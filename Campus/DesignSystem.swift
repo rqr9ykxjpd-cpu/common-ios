@@ -1,0 +1,199 @@
+import SwiftUI
+
+// MARK: - Brand system
+
+enum CampusTheme {
+    static let ink = Color(hex: "121210")
+    static let paper = Color(hex: "F2EFE7")
+    static let surface = Color(hex: "FBFAF7")
+    static let muted = Color(hex: "77746D")
+    static let acid = Color(hex: "D8FF52")
+    static let coral = Color(hex: "FF745E")
+    static let violet = Color(hex: "8066FF")
+    static let line = Color.white.opacity(0.13)
+    static let hairline = ink.opacity(0.1)
+
+    enum Space {
+        static let xs: CGFloat = 4
+        static let sm: CGFloat = 8
+        static let md: CGFloat = 12
+        static let lg: CGFloat = 16
+        static let xl: CGFloat = 24
+        static let xxl: CGFloat = 32
+    }
+
+    enum Radius {
+        static let control: CGFloat = 12
+        static let card: CGFloat = 18
+        static let hero: CGFloat = 24
+    }
+}
+
+struct EditorialTitle: ViewModifier {
+    var size: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .font(.system(size: size, weight: .medium, design: .serif))
+            .tracking(-1.4)
+    }
+}
+
+extension View {
+    func editorialTitle(_ size: CGFloat) -> some View {
+        modifier(EditorialTitle(size: size))
+    }
+}
+
+struct Wordmark: View {
+    var compact = false
+
+    var body: some View {
+        HStack(spacing: compact ? 6 : 9) {
+            ZStack {
+                Circle()
+                    .fill(CampusTheme.acid)
+                    .frame(width: compact ? 22 : 28, height: compact ? 22 : 28)
+                Circle()
+                    .trim(from: 0.12, to: 0.84)
+                    .stroke(CampusTheme.ink, style: StrokeStyle(lineWidth: compact ? 2 : 2.5, lineCap: .round))
+                    .frame(width: compact ? 11 : 15, height: compact ? 11 : 15)
+                    .rotationEffect(.degrees(-35))
+            }
+            Text("common")
+                .font(.system(size: compact ? 17 : 21, weight: .semibold, design: .rounded))
+                .tracking(-0.6)
+        }
+    }
+}
+
+struct Eyebrow: View {
+    let text: String
+    var color: Color = CampusTheme.muted
+
+    var body: some View {
+        Text(text.uppercased())
+            .font(.system(size: 10, weight: .bold, design: .rounded))
+            .tracking(1.8)
+            .foregroundStyle(color)
+    }
+}
+
+struct GrainOverlay: View {
+    var body: some View {
+        Canvas { context, size in
+            for index in 0..<180 {
+                let x = CGFloat((index * 47) % 173) / 173 * size.width
+                let y = CGFloat((index * 83) % 191) / 191 * size.height
+                context.fill(Path(ellipseIn: CGRect(x: x, y: y, width: 1, height: 1)), with: .color(.white.opacity(0.045)))
+            }
+        }
+        .allowsHitTesting(false)
+    }
+}
+
+struct PressableStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .opacity(configuration.isPressed ? 0.76 : 1)
+            .animation(.easeOut(duration: 0.14), value: configuration.isPressed)
+    }
+}
+
+struct AppSectionHeader: View {
+    let title: String
+    var actionTitle: String? = nil
+    var action: (() -> Void)? = nil
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(title)
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+            Spacer()
+            if let actionTitle, let action {
+                Button(actionTitle, action: action)
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundStyle(CampusTheme.violet)
+            }
+        }
+        .foregroundStyle(CampusTheme.ink)
+    }
+}
+
+struct AppIconButton: View {
+    let systemName: String
+    var tint: Color = CampusTheme.ink
+    var fill: Color = CampusTheme.surface
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(tint)
+                .frame(width: 44, height: 44)
+                .background(fill, in: Circle())
+                .overlay(Circle().stroke(CampusTheme.hairline))
+        }
+        .buttonStyle(PressableStyle())
+    }
+}
+
+struct AppButton: View {
+    let title: String
+    var systemName: String? = nil
+    var role: Style = .primary
+    var enabled = true
+    let action: () -> Void
+
+    enum Style { case primary, secondary, accent }
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: CampusTheme.Space.sm) {
+                if let systemName { Image(systemName: systemName) }
+                Text(title)
+            }
+            .font(.system(size: 15, weight: .semibold, design: .rounded))
+            .foregroundStyle(foreground)
+            .frame(maxWidth: .infinity)
+            .frame(height: 50)
+            .background(background, in: RoundedRectangle(cornerRadius: CampusTheme.Radius.control, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: CampusTheme.Radius.control, style: .continuous).stroke(role == .secondary ? CampusTheme.hairline : .clear))
+        }
+        .buttonStyle(PressableStyle())
+        .disabled(!enabled)
+        .opacity(enabled ? 1 : 0.42)
+    }
+
+    private var foreground: Color {
+        switch role {
+        case .primary: CampusTheme.paper
+        case .secondary, .accent: CampusTheme.ink
+        }
+    }
+
+    private var background: Color {
+        switch role {
+        case .primary: CampusTheme.ink
+        case .secondary: CampusTheme.surface
+        case .accent: CampusTheme.acid
+        }
+    }
+}
+
+struct AppSurface<Content: View>: View {
+    let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        content
+            .padding(CampusTheme.Space.lg)
+            .background(CampusTheme.surface, in: RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous).stroke(CampusTheme.hairline))
+    }
+}

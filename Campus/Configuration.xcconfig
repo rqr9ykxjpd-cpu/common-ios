@@ -1,0 +1,4 @@
+// Safe defaults. Put real values in Configuration.local.xcconfig (git-ignored).
+SUPABASE_URL =
+SUPABASE_PUBLISHABLE_KEY =
+#include? "Configuration.local.xcconfig"
