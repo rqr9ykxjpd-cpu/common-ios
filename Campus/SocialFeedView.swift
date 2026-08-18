@@ -81,7 +81,7 @@ struct SocialFeedView: View {
             }
             .sheet(item: $selectedPostAuthor) { profile in
                 NavigationStack {
-                    SocialPersonDetailView(profile: profile, place: profile.visiblePlace)
+                    SocialPersonDetailView(profile: profile, place: nil)
                 }
             }
             .sheet(item: $selectedClub) { club in
@@ -409,8 +409,8 @@ struct PostCard: View {
                     ShareLink(item: "\(post.author.name): \(post.caption)") {
                         Label("Paylaş", systemImage: "square.and.arrow.up")
                     }
-                    if post.isMine || appState.isDemoAdmin {
-                        Button(appState.isDemoAdmin && !post.isMine ? "Yönetici olarak kaldır" : "Gönderiyi sil", systemImage: "trash", role: .destructive) {
+                    if post.isMine {
+                        Button("Gönderiyi sil", systemImage: "trash", role: .destructive) {
                             showDeleteConfirmation = true
                         }
                     }
@@ -731,7 +731,7 @@ struct StoryViewer: View {
         .task(id: "\(currentIndex)-\(replyFocused)-\(selectedStoryAuthor != nil)") { await playCurrentStory() }
         .sheet(item: $selectedStoryAuthor) { profile in
             NavigationStack {
-                SocialPersonDetailView(profile: profile, place: profile.visiblePlace)
+                SocialPersonDetailView(profile: profile, place: nil)
             }
         }
         .sheet(isPresented: $showViewers) {
@@ -902,7 +902,7 @@ private struct StoryViewersSheet: View {
                         LazyVStack(spacing: 0) {
                             ForEach(records.sorted(by: { $0.lastViewedAt > $1.lastViewedAt })) { record in
                                 NavigationLink {
-                                    SocialPersonDetailView(profile: record.viewer, place: record.viewer.visiblePlace)
+                                    SocialPersonDetailView(profile: record.viewer, place: nil)
                                 } label: {
                                     HStack(spacing: CampusTheme.Space.md) {
                                         ProfileMedia(url: record.viewer.imageURL, data: nil, assetName: record.viewer.imageAssetName)

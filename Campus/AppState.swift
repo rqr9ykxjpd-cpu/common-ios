@@ -32,7 +32,6 @@ final class AppState {
     private(set) var currentUserID: UUID
     var verificationCode = ""
     var draft = ProfileDraft()
-    // Demo içeriği yalnızca `seedDemoContent()` üzerinden yüklenir; varsayılan durum her zaman boştur.
     var profiles: [StudentProfile] = []
     var discoveryFilters = DiscoveryFilters()
     var isLoadingDiscovery = false
@@ -45,11 +44,10 @@ final class AppState {
     var profileVisits: [ProfileVisit] = []
     var notifications: [AppNotification] = []
     var meetingRequests: [MeetingRequest] = []
-    /// Kampüs yerleri. Demo modunda örnek liste, backend modunda `places` tablosundan gelir —
-    /// eskiden her yerde koda gömülü `CampusPlace.samples` kullanılıyordu.
-    var places: [CampusPlace] = CampusPlace.samples
-    /// Kulüpler. Demo modunda örnek liste, backend modunda `clubs` tablosundan gelir.
-    var clubs: [CampusClub] = CampusClub.samples
+    /// Kampüs yerleri, `places` tablosundan gelir.
+    var places: [CampusPlace] = []
+    /// Kulüpler, `clubs` tablosundan gelir.
+    var clubs: [CampusClub] = []
     var avatarData: Data?
     var profileGalleryData: [Data] = []
     var avatarURL: URL?
@@ -64,10 +62,6 @@ final class AppState {
     var isAccountActionInProgress = false
     var toast: String?
 
-    var isDemoAdmin: Bool {
-        service.isDemo && email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "cem" && route == .app
-    }
-
     let service: any ProductService
     private let defaults: UserDefaults
     private var messageListenerTask: Task<Void, Never>?
@@ -80,38 +74,6 @@ final class AppState {
         email = defaults.string(forKey: SessionKey.email) ?? defaults.string(forKey: SessionKey.accountEmail) ?? ""
         currentUserID = defaults.string(forKey: SessionKey.userID).flatMap(UUID.init(uuidString:)) ?? UUID()
         loadAccountData(migratingLegacy: true)
-        if self.service.isDemo { seedDemoContent() }
-    }
-
-    /// Örnek içeriği yükler. Yalnızca `DemoProductService` kullanılırken çağrılmalıdır —
-    /// backend modunda bu verinin görünmesi gerçek kullanıcıya sahte profil ve bildirim gösterir.
-    private func seedDemoContent() {
-        assert(service.isDemo, "Demo içeriği yalnızca demo modunda yüklenmelidir")
-        profiles = StudentProfile.samples
-        conversations = Conversation.samples
-        posts = SocialPost.samples.shuffled()
-        stories = CampusStory.samples.shuffled()
-        profileVisits = ProfileVisit.samples
-        notifications = AppNotification.samples
-
-        let incoming = MeetingRequest(
-            profile: StudentProfile.samples[1],
-            place: CampusPlace.samples[1],
-            direction: .incoming,
-            createdAt: .now.addingTimeInterval(-1_200)
-        )
-        meetingRequests = [incoming]
-        notifications.insert(
-            AppNotification(
-                kind: .meetingRequest,
-                title: "Ece buluşmak istiyor",
-                body: "Şamdan Kafe için gönderilen isteği yanıtla.",
-                actor: incoming.profile,
-                meetingRequestID: incoming.id,
-                createdAt: incoming.createdAt
-            ),
-            at: 0
-        )
     }
 
     func beginOnboarding() {
@@ -120,8 +82,8 @@ final class AppState {
 
     func requestLoginCode(email: String) async -> Bool {
         let normalized = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard service.isDemo ? (normalized == "cem" || UniversityDomain.isValid(normalized)) : UniversityDomain.isValid(normalized) else {
-            toast = service.isDemo ? "Demo için cem veya üniversite e-postası kullan" : "Yalnızca üniversite e-postası kullanılabilir"
+        guard UniversityDomain.isValid(normalized) else {
+            toast = "Yalnızca üniversite e-postası kullanılabilir"
             return false
         }
         do {
@@ -136,8 +98,7 @@ final class AppState {
 
     func verifyOnboardingCode() async -> Bool {
         let normalized = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let valid = service.isDemo ? verificationCode == "1283" : verificationCode.count == 6
-        guard valid else {
+        guard verificationCode.count == 6 else {
             toast = "Doğrulama kodunu kontrol et"
             return false
         }
@@ -146,7 +107,7 @@ final class AppState {
             currentUserID = service.currentUserID ?? currentUserID
             // Kayıt akışından gelen kullanıcının sunucuda profili olabilir (uygulamayı silip
             // yeniden kurmuş olabilir). Varsa yükleyip her şeyi baştan yazdırmıyoruz.
-            if !service.isDemo, let profile = try? await service.fetchMyProfile() {
+            if let profile = try? await service.fetchMyProfile() {
                 applyRemoteProfile(profile)
             }
             return true
@@ -162,7 +123,7 @@ final class AppState {
     @discardableResult
     func signIn(email: String, code: String) async -> Bool {
         let normalized = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard service.isDemo ? (normalized == "cem" && code == "1283") : (UniversityDomain.isValid(normalized) && code.count == 6) else {
+        guard UniversityDomain.isValid(normalized), code.count == 6 else {
             toast = "Giriş bilgilerini kontrol et"
             return false
         }
@@ -172,12 +133,6 @@ final class AppState {
             currentUserID = service.currentUserID ?? currentUserID
             restoreOrCreateAccount(for: normalized)
             verificationCode = ""
-            if service.isDemo {
-                persistSession()
-                seedDemoContent()
-                withAnimation(.smooth(duration: 0.55)) { route = .app }
-                return true
-            }
             // Doğrulama başarılı olsa da sunucuda profil yoksa kullanıcı henüz kayıt akışını
             // tamamlamamış demektir. Doğrudan uygulamaya alırsak keşif sebepsiz boş gelir ve
             // nedenini anlamanın hiçbir yolu olmaz; onun yerine onboarding'e yönlendiriyoruz.
@@ -211,7 +166,6 @@ final class AppState {
     }
 
     func restoreBackendSession() async {
-        guard !service.isDemo else { return }
         do {
             guard let userID = try await service.restoreSession() else {
                 // Sunucu oturumu bitmiş. Yerel bayrağı da düşürmezsek uygulama her açılışta
@@ -266,7 +220,6 @@ final class AppState {
     }
 
     private func loadMyProfilePhotos() async {
-        guard !service.isDemo else { return }
         if let result = try? await service.fetchMyProfilePhotos() {
             avatarURL = result.avatarURL
             galleryURLs = result.galleryURLs
@@ -277,7 +230,7 @@ final class AppState {
     /// aksi halde `ConversationView` yalnızca açılış anında bir kerelik yüklüyor,
     /// karşı taraf yazınca ekranda görünmüyor.
     private func startMessageListener() {
-        guard !service.isDemo, messageListenerTask == nil else { return }
+        guard messageListenerTask == nil else { return }
         messageListenerTask = Task { [weak self] in
             guard let self else { return }
             for await payload in self.service.messageStream() {
@@ -340,16 +293,15 @@ final class AppState {
         // Kayıt akışıyla giren kullanıcı da anlık mesajları almalı; bunlar yalnızca `signIn` ve
         // `restoreBackendSession` içinde kuruluyordu, yeni kullanıcı uygulamayı yeniden
         // başlatana kadar gelen mesajları görmüyordu.
-        if !service.isDemo {
-            await loadMyProfilePhotos()
-            await loadNotifications()
-            await loadPlaces()
-            await loadStories()
-            await loadClubs()
-            await loadMeetingRequests()
-            try? await service.touchLastActive()
-            startMessageListener()
-        }
+        await loadMyProfilePhotos()
+        await loadNotifications()
+        await loadPlaces()
+        await loadStories()
+        await loadClubs()
+        await loadMeetingRequests()
+        try? await service.touchLastActive()
+        startMessageListener()
+    
         withAnimation(.smooth(duration: 0.55)) { route = .app }
     }
 
@@ -397,27 +349,11 @@ final class AppState {
                 _ = conversationID(for: profile, matchID: matchID)
                 // Backend modunda eşleşme bildirimini veritabanı trigger'ı üretiyor; burada
                 // ayrıca eklersek aynı bildirim iki kez görünür.
-                if service.isDemo {
-                    notifications.insert(
-                        AppNotification(kind: .match, title: "Yeni bir eşleşme", body: "Sen ve \(profile.name) birbirinizi beğendiniz.", actor: profile),
-                        at: 0
-                    )
-                }
             }
-            if profiles.count < 3, !service.isDemo { await loadDiscovery() }
+            if profiles.count < 3 { await loadDiscovery() }
         } catch {
             discoveryError = error.localizedDescription
         }
-    }
-
-    func undoLastPass() {
-        guard service.isDemo, let profile = lastPassedProfile else {
-            toast = "Geri alma yalnızca gönderilmemiş demo kararında kullanılabilir"
-            return
-        }
-        profiles.insert(profile, at: 0)
-        lastPassedProfile = nil
-        Haptics.impact(.light)
     }
 
     func toggleLike(postID: UUID) {
@@ -426,7 +362,6 @@ final class AppState {
         posts[index].liked = newLiked
         posts[index].likeCount += newLiked ? 1 : -1
         Haptics.impact(.light)
-        guard !service.isDemo else { return }
         Task {
             do {
                 try await service.setPostLiked(postID, liked: newLiked)
@@ -440,7 +375,6 @@ final class AppState {
     }
 
     func loadFeed() async {
-        guard !service.isDemo else { return }
         do {
             posts = try await service.fetchFeed().map(socialPost(from:))
         } catch {
@@ -451,12 +385,6 @@ final class AppState {
     func publishPost(imageData: Data?, caption: String, place: CampusPlace?) {
         let cleanCaption = caption.trimmingCharacters(in: .whitespacesAndNewlines)
         guard imageData != nil || !cleanCaption.isEmpty else { return }
-        if service.isDemo {
-            let author = currentUserProfile
-            posts.insert(SocialPost(author: author, caption: cleanCaption, localImageData: imageData, place: place, isMine: true, likeCount: 0), at: 0)
-            Haptics.success()
-            return
-        }
         Task {
             do {
                 let post = try await service.createPost(caption: cleanCaption, placeName: place?.name, imageData: imageData)
@@ -471,7 +399,6 @@ final class AppState {
     /// Story'leri sunucudan yükler. Bu liste akışın en üstünde duruyor ama şimdiye kadar
     /// yalnızca bellekteydi; uygulama kapanınca paylaşılan story kayboluyordu.
     func loadStories() async {
-        guard !service.isDemo else { return }
         do {
             stories = try await service.fetchStories()
         } catch {
@@ -480,12 +407,6 @@ final class AppState {
     }
 
     func publishStory(imageData: Data, caption: String, place: CampusPlace?) {
-        if service.isDemo {
-            stories.insert(CampusStory(author: currentUserProfile, localImageData: imageData, caption: caption, place: place, isMine: true), at: 0)
-            if stories.count > 3 { stories.removeLast(stories.count - 3) }
-            Haptics.success()
-            return
-        }
         Task {
             do {
                 try await service.publishStory(imageData: imageData, caption: caption, placeID: place?.id)
@@ -505,13 +426,7 @@ final class AppState {
     }
 
     func deletePost(_ postID: UUID) {
-        guard posts.contains(where: { $0.id == postID && ($0.isMine || isDemoAdmin) }) else { return }
-        if service.isDemo {
-            posts.removeAll { $0.id == postID }
-            toast = "Gönderi silindi"
-            Haptics.success()
-            return
-        }
+        guard posts.contains(where: { $0.id == postID && $0.isMine }) else { return }
         Task {
             do {
                 try await service.deletePost(postID)
@@ -530,7 +445,6 @@ final class AppState {
         if selectedStory?.id == storyID { selectedStory = nil }
         toast = "Story silindi"
         Haptics.success()
-        guard !service.isDemo else { return }
         Task {
             do { try await service.deleteStory(storyID) }
             catch {
@@ -542,13 +456,7 @@ final class AppState {
 
     func addComment(_ body: String, to postID: UUID) {
         let cleanBody = body.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !cleanBody.isEmpty,
-              let index = posts.firstIndex(where: { $0.id == postID }) else { return }
-        if service.isDemo {
-            posts[index].comments.append(SocialComment(author: currentUserProfile.name, body: cleanBody, isMine: true))
-            Haptics.impact(.light)
-            return
-        }
+        guard !cleanBody.isEmpty, posts.contains(where: { $0.id == postID }) else { return }
         Task {
             do {
                 let comment = try await service.addComment(cleanBody, to: postID)
@@ -563,13 +471,7 @@ final class AppState {
 
     func deleteComment(_ commentID: UUID, from postID: UUID) {
         guard let postIndex = posts.firstIndex(where: { $0.id == postID }),
-              posts[postIndex].comments.contains(where: { $0.id == commentID && ($0.isMine || isDemoAdmin) }) else { return }
-        if service.isDemo {
-            posts[postIndex].comments.removeAll { $0.id == commentID }
-            toast = "Yorum silindi"
-            Haptics.success()
-            return
-        }
+              posts[postIndex].comments.contains(where: { $0.id == commentID && $0.isMine }) else { return }
         Task {
             do {
                 try await service.deleteComment(commentID)
@@ -583,26 +485,7 @@ final class AppState {
         }
     }
 
-    func moderateDemoProfile(_ profile: StudentProfile, block: Bool) {
-        guard isDemoAdmin else { return }
-        if block {
-            profiles.removeAll { $0.id == profile.id }
-            posts.removeAll { $0.author.id == profile.id }
-            stories.removeAll { $0.author.id == profile.id }
-            conversations.removeAll { $0.profile.id == profile.id }
-            notifications.removeAll { $0.actor?.id == profile.id }
-            toast = "\(profile.name) demo akışından engellendi"
-        } else {
-            toast = "\(profile.name) için demo şikâyeti incelemeye alındı"
-        }
-        Haptics.success()
-    }
-
     func block(_ profile: StudentProfile) {
-        if service.isDemo {
-            moderateDemoProfile(profile, block: true)
-            return
-        }
         Task {
             do {
                 try await service.blockUser(profile.id)
@@ -620,10 +503,6 @@ final class AppState {
     }
 
     func report(_ profile: StudentProfile, reason: ReportReason) {
-        if service.isDemo {
-            moderateDemoProfile(profile, block: false)
-            return
-        }
         Task {
             do {
                 try await service.reportUser(profile.id, reason: reason, details: nil)
@@ -678,10 +557,9 @@ final class AppState {
             avatarData = avatar
             profileGalleryData = gallery
             discoveryFilters = updatedDraft.discoveryFilters
-            if !service.isDemo {
-                avatarURL = try await service.updateAvatar(avatar)
-                galleryURLs = try await service.updateGallery(gallery)
-            }
+            avatarURL = try await service.updateAvatar(avatar)
+            galleryURLs = try await service.updateGallery(gallery)
+        
             persistAccount()
             toast = "Profilin güncellendi"
             Haptics.success()
@@ -696,16 +574,6 @@ final class AppState {
         guard let storyIndex = stories.firstIndex(where: { $0.id == story.id }) else { return }
         stories[storyIndex].viewed = true
 
-        if service.isDemo {
-            let viewer = currentUserProfile
-            if let viewerIndex = stories[storyIndex].viewRecords.firstIndex(where: { $0.viewer.name == viewer.name }) {
-                stories[storyIndex].viewRecords[viewerIndex].viewCount += 1
-                stories[storyIndex].viewRecords[viewerIndex].lastViewedAt = .now
-            } else {
-                stories[storyIndex].viewRecords.append(StoryViewRecord(viewer: viewer, viewCount: 1))
-            }
-            return
-        }
         let storyID = story.id
         let isMine = story.isMine
         Task {
@@ -727,7 +595,6 @@ final class AppState {
     /// Buluşma isteklerini sunucudan yükler. Bu liste şimdiye kadar yalnızca bellekte
     /// yaşıyordu; uygulama kapanınca gönderilen ve gelen istekler kayboluyordu.
     func loadMeetingRequests() async {
-        guard !service.isDemo else { return }
         do {
             meetingRequests = try await service.fetchMeetingRequests()
         } catch {
@@ -736,7 +603,6 @@ final class AppState {
     }
 
     func loadPlaces() async {
-        guard !service.isDemo else { return }
         if let loaded = try? await service.fetchPlaces(), !loaded.isEmpty {
             places = loaded
         }
@@ -744,12 +610,6 @@ final class AppState {
 
     func sendMeetingRequest(to profile: StudentProfile, at place: CampusPlace) {
         guard meetingRequest(for: profile, at: place) == nil else { return }
-        if service.isDemo {
-            meetingRequests.insert(MeetingRequest(profile: profile, place: place, direction: .outgoing), at: 0)
-            toast = "\(profile.name) için \(place.name) buluşma isteği gönderildi"
-            Haptics.success()
-            return
-        }
         let optimistic = MeetingRequest(profile: profile, place: place, direction: .outgoing)
         meetingRequests.insert(optimistic, at: 0)
         Task {
@@ -772,7 +632,6 @@ final class AppState {
         notifications.removeAll { $0.meetingRequestID == requestID }
         toast = accept ? "Buluşma isteği kabul edildi" : "Buluşma isteği reddedildi"
         Haptics.success()
-        guard !service.isDemo else { return }
         Task {
             do {
                 try await service.respondToMeetingRequest(requestID, accept: accept)
@@ -795,7 +654,6 @@ final class AppState {
         currentVisiblePlace = turningOff ? nil : place
         toast = turningOff ? "Yer görünürlüğün kapatıldı" : "Şu an \(place.name) konumunda görünürsün"
         Haptics.success()
-        guard !service.isDemo else { return }
         Task {
             do {
                 try await service.setVisiblePlace(turningOff ? nil : place.id)
@@ -809,7 +667,6 @@ final class AppState {
     /// Bir yerde şu an görünen kişiler. Bu liste koda gömülü sabit isimlerdi; herkese
     /// aynı sahte kişiler gösteriliyordu.
     func peopleAtPlace(_ place: CampusPlace) async -> [StudentProfile] {
-        guard !service.isDemo else { return place.activeProfiles }
         return (try? await service.fetchPeopleAtPlace(place.id)) ?? []
     }
 
@@ -820,7 +677,6 @@ final class AppState {
     /// Kulüpleri ve üyeliklerini sunucudan yükler. Liste eskiden koda gömülüydü ve
     /// katılma bilgisi yalnızca bellekte tutulduğu için uygulama kapanınca kayboluyordu.
     func loadClubs() async {
-        guard !service.isDemo else { return }
         if let result = try? await service.fetchClubs() {
             clubs = result.clubs
             joinedClubIDs = result.joinedIDs
@@ -837,7 +693,6 @@ final class AppState {
             toast = "\(club.name) üyeliğinden ayrıldın"
         }
         Haptics.success()
-        guard !service.isDemo else { return }
         Task {
             do {
                 try await service.setClubMembership(club.id, joined: willJoin)
@@ -879,7 +734,6 @@ final class AppState {
     /// Bildirimleri sunucudan yükler. Bu ekran şimdiye kadar yalnızca demo örneklerinden
     /// besleniyordu; gerçek kullanıcı eşleşme veya mesaj aldığında hiçbir şey görmüyordu.
     func loadNotifications() async {
-        guard !service.isDemo else { return }
         do {
             notifications = try await service.fetchNotifications().map(appNotification(from:))
         } catch {
@@ -890,7 +744,6 @@ final class AppState {
     func markNotificationRead(_ notificationID: UUID) {
         guard let index = notifications.firstIndex(where: { $0.id == notificationID }), !notifications[index].isRead else { return }
         notifications[index].isRead = true
-        guard !service.isDemo else { return }
         Task {
             do { try await service.markNotificationRead(notificationID) }
             catch {
@@ -907,7 +760,6 @@ final class AppState {
         for index in notifications.indices {
             notifications[index].isRead = true
         }
-        guard !service.isDemo else { return }
         Task {
             do { try await service.markAllNotificationsRead() }
             catch {
@@ -1059,10 +911,7 @@ final class AppState {
     }
 
     private func restoreOrCreateAccount(for signedInEmail: String) {
-        if service.isDemo {
-            let stableDemoID = UUID(uuidString: "00000000-0000-0000-0000-000000001283")!
-            currentUserID = signedInEmail == "cem" ? stableDemoID : UUID()
-        } else if let backendUserID = service.currentUserID {
+        if let backendUserID = service.currentUserID {
             currentUserID = backendUserID
         }
         defaults.set(signedInEmail, forKey: SessionKey.account("email", userID: currentUserID))
@@ -1112,7 +961,7 @@ final class AppState {
             author: author,
             caption: post.caption,
             localImageData: post.imageData,
-            place: post.placeName.flatMap { name in CampusPlace.samples.first { $0.name == name } },
+            place: post.placeName.flatMap { name in places.first { $0.name == name } },
             liked: post.liked,
             isMine: post.authorID == currentUserID,
             likeCount: post.likeCount,

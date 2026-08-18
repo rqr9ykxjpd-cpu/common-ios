@@ -48,7 +48,6 @@ enum BackendServiceError: LocalizedError {
 }
 
 final class SupabaseProductService: ProductService, @unchecked Sendable {
-    let isDemo = false
     private let client: SupabaseClient
     private static let postgresDateFormatter: DateFormatter = {
         let formatter = DateFormatter()

@@ -81,19 +81,3 @@ struct StudentProfile: Identifiable, Hashable {
     }
 }
 
-extension StudentProfile {
-    var galleryAssetNames: [String] {
-        switch name {
-        case "Defne": ["profile-defne", "post-study", "post-quiet"]
-        case "Ece": ["profile-ece", "post-cafe", "post-friends"]
-        case "Mina": ["profile-mina", "post-club", "post-campus"]
-        default: imageAssetName.map { [$0] } ?? []
-        }
-    }
-
-    static let samples: [StudentProfile] = [
-        .init(name: "Defne", age: 22, university: "YÜ", department: "Psikoloji", year: "3. sınıf", bio: "Gece yürüyüşleri, iyi kahve ve kampüste plansız karşılaşmalar.", interests: ["Analog", "Indie", "Sergiler"], imageURL: nil, imageAssetName: "profile-defne", compatibility: 94, isVerified: true, compatibilityReasons: ["2 ortak ilgi alanı", "Tanışma niyetiniz benzer"], prompts: [.init(question: "Kampüste beni nerede bulursun?", answer: "Kütüphane çıkışı kahve ararken."), .init(question: "Plansız bir akşam", answer: "Sahil yürüyüşü ve iyi bir playlist.")], relationshipIntent: .both, activeLabel: "Yakın zamanda aktif"),
-        .init(name: "Ece", age: 21, university: "YÜ", department: "Endüstri Mühendisliği", year: "3. sınıf", bio: "Ders aralarında kahve, hafta sonu sahil ve canlı müzik planlarına varım.", interests: ["Müzik", "Kahve", "Koşu"], imageURL: nil, imageAssetName: "profile-ece", compatibility: 89, isVerified: true, compatibilityReasons: ["Kahve ortak ilginiz", "Aynı sınıf düzeyi"], prompts: [.init(question: "İlk buluşma fikrim", answer: "Kısa kahve, uzun sohbet."), .init(question: "Beni güldüren şey", answer: "Kötü kelime oyunları.")], relationshipIntent: .dating, activeLabel: "Bugün aktif"),
-        .init(name: "Mina", age: 23, university: "YÜ", department: "İşletme", year: "4. sınıf", bio: "Kısa filmler çekiyorum, uzun sohbetleri seviyorum. Kampüste yeni insanlar tanımaya açığım.", interests: ["Sinema", "Tasarım", "Pilates"], imageURL: nil, imageAssetName: "profile-mina", compatibility: 86, isVerified: true, compatibilityReasons: ["Yaratıcı etkinlikleri seviyorsunuz"], prompts: [.init(question: "Beraber deneyelim", answer: "Kampüste bir kısa film çekmek."), .init(question: "Pazar ritüelim", answer: "Kahve ve eski filmler.")], relationshipIntent: .friendship, activeLabel: "Bu hafta aktif")
-    ]
-}

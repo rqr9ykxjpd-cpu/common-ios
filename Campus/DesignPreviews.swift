@@ -39,11 +39,6 @@ import SwiftUI
         .preferredColorScheme(.dark)
 }
 
-#Preview("Eşleşme Anı") {
-        MatchMomentView(profile: StudentProfile.samples[1], close: {}, message: { _ in })
-        .preferredColorScheme(.dark)
-}
-
 #Preview("Bağlantılar — Premium") {
     PremiumMatchesView()
         .environment(AppState())

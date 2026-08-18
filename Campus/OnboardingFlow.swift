@@ -16,7 +16,7 @@ struct OnboardingFlow: View {
                 Group {
                     switch step {
                     case .email: EmailStep(email: $appState.email, isSubmitting: isSubmitting) { submitEmail() }
-                    case .code: CodeStep(code: $appState.verificationCode, email: appState.email, isDemo: appState.service.isDemo, isSubmitting: isSubmitting) { submitCode() }
+                    case .code: CodeStep(code: $appState.verificationCode, email: appState.email, isSubmitting: isSubmitting) { submitCode() }
                     case .identity: IdentityStep(draft: $appState.draft) { appState.advance(from: step) }
                     case .preferences: PreferencesStep(draft: $appState.draft) { appState.advance(from: step) }
                     case .interests: InterestsStep(draft: $appState.draft) { appState.advance(from: step) }
@@ -156,7 +156,6 @@ private struct EmailStep: View {
 private struct CodeStep: View {
     @Binding var code: String
     let email: String
-    let isDemo: Bool
     let isSubmitting: Bool
     let submit: () -> Void
     @FocusState private var focused: Bool
@@ -164,15 +163,15 @@ private struct CodeStep: View {
     var body: some View {
         StepScaffold(
             eyebrow: "gelen kutuna bak",
-            title: isDemo ? "Dört rakam,\ntek küçük adım." : "Altı rakam,\ntek küçük adım.",
-            subtitle: "\(email) adresine gönderdiğimiz \(isDemo ? "dört" : "altı") haneli kodu gir.",
+            title: "Altı rakam,\ntek küçük adım.",
+            subtitle: "\(email) adresine gönderdiğimiz altı haneli kodu gir.",
             content: ZStack {
                 TextField("", text: $code)
                     .keyboardType(.numberPad)
                     .focused($focused)
                     .opacity(0.01)
                 HStack(spacing: 8) {
-                    ForEach(0..<(isDemo ? 4 : 6), id: \.self) { index in
+                    ForEach(0..<6, id: \.self) { index in
                         Text(character(at: index))
                             .font(.system(size: 24, weight: .medium, design: .monospaced))
                             .frame(maxWidth: .infinity)
@@ -183,9 +182,9 @@ private struct CodeStep: View {
                 }
                 .onTapGesture { focused = true }
             },
-            footer: PrimaryEditorialButton(title: isSubmitting ? "DOĞRULANIYOR…" : "DOĞRULA", enabled: (isDemo ? code == "1283" : code.count == 6) && !isSubmitting, action: submit)
+            footer: PrimaryEditorialButton(title: isSubmitting ? "DOĞRULANIYOR…" : "DOĞRULA", enabled: code.count == 6 && !isSubmitting, action: submit)
         )
-        .onChange(of: code) { _, newValue in code = String(newValue.filter(\.isNumber).prefix(isDemo ? 4 : 6)) }
+        .onChange(of: code) { _, newValue in code = String(newValue.filter(\.isNumber).prefix(6)) }
         .onAppear { focused = true }
     }
 

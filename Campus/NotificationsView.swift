@@ -49,7 +49,7 @@ struct NotificationsView: View {
             .toolbar(.hidden, for: .navigationBar)
             .sheet(item: $selectedProfile) { profile in
                 NavigationStack {
-                    SocialPersonDetailView(profile: profile, place: profile.visiblePlace)
+                    SocialPersonDetailView(profile: profile, place: nil)
                 }
             }
             .sheet(item: $selectedMeetingRequest) { route in

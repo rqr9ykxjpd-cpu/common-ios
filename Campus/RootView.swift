@@ -9,7 +9,6 @@ struct RootView: View {
             case .welcome:
                 WelcomeView(
                     onContinue: { appState.beginOnboarding() },
-                    isDemo: appState.service.isDemo,
                     onRequestCode: { email in
                         await appState.requestLoginCode(email: email)
                     },
@@ -68,7 +67,6 @@ private struct AppToast: View {
 
 struct WelcomeView: View {
     let onContinue: () -> Void
-    var isDemo = true
     var onRequestCode: (String) async -> Bool = { _ in false }
     var onLogin: (String, String) async -> Bool = { _, _ in false }
     @State private var appeared = false
@@ -153,7 +151,6 @@ struct WelcomeView: View {
         }
         .sheet(isPresented: $showLogin) {
             LoginView(
-                isDemo: isDemo,
                 requestCode: onRequestCode,
                 login: { email, code in
                     let success = await onLogin(email, code)
@@ -169,7 +166,6 @@ struct WelcomeView: View {
 
 private struct LoginView: View {
     @Environment(\.dismiss) private var dismiss
-    let isDemo: Bool
     let requestCode: (String) async -> Bool
     let login: (String, String) async -> Bool
     @State private var email = ""
@@ -183,10 +179,10 @@ private struct LoginView: View {
 
     private var usernameIsValid: Bool {
         let normalized = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        return isDemo ? normalized == "cem" : UniversityDomain.isValid(normalized)
+        return UniversityDomain.isValid(normalized)
     }
     private var isValid: Bool {
-        codeRequested && usernameIsValid && (isDemo ? code == "1283" : code.count == 6)
+        codeRequested && usernameIsValid && code.count == 6
     }
 
     var body: some View {
@@ -204,19 +200,19 @@ private struct LoginView: View {
             }
 
             VStack(spacing: 14) {
-                EditorialLoginField(title: isDemo ? "KULLANICI ADI" : "ÜNİVERSİTE E-POSTASI", text: $email, keyboard: isDemo ? .default : .emailAddress)
+                EditorialLoginField(title: "ÜNİVERSİTE E-POSTASI", text: $email, keyboard: .emailAddress)
                     .disabled(codeRequested)
                 if codeRequested {
                     EditorialLoginField(title: "GİRİŞ KODU", text: $code, keyboard: .numberPad)
                         .onChange(of: code) { _, newValue in
-                            code = String(newValue.filter(\.isNumber).prefix(isDemo ? 4 : 6))
+                            code = String(newValue.filter(\.isNumber).prefix(6))
                         }
                 }
             }
 
             Text(codeRequested
-                 ? (isDemo ? "Dört haneli demo kodunu gir." : "E-postana gelen altı haneli kodu gir.")
-                 : (isDemo ? "Kullanıcı adını yazarak giriş kodu adımına geç." : "Üniversite e-postana tek kullanımlık kod göndereceğiz."))
+                 ? "E-postana gelen altı haneli kodu gir."
+                 : "Üniversite e-postana tek kullanımlık kod göndereceğiz.")
                 .font(.caption).foregroundStyle(CampusTheme.ink.opacity(0.48))
 
             if codeRequested {
@@ -246,7 +242,7 @@ private struct LoginView: View {
                     .disabled(resendCooldown > 0 || isRequestingCode)
                     .foregroundStyle(resendCooldown > 0 || isRequestingCode ? CampusTheme.ink.opacity(0.32) : CampusTheme.violet)
 
-                    Button(isDemo ? "Kullanıcı adını değiştir" : "E-postayı değiştir") {
+                    Button("E-postayı değiştir") {
                         codeRequested = false
                         code = ""
                         resendCooldown = 0

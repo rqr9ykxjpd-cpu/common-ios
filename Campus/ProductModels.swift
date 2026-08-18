@@ -33,15 +33,6 @@ struct Conversation: Identifiable, Hashable {
 
     var lastMessage: String { messages.last?.body ?? "Yeni bir eşleşme" }
 
-    static let samples: [Conversation] = [
-        Conversation(id: UUID(), profile: StudentProfile.samples[1], messages: [
-            Message(body: "Perşembe akşamı o sergiye gidelim mi?", isMine: false, sentAt: .now.addingTimeInterval(-420))
-        ], updatedAt: .now.addingTimeInterval(-420), unreadCount: 1),
-        Conversation(id: UUID(), profile: StudentProfile.samples[0], messages: [
-            Message(body: "Playlist'i dinledim, üçüncü şarkı çok iyi.", isMine: false, sentAt: .now.addingTimeInterval(-3600), reaction: "❤️"),
-            Message(body: "Benim de favorim oydu.", isMine: true, sentAt: .now.addingTimeInterval(-3000))
-        ], updatedAt: .now.addingTimeInterval(-3000), unreadCount: 0)
-    ]
 }
 
 enum MeetingRequestStatus: String, Hashable {
@@ -114,12 +105,6 @@ struct AppNotification: Identifiable, Hashable {
         self.isRead = isRead
     }
 
-    static let samples: [AppNotification] = [
-        AppNotification(kind: .message, title: "Ece sana mesaj gönderdi", body: "Perşembe akşamı o sergiye gidelim mi?", actor: StudentProfile.samples[1], createdAt: .now.addingTimeInterval(-420)),
-        AppNotification(kind: .like, title: "Defne gönderini beğendi", body: "Kampüs paylaşımın dikkatini çekti.", actor: StudentProfile.samples[0], createdAt: .now.addingTimeInterval(-1_800)),
-        AppNotification(kind: .comment, title: "Mina yorum yaptı", body: "Bu etkinliğe ben de geliyorum.", actor: StudentProfile.samples[2], createdAt: .now.addingTimeInterval(-5_400), isRead: true),
-        AppNotification(kind: .club, title: "Fotoğraf Topluluğu", body: "Cuma günkü kampüs yürüyüşü için yeni duyuru var.", createdAt: .now.addingTimeInterval(-14_400), isRead: true)
-    ]
 }
 
 enum UniversityDomain {

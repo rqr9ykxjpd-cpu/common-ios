@@ -55,7 +55,7 @@ struct ConversationView: View {
         .sheet(isPresented: $showProfile) {
             if let profile = conversation?.profile {
                 NavigationStack {
-                    SocialPersonDetailView(profile: profile, place: profile.visiblePlace)
+                    SocialPersonDetailView(profile: profile, place: nil)
                 }
             }
         }

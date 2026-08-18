@@ -132,14 +132,6 @@ struct SocialProfileView: View {
                 Label("Doğrulanmış YÜ öğrencisi", systemImage: "checkmark.seal.fill")
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundStyle(CampusTheme.violet)
-                if appState.isDemoAdmin {
-                    Label("Common Kurucusu · Yönetici", systemImage: "crown.fill")
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
-                        .foregroundStyle(CampusTheme.ink)
-                        .padding(.horizontal, 10)
-                        .frame(height: 28)
-                        .background(CampusTheme.acid, in: Capsule())
-                }
             }
             Spacer(minLength: 0)
         }
@@ -373,7 +365,7 @@ struct ProfileVisitorsView: View {
                     LazyVStack(spacing: 0) {
                         ForEach(visits) { visit in
                             NavigationLink {
-                                SocialPersonDetailView(profile: visit.profile, place: visit.profile.visiblePlace)
+                                SocialPersonDetailView(profile: visit.profile, place: nil)
                             } label: {
                             HStack(spacing: 14) {
                                 ProfileMedia(url: visit.profile.imageURL, data: nil, assetName: visit.profile.imageAssetName)
@@ -381,11 +373,6 @@ struct ProfileVisitorsView: View {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(visit.profile.name).font(.system(size: 16, weight: .semibold, design: .rounded))
                                     Text(visit.profile.department).font(.system(size: 13, design: .rounded)).foregroundStyle(CampusTheme.muted)
-                                    if let place = visit.profile.visiblePlace {
-                                        Label(place.name, systemImage: "location.fill")
-                                            .font(.system(size: 11, weight: .semibold, design: .rounded))
-                                            .foregroundStyle(CampusTheme.violet)
-                                    }
                                 }
                                 Spacer()
                                 Text(visit.visitedAt.formatted(.relative(presentation: .named)))

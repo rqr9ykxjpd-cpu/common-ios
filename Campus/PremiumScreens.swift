@@ -142,12 +142,8 @@ struct PremiumDiscoverView: View {
 
     private var controls: some View {
         HStack(spacing: 10) {
-            iconButton(systemName: "arrow.uturn.backward", tint: appState.lastPassedProfile == nil ? .white.opacity(0.3) : CampusTheme.acid) {
-                appState.undoLastPass()
-            }
-            .disabled(appState.lastPassedProfile == nil || !appState.service.isDemo)
-            .accessibilityLabel("Son kararı geri al")
-
+            // "Geri al" kaldırıldı: kararlar sunucuya yazılıyor ve geri alınamıyordu,
+            // buton backend modunda her zaman pasifti.
             actionButton(icon: "xmark", label: "Geç", fill: .white.opacity(0.08), color: .white) { dismiss(-1) }
             actionButton(icon: "heart.fill", label: "Tanış", fill: CampusTheme.acid, color: CampusTheme.ink) { dismiss(1) }
 
@@ -258,7 +254,6 @@ struct ProfileDetailSheet: View {
                 compatibility
                 prompts
                 interests
-                if let place = profile.visiblePlace { visiblePlace(place) }
                 posts
                 safetyActions
             }
@@ -270,29 +265,21 @@ struct ProfileDetailSheet: View {
     }
 
     private var galleryPageCount: Int {
-        !profile.galleryImageURLs.isEmpty ? profile.galleryImageURLs.count : profile.galleryAssetNames.count
+        max(profile.galleryImageURLs.count, 1)
     }
 
     private var gallery: some View {
         ZStack(alignment: .topTrailing) {
             TabView(selection: $selectedPhoto) {
-                if !profile.galleryImageURLs.isEmpty {
-                    ForEach(Array(profile.galleryImageURLs.enumerated()), id: \.offset) { index, url in
-                        ProfileMedia(url: url, data: nil, assetName: nil)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 460)
-                            .clipped()
-                            .tag(index)
-                    }
-                } else if profile.galleryAssetNames.isEmpty {
-                    ProfileMedia(url: profile.imageURL, data: nil, assetName: profile.imageAssetName)
+                if profile.galleryImageURLs.isEmpty {
+                    ProfileMedia(url: profile.imageURL, data: nil, assetName: nil)
                         .frame(maxWidth: .infinity)
                         .frame(height: 460)
                         .clipped()
                         .tag(0)
                 } else {
-                    ForEach(Array(profile.galleryAssetNames.enumerated()), id: \.offset) { index, asset in
-                        ProfileMedia(url: nil, data: nil, assetName: asset)
+                    ForEach(Array(profile.galleryImageURLs.enumerated()), id: \.offset) { index, url in
+                        ProfileMedia(url: url, data: nil, assetName: nil)
                             .frame(maxWidth: .infinity)
                             .frame(height: 460)
                             .clipped()
@@ -538,7 +525,7 @@ struct PremiumMatchesView: View {
                 HStack(spacing: CampusTheme.Space.md) {
                     ForEach(appState.conversations.map(\.profile)) { profile in
                         NavigationLink {
-                            SocialPersonDetailView(profile: profile, place: profile.visiblePlace)
+                            SocialPersonDetailView(profile: profile, place: nil)
                         } label: {
                             VStack(spacing: 7) {
                                 ProfileMedia(url: profile.imageURL, data: nil, assetName: profile.imageAssetName)

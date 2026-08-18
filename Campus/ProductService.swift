@@ -48,7 +48,6 @@ enum ReportReason: String, CaseIterable, Identifiable, Sendable {
 }
 
 protocol ProductService: Sendable {
-    var isDemo: Bool { get }
     var currentUserID: UUID? { get }
     /// Oturumdaki hesabın e-postası. Uygulama silinip kurulduğunda yerel kayıt gider ama
     /// Supabase oturumu Keychain'de kaldığı için e-postayı yalnızca oturumdan geri alabiliyoruz.
@@ -106,81 +105,6 @@ protocol ProductService: Sendable {
     func fetchPeopleAtPlace(_ placeID: UUID) async throws -> [StudentProfile]
 }
 
-struct DemoProductService: ProductService {
-    let isDemo = true
-    var currentUserID: UUID? { nil }
-    var currentUserEmail: String? { nil }
-
-    func requestOTP(email: String) async throws {
-        try await Task.sleep(for: .milliseconds(350))
-    }
-
-    func verifyOTP(email: String, code: String) async throws {
-        try await Task.sleep(for: .milliseconds(300))
-    }
-
-    func restoreSession() async throws -> UUID? { nil }
-    func signOut() async throws {}
-    func deleteAccount() async throws {}
-    func saveProfile(_ draft: ProfileDraft) async throws {}
-    func fetchDiscoveryCandidates(filters: DiscoveryFilters, offset: Int, limit: Int) async throws -> [StudentProfile] {
-        let filtered = StudentProfile.samples.filter { profile in
-            (filters.minimumAge...filters.maximumAge).contains(profile.age) &&
-            (filters.academicYears.isEmpty || filters.academicYears.contains(profile.year)) &&
-            (filters.departments.isEmpty || filters.departments.contains(profile.department))
-        }
-        return Array(filtered.dropFirst(offset).prefix(limit))
-    }
-    func reactToProfile(profileID: UUID, liked: Bool) async throws -> DiscoveryReactionResult {
-        try await Task.sleep(for: .milliseconds(180))
-        let matched = liked && profileID == StudentProfile.samples[1].id
-        return DiscoveryReactionResult(matched: matched, matchID: matched ? UUID() : nil)
-    }
-    func fetchConversations() async throws -> [Conversation] { Conversation.samples }
-    func sendMessage(_ message: Message, matchID: UUID) async throws -> Message {
-        try await Task.sleep(for: .milliseconds(100))
-        return message
-    }
-    func markConversationRead(matchID: UUID) async throws {}
-    func setMessageReaction(messageID: UUID, reaction: String?) async throws {}
-    func fetchFeed() async throws -> [BackendPost] { [] }
-    func createPost(caption: String, placeName: String?, imageData: Data?) async throws -> BackendPost {
-        throw BackendServiceError.missingConfiguration
-    }
-    func addComment(_ body: String, to postID: UUID) async throws -> BackendComment {
-        throw BackendServiceError.missingConfiguration
-    }
-    func deletePost(_ postID: UUID) async throws {}
-    func deleteComment(_ commentID: UUID) async throws {}
-    func fetchMyProfile() async throws -> ProfileDraft? { nil }
-    func fetchMyProfilePhotos() async throws -> ProfilePhotosResult { ProfilePhotosResult(avatarURL: nil, galleryURLs: []) }
-    func updateAvatar(_ imageData: Data?) async throws -> URL? { nil }
-    func updateGallery(_ images: [Data]) async throws -> [URL] { [] }
-    func blockUser(_ profileID: UUID) async throws {}
-    func unblockUser(_ profileID: UUID) async throws {}
-    func reportUser(_ profileID: UUID, reason: ReportReason, details: String?) async throws {}
-    func messageStream() -> AsyncStream<RealtimeMessage> { AsyncStream { $0.finish() } }
-    func setPostLiked(_ postID: UUID, liked: Bool) async throws {}
-    func fetchNotifications() async throws -> [BackendNotification] { [] }
-    func markNotificationRead(_ notificationID: UUID) async throws {}
-    func markAllNotificationsRead() async throws {}
-    func registerDeviceToken(_ token: String) async throws {}
-    func fetchPlaces() async throws -> [CampusPlace] { CampusPlace.samples }
-    func fetchMeetingRequests() async throws -> [MeetingRequest] { [] }
-    func sendMeetingRequest(to profileID: UUID, placeID: UUID) async throws {}
-    func respondToMeetingRequest(_ requestID: UUID, accept: Bool) async throws {}
-    func touchLastActive() async throws {}
-    func fetchStories() async throws -> [CampusStory] { [] }
-    func publishStory(imageData: Data, caption: String, placeID: UUID?) async throws {}
-    func deleteStory(_ storyID: UUID) async throws {}
-    func markStoryViewed(_ storyID: UUID) async throws {}
-    func fetchStoryViews(_ storyID: UUID) async throws -> [StoryViewRecord] { [] }
-    func fetchClubs() async throws -> (clubs: [CampusClub], joinedIDs: Set<UUID>) { (CampusClub.samples, []) }
-    func setClubMembership(_ clubID: UUID, joined: Bool) async throws {}
-    func setVisiblePlace(_ placeID: UUID?) async throws {}
-    func fetchPeopleAtPlace(_ placeID: UUID) async throws -> [StudentProfile] { [] }
-}
-
 struct BackendConfiguration: Sendable {
     let url: URL
     let publishableKey: String
@@ -200,10 +124,66 @@ struct BackendConfiguration: Sendable {
     static var isConfigured: Bool { current != nil }
 }
 
+/// Supabase yapılandırması eksikken kullanılan servis. Her çağrıda net bir hata verir.
+///
+/// Eskiden bu durumda uygulama sessizce demo verisine düşüyordu; yapılandırma hatası
+/// çalışan bir uygulama gibi göründüğü için fark edilmiyordu. Artık sorun hemen görünür.
+struct UnconfiguredProductService: ProductService {
+    var currentUserID: UUID? { nil }
+    var currentUserEmail: String? { nil }
+
+    private func fail() throws -> Never { throw BackendServiceError.missingConfiguration }
+
+    func requestOTP(email: String) async throws { try fail() }
+    func verifyOTP(email: String, code: String) async throws { try fail() }
+    func restoreSession() async throws -> UUID? { nil }
+    func signOut() async throws {}
+    func deleteAccount() async throws { try fail() }
+    func saveProfile(_ draft: ProfileDraft) async throws { try fail() }
+    func fetchDiscoveryCandidates(filters: DiscoveryFilters, offset: Int, limit: Int) async throws -> [StudentProfile] { try fail() }
+    func reactToProfile(profileID: UUID, liked: Bool) async throws -> DiscoveryReactionResult { try fail() }
+    func fetchConversations() async throws -> [Conversation] { try fail() }
+    func sendMessage(_ message: Message, matchID: UUID) async throws -> Message { try fail() }
+    func markConversationRead(matchID: UUID) async throws { try fail() }
+    func setMessageReaction(messageID: UUID, reaction: String?) async throws { try fail() }
+    func fetchFeed() async throws -> [BackendPost] { try fail() }
+    func createPost(caption: String, placeName: String?, imageData: Data?) async throws -> BackendPost { try fail() }
+    func addComment(_ body: String, to postID: UUID) async throws -> BackendComment { try fail() }
+    func deletePost(_ postID: UUID) async throws { try fail() }
+    func deleteComment(_ commentID: UUID) async throws { try fail() }
+    func fetchMyProfile() async throws -> ProfileDraft? { try fail() }
+    func fetchMyProfilePhotos() async throws -> ProfilePhotosResult { try fail() }
+    func updateAvatar(_ imageData: Data?) async throws -> URL? { try fail() }
+    func updateGallery(_ images: [Data]) async throws -> [URL] { try fail() }
+    func blockUser(_ profileID: UUID) async throws { try fail() }
+    func unblockUser(_ profileID: UUID) async throws { try fail() }
+    func reportUser(_ profileID: UUID, reason: ReportReason, details: String?) async throws { try fail() }
+    func messageStream() -> AsyncStream<RealtimeMessage> { AsyncStream { $0.finish() } }
+    func setPostLiked(_ postID: UUID, liked: Bool) async throws { try fail() }
+    func fetchNotifications() async throws -> [BackendNotification] { try fail() }
+    func markNotificationRead(_ notificationID: UUID) async throws { try fail() }
+    func markAllNotificationsRead() async throws { try fail() }
+    func registerDeviceToken(_ token: String) async throws { try fail() }
+    func fetchPlaces() async throws -> [CampusPlace] { try fail() }
+    func fetchMeetingRequests() async throws -> [MeetingRequest] { try fail() }
+    func sendMeetingRequest(to profileID: UUID, placeID: UUID) async throws { try fail() }
+    func respondToMeetingRequest(_ requestID: UUID, accept: Bool) async throws { try fail() }
+    func touchLastActive() async throws {}
+    func fetchStories() async throws -> [CampusStory] { try fail() }
+    func publishStory(imageData: Data, caption: String, placeID: UUID?) async throws { try fail() }
+    func deleteStory(_ storyID: UUID) async throws { try fail() }
+    func markStoryViewed(_ storyID: UUID) async throws { try fail() }
+    func fetchStoryViews(_ storyID: UUID) async throws -> [StoryViewRecord] { try fail() }
+    func fetchClubs() async throws -> (clubs: [CampusClub], joinedIDs: Set<UUID>) { try fail() }
+    func setClubMembership(_ clubID: UUID, joined: Bool) async throws { try fail() }
+    func setVisiblePlace(_ placeID: UUID?) async throws { try fail() }
+    func fetchPeopleAtPlace(_ placeID: UUID) async throws -> [StudentProfile] { try fail() }
+}
+
 enum ProductServiceFactory {
     static func make() -> any ProductService {
         guard let configuration = BackendConfiguration.current else {
-            return DemoProductService()
+            return UnconfiguredProductService()
         }
         return SupabaseProductService(configuration: configuration)
     }

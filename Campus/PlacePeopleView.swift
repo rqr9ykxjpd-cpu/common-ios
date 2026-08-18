@@ -138,7 +138,7 @@ struct SocialPersonDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var conversationRoute: ConversationRoute?
 
-    private var visiblePlace: CampusPlace? { place ?? profile.visiblePlace }
+    private var visiblePlace: CampusPlace? { place }
     private var pendingRequest: MeetingRequest? {
         guard let visiblePlace else { return nil }
         return appState.meetingRequest(for: profile, at: visiblePlace)

@@ -95,7 +95,7 @@ struct DiscoveryCard: View {
     }
 
     private var photoCount: Int {
-        let count = profile.galleryImageURLs.isEmpty ? profile.galleryAssetNames.count : profile.galleryImageURLs.count
+        let count = profile.galleryImageURLs.count
         return max(count, 1)
     }
 
