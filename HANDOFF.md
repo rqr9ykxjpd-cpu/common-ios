@@ -73,9 +73,6 @@ her işlem "Supabase yapılandırması eksik" hatası verir (`UnconfiguredProduc
 - **Erişilebilirlik** — Dynamic Type desteklenmiyor (~228 sabit punto),
   lokalizasyon altyapısı yok (tüm metinler Türkçe hardcoded), bazı kontrast
   oranları WCAG AA altında. İkon butonlarının etiketleri tamamlandı.
-- **Sessiz hata yolları** — `loadProfileVisits`, `loadPlaces`, `loadClubs`,
-  `fetchPeopleAtPlace`, `fetchStoryViews` sunucu hatasını `try?` ile yutuyor.
-  Çökmez ama liste sebepsiz boş görünür; kullanıcıya mesaj gösterilmiyor.
 - **Test yok** — test target'ı bulunmuyor. `ProductService` protokolü zaten
   enjekte edilebilir olduğu için `AppState` testleri düşük maliyetle yazılabilir.
 - **Üniversite doğrulaması yok** — `save_my_profile` artık hesabın e-posta
@@ -102,9 +99,18 @@ Bunlar tamamlanmadan uygulamaya **hiç giriş yapılamaz**.
 4. **GoogleSignIn-iOS paketi** — `project.pbxproj`'a elle eklendi
    (`XCRemoteSwiftPackageReference "GoogleSignIn-iOS"`); ilk açılışta Xcode
    paketi otomatik çeker, elle eklemeye gerek yok.
-5. **`20260818220000_remove_domain_verification.sql`** — sunucuda henüz
-   uygulanmamışsa SQL Editor'de çalıştırın; idempotent.
-6. **İlk gerçek giriş** — bugüne kadar hiçbir akış canlı sunucuya karşı uçtan
+5. **Bekleyen migration'lar** — sunucuda henüz uygulanmamışsa SQL Editor'de
+   sırayla çalıştırın; ikisi de idempotent:
+   - `20260818220000_remove_domain_verification.sql`
+   - `20260818230000_truthful_active_label.sql` — aktiflik etiketi ("Bu hafta
+     aktif" her şeyi yakalıyordu, üç ay girmeyen de öyle görünüyordu).
+     Uygulanmazsa uygulama çalışır, yalnızca etiket yanlış kalır.
+6. **Apple sağlayıcısı** — Supabase'de şu an **kapalı**. Uygulamada Apple
+   düğmesi var; açılmadan basılırsa hata veriyor. Authentication → Providers →
+   Apple → aç, Authorized Client IDs'e `com.campus.social`. App Store için de
+   gerekli: Google gibi üçüncü taraf girişi sunan uygulamalarda Apple girişi
+   zorunlu.
+7. **İlk gerçek giriş** — bugüne kadar hiçbir akış canlı sunucuya karşı uçtan
    uca çalıştırılmadı. Kayıt → fotoğraf → eşleşme → mesaj yolu ilk kez burada
    denenecek.
 
