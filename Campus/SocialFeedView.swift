@@ -59,7 +59,7 @@ struct SocialFeedView: View {
                         .padding(.bottom, 24)
                     }
                     .scrollContentBackground(.hidden)
-                    .refreshable { await appState.loadFeed() }
+                    .refreshable { await appState.loadFeed(); await appState.loadStories() }
                     .onAppear {
                         proxy.scrollTo("feed-top", anchor: .top)
                     }
@@ -96,7 +96,7 @@ struct SocialFeedView: View {
             .sheet(isPresented: $showNotifications) {
                 NotificationsView()
             }
-            .task { await appState.loadFeed() }
+            .task { await appState.loadFeed(); await appState.loadStories() }
             .fullScreenCover(item: Binding(get: { appState.selectedStory }, set: { appState.selectedStory = $0 })) { story in
                 StoryViewer(
                     stories: appState.stories,
@@ -234,7 +234,7 @@ struct SocialFeedView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 7) {
                     placeChip(title: "Tümü", icon: "square.grid.2x2", place: nil)
-                    ForEach(Array(CampusPlace.samples.enumerated()), id: \.element.id) { index, place in
+                    ForEach(Array(appState.places.enumerated()), id: \.element.id) { index, place in
                         placeChip(title: place.name, icon: placeIcon(index), place: place)
                     }
                 }
@@ -266,7 +266,7 @@ struct SocialFeedView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
-                    ForEach(CampusClub.samples) { club in
+                    ForEach(appState.clubs) { club in
                         Button { selectedClub = club } label: {
                             clubCard(club)
                         }

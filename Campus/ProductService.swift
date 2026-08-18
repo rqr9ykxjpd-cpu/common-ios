@@ -86,6 +86,24 @@ protocol ProductService: Sendable {
     func markNotificationRead(_ notificationID: UUID) async throws
     func markAllNotificationsRead() async throws
     func registerDeviceToken(_ token: String) async throws
+    func fetchPlaces() async throws -> [CampusPlace]
+    func fetchMeetingRequests() async throws -> [MeetingRequest]
+    func sendMeetingRequest(to profileID: UUID, placeID: UUID) async throws
+    func respondToMeetingRequest(_ requestID: UUID, accept: Bool) async throws
+    /// Kartlardaki aktiflik etiketi `last_active_at`'e bakıyor; bu alan hiçbir yerde
+    /// güncellenmediği için herkes sürekli "Bu hafta aktif" görünüyordu.
+    func touchLastActive() async throws
+    func fetchStories() async throws -> [CampusStory]
+    func publishStory(imageData: Data, caption: String, placeID: UUID?) async throws
+    func deleteStory(_ storyID: UUID) async throws
+    func markStoryViewed(_ storyID: UUID) async throws
+    func fetchStoryViews(_ storyID: UUID) async throws -> [StoryViewRecord]
+    /// Kulüpler ve kullanıcının üye olduğu kulüplerin kimlikleri.
+    func fetchClubs() async throws -> (clubs: [CampusClub], joinedIDs: Set<UUID>)
+    func setClubMembership(_ clubID: UUID, joined: Bool) async throws
+    /// Yer görünürlüğü. `placeID` nil ise görünürlük kapatılır.
+    func setVisiblePlace(_ placeID: UUID?) async throws
+    func fetchPeopleAtPlace(_ placeID: UUID) async throws -> [StudentProfile]
 }
 
 struct DemoProductService: ProductService {
@@ -147,6 +165,20 @@ struct DemoProductService: ProductService {
     func markNotificationRead(_ notificationID: UUID) async throws {}
     func markAllNotificationsRead() async throws {}
     func registerDeviceToken(_ token: String) async throws {}
+    func fetchPlaces() async throws -> [CampusPlace] { CampusPlace.samples }
+    func fetchMeetingRequests() async throws -> [MeetingRequest] { [] }
+    func sendMeetingRequest(to profileID: UUID, placeID: UUID) async throws {}
+    func respondToMeetingRequest(_ requestID: UUID, accept: Bool) async throws {}
+    func touchLastActive() async throws {}
+    func fetchStories() async throws -> [CampusStory] { [] }
+    func publishStory(imageData: Data, caption: String, placeID: UUID?) async throws {}
+    func deleteStory(_ storyID: UUID) async throws {}
+    func markStoryViewed(_ storyID: UUID) async throws {}
+    func fetchStoryViews(_ storyID: UUID) async throws -> [StoryViewRecord] { [] }
+    func fetchClubs() async throws -> (clubs: [CampusClub], joinedIDs: Set<UUID>) { (CampusClub.samples, []) }
+    func setClubMembership(_ clubID: UUID, joined: Bool) async throws {}
+    func setVisiblePlace(_ placeID: UUID?) async throws {}
+    func fetchPeopleAtPlace(_ placeID: UUID) async throws -> [StudentProfile] { [] }
 }
 
 struct BackendConfiguration: Sendable {

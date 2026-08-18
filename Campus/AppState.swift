@@ -45,6 +45,11 @@ final class AppState {
     var profileVisits: [ProfileVisit] = []
     var notifications: [AppNotification] = []
     var meetingRequests: [MeetingRequest] = []
+    /// Kampüs yerleri. Demo modunda örnek liste, backend modunda `places` tablosundan gelir —
+    /// eskiden her yerde koda gömülü `CampusPlace.samples` kullanılıyordu.
+    var places: [CampusPlace] = CampusPlace.samples
+    /// Kulüpler. Demo modunda örnek liste, backend modunda `clubs` tablosundan gelir.
+    var clubs: [CampusClub] = CampusClub.samples
     var avatarData: Data?
     var profileGalleryData: [Data] = []
     var avatarURL: URL?
@@ -191,6 +196,11 @@ final class AppState {
             persistSession()
             await loadMyProfilePhotos()
             await loadNotifications()
+            await loadPlaces()
+            await loadStories()
+            await loadClubs()
+            await loadMeetingRequests()
+            try? await service.touchLastActive()
             startMessageListener()
             withAnimation(.smooth(duration: 0.55)) { route = .app }
             return true
@@ -230,6 +240,11 @@ final class AppState {
             if !email.isEmpty { persistSession() }
             await loadMyProfilePhotos()
             await loadNotifications()
+            await loadPlaces()
+            await loadStories()
+            await loadClubs()
+            await loadMeetingRequests()
+            try? await service.touchLastActive()
             startMessageListener()
             // Geçerli oturum ve tamamlanmış profil varken karşılama ekranında bırakmak
             // kullanıcıyı hiçbir yere gidemez halde bırakıyordu.
@@ -328,6 +343,11 @@ final class AppState {
         if !service.isDemo {
             await loadMyProfilePhotos()
             await loadNotifications()
+            await loadPlaces()
+            await loadStories()
+            await loadClubs()
+            await loadMeetingRequests()
+            try? await service.touchLastActive()
             startMessageListener()
         }
         withAnimation(.smooth(duration: 0.55)) { route = .app }
@@ -448,12 +468,34 @@ final class AppState {
         }
     }
 
-    func publishStory(imageData: Data, caption: String, place: CampusPlace?) {
-        stories.insert(CampusStory(author: currentUserProfile, localImageData: imageData, caption: caption, place: place, isMine: true), at: 0)
-        if stories.count > 3 {
-            stories.removeLast(stories.count - 3)
+    /// Story'leri sunucudan yükler. Bu liste akışın en üstünde duruyor ama şimdiye kadar
+    /// yalnızca bellekteydi; uygulama kapanınca paylaşılan story kayboluyordu.
+    func loadStories() async {
+        guard !service.isDemo else { return }
+        do {
+            stories = try await service.fetchStories()
+        } catch {
+            toast = error.localizedDescription
         }
-        Haptics.success()
+    }
+
+    func publishStory(imageData: Data, caption: String, place: CampusPlace?) {
+        if service.isDemo {
+            stories.insert(CampusStory(author: currentUserProfile, localImageData: imageData, caption: caption, place: place, isMine: true), at: 0)
+            if stories.count > 3 { stories.removeLast(stories.count - 3) }
+            Haptics.success()
+            return
+        }
+        Task {
+            do {
+                try await service.publishStory(imageData: imageData, caption: caption, placeID: place?.id)
+                await loadStories()
+            await loadClubs()
+                Haptics.success()
+            } catch {
+                toast = error.localizedDescription
+            }
+        }
     }
 
     func toggleSaved(postID: UUID) {
@@ -483,11 +525,19 @@ final class AppState {
     }
 
     func deleteStory(_ storyID: UUID) {
-        guard stories.contains(where: { $0.id == storyID && $0.isMine }) else { return }
+        guard let removed = stories.first(where: { $0.id == storyID && $0.isMine }) else { return }
         stories.removeAll { $0.id == storyID }
         if selectedStory?.id == storyID { selectedStory = nil }
         toast = "Story silindi"
         Haptics.success()
+        guard !service.isDemo else { return }
+        Task {
+            do { try await service.deleteStory(storyID) }
+            catch {
+                stories.insert(removed, at: 0)
+                toast = error.localizedDescription
+            }
+        }
     }
 
     func addComment(_ body: String, to postID: UUID) {
@@ -646,12 +696,25 @@ final class AppState {
         guard let storyIndex = stories.firstIndex(where: { $0.id == story.id }) else { return }
         stories[storyIndex].viewed = true
 
-        let viewer = currentUserProfile
-        if let viewerIndex = stories[storyIndex].viewRecords.firstIndex(where: { $0.viewer.name == viewer.name }) {
-            stories[storyIndex].viewRecords[viewerIndex].viewCount += 1
-            stories[storyIndex].viewRecords[viewerIndex].lastViewedAt = .now
-        } else {
-            stories[storyIndex].viewRecords.append(StoryViewRecord(viewer: viewer, viewCount: 1))
+        if service.isDemo {
+            let viewer = currentUserProfile
+            if let viewerIndex = stories[storyIndex].viewRecords.firstIndex(where: { $0.viewer.name == viewer.name }) {
+                stories[storyIndex].viewRecords[viewerIndex].viewCount += 1
+                stories[storyIndex].viewRecords[viewerIndex].lastViewedAt = .now
+            } else {
+                stories[storyIndex].viewRecords.append(StoryViewRecord(viewer: viewer, viewCount: 1))
+            }
+            return
+        }
+        let storyID = story.id
+        let isMine = story.isMine
+        Task {
+            try? await service.markStoryViewed(storyID)
+            // İzleyen listesini yalnızca story sahibi görebilir; başkasının story'sinde
+            // bu sorgu boş döneceği için hiç yapmıyoruz.
+            guard isMine, let records = try? await service.fetchStoryViews(storyID),
+                  let index = stories.firstIndex(where: { $0.id == storyID }) else { return }
+            stories[index].viewRecords = records
         }
     }
 
@@ -661,19 +724,65 @@ final class AppState {
         }
     }
 
+    /// Buluşma isteklerini sunucudan yükler. Bu liste şimdiye kadar yalnızca bellekte
+    /// yaşıyordu; uygulama kapanınca gönderilen ve gelen istekler kayboluyordu.
+    func loadMeetingRequests() async {
+        guard !service.isDemo else { return }
+        do {
+            meetingRequests = try await service.fetchMeetingRequests()
+        } catch {
+            toast = error.localizedDescription
+        }
+    }
+
+    func loadPlaces() async {
+        guard !service.isDemo else { return }
+        if let loaded = try? await service.fetchPlaces(), !loaded.isEmpty {
+            places = loaded
+        }
+    }
+
     func sendMeetingRequest(to profile: StudentProfile, at place: CampusPlace) {
         guard meetingRequest(for: profile, at: place) == nil else { return }
-        meetingRequests.insert(MeetingRequest(profile: profile, place: place, direction: .outgoing), at: 0)
-        toast = "\(profile.name) için \(place.name) buluşma isteği gönderildi"
-        Haptics.success()
+        if service.isDemo {
+            meetingRequests.insert(MeetingRequest(profile: profile, place: place, direction: .outgoing), at: 0)
+            toast = "\(profile.name) için \(place.name) buluşma isteği gönderildi"
+            Haptics.success()
+            return
+        }
+        let optimistic = MeetingRequest(profile: profile, place: place, direction: .outgoing)
+        meetingRequests.insert(optimistic, at: 0)
+        Task {
+            do {
+                try await service.sendMeetingRequest(to: profile.id, placeID: place.id)
+                await loadMeetingRequests()
+                toast = "\(profile.name) için \(place.name) buluşma isteği gönderildi"
+                Haptics.success()
+            } catch {
+                meetingRequests.removeAll { $0.id == optimistic.id }
+                toast = error.localizedDescription
+            }
+        }
     }
 
     func respondToMeetingRequest(_ requestID: UUID, accept: Bool) {
         guard let index = meetingRequests.firstIndex(where: { $0.id == requestID && $0.direction == .incoming && $0.status == .pending }) else { return }
+        let previous = meetingRequests[index].status
         meetingRequests[index].status = accept ? .accepted : .declined
         notifications.removeAll { $0.meetingRequestID == requestID }
         toast = accept ? "Buluşma isteği kabul edildi" : "Buluşma isteği reddedildi"
         Haptics.success()
+        guard !service.isDemo else { return }
+        Task {
+            do {
+                try await service.respondToMeetingRequest(requestID, accept: accept)
+            } catch {
+                if let refreshed = meetingRequests.firstIndex(where: { $0.id == requestID }) {
+                    meetingRequests[refreshed].status = previous
+                }
+                toast = error.localizedDescription
+            }
+        }
     }
 
     var pendingIncomingMeetingRequestCount: Int {
@@ -681,29 +790,63 @@ final class AppState {
     }
 
     func togglePresence(at place: CampusPlace) {
-        if currentVisiblePlace?.id == place.id {
-            currentVisiblePlace = nil
-            toast = "Yer görünürlüğün kapatıldı"
-        } else {
-            currentVisiblePlace = place
-            toast = "Şu an \(place.name) konumunda görünürsün"
-        }
+        let previous = currentVisiblePlace
+        let turningOff = currentVisiblePlace?.id == place.id
+        currentVisiblePlace = turningOff ? nil : place
+        toast = turningOff ? "Yer görünürlüğün kapatıldı" : "Şu an \(place.name) konumunda görünürsün"
         Haptics.success()
+        guard !service.isDemo else { return }
+        Task {
+            do {
+                try await service.setVisiblePlace(turningOff ? nil : place.id)
+            } catch {
+                currentVisiblePlace = previous
+                toast = error.localizedDescription
+            }
+        }
+    }
+
+    /// Bir yerde şu an görünen kişiler. Bu liste koda gömülü sabit isimlerdi; herkese
+    /// aynı sahte kişiler gösteriliyordu.
+    func peopleAtPlace(_ place: CampusPlace) async -> [StudentProfile] {
+        guard !service.isDemo else { return place.activeProfiles }
+        return (try? await service.fetchPeopleAtPlace(place.id)) ?? []
     }
 
     func isJoined(to club: CampusClub) -> Bool {
         joinedClubIDs.contains(club.id)
     }
 
+    /// Kulüpleri ve üyeliklerini sunucudan yükler. Liste eskiden koda gömülüydü ve
+    /// katılma bilgisi yalnızca bellekte tutulduğu için uygulama kapanınca kayboluyordu.
+    func loadClubs() async {
+        guard !service.isDemo else { return }
+        if let result = try? await service.fetchClubs() {
+            clubs = result.clubs
+            joinedClubIDs = result.joinedIDs
+        }
+    }
+
     func toggleClubMembership(_ club: CampusClub) {
-        if joinedClubIDs.contains(club.id) {
-            joinedClubIDs.remove(club.id)
-            toast = "\(club.name) üyeliğinden ayrıldın"
-        } else {
+        let willJoin = !joinedClubIDs.contains(club.id)
+        if willJoin {
             joinedClubIDs.insert(club.id)
             toast = "\(club.name) kulübüne katıldın"
+        } else {
+            joinedClubIDs.remove(club.id)
+            toast = "\(club.name) üyeliğinden ayrıldın"
         }
         Haptics.success()
+        guard !service.isDemo else { return }
+        Task {
+            do {
+                try await service.setClubMembership(club.id, joined: willJoin)
+                await loadClubs()
+            } catch {
+                if willJoin { joinedClubIDs.remove(club.id) } else { joinedClubIDs.insert(club.id) }
+                toast = error.localizedDescription
+            }
+        }
     }
 
     func loadConversations() async {

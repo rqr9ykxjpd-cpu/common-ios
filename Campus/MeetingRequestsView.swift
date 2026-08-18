@@ -60,6 +60,8 @@ struct MeetingRequestsView: View {
                     Button("Bitti") { dismiss() }
                 }
             }
+            .task { await appState.loadMeetingRequests() }
+            .refreshable { await appState.loadMeetingRequests() }
             .onAppear {
                 if let initialRequestID,
                    let request = appState.meetingRequests.first(where: { $0.id == initialRequestID }) {

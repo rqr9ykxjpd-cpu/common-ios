@@ -169,7 +169,7 @@ struct CreatePostView: View {
     private var placeMenu: some View {
         Menu {
             Button("Yer ekleme") { selectedPlace = nil }
-            ForEach(CampusPlace.samples) { place in
+            ForEach(appState.places) { place in
                 Button("\(place.name) · \(place.area)") { selectedPlace = place }
             }
         } label: {

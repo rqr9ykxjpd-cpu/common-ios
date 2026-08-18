@@ -572,6 +572,205 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
             .execute()
     }
 
+    func fetchPlaces() async throws -> [CampusPlace] {
+        let rows: [PlaceRow] = try await client
+            .from("places")
+            .select("id,name,area")
+            .order("name")
+            .execute()
+            .value
+        return rows.map { CampusPlace(id: $0.id, name: $0.name, area: $0.area) }
+    }
+
+    func fetchMeetingRequests() async throws -> [MeetingRequest] {
+        guard let userID = currentUserID else { throw BackendServiceError.missingSession }
+        let rows: [MeetingRequestRow] = try await client
+            .from("meeting_requests")
+            .select("""
+            id,requester_id,recipient_id,place_id,status,created_at,\
+            place:places!meeting_requests_place_id_fkey(id,name,area),\
+            requester:profiles!meeting_requests_requester_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),\
+            recipient:profiles!meeting_requests_recipient_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified)
+            """)
+            .order("created_at", ascending: false)
+            .execute()
+            .value
+        // Karşı taraf, isteği kimin gönderdiğine göre değişir: gelen istekte gönderen,
+        // giden istekte alıcı gösterilmeli.
+        let peerPaths = rows.compactMap { $0.requesterID == userID ? $0.recipient?.avatarPath : $0.requester?.avatarPath }
+        let urlMap = await signedURLs(bucket: "profile-photos", paths: peerPaths)
+        return rows.compactMap { row in
+            let outgoing = row.requesterID == userID
+            guard let peer = outgoing ? row.recipient : row.requester, let place = row.place else { return nil }
+            return MeetingRequest(
+                id: row.id,
+                profile: peer.studentProfile(avatarURL: peer.avatarPath.flatMap { urlMap[$0] }),
+                place: CampusPlace(id: place.id, name: place.name, area: place.area),
+                direction: outgoing ? .outgoing : .incoming,
+                status: row.meetingStatus,
+                createdAt: row.createdAt
+            )
+        }
+    }
+
+    func sendMeetingRequest(to profileID: UUID, placeID: UUID) async throws {
+        guard let userID = currentUserID else { throw BackendServiceError.missingSession }
+        try await client.from("meeting_requests")
+            .insert(MeetingRequestInsert(requesterID: userID, recipientID: profileID, placeID: placeID), returning: .minimal)
+            .execute()
+    }
+
+    func respondToMeetingRequest(_ requestID: UUID, accept: Bool) async throws {
+        try await client.from("meeting_requests")
+            .update(MeetingRequestStatusUpdate(status: accept ? "accepted" : "declined"), returning: .minimal)
+            .eq("id", value: requestID)
+            .execute()
+    }
+
+    func touchLastActive() async throws {
+        try await client.rpc("touch_last_active").execute()
+    }
+
+    func fetchStories() async throws -> [CampusStory] {
+        guard let userID = currentUserID else { throw BackendServiceError.missingSession }
+        let rows: [StoryRow] = try await client
+            .from("stories")
+            .select("""
+            id,author_id,media_path,caption,place_id,created_at,expires_at,\
+            author:profiles!stories_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),\
+            place:places!stories_place_id_fkey(id,name,area),\
+            story_views(viewer_id)
+            """)
+            .order("created_at", ascending: false)
+            .execute()
+            .value
+        let mediaURLs = await signedURLs(bucket: "story-media", paths: rows.map(\.mediaPath))
+        let avatarURLs = await signedURLs(bucket: "profile-photos", paths: rows.compactMap { $0.author?.avatarPath })
+        return rows.compactMap { row in
+            guard let author = row.author else { return nil }
+            return CampusStory(
+                id: row.id,
+                author: author.studentProfile(avatarURL: author.avatarPath.flatMap { avatarURLs[$0] }),
+                imageURL: mediaURLs[row.mediaPath],
+                caption: row.caption,
+                place: row.place.map { CampusPlace(id: $0.id, name: $0.name, area: $0.area) },
+                viewed: row.storyViews?.contains { $0.viewerID == userID } ?? false,
+                isMine: row.authorID == userID,
+                expiresAt: row.expiresAt
+            )
+        }
+    }
+
+    func publishStory(imageData: Data, caption: String, placeID: UUID?) async throws {
+        guard let userID = currentUserID else { throw BackendServiceError.missingSession }
+        let path = "\(userID.uuidString.lowercased())/\(UUID().uuidString.lowercased()).jpg"
+        try await client.storage.from("story-media")
+            .upload(path, data: imageData, options: FileOptions(contentType: "image/jpeg"))
+        do {
+            try await client.from("stories")
+                .insert(StoryInsert(authorID: userID, mediaPath: path,
+                                    caption: caption.trimmingCharacters(in: .whitespacesAndNewlines),
+                                    placeID: placeID), returning: .minimal)
+                .execute()
+        } catch {
+            // Satır eklenemezse yüklenen dosya sahipsiz kalmasın.
+            _ = try? await client.storage.from("story-media").remove(paths: [path])
+            throw error
+        }
+    }
+
+    func deleteStory(_ storyID: UUID) async throws {
+        try await client.from("stories").delete(returning: .minimal).eq("id", value: storyID).execute()
+    }
+
+    func markStoryViewed(_ storyID: UUID) async throws {
+        guard let userID = currentUserID else { throw BackendServiceError.missingSession }
+        try await client.from("story_views")
+            .upsert(StoryViewUpsert(storyID: storyID, viewerID: userID, lastViewedAt: Date()), returning: .minimal)
+            .execute()
+    }
+
+    func setVisiblePlace(_ placeID: UUID?) async throws {
+        try await client.rpc("set_visible_place", params: VisiblePlaceParams(targetPlace: placeID)).execute()
+    }
+
+    func fetchPeopleAtPlace(_ placeID: UUID) async throws -> [StudentProfile] {
+        let rows: [PlacePersonRow] = try await client
+            .rpc("get_people_at_place", params: PlacePeopleParams(targetPlace: placeID))
+            .execute()
+            .value
+        let avatarURLs = await signedURLs(bucket: "profile-photos", paths: rows.compactMap(\.avatarPath))
+        return rows.map { row in
+            let age = max(18, Calendar.current.dateComponents([.year], from: row.birthDate, to: .now).year ?? 18)
+            return StudentProfile(
+                id: row.id, name: row.name, age: age, university: row.university,
+                department: row.department, year: row.academicYear, bio: row.bio,
+                interests: row.interests,
+                imageURL: row.avatarPath.flatMap { avatarURLs[$0] },
+                compatibility: 0, isVerified: row.isVerified,
+                relationshipIntent: row.relationshipIntent, activeLabel: row.activeLabel
+            )
+        }
+    }
+
+    func fetchClubs() async throws -> (clubs: [CampusClub], joinedIDs: Set<UUID>) {
+        guard let userID = currentUserID else { throw BackendServiceError.missingSession }
+        let rows: [ClubRow] = try await client
+            .from("clubs")
+            .select("id,name,summary,icon,next_event,accent_hex,place:places!clubs_place_id_fkey(id,name,area),club_members(user_id)")
+            .order("name")
+            .execute()
+            .value
+        let clubs = rows.map { row in
+            CampusClub(
+                id: row.id,
+                name: row.name,
+                summary: row.summary,
+                icon: row.icon,
+                memberCount: row.members?.count ?? 0,
+                nextEvent: row.nextEvent,
+                meetingPlace: row.place.map { CampusPlace(id: $0.id, name: $0.name, area: $0.area) },
+                accentHex: row.accentHex
+            )
+        }
+        let joined = Set(rows.filter { $0.members?.contains { $0.userID == userID } ?? false }.map(\.id))
+        return (clubs, joined)
+    }
+
+    func setClubMembership(_ clubID: UUID, joined: Bool) async throws {
+        guard let userID = currentUserID else { throw BackendServiceError.missingSession }
+        if joined {
+            try await client.from("club_members")
+                .upsert(ClubMemberInsert(clubID: clubID, userID: userID), returning: .minimal)
+                .execute()
+        } else {
+            try await client.from("club_members")
+                .delete(returning: .minimal)
+                .eq("club_id", value: clubID)
+                .eq("user_id", value: userID)
+                .execute()
+        }
+    }
+
+    func fetchStoryViews(_ storyID: UUID) async throws -> [StoryViewRecord] {
+        let rows: [StoryViewRow] = try await client
+            .from("story_views")
+            .select("viewer_id,view_count,last_viewed_at,viewer:profiles!story_views_viewer_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified)")
+            .eq("story_id", value: storyID)
+            .order("last_viewed_at", ascending: false)
+            .execute()
+            .value
+        let avatarURLs = await signedURLs(bucket: "profile-photos", paths: rows.compactMap { $0.viewer?.avatarPath })
+        return rows.compactMap { row in
+            guard let viewer = row.viewer else { return nil }
+            return StoryViewRecord(
+                viewer: viewer.studentProfile(avatarURL: viewer.avatarPath.flatMap { avatarURLs[$0] }),
+                viewCount: row.viewCount,
+                lastViewedAt: row.lastViewedAt
+            )
+        }
+    }
+
     private func signedURLs(bucket: String, paths: [String]) async -> [String: URL] {
         let uniquePaths = Array(Set(paths))
         guard !uniquePaths.isEmpty else { return [:] }
@@ -582,6 +781,186 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         }
         return map
     }
+}
+
+private struct VisiblePlaceParams: Encodable {
+    let targetPlace: UUID?
+    enum CodingKeys: String, CodingKey { case targetPlace = "target_place" }
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        if let targetPlace { try container.encode(targetPlace, forKey: .targetPlace) }
+        else { try container.encodeNil(forKey: .targetPlace) }
+    }
+}
+
+private struct PlacePeopleParams: Encodable {
+    let targetPlace: UUID
+    enum CodingKeys: String, CodingKey { case targetPlace = "target_place" }
+}
+
+private struct PlacePersonRow: Decodable {
+    let id: UUID
+    let name: String
+    let birthDate: Date
+    let university: String
+    let department: String
+    let academicYear: String
+    let bio: String
+    let avatarPath: String?
+    let isVerified: Bool
+    let relationshipIntent: RelationshipIntent
+    let interests: [String]
+    let activeLabel: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, university, department, bio, interests
+        case birthDate = "birth_date"
+        case academicYear = "academic_year"
+        case avatarPath = "avatar_path"
+        case isVerified = "is_verified"
+        case relationshipIntent = "relationship_intent"
+        case activeLabel = "active_label"
+    }
+}
+
+private struct ClubMemberIDRow: Decodable {
+    let userID: UUID
+    enum CodingKeys: String, CodingKey { case userID = "user_id" }
+}
+
+private struct ClubRow: Decodable {
+    let id: UUID
+    let name: String
+    let summary: String
+    let icon: String
+    let nextEvent: String
+    let accentHex: String
+    let place: PlaceRow?
+    let members: [ClubMemberIDRow]?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, summary, icon, place
+        case nextEvent = "next_event"
+        case accentHex = "accent_hex"
+        case members = "club_members"
+    }
+}
+
+private struct ClubMemberInsert: Encodable {
+    let clubID: UUID
+    let userID: UUID
+    enum CodingKeys: String, CodingKey {
+        case clubID = "club_id"
+        case userID = "user_id"
+    }
+}
+
+private struct StoryViewerIDRow: Decodable {
+    let viewerID: UUID
+    enum CodingKeys: String, CodingKey { case viewerID = "viewer_id" }
+}
+
+private struct StoryRow: Decodable {
+    let id: UUID
+    let authorID: UUID
+    let mediaPath: String
+    let caption: String
+    let createdAt: Date
+    let expiresAt: Date
+    let author: SupabaseProfileRow?
+    let place: PlaceRow?
+    let storyViews: [StoryViewerIDRow]?
+
+    enum CodingKeys: String, CodingKey {
+        case id, caption, author, place
+        case authorID = "author_id"
+        case mediaPath = "media_path"
+        case createdAt = "created_at"
+        case expiresAt = "expires_at"
+        case storyViews = "story_views"
+    }
+}
+
+private struct StoryInsert: Encodable {
+    let authorID: UUID
+    let mediaPath: String
+    let caption: String
+    let placeID: UUID?
+    enum CodingKeys: String, CodingKey {
+        case authorID = "author_id"
+        case mediaPath = "media_path"
+        case caption
+        case placeID = "place_id"
+    }
+}
+
+private struct StoryViewUpsert: Encodable {
+    let storyID: UUID
+    let viewerID: UUID
+    let lastViewedAt: Date
+    enum CodingKeys: String, CodingKey {
+        case storyID = "story_id"
+        case viewerID = "viewer_id"
+        case lastViewedAt = "last_viewed_at"
+    }
+}
+
+private struct StoryViewRow: Decodable {
+    let viewCount: Int
+    let lastViewedAt: Date
+    let viewer: SupabaseProfileRow?
+    enum CodingKeys: String, CodingKey {
+        case viewCount = "view_count"
+        case lastViewedAt = "last_viewed_at"
+        case viewer
+    }
+}
+
+private struct PlaceRow: Decodable {
+    let id: UUID
+    let name: String
+    let area: String
+}
+
+private struct MeetingRequestRow: Decodable {
+    let id: UUID
+    let requesterID: UUID
+    let recipientID: UUID
+    let status: String
+    let createdAt: Date
+    let place: PlaceRow?
+    let requester: SupabaseProfileRow?
+    let recipient: SupabaseProfileRow?
+
+    enum CodingKeys: String, CodingKey {
+        case id, status, place, requester, recipient
+        case requesterID = "requester_id"
+        case recipientID = "recipient_id"
+        case createdAt = "created_at"
+    }
+
+    var meetingStatus: MeetingRequestStatus {
+        switch status {
+        case "accepted": .accepted
+        case "declined": .declined
+        default: .pending
+        }
+    }
+}
+
+private struct MeetingRequestInsert: Encodable {
+    let requesterID: UUID
+    let recipientID: UUID
+    let placeID: UUID
+    enum CodingKeys: String, CodingKey {
+        case requesterID = "requester_id"
+        case recipientID = "recipient_id"
+        case placeID = "place_id"
+    }
+}
+
+private struct MeetingRequestStatusUpdate: Encodable {
+    let status: String
 }
 
 private struct NotificationActorRow: Decodable {

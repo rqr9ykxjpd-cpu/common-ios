@@ -4,6 +4,8 @@ struct PlacePeopleView: View {
     let place: CampusPlace
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
+    @State private var people: [StudentProfile] = []
+    @State private var isLoading = true
 
     var body: some View {
         NavigationStack {
@@ -12,20 +14,49 @@ struct PlacePeopleView: View {
                 ScrollView {
                     LazyVStack(spacing: 12) {
                         placeHeader
-                        ForEach(place.activeProfiles) { profile in
-                            NavigationLink {
-                                SocialPersonDetailView(profile: profile, place: place)
-                            } label: {
-                                personRow(profile)
+                        if isLoading {
+                            ProgressView()
+                                .tint(CampusTheme.violet)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 40)
+                        } else if people.isEmpty {
+                            // Kimse görünmüyorsa bunu açıkça söylüyoruz; eskiden sahte
+                            // isimlerle dolu olduğu için boş durum hiç görünmüyordu.
+                            VStack(spacing: 8) {
+                                Image(systemName: "person.2.slash")
+                                    .font(.system(size: 26, weight: .light))
+                                Text("Şu an burada görünen kimse yok")
+                                    .font(.subheadline.bold())
+                                Text("\"Buradayım\" diyerek ilk sen görün.")
+                                    .font(.caption)
+                                    .foregroundStyle(CampusTheme.ink.opacity(0.5))
                             }
-                            .buttonStyle(PressableStyle())
+                            .foregroundStyle(CampusTheme.ink.opacity(0.6))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 40)
+                        } else {
+                            ForEach(people) { profile in
+                                NavigationLink {
+                                    SocialPersonDetailView(profile: profile, place: place)
+                                } label: {
+                                    personRow(profile)
+                                }
+                                .buttonStyle(PressableStyle())
+                            }
                         }
                     }
                     .padding(18)
                 }
+                .refreshable { await reload() }
             }
             .toolbar(.hidden, for: .navigationBar)
+            .task { await reload() }
         }
+    }
+
+    private func reload() async {
+        people = await appState.peopleAtPlace(place)
+        isLoading = false
     }
 
     private var placeHeader: some View {
@@ -46,7 +77,7 @@ struct PlacePeopleView: View {
             Text("Şu an burada görünür olan YÜ öğrencileri")
                 .font(.subheadline)
                 .foregroundStyle(CampusTheme.ink.opacity(0.5))
-            Label("\(place.activeProfiles.count + (isHere ? 1 : 0)) kişi görünür", systemImage: "person.2.fill")
+            Label("\(people.count + (isHere ? 1 : 0)) kişi görünür", systemImage: "person.2.fill")
                 .font(.caption.bold())
                 .foregroundStyle(CampusTheme.violet)
 

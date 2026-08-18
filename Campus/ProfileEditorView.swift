@@ -291,7 +291,7 @@ struct ProfileEditorView: View {
                     .foregroundStyle(CampusTheme.muted)
                 Menu {
                     Button("Konumu gizle") { appState.currentVisiblePlace = nil }
-                    ForEach(CampusPlace.samples) { place in
+                    ForEach(appState.places) { place in
                         Button(place.name) { appState.currentVisiblePlace = place }
                     }
                 } label: {
