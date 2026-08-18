@@ -460,7 +460,6 @@ final class AppState {
             do {
                 try await service.publishStory(imageData: imageData, caption: caption, placeID: place?.id)
                 await loadStories()
-            await loadClubs()
                 Haptics.success()
             } catch {
                 showError(error, fallback: "Story paylaşılamadı.")
@@ -636,21 +635,36 @@ final class AppState {
     func saveProfile(_ updatedDraft: ProfileDraft, avatar: Data?, gallery: [Data]) async -> Bool {
         do {
             try await service.saveProfile(updatedDraft)
-            draft = updatedDraft
-            avatarData = avatar
-            profileGalleryData = gallery
-            discoveryFilters = updatedDraft.discoveryFilters
-            avatarURL = try await service.updateAvatar(avatar)
-            galleryURLs = try await service.updateGallery(gallery)
-        
-            persistAccount()
-            show("Profilin güncellendi")
-            Haptics.success()
-            return true
         } catch {
             showError(error, fallback: "Profil değişiklikleri kaydedilemedi.")
             return false
         }
+
+        draft = updatedDraft
+        avatarData = avatar
+        profileGalleryData = gallery
+        discoveryFilters = updatedDraft.discoveryFilters
+
+        // Fotoğraf yüklemesi metin kaydından ayrı. Aynı `do` bloğundayken bir fotoğraf
+        // hatası üç şeyi birden bozuyordu: metinler sunucuya yazılmış olmasına rağmen
+        // "kaydedilemedi" deniyor, `persistAccount()` hiç çalışmadığı için yerel kayıt
+        // sunucudan farklı kalıyor ve ekran kapanmadığı için kullanıcı baştan deniyordu.
+        var photoFailed = false
+        do {
+            avatarURL = try await service.updateAvatar(avatar)
+            galleryURLs = try await service.updateGallery(gallery)
+        } catch {
+            photoFailed = true
+        }
+
+        persistAccount()
+        if photoFailed {
+            showError("Bilgilerin kaydedildi, fotoğrafların yüklenemedi. Tekrar deneyebilirsin.")
+        } else {
+            show("Profilin güncellendi")
+            Haptics.success()
+        }
+        return true
     }
 
     func markStoryViewed(_ story: CampusStory) {
@@ -728,7 +742,6 @@ final class AppState {
             do {
                 try await service.sendMeetingRequest(to: profile.id, placeID: place.id)
                 await loadMeetingRequests()
-            await loadProfileVisits()
                 show("\(profile.name) için \(place.name) buluşma isteği gönderildi")
                 Haptics.success()
             } catch {
