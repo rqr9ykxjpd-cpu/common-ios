@@ -147,7 +147,7 @@ struct DiscoveryCard: View {
         Haptics.impact(.light)
     }
 
-    /// Kartın alt paneli. `compatibilityReasons`, `prompts` ve `activeLabel` backend'den zaten
+    /// Kartın alt paneli. `compatibilityReasons` ve `activeLabel` backend'den zaten
     /// geliyordu ama hiçbir yerde gösterilmiyordu — kararı verdiren asıl sinyal bunlar olduğu için
     /// kartın boş kalan alt yarısını bu içerikle değerlendiriyoruz.
     private var details: some View {
@@ -174,22 +174,6 @@ struct DiscoveryCard: View {
                             .foregroundStyle(CampusTheme.violet)
                     }
                 }
-            }
-
-            if let prompt = profile.prompts.first(where: { !$0.answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(prompt.question.uppercased())
-                        .font(.system(size: 9, weight: .bold, design: .rounded))
-                        .tracking(0.5)
-                        .foregroundStyle(CampusTheme.ink.opacity(0.4))
-                    Text(prompt.answer)
-                        .font(.system(size: 14, design: .serif))
-                        .foregroundStyle(CampusTheme.ink.opacity(0.85))
-                        .lineLimit(2)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(10)
-                .background(CampusTheme.ink.opacity(0.045), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
 
             HStack(spacing: 7) {

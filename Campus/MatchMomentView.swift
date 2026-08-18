@@ -63,15 +63,7 @@ struct MatchMomentView: View {
     }
 
     private var conversationStarters: [String] {
-        let promptStarters = profile.prompts
-            .filter { !$0.answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-            .prefix(2)
-            .map { "\($0.answer) — bunu biraz daha anlatsana?" }
-        if !promptStarters.isEmpty { return promptStarters }
-
-        // Önceden karşı tarafın ilk iki ilgi alanı "ortak ilgimiz" diye sunuluyordu;
-        // gerçekten paylaşılıp paylaşılmadığına bakılmıyordu. Ortak olanı ortak diye,
-        // olmayanı merak sorusu olarak soruyoruz.
+        // Ortak olanı ortak diye, olmayanı merak sorusu olarak soruyoruz.
         let mine = Set(appState.draft.interests)
         let shared = profile.interests.filter { mine.contains($0) }
         if !shared.isEmpty {

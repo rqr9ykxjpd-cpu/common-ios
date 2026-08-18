@@ -21,11 +21,8 @@ struct ProfileEditorView: View {
         !draft.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !draft.department.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         draft.gender != nil &&
-        draft.datingPreference != nil &&
         draft.bio.count <= 220 &&
-        draft.interests.count >= 3 &&
-        draft.prompts.count == 3 &&
-        draft.prompts.allSatisfy { !$0.answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        draft.interests.count >= 3
     }
 
     private var changed: Bool {
@@ -39,7 +36,6 @@ struct ProfileEditorView: View {
                 photos
                 basicInformation
                 about
-                promptAnswers
                 interestSelection
                 preferences
                 accountInformation
@@ -83,7 +79,7 @@ struct ProfileEditorView: View {
     private var saveBar: some View {
         VStack(spacing: 6) {
             if !valid {
-                Text("Ad, bölüm, cinsiyet, tanışma tercihi, 3 ilgi alanı ve 3 soru cevabı zorunlu.")
+                Text("Ad, bölüm, cinsiyet ve en az 3 ilgi alanı zorunlu.")
                     .font(.system(size: 11, weight: .medium, design: .rounded))
                     .foregroundStyle(CampusTheme.muted)
                     .multilineTextAlignment(.center)
@@ -224,25 +220,6 @@ struct ProfileEditorView: View {
         }
     }
 
-    private var promptAnswers: some View {
-        VStack(alignment: .leading, spacing: CampusTheme.Space.md) {
-            AppSectionHeader(title: "Profil soruları")
-            Text("Keşifte görünmek için üç soruyu da yanıtla.")
-                .font(.system(size: 12, design: .rounded)).foregroundStyle(CampusTheme.muted)
-            ForEach(draft.prompts.indices, id: \.self) { index in
-                AppSurface {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(draft.prompts[index].question)
-                            .font(.system(size: 12, weight: .bold, design: .rounded))
-                            .foregroundStyle(CampusTheme.violet)
-                        TextField("Kısa ve sana ait bir cevap...", text: $draft.prompts[index].answer, axis: .vertical)
-                            .lineLimit(2...4)
-                    }
-                }
-            }
-        }
-    }
-
     private var interestSelection: some View {
         VStack(alignment: .leading, spacing: CampusTheme.Space.md) {
             AppSectionHeader(title: "İlgi alanları")
@@ -276,20 +253,13 @@ struct ProfileEditorView: View {
                     }
                 }
                 .tint(CampusTheme.violet)
-                Picker("Kimlerle tanışmak istersin?", selection: $draft.datingPreference) {
-                    Text("Seç").tag(DatingPreference?.none)
-                    ForEach(DatingPreference.allCases) { option in
-                        Text(option.title).tag(DatingPreference?.some(option))
-                    }
-                }
-                .tint(CampusTheme.violet)
                 Picker("Tanışma niyetin", selection: $draft.relationshipIntent) {
                     ForEach(RelationshipIntent.allCases) { option in
                         Text(option.title).tag(option)
                     }
                 }
                 .tint(CampusTheme.violet)
-                Text("Cinsiyet ve tanışma tercihi zorunludur.")
+                Text("Cinsiyet zorunludur; kimlerin gösterileceği buna göre belirlenir.")
                     .font(.system(size: 12, design: .rounded))
                     .foregroundStyle(CampusTheme.muted)
                 Menu {
@@ -336,13 +306,6 @@ struct ProfileEditorView: View {
     private func loadOnce() {
         guard !loaded else { return }
         draft = appState.draft
-        if draft.prompts.count != 3 {
-            draft.prompts = [
-                ProfilePrompt(question: "Kampüste beni nerede bulursun?", answer: ""),
-                ProfilePrompt(question: "İlk buluşma fikrim", answer: ""),
-                ProfilePrompt(question: "Beraber deneyelim", answer: "")
-            ]
-        }
         avatarData = appState.avatarData
         galleryData = appState.profileGalleryData
         loaded = true

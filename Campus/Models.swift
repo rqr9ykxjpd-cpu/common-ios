@@ -15,18 +15,6 @@ enum RelationshipIntent: String, Codable, CaseIterable, Identifiable {
     }
 }
 
-struct ProfilePrompt: Identifiable, Hashable, Codable {
-    let id: UUID
-    var question: String
-    var answer: String
-
-    init(id: UUID = UUID(), question: String, answer: String) {
-        self.id = id
-        self.question = question
-        self.answer = answer
-    }
-}
-
 struct DiscoveryFilters: Equatable, Codable {
     var minimumAge = 18
     var maximumAge = 30
@@ -69,11 +57,10 @@ struct StudentProfile: Identifiable, Hashable {
     let compatibility: Int
     let isVerified: Bool
     let compatibilityReasons: [String]
-    let prompts: [ProfilePrompt]
     let relationshipIntent: RelationshipIntent
     let activeLabel: String
 
-    init(id: UUID = UUID(), name: String, age: Int, university: String, department: String, year: String, bio: String, interests: [String], imageURL: URL?, imageAssetName: String? = nil, galleryImageURLs: [URL] = [], compatibility: Int, isVerified: Bool, compatibilityReasons: [String] = [], prompts: [ProfilePrompt] = [], relationshipIntent: RelationshipIntent = .both, activeLabel: String = "Bugün aktif") {
+    init(id: UUID = UUID(), name: String, age: Int, university: String, department: String, year: String, bio: String, interests: [String], imageURL: URL?, imageAssetName: String? = nil, galleryImageURLs: [URL] = [], compatibility: Int, isVerified: Bool, compatibilityReasons: [String] = [], relationshipIntent: RelationshipIntent = .both, activeLabel: String = "Bugün aktif") {
         self.id = id
         self.name = name
         self.age = age
@@ -88,7 +75,6 @@ struct StudentProfile: Identifiable, Hashable {
         self.compatibility = compatibility
         self.isVerified = isVerified
         self.compatibilityReasons = compatibilityReasons
-        self.prompts = prompts
         self.relationshipIntent = relationshipIntent
         self.activeLabel = activeLabel
     }

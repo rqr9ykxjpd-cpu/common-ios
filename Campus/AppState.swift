@@ -621,7 +621,6 @@ final class AppState {
             compatibility: 0,
             isVerified: true,
             compatibilityReasons: [],
-            prompts: draft.prompts,
             relationshipIntent: draft.relationshipIntent,
             activeLabel: "Yakın zamanda aktif"
         )
@@ -1128,6 +1127,15 @@ enum ProfileGender: String, Codable, CaseIterable, Identifiable {
     case female
     case male
 
+    /// Kimlerin gösterileceği artık ayrı bir soru değil, cinsiyetten türetiliyor.
+    /// Kadın seçen erkekleri, erkek seçen kadınları görüyor.
+    var impliedDatingPreference: DatingPreference {
+        switch self {
+        case .female: .men
+        case .male: .women
+        }
+    }
+
     var id: Self { self }
     var title: String {
         switch self {
@@ -1161,21 +1169,14 @@ struct ProfileDraft: Equatable, Codable {
     var bio = ""
     var interests: Set<String> = []
     var gender: ProfileGender?
-    var datingPreference: DatingPreference?
+    /// Ayrı bir soru olarak sorulmuyor; cinsiyetten türetiliyor. Hesaplanan olması,
+    /// ikisinin birbirinden ayrı düşüp tutarsız kalmasını da imkânsız kılıyor.
+    var datingPreference: DatingPreference? { gender?.impliedDatingPreference }
     var relationshipIntent: RelationshipIntent = .both
-    var prompts: [ProfilePrompt] = Self.defaultPrompts
     var discoveryFilters = DiscoveryFilters()
 
-    private static var defaultPrompts: [ProfilePrompt] {
-        [
-            ProfilePrompt(question: "Kampüste beni nerede bulursun?", answer: ""),
-            ProfilePrompt(question: "İlk buluşma fikrim", answer: ""),
-            ProfilePrompt(question: "Beraber deneyelim", answer: "")
-        ]
-    }
-
     private enum CodingKeys: String, CodingKey {
-        case name, birthDate, university, department, year, bio, interests, gender, datingPreference, relationshipIntent, prompts, discoveryFilters
+        case name, birthDate, university, department, year, bio, interests, gender, relationshipIntent, discoveryFilters
     }
 
     init() {}
@@ -1190,9 +1191,7 @@ struct ProfileDraft: Equatable, Codable {
         bio = try container.decodeIfPresent(String.self, forKey: .bio) ?? ""
         interests = try container.decodeIfPresent(Set<String>.self, forKey: .interests) ?? []
         gender = try container.decodeIfPresent(ProfileGender.self, forKey: .gender)
-        datingPreference = try container.decodeIfPresent(DatingPreference.self, forKey: .datingPreference)
         relationshipIntent = try container.decodeIfPresent(RelationshipIntent.self, forKey: .relationshipIntent) ?? .both
-        prompts = try container.decodeIfPresent([ProfilePrompt].self, forKey: .prompts) ?? Self.defaultPrompts
         discoveryFilters = try container.decodeIfPresent(DiscoveryFilters.self, forKey: .discoveryFilters) ?? DiscoveryFilters()
     }
 

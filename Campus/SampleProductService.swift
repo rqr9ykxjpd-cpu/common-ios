@@ -386,11 +386,6 @@ enum SampleData {
         imageAssetName: "profile-berk",
         compatibility: 100,
         isVerified: true,
-        prompts: [
-            ProfilePrompt(question: "Kampüste beni nerede bulursun?", answer: "Kütüphanenin en arka masasında, kulaklık takılı."),
-            ProfilePrompt(question: "İlk buluşma fikrim", answer: "Sahilde yürüyüş, sonra iyi bir üçüncü dalga kahve."),
-            ProfilePrompt(question: "Beraber deneyelim", answer: "Şehirdeki bütün kahvecileri sırayla puanlamak.")
-        ],
         relationshipIntent: .both
     )
 
@@ -404,9 +399,7 @@ enum SampleData {
         draft.bio = me.bio
         draft.interests = Set(me.interests)
         draft.gender = .male
-        draft.datingPreference = .everyone
         draft.relationshipIntent = .both
-        draft.prompts = me.prompts
         return draft
     }
 
@@ -419,10 +412,6 @@ enum SampleData {
             imageURL: nil, imageAssetName: "profile-ece",
             compatibility: 92, isVerified: true,
             compatibilityReasons: ["3 ortak ilgi alanı", "İkiniz de kahve düşkünü"],
-            prompts: [
-                ProfilePrompt(question: "Kampüste beni nerede bulursun?", answer: "Hazırlık kantininde, pencere kenarında."),
-                ProfilePrompt(question: "İlk buluşma fikrim", answer: "Film kulübünün gece gösterimi.")
-            ],
             relationshipIntent: .both, activeLabel: "Bugün aktif"
         ),
         StudentProfile(
@@ -433,9 +422,6 @@ enum SampleData {
             imageURL: nil, imageAssetName: "profile-defne",
             compatibility: 87, isVerified: true,
             compatibilityReasons: ["3 ortak ilgi alanı", "Aynı fakülte bahçesinde takılıyorsunuz"],
-            prompts: [
-                ProfilePrompt(question: "Kampüste beni nerede bulursun?", answer: "Kütüphane kafeteryasında, masada üç kitapla.")
-            ],
             relationshipIntent: .friendship, activeLabel: "2 saat önce aktif"
         ),
         StudentProfile(
@@ -446,9 +432,6 @@ enum SampleData {
             imageURL: nil, imageAssetName: "profile-duru",
             compatibility: 84, isVerified: false,
             compatibilityReasons: ["2 ortak ilgi alanı"],
-            prompts: [
-                ProfilePrompt(question: "Beraber deneyelim", answer: "Kampüsü gece gezip iyi ışığı olan binaları bulmak.")
-            ],
             relationshipIntent: .both, activeLabel: "Bu hafta aktif"
         ),
         StudentProfile(
@@ -459,7 +442,6 @@ enum SampleData {
             imageURL: nil, imageAssetName: "profile-selin",
             compatibility: 76, isVerified: true,
             compatibilityReasons: ["1 ortak ilgi alanı"],
-            prompts: [], relationshipIntent: .dating, activeLabel: "Dün aktif"
         ),
         StudentProfile(
             id: id(14),
@@ -469,9 +451,6 @@ enum SampleData {
             imageURL: nil, imageAssetName: "profile-mina",
             compatibility: 81, isVerified: false,
             compatibilityReasons: ["2 ortak ilgi alanı", "Aynı kampüsteki geç saatçiler"],
-            prompts: [
-                ProfilePrompt(question: "İlk buluşma fikrim", answer: "Kütüphanede yan yana çalışıp sonra kaçamak yemek.")
-            ],
             relationshipIntent: .friendship, activeLabel: "Bugün aktif"
         ),
         StudentProfile(
@@ -482,7 +461,6 @@ enum SampleData {
             imageURL: nil, imageAssetName: "profile-arda",
             compatibility: 68, isVerified: false,
             compatibilityReasons: ["1 ortak ilgi alanı"],
-            prompts: [], relationshipIntent: .friendship, activeLabel: "3 gün önce aktif"
         )
     ]
 

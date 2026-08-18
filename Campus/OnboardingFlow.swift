@@ -123,27 +123,18 @@ private struct PreferencesStep: View {
     @Binding var draft: ProfileDraft
     let submit: () -> Void
 
-    private var valid: Bool {
-        draft.gender != nil && draft.datingPreference != nil
-    }
+    private var valid: Bool { draft.gender != nil }
 
     var body: some View {
         StepScaffold(
             eyebrow: "tanışma tercihlerin",
-            title: "Seni ve aradığını\nnetleştirelim.",
-            subtitle: "İki seçim de zorunludur. Bu bilgileri daha sonra profil ayarlarından değiştirebilirsin.",
+            title: "Kısaca\nseni tanıyalım.",
+            subtitle: "Kimlerin gösterileceği cinsiyetine göre belirlenir. İkisini de sonradan değiştirebilirsin.",
             content: VStack(alignment: .leading, spacing: 28) {
                 choiceSection(title: "CİNSİYETİN") {
                     ForEach(ProfileGender.allCases) { option in
                         choiceButton(option.title, selected: draft.gender == option) {
                             draft.gender = option
-                        }
-                    }
-                }
-                choiceSection(title: "KİMLERLE TANIŞMAK İSTİYORSUN?") {
-                    ForEach(DatingPreference.allCases) { option in
-                        choiceButton(option.title, selected: draft.datingPreference == option) {
-                            draft.datingPreference = option
                         }
                     }
                 }
@@ -190,16 +181,14 @@ private struct InterestsStep: View {
     let options = ["Canlı müzik", "Sinema", "Gece yürüyüşü", "Tasarım", "Koşu", "Analog", "Kahve", "Sergiler", "Kitaplar", "Elektronik", "Fotoğraf", "Girişim"]
 
     private var complete: Bool {
-        draft.interests.count >= 3 && draft.prompts.count == 3 && draft.prompts.allSatisfy {
-            !$0.answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        }
+        draft.interests.count >= 3
     }
 
     var body: some View {
         StepScaffold(
             eyebrow: "ortak frekanslar",
             title: "Sohbete bir\nipucu bırak.",
-            subtitle: "En az üç ilgi seç ve profilindeki üç kısa soruyu yanıtla.",
+            subtitle: "En az üç ilgi alanı seç. Ortak ilgiler keşifte öne çıkarılır.",
             content: ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
                     FlowLayout(spacing: 9) {
@@ -217,17 +206,6 @@ private struct InterestsStep: View {
                                     .overlay(Capsule().stroke(CampusTheme.ink.opacity(0.22)))
                                     .clipShape(Capsule())
                             }.buttonStyle(PressableStyle())
-                        }
-                    }
-                    ForEach(draft.prompts.indices, id: \.self) { index in
-                        VStack(alignment: .leading, spacing: 7) {
-                            Text(draft.prompts[index].question)
-                                .font(.system(size: 11, weight: .bold, design: .rounded))
-                                .foregroundStyle(CampusTheme.violet)
-                            TextField("Kısa cevabın...", text: $draft.prompts[index].answer, axis: .vertical)
-                                .lineLimit(2...3)
-                                .padding(12)
-                                .background(CampusTheme.ink.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))
                         }
                     }
                 }

@@ -295,7 +295,6 @@ struct ProfileDetailSheet: View {
                 gallery
                 identity
                 compatibility
-                prompts
                 interests
                 posts
                 safetyActions
@@ -402,22 +401,6 @@ struct ProfileDetailSheet: View {
         .padding(.horizontal, CampusTheme.Space.lg)
     }
 
-    @ViewBuilder
-    private var prompts: some View {
-        if !profile.prompts.isEmpty {
-            VStack(alignment: .leading, spacing: CampusTheme.Space.md) {
-                AppSectionHeader(title: "Profilinden")
-                ForEach(profile.prompts) { prompt in
-                    AppSurface {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(prompt.question).font(.caption.bold()).foregroundStyle(CampusTheme.violet)
-                            Text(prompt.answer).font(.system(size: 17, weight: .medium, design: .rounded))
-                        }.frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                }
-            }.padding(.horizontal, CampusTheme.Space.lg)
-        }
-    }
 
     private var interests: some View {
         VStack(alignment: .leading, spacing: CampusTheme.Space.md) {

@@ -114,9 +114,6 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
               let datingPreference = draft.datingPreference else {
             throw BackendServiceError.incompleteProfile
         }
-        let prompts = draft.prompts.prefix(3).map {
-            ProfilePromptPayload(promptKey: $0.question, answer: $0.answer.trimmingCharacters(in: .whitespacesAndNewlines))
-        }
         let params = SaveProfileParams(
             profileName: draft.name.trimmingCharacters(in: .whitespacesAndNewlines),
             profileBirthDate: Self.postgresDateFormatter.string(from: draft.birthDate),
@@ -127,8 +124,7 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
             profileDepartment: draft.department.trimmingCharacters(in: .whitespacesAndNewlines),
             profileAcademicYear: draft.year,
             profileBio: draft.bio.trimmingCharacters(in: .whitespacesAndNewlines),
-            profileInterests: draft.interests.sorted(),
-            profilePrompts: prompts
+            profileInterests: draft.interests.sorted()
         )
         try await client.rpc("save_my_profile", params: params).execute()
     }
@@ -349,16 +345,12 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         draft.name = row.name
         draft.birthDate = row.birthDate
         draft.gender = ProfileGender(rawValue: row.gender)
-        draft.datingPreference = DatingPreference(rawValue: row.datingPreference)
         draft.relationshipIntent = RelationshipIntent(rawValue: row.relationshipIntent) ?? .both
         draft.university = row.university
         draft.department = row.department
         draft.year = row.academicYear
         draft.bio = row.bio
         draft.interests = Set(row.interests)
-        if !row.promptKeys.isEmpty {
-            draft.prompts = zip(row.promptKeys, row.promptAnswers).map { ProfilePrompt(question: $0.0, answer: $0.1) }
-        }
         var filters = DiscoveryFilters()
         filters.minimumAge = row.minAge
         filters.maximumAge = row.maxAge
@@ -1232,16 +1224,6 @@ private struct MessageReadUpdate: Encodable {
     enum CodingKeys: String, CodingKey { case readAt = "read_at" }
 }
 
-private struct ProfilePromptPayload: Encodable {
-    let promptKey: String
-    let answer: String
-
-    enum CodingKeys: String, CodingKey {
-        case promptKey = "prompt_key"
-        case answer
-    }
-}
-
 private struct SaveProfileParams: Encodable {
     let profileName: String
     let profileBirthDate: String
@@ -1253,7 +1235,6 @@ private struct SaveProfileParams: Encodable {
     let profileAcademicYear: String
     let profileBio: String
     let profileInterests: [String]
-    let profilePrompts: [ProfilePromptPayload]
 
     enum CodingKeys: String, CodingKey {
         case profileName = "profile_name"
@@ -1266,7 +1247,6 @@ private struct SaveProfileParams: Encodable {
         case profileAcademicYear = "profile_academic_year"
         case profileBio = "profile_bio"
         case profileInterests = "profile_interests"
-        case profilePrompts = "profile_prompts"
     }
 }
 
@@ -1364,7 +1344,6 @@ private struct DiscoveryCandidateRow: Decodable {
             galleryImageURLs: galleryURLs,
             compatibility: compatibility, isVerified: isVerified,
             compatibilityReasons: compatibilityReasons,
-            prompts: zip(promptKeys, promptAnswers).map { ProfilePrompt(question: $0.0, answer: $0.1) },
             relationshipIntent: relationshipIntent, activeLabel: activeLabel
         )
     }

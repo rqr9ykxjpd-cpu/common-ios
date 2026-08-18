@@ -110,8 +110,6 @@ enum UserFacingError {
 
         // — Profil kuralları (save_my_profile içindeki kontroller) —
         (["at least three interests"], "En az 3 ilgi alanı seçmelisin."),
-        (["exactly three prompts"], "Üç profil sorusunun da cevaplanması gerekiyor."),
-        (["prompt answers cannot be empty"], "Profil sorularını boş bırakamazsın."),
 
         // — Yetki ve veri —
         (["row-level security"], "Bunu yapma yetkin yok."),

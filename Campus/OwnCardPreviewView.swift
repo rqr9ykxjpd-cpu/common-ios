@@ -18,9 +18,6 @@ struct OwnCardPreviewView: View {
         if appState.draft.department.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { missing.append("Bölüm") }
         if appState.draft.bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { missing.append("Hakkımda") }
         if appState.draft.interests.count < 3 { missing.append("En az 3 ilgi alanı") }
-        if appState.draft.prompts.allSatisfy({ $0.answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) {
-            missing.append("Profil soruları")
-        }
         return missing
     }
 
