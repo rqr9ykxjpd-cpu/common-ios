@@ -3,6 +3,17 @@ import SwiftUI
 struct RootView: View {
     @Environment(AppState.self) private var appState
 
+    /// Karşılama ve kayıt akışı her zaman açık modda kalır. Bu ekranlardaki kullanıcı
+    /// henüz bir görünüm tercihi yapmadı — ayara ancak giriş yaptıktan sonra ulaşıyor —
+    /// ve telefonu koyu diye uygulamanın ilk izlenimini koyu göstermek onun seçimi değil.
+    /// Koyu mod, isteyenin uygulama içinden açtığı bir tercih olarak kalıyor.
+    private var resolvedColorScheme: ColorScheme? {
+        switch appState.route {
+        case .welcome, .onboarding: .light
+        case .app: appState.appearance.colorScheme
+        }
+    }
+
     var body: some View {
         Group {
             switch appState.route {
@@ -22,9 +33,7 @@ struct RootView: View {
                 MainTabView()
             }
         }
-        // Görünüm artık kullanıcının seçimi. Varsayılan "Sistem"; Profil > Görünüm'den
-        // Açık/Koyu'ya sabitlenebilir.
-        .preferredColorScheme(appState.appearance.colorScheme)
+        .preferredColorScheme(resolvedColorScheme)
         .task { await appState.restoreBackendSession() }
         .overlay(alignment: .top) {
             if let toast = appState.toast {
