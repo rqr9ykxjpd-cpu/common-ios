@@ -7,7 +7,7 @@
 --    ziyaretçi listesini okuyamaz.
 -- 2. Aynı kişi tekrar bakınca yeni satır açılmaz; sayaç ve zaman güncellenir.
 --    Böylece liste tek kişiyle dolmaz.
--- 3. Kayıtlar 30 günden eskiyse gösterilmez — süresiz iz bırakmıyoruz.
+-- 3. Kayıtlar 7 günden eskiyse gösterilmez — süresiz iz bırakmıyoruz.
 -- 4. Karşılıklı engelleme varsa ziyaret kaydedilmez ve görünmez.
 -- 5. Kendi profilini görüntülemek kaydedilmez.
 -- 6. Ziyaret kaydı yalnızca `record_profile_visit` RPC'siyle oluşur; istemci
@@ -77,7 +77,7 @@ language sql stable security definer set search_path = '' as $$
   from public.profile_visits v
   join public.profiles p on p.id = v.visitor_id
   where v.profile_id = auth.uid()
-    and v.last_visited_at > now() - interval '30 days'
+    and v.last_visited_at > now() - interval '7 days'
     and p.is_active
     and not exists (
       select 1 from public.blocks b

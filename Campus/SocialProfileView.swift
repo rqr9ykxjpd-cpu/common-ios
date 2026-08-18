@@ -268,7 +268,7 @@ struct SocialProfileView: View {
                     ContentUnavailableView(
                         "Henüz ziyaretçi yok",
                         systemImage: "eye",
-                        description: Text("Profilini görüntüleyenler burada görünecek. Son 30 gün gösterilir.")
+                        description: Text("Profilini görüntüleyenler burada görünecek. Son 7 gün gösterilir.")
                     )
                     .padding(.top, CampusTheme.Space.xxl)
                 } else {
