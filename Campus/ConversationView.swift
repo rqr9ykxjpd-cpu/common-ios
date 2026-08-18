@@ -77,6 +77,7 @@ struct ConversationView: View {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 17, weight: .semibold)).frame(width: 44, height: 44)
             }
+            .accessibilityLabel("Geri")
             Button { showProfile = true } label: {
                 HStack(spacing: 10) {
                     ProfileMedia(url: conversation.profile.imageURL, data: nil, assetName: conversation.profile.imageAssetName)
@@ -108,6 +109,7 @@ struct ConversationView: View {
                 Image(systemName: "ellipsis")
                     .font(.system(size: 17, weight: .semibold)).frame(width: 44, height: 44)
             }
+            .accessibilityLabel("Sohbet seçenekleri")
         }
         .padding(.horizontal, 10).padding(.vertical, 8)
         .background(CampusTheme.surface)
@@ -167,6 +169,7 @@ struct ConversationView: View {
                         .frame(width: 44, height: 44)
                         .background(canSend ? CampusTheme.ink : CampusTheme.ink.opacity(0.22), in: Circle())
                 }
+                .accessibilityLabel("Gönder")
                 .disabled(!canSend)
                 .buttonStyle(PressableStyle())
             }

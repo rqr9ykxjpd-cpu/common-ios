@@ -83,7 +83,9 @@ struct CreatePostView: View {
             Button { dismiss() } label: {
                 Image(systemName: "xmark").font(.system(size: 15, weight: .bold))
                     .frame(width: 44, height: 44).background(controlBackground, in: Circle())
-            }.buttonStyle(PressableStyle())
+            }
+            .buttonStyle(PressableStyle())
+            .accessibilityLabel("Kapat")
         }
     }
 

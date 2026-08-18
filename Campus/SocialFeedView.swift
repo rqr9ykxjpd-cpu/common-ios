@@ -823,6 +823,7 @@ struct StoryViewer: View {
                             .font(.title3).foregroundStyle(liked ? CampusTheme.coral : .white)
                             .frame(width: 44, height: 44)
                     }
+                    .accessibilityLabel(reply.isEmpty ? "Beğen" : "Yanıtı gönder")
                 }
             }
         }

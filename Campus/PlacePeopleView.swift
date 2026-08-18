@@ -67,6 +67,7 @@ struct PlacePeopleView: View {
                         .background(CampusTheme.surface, in: Circle())
                         .overlay(Circle().stroke(CampusTheme.hairline))
                 }
+                .accessibilityLabel("Kapat")
                 Spacer()
                 Eyebrow(text: "isteğe bağlı görünürlük", color: CampusTheme.ink.opacity(0.42))
             }
@@ -218,6 +219,7 @@ struct SocialPersonDetailView: View {
                 Image(systemName: "arrow.left").foregroundStyle(.white)
                     .frame(width: 44, height: 44).background(.black.opacity(0.55), in: Circle())
             }
+            .accessibilityLabel("Geri")
             .padding(16)
 
             HStack {

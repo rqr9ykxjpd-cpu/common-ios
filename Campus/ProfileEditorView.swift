@@ -177,6 +177,7 @@ struct ProfileEditorView: View {
                                         .font(.caption.bold()).foregroundStyle(.white)
                                         .frame(width: 44, height: 44).background(.black.opacity(0.62), in: Circle())
                                 }
+                                .accessibilityLabel("Bu fotoğrafı kaldır")
                                 .padding(5)
                             }
                         }

@@ -197,6 +197,7 @@ private struct LoginView: View {
                     Image(systemName: "xmark").frame(width: 44, height: 44)
                         .background(CampusTheme.ink.opacity(0.07), in: Circle())
                 }
+                .accessibilityLabel("Kapat")
             }
 
             VStack(spacing: 14) {

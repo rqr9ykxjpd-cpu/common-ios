@@ -353,6 +353,7 @@ struct ProfileDetailSheet: View {
                     .frame(width: 44, height: 44)
                     .background(.black.opacity(0.42), in: Circle())
             }
+            .accessibilityLabel("Kapat")
             .buttonStyle(PressableStyle())
             .padding(14)
         }

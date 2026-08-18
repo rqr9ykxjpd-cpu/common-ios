@@ -24,6 +24,7 @@ struct ClubDetailView: View {
                                 .background(CampusTheme.surface, in: Circle())
                                 .overlay(Circle().stroke(CampusTheme.hairline))
                         }
+                        .accessibilityLabel("Kapat")
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
