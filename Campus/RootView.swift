@@ -6,6 +6,7 @@ import GoogleSignIn
 
 struct RootView: View {
     @Environment(AppState.self) private var appState
+    @Environment(\.scenePhase) private var scenePhase
 
     /// Karşılama ve kayıt akışı her zaman açık modda kalır. Bu ekranlardaki kullanıcı
     /// henüz bir görünüm tercihi yapmadı — ayara ancak giriş yaptıktan sonra ulaşıyor —
@@ -31,6 +32,11 @@ struct RootView: View {
         }
         .preferredColorScheme(resolvedColorScheme)
         .task { await appState.restoreBackendSession() }
+        .onChange(of: scenePhase) { previous, phase in
+            // Arka planda anlık kanal kopuyor; dönüşte kaçan mesajları getiriyoruz.
+            guard phase == .active, previous != .active else { return }
+            Task { await appState.refreshAfterForeground() }
+        }
         .overlay(alignment: .top) {
             if let toast = appState.toast {
                 AppToast(message: toast)

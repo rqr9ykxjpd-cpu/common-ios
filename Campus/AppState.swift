@@ -291,6 +291,19 @@ final class AppState {
         conversations.sort { $0.updatedAt > $1.updatedAt }
     }
 
+    /// Uygulama arka plandan öne döndüğünde çağrılır.
+    ///
+    /// Anlık kanal arka planda kopuyor ve bu sırada gelen mesajlar kaçıyor. Yeniden
+    /// bağlanma kendiliğinden oluyor ama kaçırılan mesajları getirmiyor; burada
+    /// sunucudan tazeliyoruz. Bildirimler ve story'ler de aynı sebeple yenileniyor.
+    func refreshAfterForeground() async {
+        guard route == .app else { return }
+        await loadConversations()
+        await loadNotifications()
+        await loadStories()
+        try? await service.touchLastActive()
+    }
+
     func advance(from step: OnboardingStep) {
         guard let next = OnboardingStep(rawValue: step.rawValue + 1) else {
             Task { await finishOnboarding() }
@@ -1041,6 +1054,19 @@ final class AppState {
         selectedPlaceFilter = nil
         currentVisiblePlace = nil
         joinedClubIDs = []
+        lastPassedProfile = nil
+
+        // Geçici bayraklar da sıfırlanmalı. Çıkış bir yükleme sürerken yapılırsa
+        // `isLoadingDiscovery` true kalıyor ve sonraki girişte `loadDiscovery`
+        // başındaki guard yüzünden keşif hiç yüklenmiyordu.
+        isLoadingDiscovery = false
+        isReactingToProfile = false
+        isFinishingOnboarding = false
+        discoveryError = nil
+        toast = nil
+
+        // `places`, `clubs` herkese açık referans verisi; `appearance` kullanıcının
+        // cihaz tercihi. Bunlar kasıtlı olarak korunuyor.
         route = .welcome
         Haptics.success()
     }

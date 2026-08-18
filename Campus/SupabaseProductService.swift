@@ -483,6 +483,15 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
     // RLS on `messages` (is_match_member) already limits Postgres Changes delivery to rows
     // this user could SELECT, so subscribing to every insert on the table without a match_id
     // filter still only ever streams this user's own conversations.
+    /// Anlık mesaj akışı. Bağlantı koptuğunda ya da hiç kurulamadığında kendi kendine
+    /// yeniden bağlanır.
+    ///
+    /// Önceden tek denemeydi: `subscribeWithError()` hata verirse ya da soket düşerse
+    /// akış sessizce bitiyordu. `AppState` tarafındaki dinleyici görevi de tamamlanmış
+    /// haliyle duruyor ve `startMessageListener` içindeki `guard messageListenerTask == nil`
+    /// yüzünden bir daha hiç başlatılmıyordu. Yani tek bir ağ kesintisi, uygulama
+    /// kapatılıp açılana kadar canlı mesajlaşmayı tamamen bitiriyordu — mesajlaşma
+    /// uygulaması için sessizce çalışmayı bırakan en kötü tür hata.
     func messageStream() -> AsyncStream<RealtimeMessage> {
         AsyncStream { continuation in
             let task = Task {
@@ -490,27 +499,39 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
                     continuation.finish()
                     return
                 }
-                let channel = client.channel("messages-\(userID.uuidString.lowercased())")
-                let insertions = channel.postgresChange(InsertAction.self, schema: "public", table: "messages")
-                do {
-                    try await channel.subscribeWithError()
-                } catch {
-                    continuation.finish()
-                    return
+
+                // Üst üste başarısız denemelerde bekleme süresi katlanarak artıyor;
+                // ağ gerçekten yoksa saniyede bir denemenin anlamı yok.
+                let ilkBekleme: UInt64 = 1_000_000_000
+                let enUzunBekleme: UInt64 = 30_000_000_000
+                var bekleme = ilkBekleme
+
+                while !Task.isCancelled {
+                    let channel = client.channel("messages-\(userID.uuidString.lowercased())")
+                    let insertions = channel.postgresChange(InsertAction.self, schema: "public", table: "messages")
+                    do {
+                        try await channel.subscribeWithError()
+                        bekleme = ilkBekleme
+                        for await insertion in insertions {
+                            guard let row = try? insertion.decodeRecord(as: MessageRow.self, decoder: PostgrestClient.Configuration.jsonDecoder) else { continue }
+                            continuation.yield(RealtimeMessage(
+                                matchID: row.matchID,
+                                id: row.id,
+                                senderID: row.senderID,
+                                body: row.body,
+                                replyToID: row.replyToID,
+                                reaction: row.reaction,
+                                createdAt: row.createdAt
+                            ))
+                        }
+                    } catch {
+                        // Bağlanılamadı; aşağıdaki beklemeden sonra tekrar denenecek.
+                    }
+                    await client.removeChannel(channel)
+                    if Task.isCancelled { break }
+                    try? await Task.sleep(nanoseconds: bekleme)
+                    bekleme = min(bekleme * 2, enUzunBekleme)
                 }
-                for await insertion in insertions {
-                    guard let row = try? insertion.decodeRecord(as: MessageRow.self, decoder: PostgrestClient.Configuration.jsonDecoder) else { continue }
-                    continuation.yield(RealtimeMessage(
-                        matchID: row.matchID,
-                        id: row.id,
-                        senderID: row.senderID,
-                        body: row.body,
-                        replyToID: row.replyToID,
-                        reaction: row.reaction,
-                        createdAt: row.createdAt
-                    ))
-                }
-                await client.removeChannel(channel)
                 continuation.finish()
             }
             continuation.onTermination = { _ in task.cancel() }
