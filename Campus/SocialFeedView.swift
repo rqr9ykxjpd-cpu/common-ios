@@ -540,7 +540,7 @@ struct PostCard: View {
                             .font(.system(size: 13, design: .rounded)).foregroundStyle(CampusTheme.ink.opacity(0.62))
                     }
                 }
-                Text(post.createdAt.formatted(.relative(presentation: .named)))
+                Text(post.createdAt.relativeTurkish)
                     .font(.system(size: 11, weight: .medium, design: .rounded)).foregroundStyle(CampusTheme.muted)
             }
             .foregroundStyle(CampusTheme.ink)
@@ -637,7 +637,7 @@ private struct CommentsView: View {
                 HStack(alignment: .firstTextBaseline) {
                     Text(comment.author)
                         .font(.system(size: 14, weight: .bold, design: .rounded))
-                    Text(comment.createdAt.formatted(.relative(presentation: .named)))
+                    Text(comment.createdAt.relativeTurkish)
                         .font(.system(size: 11, design: .rounded))
                         .foregroundStyle(CampusTheme.muted)
                 }
@@ -774,6 +774,11 @@ struct StoryViewer: View {
                 StoryViewersSheet(story: story, records: viewRecords(story.id))
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
+            } else {
+                // Story araya silinmiş olabilir; boş bir sayfa açmak yerine sebebini söylüyoruz.
+                ContentUnavailableView("Story bulunamadı", systemImage: "eye.slash",
+                                       description: Text("Story silinmiş ya da süresi dolmuş olabilir."))
+                    .presentationDetents([.medium])
             }
         }
         .confirmationDialog("Story'yi sil?", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
@@ -947,7 +952,7 @@ private struct StoryViewersSheet: View {
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text(record.viewer.name)
                                                 .font(.system(size: 15, weight: .semibold, design: .rounded))
-                                            Text(record.lastViewedAt.formatted(.relative(presentation: .named)))
+                                            Text(record.lastViewedAt.relativeTurkish)
                                                 .font(.system(size: 11, design: .rounded))
                                                 .foregroundStyle(CampusTheme.muted)
                                         }

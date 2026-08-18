@@ -598,7 +598,7 @@ struct PremiumMatchesView: View {
                     Text(conversation.profile.name)
                         .font(.system(size: 15, weight: conversation.unreadCount > 0 ? .bold : .semibold, design: .rounded))
                     Spacer()
-                    Text(conversation.updatedAt.formatted(date: .omitted, time: .shortened))
+                    Text(conversation.updatedAt.shortTimeTurkish)
                         .font(.system(size: 11, design: .rounded))
                         .foregroundStyle(CampusTheme.muted)
                 }

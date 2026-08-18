@@ -287,7 +287,7 @@ struct SocialProfileView: View {
                                         .foregroundStyle(CampusTheme.muted)
                                 }
                                 Spacer(minLength: 0)
-                                Text(visit.visitedAt.formatted(.relative(presentation: .named)))
+                                Text(visit.visitedAt.relativeTurkish)
                                     .font(.system(size: 11, design: .rounded))
                                     .foregroundStyle(CampusTheme.muted)
                             }

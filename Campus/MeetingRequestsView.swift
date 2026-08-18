@@ -90,7 +90,7 @@ struct MeetingRequestsView: View {
                             Label(request.place.name, systemImage: "mappin.and.ellipse")
                                 .font(.system(size: 13, weight: .semibold, design: .rounded))
                                 .foregroundStyle(CampusTheme.violet)
-                            Text(request.createdAt.formatted(.relative(presentation: .named)))
+                            Text(request.createdAt.relativeTurkish)
                                 .font(.system(size: 11, design: .rounded))
                                 .foregroundStyle(CampusTheme.muted)
                         }

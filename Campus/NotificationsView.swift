@@ -108,7 +108,7 @@ struct NotificationsView: View {
                     .font(.system(size: 13, design: .rounded))
                     .foregroundStyle(CampusTheme.muted)
                     .lineLimit(2)
-                Text(notification.createdAt.formatted(.relative(presentation: .named)))
+                Text(notification.createdAt.relativeTurkish)
                     .font(.system(size: 11, design: .rounded))
                     .foregroundStyle(CampusTheme.muted)
             }

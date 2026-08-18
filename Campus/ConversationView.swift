@@ -301,7 +301,7 @@ private struct MessageBubble: View {
                     Text(message.body)
                         .font(.system(size: 15, design: .rounded))
                         .lineSpacing(3)
-                    Text(message.sentAt.formatted(date: .omitted, time: .shortened))
+                    Text(message.sentAt.shortTimeTurkish)
                         .font(.system(size: 10, design: .rounded))
                         .foregroundStyle(message.isMine ? CampusTheme.paper.opacity(0.52) : CampusTheme.muted)
                 }
