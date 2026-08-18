@@ -41,7 +41,6 @@ final class AppState {
     var conversations: [Conversation] = []
     var posts: [SocialPost] = []
     var stories: [CampusStory] = []
-    var profileVisits: [ProfileVisit] = []
     var notifications: [AppNotification] = []
     var meetingRequests: [MeetingRequest] = []
     /// Kampüs yerleri, `places` tablosundan gelir.
@@ -421,9 +420,24 @@ final class AppState {
 
     func toggleSaved(postID: UUID) {
         guard let index = posts.firstIndex(where: { $0.id == postID }) else { return }
-        posts[index].saved.toggle()
+        let newSaved = !posts[index].saved
+        posts[index].saved = newSaved
         Haptics.impact(.light)
+        Task {
+            do {
+                try await service.setPostSaved(postID, saved: newSaved)
+            } catch {
+                if let refreshed = posts.firstIndex(where: { $0.id == postID }) {
+                    posts[refreshed].saved = !newSaved
+                }
+                toast = error.localizedDescription
+            }
+        }
     }
+
+    /// Kaydedilen gönderiler. Yer imi butonu yalnızca yerel durumu değiştiriyordu ve
+    /// kaydedilenleri görecek bir ekran da yoktu; buton hiçbir işe yaramıyordu.
+    var savedPosts: [SocialPost] { posts.filter(\.saved) }
 
     func deletePost(_ postID: UUID) {
         guard posts.contains(where: { $0.id == postID && $0.isMine }) else { return }
@@ -897,7 +911,6 @@ final class AppState {
         conversations = []
         posts = []
         stories = []
-        profileVisits = []
         notifications = []
         meetingRequests = []
         currentMatch = nil
@@ -963,6 +976,7 @@ final class AppState {
             localImageData: post.imageData,
             place: post.placeName.flatMap { name in places.first { $0.name == name } },
             liked: post.liked,
+            saved: post.saved,
             isMine: post.authorID == currentUserID,
             likeCount: post.likeCount,
             comments: post.comments.map(socialComment(from:)),

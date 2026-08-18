@@ -81,6 +81,7 @@ protocol ProductService: Sendable {
     func reportUser(_ profileID: UUID, reason: ReportReason, details: String?) async throws
     func messageStream() -> AsyncStream<RealtimeMessage>
     func setPostLiked(_ postID: UUID, liked: Bool) async throws
+    func setPostSaved(_ postID: UUID, saved: Bool) async throws
     func fetchNotifications() async throws -> [BackendNotification]
     func markNotificationRead(_ notificationID: UUID) async throws
     func markAllNotificationsRead() async throws
@@ -160,6 +161,7 @@ struct UnconfiguredProductService: ProductService {
     func reportUser(_ profileID: UUID, reason: ReportReason, details: String?) async throws { try fail() }
     func messageStream() -> AsyncStream<RealtimeMessage> { AsyncStream { $0.finish() } }
     func setPostLiked(_ postID: UUID, liked: Bool) async throws { try fail() }
+    func setPostSaved(_ postID: UUID, saved: Bool) async throws { try fail() }
     func fetchNotifications() async throws -> [BackendNotification] { try fail() }
     func markNotificationRead(_ notificationID: UUID) async throws { try fail() }
     func markAllNotificationsRead() async throws { try fail() }

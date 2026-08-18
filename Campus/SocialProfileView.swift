@@ -2,7 +2,7 @@ import SwiftUI
 
 struct SocialProfileView: View {
     @Environment(AppState.self) private var appState
-    @State private var showVisits = false
+    @State private var showSaved = false
     @State private var showComposer = false
     @State private var showMeetingRequests = false
     @State private var showSignOutAlert = false
@@ -40,7 +40,7 @@ struct SocialProfileView: View {
                 NavigationStack { ProfileEditorView() }
             }
             .sheet(isPresented: $showCardPreview) { OwnCardPreviewView() }
-            .sheet(isPresented: $showVisits) { ProfileVisitorsView(visits: appState.profileVisits) }
+            .sheet(isPresented: $showSaved) { savedPostsSheet }
             .sheet(isPresented: $showComposer) { CreatePostView() }
             .sheet(isPresented: $showMeetingRequests) {
                 MeetingRequestsView()
@@ -169,7 +169,6 @@ struct SocialProfileView: View {
             Rectangle()
                 .fill(CampusTheme.hairline)
                 .frame(width: 1, height: 34)
-            metric(value: "\(appState.profileVisits.count)", label: "Ziyaretçi")
         }
         .padding(.vertical, CampusTheme.Space.sm)
     }
@@ -253,8 +252,61 @@ struct SocialProfileView: View {
 
     private var actions: some View {
         HStack(spacing: CampusTheme.Space.sm) {
-            AppButton(title: "Ziyaretçiler", systemName: "eye", role: .secondary) { showVisits = true }
+            // "Ziyaretçiler" kaldırıldı: profil görüntülemeleri hiçbir yerde kaydedilmiyordu,
+            // liste her zaman boştu. Kaydedilenler ise artık gerçekten kalıcı.
+            AppButton(title: "Kaydedilenler", systemName: "bookmark", role: .secondary) { showSaved = true }
             AppButton(title: "Gönderi", systemName: "plus", role: .accent) { showComposer = true }
+        }
+    }
+
+    private var savedPostsSheet: some View {
+        NavigationStack {
+            ScrollView {
+                if appState.savedPosts.isEmpty {
+                    ContentUnavailableView(
+                        "Kaydedilen gönderi yok",
+                        systemImage: "bookmark",
+                        description: Text("Akışta bir gönderiyi yer imine eklediğinde burada görünecek.")
+                    )
+                    .padding(.top, CampusTheme.Space.xxl)
+                } else {
+                    LazyVStack(spacing: CampusTheme.Space.md) {
+                        ForEach(appState.savedPosts) { post in
+                            HStack(spacing: CampusTheme.Space.md) {
+                                ProfileMedia(url: post.imageURL, data: post.localImageData, assetName: nil)
+                                    .frame(width: 64, height: 78)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(post.author.name)
+                                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                                    Text(post.caption)
+                                        .font(.system(size: 13, design: .rounded))
+                                        .foregroundStyle(CampusTheme.muted)
+                                        .lineLimit(2)
+                                }
+                                Spacer(minLength: 0)
+                                Button {
+                                    appState.toggleSaved(postID: post.id)
+                                } label: {
+                                    Image(systemName: "bookmark.fill")
+                                        .foregroundStyle(CampusTheme.violet)
+                                        .frame(width: 44, height: 44)
+                                }
+                                .accessibilityLabel("Kaydedilenlerden çıkar")
+                            }
+                            .padding(CampusTheme.Space.md)
+                            .background(CampusTheme.surface, in: RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous))
+                        }
+                    }
+                    .padding(CampusTheme.Space.lg)
+                }
+            }
+            .background(CampusTheme.paper.ignoresSafeArea())
+            .navigationTitle("Kaydedilenler")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) { Button("Bitti") { showSaved = false } }
+            }
         }
     }
 
@@ -343,56 +395,6 @@ struct SocialProfileView: View {
                 }
                 .clipShape(RoundedRectangle(cornerRadius: CampusTheme.Radius.control))
             }
-        }
-    }
-}
-
-struct ProfileVisitorsView: View {
-    let visits: [ProfileVisit]
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                if visits.isEmpty {
-                    ContentUnavailableView(
-                        "Henüz ziyaretçi yok",
-                        systemImage: "eye.slash",
-                        description: Text("Profilini ziyaret eden kişiler burada görünür.")
-                    )
-                    .padding(.top, 80)
-                } else {
-                    LazyVStack(spacing: 0) {
-                        ForEach(visits) { visit in
-                            NavigationLink {
-                                SocialPersonDetailView(profile: visit.profile, place: nil)
-                            } label: {
-                            HStack(spacing: 14) {
-                                ProfileMedia(url: visit.profile.imageURL, data: nil, assetName: visit.profile.imageAssetName)
-                                    .frame(width: 54, height: 54).clipShape(Circle())
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(visit.profile.name).font(.system(size: 16, weight: .semibold, design: .rounded))
-                                    Text(visit.profile.department).font(.system(size: 13, design: .rounded)).foregroundStyle(CampusTheme.muted)
-                                }
-                                Spacer()
-                                Text(visit.visitedAt.formatted(.relative(presentation: .named)))
-                                    .font(.system(size: 11, design: .rounded)).foregroundStyle(CampusTheme.muted)
-                                Image(systemName: "chevron.right").font(.caption).foregroundStyle(CampusTheme.muted)
-                            }
-                            .foregroundStyle(CampusTheme.ink)
-                            .padding(.vertical, 14)
-                            .overlay(alignment: .bottom) { Rectangle().fill(CampusTheme.hairline).frame(height: 0.5) }
-                        }
-                        .buttonStyle(PressableStyle())
-                        }
-                    }
-                    .padding(.horizontal, 18)
-                }
-            }
-            .background(CampusTheme.paper.ignoresSafeArea())
-            .navigationTitle("Profil ziyaretleri")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Bitti") { dismiss() } } }
         }
     }
 }

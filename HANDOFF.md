@@ -49,10 +49,19 @@ zaman damgasına göre.
 ### Çalışan (backend'e bağlı)
 Kimlik doğrulama (OTP), profil kaydetme/geri yükleme, profil fotoğrafı ve galeri
 (Storage + imzalı URL), keşif ve eşleşme, gerçek zamanlı mesajlaşma, mesaj
-reaksiyonları, gönderi/yorum/beğeni, engelleme ve şikayet, bildirimler,
-story'ler, buluşma istekleri, kulüpler, kampüs yerleri, yer görünürlüğü.
+reaksiyonları, gönderi/yorum/beğeni, gönderi kaydetme, engelleme ve şikayet,
+bildirimler, story'ler, buluşma istekleri, kulüpler, kampüs yerleri,
+yer görünürlüğü.
+
+**Demo modu yoktur.** `Configuration.local.xcconfig` olmadan uygulama açılır ama
+her işlem "Supabase yapılandırması eksik" hatası verir (`UnconfiguredProductService`).
+Örnek/sahte veri, demo girişi ve demo yönetici yetkileri tamamen kaldırıldı.
 
 ### Eksik
+- **Profil ziyaretleri** — "Ziyaretçiler" özelliği kaldırıldı: profil
+  görüntülemeleri hiçbir yerde kaydedilmiyordu, liste her zaman boştu.
+  Yeniden eklenecekse önce ürün kararı gerekiyor: kim kimin ziyaretini
+  görebilir, kullanıcı kapatabilmeli mi, kayıt ne kadar saklanır.
 - **Push bildirimi** — `device_tokens` tablosu ve `registerDeviceToken` servis
   metodu hazır. Eksik: iOS izin akışı, token kaydı, APNs'e istek atan Edge
   Function. Apple Developer hesabı ve APNs `.p8` anahtarı gerekiyor.

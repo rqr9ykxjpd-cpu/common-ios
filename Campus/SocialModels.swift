@@ -134,9 +134,3 @@ struct CampusStory: Identifiable, Hashable {
 
 }
 
-struct ProfileVisit: Identifiable, Hashable {
-    let id = UUID()
-    let profile: StudentProfile
-    let visitedAt: Date
-
-}

@@ -28,6 +28,7 @@ struct BackendPost: Sendable {
     let comments: [BackendComment]
     let likeCount: Int
     let liked: Bool
+    let saved: Bool
 }
 
 enum BackendServiceError: LocalizedError {
@@ -265,6 +266,12 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
             .`in`("post_id", values: rows.map(\.id))
             .execute()
             .value) ?? [])
+        let savedIDs: Set<UUID> = rows.isEmpty ? [] : Set(((try? await client
+            .from("saved_posts")
+            .select("post_id")
+            .`in`("post_id", values: rows.map(\.id))
+            .execute()
+            .value) as [SavedPostRow]? ?? []).map(\.postID))
         var posts: [BackendPost] = []
         for row in rows {
             var imageData: Data?
@@ -277,7 +284,8 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
                 imageData: imageData,
                 authorAvatarURL: authorAvatarURL,
                 likeCount: postLikes.count,
-                liked: userID.map { id in postLikes.contains { $0.userID == id } } ?? false
+                liked: userID.map { id in postLikes.contains { $0.userID == id } } ?? false,
+                saved: savedIDs.contains(row.id)
             ))
         }
         return posts
@@ -310,7 +318,7 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         if let path = row.author.avatarPath {
             authorAvatarURL = try? await client.storage.from("profile-photos").createSignedURL(path: path, expiresIn: 3600)
         }
-        return row.backendPost(imageData: imageData, authorAvatarURL: authorAvatarURL, likeCount: 0, liked: false)
+        return row.backendPost(imageData: imageData, authorAvatarURL: authorAvatarURL, likeCount: 0, liked: false, saved: false)
     }
 
     func addComment(_ body: String, to postID: UUID) async throws -> BackendComment {
@@ -526,6 +534,21 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
                 .execute()
         } else {
             try await client.from("post_likes")
+                .delete(returning: .minimal)
+                .eq("post_id", value: postID)
+                .eq("user_id", value: userID)
+                .execute()
+        }
+    }
+
+    func setPostSaved(_ postID: UUID, saved: Bool) async throws {
+        guard let userID = currentUserID else { throw BackendServiceError.missingSession }
+        if saved {
+            try await client.from("saved_posts")
+                .upsert(SavedPostInsert(postID: postID, userID: userID), returning: .minimal)
+                .execute()
+        } else {
+            try await client.from("saved_posts")
                 .delete(returning: .minimal)
                 .eq("post_id", value: postID)
                 .eq("user_id", value: userID)
@@ -1451,7 +1474,7 @@ private struct PostRow: Decodable {
         case createdAt = "created_at"
     }
 
-    func backendPost(imageData: Data?, authorAvatarURL: URL?, likeCount: Int, liked: Bool) -> BackendPost {
+    func backendPost(imageData: Data?, authorAvatarURL: URL?, likeCount: Int, liked: Bool, saved: Bool) -> BackendPost {
         BackendPost(
             id: id,
             authorID: authorID,
@@ -1469,8 +1492,23 @@ private struct PostRow: Decodable {
             createdAt: createdAt,
             comments: comments.sorted { $0.createdAt < $1.createdAt }.map(\.backendComment),
             likeCount: likeCount,
-            liked: liked
+            liked: liked,
+            saved: saved
         )
+    }
+}
+
+private struct SavedPostRow: Decodable {
+    let postID: UUID
+    enum CodingKeys: String, CodingKey { case postID = "post_id" }
+}
+
+private struct SavedPostInsert: Encodable {
+    let postID: UUID
+    let userID: UUID
+    enum CodingKeys: String, CodingKey {
+        case postID = "post_id"
+        case userID = "user_id"
     }
 }
 
