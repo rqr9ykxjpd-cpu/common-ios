@@ -75,12 +75,24 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         )
     }
 
+    /// Supabase, kodu hangi akışın ürettiğine göre farklı tiplerle doğruluyor: ilk kez kayıt
+    /// olan kullanıcıya "Confirm signup" e-postası gidiyor ve kod `signup` tipiyle, daha önce
+    /// kayıtlı kullanıcıya "Magic Link" gidiyor ve kod `magiclink` tipiyle doğrulanıyor.
+    /// Tek tip denemek, kullanıcının ilk kaydında geçerli kodu "geçersiz" göstermeye yol
+    /// açtığı için sırayla hepsini deniyoruz.
     func verifyOTP(email: String, code: String) async throws {
-        try await client.auth.verifyOTP(
-            email: email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
-            token: code,
-            type: .email
-        )
+        let normalized = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let token = code.trimmingCharacters(in: .whitespacesAndNewlines)
+        var lastError: Error?
+        for type: EmailOTPType in [.email, .signup, .magiclink] {
+            do {
+                try await client.auth.verifyOTP(email: normalized, token: token, type: type)
+                return
+            } catch {
+                lastError = error
+            }
+        }
+        throw lastError ?? BackendServiceError.missingSession
     }
 
     func restoreSession() async throws -> UUID? {
