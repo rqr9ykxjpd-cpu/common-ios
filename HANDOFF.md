@@ -105,6 +105,9 @@ Bunlar tamamlanmadan uygulamaya **hiç giriş yapılamaz**.
    - `20260818230000_truthful_active_label.sql` — aktiflik etiketi ("Bu hafta
      aktif" her şeyi yakalıyordu, üç ay girmeyen de öyle görünüyordu).
      Uygulanmazsa uygulama çalışır, yalnızca etiket yanlış kalır.
+   - `20260819000000_drop_profile_prompts.sql` — profil soruları kaldırıldı.
+     **Bu uygulanmadan profil kaydı hiç çalışmaz**: eski fonksiyon üç soruyu
+     zorunlu tutuyor, uygulama artık göndermiyor.
 6. **Apple sağlayıcısı** — Supabase'de şu an **kapalı**. Uygulamada Apple
    düğmesi var; açılmadan basılırsa hata veriyor. Authentication → Providers →
    Apple → aç, Authorized Client IDs'e `com.campus.social`. App Store için de
