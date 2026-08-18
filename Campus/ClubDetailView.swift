@@ -55,7 +55,7 @@ struct ClubDetailView: View {
                         }
                         .padding(16)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.white, in: RoundedRectangle(cornerRadius: 16))
+                        .background(CampusTheme.surface, in: RoundedRectangle(cornerRadius: 16))
                     }
 
                     VStack(alignment: .leading, spacing: 12) {
@@ -94,7 +94,7 @@ struct ClubDetailView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(15)
-        .background(.white, in: RoundedRectangle(cornerRadius: 16))
+        .background(CampusTheme.surface, in: RoundedRectangle(cornerRadius: 16))
     }
 
     private func benefit(_ text: String) -> some View {

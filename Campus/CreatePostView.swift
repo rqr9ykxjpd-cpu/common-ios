@@ -67,7 +67,8 @@ struct CreatePostView: View {
                 }
             }
         }
-        .preferredColorScheme(isStory ? .dark : .light)
+        // Story her zaman koyu zeminde; normal gönderi ekranı kullanıcının seçtiği görünümü izler.
+        .preferredColorScheme(isStory ? .dark : nil)
     }
 
     private var header: some View {
@@ -202,7 +203,7 @@ struct CreatePostView: View {
                 }
             }
             .padding(4).background(.ultraThinMaterial, in: Capsule())
-            .overlay(Capsule().stroke(.white.opacity(isStory ? 0.2 : 0.55)))
+            .overlay(Capsule().stroke(isStory ? .white.opacity(0.2) : CampusTheme.hairline))
 
             AppButton(title: isStory ? "Story'yi paylaş" : "Gönderiyi paylaş", systemName: "arrow.up", role: isStory ? .accent : .primary, enabled: canPublish) { publish() }
         }

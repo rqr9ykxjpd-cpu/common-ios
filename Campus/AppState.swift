@@ -11,9 +11,42 @@ final class AppState {
         static let profileDraft = "account.profileDraft"
         static let avatar = "account.avatar"
         static let gallery = "account.gallery"
+        static let appearance = "settings.appearance"
 
         static func account(_ key: String, userID: UUID) -> String {
             "account.\(userID.uuidString.lowercased()).\(key)"
+        }
+    }
+
+    /// Kullanıcının seçtiği görünüm. Varsayılan "sistem"; koyu mod zorunlu değil,
+    /// isteyen Profil > Görünüm'den açıyor.
+    enum Appearance: String, CaseIterable, Identifiable {
+        case system, light, dark
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .system: "Sistem"
+            case .light: "Açık"
+            case .dark: "Koyu"
+            }
+        }
+
+        var icon: String {
+            switch self {
+            case .system: "iphone"
+            case .light: "sun.max"
+            case .dark: "moon"
+            }
+        }
+
+        var colorScheme: ColorScheme? {
+            switch self {
+            case .system: nil
+            case .light: .light
+            case .dark: .dark
+            }
         }
     }
 
@@ -63,6 +96,11 @@ final class AppState {
     var isAccountActionInProgress = false
     var toast: String?
 
+    /// Seçilen görünüm. Değişince anında kaydedilir; uygulama yeniden açıldığında korunur.
+    var appearance: Appearance = .system {
+        didSet { defaults.set(appearance.rawValue, forKey: SessionKey.appearance) }
+    }
+
     let service: any ProductService
     private let defaults: UserDefaults
     private var messageListenerTask: Task<Void, Never>?
@@ -74,6 +112,7 @@ final class AppState {
         route = hasSession ? .app : .welcome
         email = defaults.string(forKey: SessionKey.email) ?? defaults.string(forKey: SessionKey.accountEmail) ?? ""
         currentUserID = defaults.string(forKey: SessionKey.userID).flatMap(UUID.init(uuidString:)) ?? UUID()
+        appearance = defaults.string(forKey: SessionKey.appearance).flatMap(Appearance.init(rawValue:)) ?? .system
         loadAccountData(migratingLegacy: true)
     }
 

@@ -247,7 +247,7 @@ private struct MessageBubble: View {
                         .padding(.horizontal, 9)
                         .padding(.vertical, 7)
                         .frame(maxWidth: 230, alignment: .leading)
-                        .background(message.isMine ? .white.opacity(0.1) : CampusTheme.ink.opacity(0.055), in: RoundedRectangle(cornerRadius: 10))
+                        .background(message.isMine ? CampusTheme.paper.opacity(0.13) : CampusTheme.ink.opacity(0.055), in: RoundedRectangle(cornerRadius: 10))
                     }
 
                     Text(message.body)

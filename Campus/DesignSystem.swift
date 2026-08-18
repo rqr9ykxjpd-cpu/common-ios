@@ -1,15 +1,35 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Brand system
 
 enum CampusTheme {
-    static let ink = Color(hex: "121210")
-    static let paper = Color(hex: "F2EFE7")
-    static let surface = Color(hex: "FBFAF7")
-    static let muted = Color(hex: "77746D")
+    /// Renk şemasına göre değişen renk. `UIColor` üzerinden tanımlandığı için çağrı
+    /// yerlerine dokunmadan tüm uygulamada koyu moda uyum sağlar.
+    private static func adaptive(light: String, dark: String) -> Color {
+        Color(UIColor { traits in
+            UIColor(Color(hex: traits.userInterfaceStyle == .dark ? dark : light))
+        })
+    }
+
+    /// Birincil ön plan (yazı). Koyu modda açık tona döner.
+    static let ink = adaptive(light: "121210", dark: "F2EFE7")
+    /// Sayfa arka planı.
+    static let paper = adaptive(light: "F2EFE7", dark: "121211")
+    /// Kart/yüzey arka planı; sayfadan bir tık ayrışır.
+    static let surface = adaptive(light: "FBFAF7", dark: "1D1D1A")
+    static let muted = adaptive(light: "77746D", dark: "9A968D")
+
+    /// Tasarımı gereği her iki modda da koyu kalan ekranların zemini (Tanış, story,
+    /// eşleşme anı, kayıt sonu). Bunlar "sinema modu" gibi tasarlandı; `ink` ile
+    /// birlikte dönselerdi beyaz zemin üzerinde beyaz yazı ortaya çıkardı.
+    static let canvasDark = Color(hex: "121210")
+
+    // Marka renkleri her iki modda da aynı kalır.
     static let acid = Color(hex: "D8FF52")
     static let coral = Color(hex: "FF745E")
     static let violet = Color(hex: "8066FF")
+
     static let line = Color.white.opacity(0.13)
     static let hairline = ink.opacity(0.1)
 

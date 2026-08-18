@@ -133,7 +133,7 @@ struct ProfileEditorView: View {
                             .clipShape(RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous))
                         Image(systemName: "camera.fill")
                             .font(.caption.bold())
-                            .foregroundStyle(.white)
+                            .foregroundStyle(CampusTheme.paper)
                             .frame(width: 30, height: 30)
                             .background(CampusTheme.ink, in: Circle())
                             .padding(7)

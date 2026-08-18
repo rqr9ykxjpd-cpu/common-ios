@@ -27,6 +27,7 @@ struct SocialProfileView: View {
                     meetingRequests
                     actions
                     posts
+                    appearanceSection
                     accountActions
                 }
                 .padding(.horizontal, CampusTheme.Space.lg)
@@ -355,6 +356,30 @@ struct SocialProfileView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) { Button("Bitti") { showSaved = false } }
+            }
+        }
+    }
+
+    /// Görünüm tercihi. Koyu mod zorunlu değil; isteyen buradan açıyor,
+    /// varsayılan cihazın kendi ayarını izliyor.
+    private var appearanceSection: some View {
+        @Bindable var state = appState
+        return VStack(alignment: .leading, spacing: CampusTheme.Space.md) {
+            AppSectionHeader(title: "Görünüm")
+            AppSurface {
+                VStack(alignment: .leading, spacing: CampusTheme.Space.md) {
+                    Picker("Görünüm", selection: $state.appearance) {
+                        ForEach(AppState.Appearance.allCases) { option in
+                            Label(option.title, systemImage: option.icon).tag(option)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    Text(appState.appearance == .system
+                         ? "Cihazının ayarını izler."
+                         : "Uygulama her zaman \(appState.appearance.title.lowercased()) görünümde açılır.")
+                        .font(.system(size: 11, design: .rounded))
+                        .foregroundStyle(CampusTheme.muted)
+                }
             }
         }
     }

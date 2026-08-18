@@ -349,7 +349,7 @@ private struct ReadyStep: View {
 
     var body: some View {
         ZStack {
-            CampusTheme.ink.ignoresSafeArea()
+            CampusTheme.canvasDark.ignoresSafeArea()
             GrainOverlay().ignoresSafeArea()
             VStack(spacing: 26) {
                 Spacer()

@@ -127,7 +127,7 @@ struct PlacePeopleView: View {
         }
         .foregroundStyle(CampusTheme.ink)
         .padding(13)
-        .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(CampusTheme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 

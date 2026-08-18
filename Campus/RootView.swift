@@ -16,15 +16,15 @@ struct RootView: View {
                         await appState.signIn(email: email, code: code)
                     }
                 )
-                .preferredColorScheme(.light)
             case .onboarding(let step):
                 OnboardingFlow(step: step)
-                    .preferredColorScheme(step == .ready ? .dark : .light)
             case .app:
                 MainTabView()
-                    .preferredColorScheme(.light)
             }
         }
+        // Görünüm artık kullanıcının seçimi. Varsayılan "Sistem"; Profil > Görünüm'den
+        // Açık/Koyu'ya sabitlenebilir.
+        .preferredColorScheme(appState.appearance.colorScheme)
         .task { await appState.restoreBackendSession() }
         .overlay(alignment: .top) {
             if let toast = appState.toast {
@@ -56,7 +56,7 @@ private struct AppToast: View {
                 .lineLimit(2)
             Spacer(minLength: 0)
         }
-        .foregroundStyle(.white)
+        .foregroundStyle(CampusTheme.paper)
         .padding(.horizontal, CampusTheme.Space.lg)
         .frame(minHeight: 48)
         .background(CampusTheme.ink, in: RoundedRectangle(cornerRadius: CampusTheme.Radius.control, style: .continuous))
@@ -296,7 +296,7 @@ private struct EditorialLoginField: View {
                 .font(.system(size: 17, weight: .semibold, design: .rounded))
                 .padding(.horizontal, 14)
                 .frame(height: 50)
-                .background(.white, in: RoundedRectangle(cornerRadius: 12))
+                .background(CampusTheme.surface, in: RoundedRectangle(cornerRadius: 12))
         }
     }
 }
@@ -310,7 +310,7 @@ private struct WelcomeSocialCanvas: View {
                         HStack { Circle().fill(CampusTheme.coral).frame(width: 34, height: 34); Text("Ece bir an paylaştı").font(.caption.bold()); Spacer(); Image(systemName: "heart") }
                         Text("Ders sonrası planı:\nkendimizi dışarı atmak.").font(.system(size: 23, weight: .medium, design: .serif))
                         HStack { Label("Hazırlık Kantini", systemImage: "mappin"); Spacer(); Text("12 dk") }.font(.caption).opacity(0.6)
-                    }.foregroundStyle(.white).padding(22)
+                    }.foregroundStyle(CampusTheme.paper).padding(22)
                 }
             VStack {
                 Spacer()
@@ -319,7 +319,7 @@ private struct WelcomeSocialCanvas: View {
                     VStack(alignment: .leading, spacing: 3) { Text("Yeni bir sohbet başladı").font(.caption.bold()); Text("“Kahve için hâlâ geç değil.”").font(.caption).opacity(0.55) }
                     Spacer()
                 }
-                .foregroundStyle(CampusTheme.ink).padding(14).background(.white, in: RoundedRectangle(cornerRadius: 18))
+                .foregroundStyle(CampusTheme.ink).padding(14).background(CampusTheme.surface, in: RoundedRectangle(cornerRadius: 18))
                 .shadow(color: .black.opacity(0.12), radius: 20, y: 10).padding(.horizontal, 18).offset(y: 18)
             }
         }

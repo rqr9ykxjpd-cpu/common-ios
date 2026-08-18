@@ -9,7 +9,7 @@ struct MatchMomentView: View {
 
     var body: some View {
         ZStack {
-            CampusTheme.ink.ignoresSafeArea()
+            CampusTheme.canvasDark.ignoresSafeArea()
             GrainOverlay().ignoresSafeArea()
             Circle().fill(CampusTheme.violet.opacity(0.5)).frame(width: 420, height: 420).blur(radius: 80).offset(y: -160)
 

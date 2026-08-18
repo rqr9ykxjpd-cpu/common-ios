@@ -314,7 +314,7 @@ struct SocialFeedView: View {
         }
         .padding(14)
         .frame(width: 210, height: 166, alignment: .topLeading)
-        .background(.white, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(CampusTheme.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(Color(hex: club.accentHex).opacity(joined ? 0.55 : 0.16), lineWidth: joined ? 1.5 : 1)
