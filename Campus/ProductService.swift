@@ -53,8 +53,8 @@ protocol ProductService: Sendable {
     /// Supabase oturumu Keychain'de kaldığı için e-postayı yalnızca oturumdan geri alabiliyoruz.
     var currentUserEmail: String? { get }
 
-    func requestOTP(email: String) async throws
-    func verifyOTP(email: String, code: String) async throws
+    func signInWithApple(idToken: String, nonce: String) async throws
+    func signInWithGoogle(idToken: String, accessToken: String) async throws
     func restoreSession() async throws -> UUID?
     func signOut() async throws
     func deleteAccount() async throws
@@ -140,8 +140,8 @@ struct UnconfiguredProductService: ProductService {
 
     private func fail() throws -> Never { throw BackendServiceError.missingConfiguration }
 
-    func requestOTP(email: String) async throws { try fail() }
-    func verifyOTP(email: String, code: String) async throws { try fail() }
+    func signInWithApple(idToken: String, nonce: String) async throws { try fail() }
+    func signInWithGoogle(idToken: String, accessToken: String) async throws { try fail() }
     func restoreSession() async throws -> UUID? { nil }
     func signOut() async throws {}
     func deleteAccount() async throws { try fail() }

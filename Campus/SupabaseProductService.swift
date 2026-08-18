@@ -69,30 +69,18 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         )
     }
 
-    func requestOTP(email: String) async throws {
-        try await client.auth.signInWithOTP(
-            email: email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    /// `nonce` burada ham (hash'lenmemiş) değer olmalı; Apple'a giderken SHA256'sı gönderilir,
+    /// Supabase ise dönen id_token'daki hash'i bu ham değerle yeniden hesaplayıp doğrular.
+    func signInWithApple(idToken: String, nonce: String) async throws {
+        try await client.auth.signInWithIdToken(
+            credentials: OpenIDConnectCredentials(provider: .apple, idToken: idToken, nonce: nonce)
         )
     }
 
-    /// Supabase, kodu hangi akışın ürettiğine göre farklı tiplerle doğruluyor: ilk kez kayıt
-    /// olan kullanıcıya "Confirm signup" e-postası gidiyor ve kod `signup` tipiyle, daha önce
-    /// kayıtlı kullanıcıya "Magic Link" gidiyor ve kod `magiclink` tipiyle doğrulanıyor.
-    /// Tek tip denemek, kullanıcının ilk kaydında geçerli kodu "geçersiz" göstermeye yol
-    /// açtığı için sırayla hepsini deniyoruz.
-    func verifyOTP(email: String, code: String) async throws {
-        let normalized = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let token = code.trimmingCharacters(in: .whitespacesAndNewlines)
-        var lastError: Error?
-        for type: EmailOTPType in [.email, .signup, .magiclink] {
-            do {
-                try await client.auth.verifyOTP(email: normalized, token: token, type: type)
-                return
-            } catch {
-                lastError = error
-            }
-        }
-        throw lastError ?? BackendServiceError.missingSession
+    func signInWithGoogle(idToken: String, accessToken: String) async throws {
+        try await client.auth.signInWithIdToken(
+            credentials: OpenIDConnectCredentials(provider: .google, idToken: idToken, accessToken: accessToken)
+        )
     }
 
     func restoreSession() async throws -> UUID? {

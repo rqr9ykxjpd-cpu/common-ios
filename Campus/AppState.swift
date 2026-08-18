@@ -57,13 +57,12 @@ final class AppState {
     }
 
     enum OnboardingStep: Int, Equatable, CaseIterable {
-        case email, code, identity, preferences, interests, photo, ready
+        case identity, preferences, interests, photo, ready
     }
 
     var route: Route
     var email: String
     private(set) var currentUserID: UUID
-    var verificationCode = ""
     var draft = ProfileDraft()
     var profiles: [StudentProfile] = []
     var discoveryFilters = DiscoveryFilters()
@@ -116,94 +115,57 @@ final class AppState {
         loadAccountData(migratingLegacy: true)
     }
 
-    func beginOnboarding() {
-        withAnimation(.smooth(duration: 0.55)) { route = .onboarding(.email) }
-    }
-
-    func requestLoginCode(email: String) async -> Bool {
-        let normalized = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard UniversityDomain.isValid(normalized) else {
-            toast = "Yalnızca üniversite e-postası kullanılabilir"
-            return false
-        }
-        do {
-            try await service.requestOTP(email: normalized)
-            self.email = normalized
-            return true
-        } catch {
-            toast = error.localizedDescription
-            return false
-        }
-    }
-
-    func verifyOnboardingCode() async -> Bool {
-        let normalized = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard verificationCode.count == 6 else {
-            toast = "Doğrulama kodunu kontrol et"
-            return false
-        }
-        do {
-            try await service.verifyOTP(email: normalized, code: verificationCode)
-            currentUserID = service.currentUserID ?? currentUserID
-            // Kayıt akışından gelen kullanıcının sunucuda profili olabilir (uygulamayı silip
-            // yeniden kurmuş olabilir). Varsa yükleyip her şeyi baştan yazdırmıyoruz.
-            if let profile = try? await service.fetchMyProfile() {
-                applyRemoteProfile(profile)
-            }
-            return true
-        } catch {
-            toast = error.localizedDescription
-            return false
-        }
-    }
-
-    /// Kimlik doğrulama başarılıysa `true` döner. Giriş ekranı sonucu bekler; aksi halde
-    /// hata durumunda ekran çoktan kapanmış oluyor ve kullanıcı yalnızca kaybolan bir
-    /// bildirim görüyordu.
+    /// Apple'ın verdiği ham (hash'lenmemiş) nonce'u geçir; `SupabaseProductService` bunu
+    /// olduğu gibi Supabase'e iletir, hash'lenmiş hali yalnızca Apple'a giden istekte kullanılır.
     @discardableResult
-    func signIn(email: String, code: String) async -> Bool {
-        let normalized = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard UniversityDomain.isValid(normalized), code.count == 6 else {
-            toast = "Giriş bilgilerini kontrol et"
-            return false
-        }
+    func signInWithApple(idToken: String, nonce: String) async -> Bool {
         do {
-            try await service.verifyOTP(email: normalized, code: code)
-            self.email = normalized
-            currentUserID = service.currentUserID ?? currentUserID
-            restoreOrCreateAccount(for: normalized)
-            verificationCode = ""
-            // Doğrulama başarılı olsa da sunucuda profil yoksa kullanıcı henüz kayıt akışını
-            // tamamlamamış demektir. Doğrudan uygulamaya alırsak keşif sebepsiz boş gelir ve
-            // nedenini anlamanın hiçbir yolu olmaz; onun yerine onboarding'e yönlendiriyoruz.
-            // `persistSession` bilinçli olarak profil kontrolünden sonra çalışıyor: daha önce
-            // OTP doğrulanır doğrulanmaz yazılıyordu ve bu adım hata verirse kullanıcı karşılama
-            // ekranında kalmasına rağmen "giriş yapılmış" işaretleniyor, sonraki açılışta
-            // doğrudan uygulamaya düşüyordu.
-            let profile = try await service.fetchMyProfile()
-            guard let profile else {
-                persistSession()
-                toast = "Profilini tamamlaman gerekiyor"
-                withAnimation(.smooth(duration: 0.55)) { route = .onboarding(.identity) }
-                return true
-            }
-            applyRemoteProfile(profile)
-            persistSession()
-            await loadMyProfilePhotos()
-            await loadNotifications()
-            await loadPlaces()
-            await loadStories()
-            await loadClubs()
-            await loadMeetingRequests()
-            await loadProfileVisits()
-            try? await service.touchLastActive()
-            startMessageListener()
-            withAnimation(.smooth(duration: 0.55)) { route = .app }
-            return true
+            try await service.signInWithApple(idToken: idToken, nonce: nonce)
+            return try await completeSocialSignIn()
         } catch {
             toast = error.localizedDescription
             return false
         }
+    }
+
+    @discardableResult
+    func signInWithGoogle(idToken: String, accessToken: String) async -> Bool {
+        do {
+            try await service.signInWithGoogle(idToken: idToken, accessToken: accessToken)
+            return try await completeSocialSignIn()
+        } catch {
+            toast = error.localizedDescription
+            return false
+        }
+    }
+
+    /// Apple/Google ikisi de aynı sonrası akışı paylaşır: yeni hesapsa onboarding'e,
+    /// profili tamamlanmışsa doğrudan uygulamaya geçer.
+    private func completeSocialSignIn() async throws -> Bool {
+        currentUserID = service.currentUserID ?? currentUserID
+        if let sessionEmail = service.currentUserEmail {
+            email = sessionEmail.lowercased()
+        }
+        restoreOrCreateAccount(for: email)
+        let profile = try await service.fetchMyProfile()
+        guard let profile else {
+            persistSession()
+            withAnimation(.smooth(duration: 0.55)) { route = .onboarding(.identity) }
+            return true
+        }
+        applyRemoteProfile(profile)
+        persistSession()
+        await loadMyProfilePhotos()
+        await loadNotifications()
+        await loadPlaces()
+        await loadStories()
+        await loadClubs()
+        await loadMeetingRequests()
+        await loadProfileVisits()
+        try? await service.touchLastActive()
+        startMessageListener()
+        withAnimation(.smooth(duration: 0.55)) { route = .app }
+        return true
     }
 
     func restoreBackendSession() async {
@@ -335,7 +297,6 @@ final class AppState {
             toast = error.localizedDescription
             return
         }
-        verificationCode = ""
         persistSession()
         // Kayıt akışıyla giren kullanıcı da anlık mesajları almalı; bunlar yalnızca `signIn` ve
         // `restoreBackendSession` içinde kuruluyordu, yeni kullanıcı uygulamayı yeniden
@@ -981,7 +942,6 @@ final class AppState {
         defaults.removeObject(forKey: SessionKey.userID)
         email = ""
         currentUserID = UUID()
-        verificationCode = ""
         draft = ProfileDraft()
         discoveryFilters = DiscoveryFilters()
         avatarData = nil

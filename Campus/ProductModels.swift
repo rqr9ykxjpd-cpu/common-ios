@@ -106,12 +106,3 @@ struct AppNotification: Identifiable, Hashable {
     }
 
 }
-
-enum UniversityDomain {
-    static let accepted = ["yalova.edu.tr"]
-
-    static func isValid(_ email: String) -> Bool {
-        guard let domain = email.lowercased().split(separator: "@").last else { return false }
-        return accepted.contains(String(domain))
-    }
-}

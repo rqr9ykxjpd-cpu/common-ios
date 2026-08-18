@@ -4,9 +4,6 @@ import PhotosUI
 struct OnboardingFlow: View {
     @Environment(AppState.self) private var appState
     let step: AppState.OnboardingStep
-    /// Async doğrulama sürerken buton aktif kalıyordu; hızlı çift dokunuş iki OTP e-postası
-    /// (hız sınırına takılır) ya da tüketilmiş token hatası üretiyordu.
-    @State private var isSubmitting = false
 
     var body: some View {
         @Bindable var appState = appState
@@ -16,8 +13,6 @@ struct OnboardingFlow: View {
                 OnboardingHeader(step: step) { appState.goBack(from: step) }
                 Group {
                     switch step {
-                    case .email: EmailStep(email: $appState.email, isSubmitting: isSubmitting) { submitEmail() }
-                    case .code: CodeStep(code: $appState.verificationCode, email: appState.email, isSubmitting: isSubmitting) { submitCode() }
                     case .identity: IdentityStep(draft: $appState.draft) { appState.advance(from: step) }
                     case .preferences: PreferencesStep(draft: $appState.draft) { appState.advance(from: step) }
                     case .interests: InterestsStep(draft: $appState.draft) { appState.advance(from: step) }
@@ -30,30 +25,6 @@ struct OnboardingFlow: View {
             }
         }
         .foregroundStyle(CampusTheme.ink)
-    }
-
-    private func submitEmail() {
-        guard !isSubmitting else { return }
-        isSubmitting = true
-        Task {
-            let sent = await appState.requestLoginCode(email: appState.email)
-            isSubmitting = false
-            guard sent else { return }
-            Haptics.impact(.light)
-            appState.advance(from: step)
-        }
-    }
-
-    private func submitCode() {
-        guard !isSubmitting else { return }
-        isSubmitting = true
-        Task {
-            let verified = await appState.verifyOnboardingCode()
-            isSubmitting = false
-            guard verified else { return }
-            Haptics.success()
-            appState.advance(from: step)
-        }
     }
 }
 
@@ -117,82 +88,6 @@ private struct StepScaffold<Content: View, Footer: View>: View {
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 20)
-    }
-}
-
-private struct EmailStep: View {
-    @Binding var email: String
-    let isSubmitting: Bool
-    let submit: () -> Void
-    @FocusState private var focused: Bool
-
-    var isValid: Bool { UniversityDomain.isValid(email) }
-
-    var body: some View {
-        StepScaffold(
-            eyebrow: "öğrenci doğrulaması",
-            title: "Önce aynı\nyerden başlayalım.",
-            subtitle: "Yalnızca üniversite uzantılı e-postaları kabul ediyoruz. Adresin profilinde görünmez.",
-            content: VStack(alignment: .leading, spacing: 12) {
-                TextField("ad.soyad@yalova.edu.tr", text: $email)
-                    .font(.system(size: 21, weight: .medium, design: .rounded))
-                    .textInputAutocapitalization(.never)
-                    .keyboardType(.emailAddress)
-                    .autocorrectionDisabled()
-                    .focused($focused)
-                    .padding(.vertical, 16)
-                    .overlay(alignment: .bottom) { Rectangle().fill(isValid ? CampusTheme.ink : CampusTheme.ink.opacity(0.2)).frame(height: 1) }
-                HStack(spacing: 7) {
-                    Image(systemName: "lock.fill")
-                    Text("E-posta yalnızca doğrulama için kullanılır")
-                }
-                .font(.system(size: 10, weight: .bold, design: .rounded))
-                .foregroundStyle(CampusTheme.ink.opacity(0.4))
-            },
-            footer: PrimaryEditorialButton(title: isSubmitting ? "GÖNDERİLİYOR…" : "KODU GÖNDER", enabled: isValid && !isSubmitting, action: submit)
-        )
-        .onAppear { focused = true }
-    }
-}
-
-private struct CodeStep: View {
-    @Binding var code: String
-    let email: String
-    let isSubmitting: Bool
-    let submit: () -> Void
-    @FocusState private var focused: Bool
-
-    var body: some View {
-        StepScaffold(
-            eyebrow: "gelen kutuna bak",
-            title: "Altı rakam,\ntek küçük adım.",
-            subtitle: "\(email) adresine gönderdiğimiz altı haneli kodu gir.",
-            content: ZStack {
-                TextField("", text: $code)
-                    .keyboardType(.numberPad)
-                    .focused($focused)
-                    .opacity(0.01)
-                HStack(spacing: 8) {
-                    ForEach(0..<6, id: \.self) { index in
-                        Text(character(at: index))
-                            .font(.system(size: 24, weight: .medium, design: .monospaced))
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 62)
-                            .background(index < code.count ? CampusTheme.acid : CampusTheme.ink.opacity(0.05))
-                            .overlay(Rectangle().stroke(CampusTheme.ink.opacity(index == code.count ? 0.7 : 0.1)))
-                    }
-                }
-                .onTapGesture { focused = true }
-            },
-            footer: PrimaryEditorialButton(title: isSubmitting ? "DOĞRULANIYOR…" : "DOĞRULA", enabled: code.count == 6 && !isSubmitting, action: submit)
-        )
-        .onChange(of: code) { _, newValue in code = String(newValue.filter(\.isNumber).prefix(6)) }
-        .onAppear { focused = true }
-    }
-
-    private func character(at index: Int) -> String {
-        guard index < code.count else { return "" }
-        return String(code[code.index(code.startIndex, offsetBy: index)])
     }
 }
 

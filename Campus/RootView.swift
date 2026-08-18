@@ -1,4 +1,8 @@
 import SwiftUI
+import UIKit
+import AuthenticationServices
+import CryptoKit
+import GoogleSignIn
 
 struct RootView: View {
     @Environment(AppState.self) private var appState
@@ -18,15 +22,7 @@ struct RootView: View {
         Group {
             switch appState.route {
             case .welcome:
-                WelcomeView(
-                    onContinue: { appState.beginOnboarding() },
-                    onRequestCode: { email in
-                        await appState.requestLoginCode(email: email)
-                    },
-                    onLogin: { email, code in
-                        await appState.signIn(email: email, code: code)
-                    }
-                )
+                WelcomeView()
             case .onboarding(let step):
                 OnboardingFlow(step: step)
             case .app:
@@ -75,13 +71,11 @@ private struct AppToast: View {
 }
 
 struct WelcomeView: View {
-    let onContinue: () -> Void
-    var onRequestCode: (String) async -> Bool = { _ in false }
-    var onLogin: (String, String) async -> Bool = { _, _ in false }
+    @Environment(AppState.self) private var appState
     @State private var appeared = false
     @State private var float = false
-    @State private var loginGlow = false
-    @State private var showLogin = false
+    @State private var currentAppleNonce: String?
+    @State private var isSigningIn = false
 
     var body: some View {
         GeometryReader { proxy in
@@ -93,28 +87,7 @@ struct WelcomeView: View {
                     .offset(x: -150, y: float ? 160 : 200)
 
                 VStack(alignment: .leading, spacing: 0) {
-                    HStack {
-                        Wordmark().foregroundStyle(CampusTheme.ink)
-                        Spacer()
-                        Button { showLogin = true } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: "sparkles")
-                                    .symbolEffect(.pulse, options: .repeating)
-                                Text("GİRİŞ")
-                                    .font(.system(size: 9, weight: .black, design: .rounded))
-                                    .tracking(1.1)
-                            }
-                            .foregroundStyle(CampusTheme.ink)
-                            .padding(.horizontal, 14)
-                            .frame(height: 44)
-                            .background(CampusTheme.acid.opacity(loginGlow ? 1 : 0.68), in: Capsule())
-                            .overlay(Capsule().stroke(.white.opacity(0.8), lineWidth: 1))
-                            .shadow(color: CampusTheme.acid.opacity(loginGlow ? 0.75 : 0.2), radius: loginGlow ? 14 : 4)
-                            .scaleEffect(loginGlow ? 1.035 : 1)
-                        }
-                        .buttonStyle(PressableStyle())
-                    }
-                    .frame(height: 48)
+                    Wordmark().foregroundStyle(CampusTheme.ink).frame(height: 48)
 
                     Spacer(minLength: 20)
 
@@ -133,19 +106,36 @@ struct WelcomeView: View {
 
                     Spacer(minLength: 18)
 
-                    Button {
-                        Haptics.impact(.light)
-                        onContinue()
-                    } label: {
-                        HStack {
-                            Text("COMMON'A KATIL").font(.system(size: 11, weight: .black, design: .rounded)).tracking(1.2)
-                            Spacer()
-                            Image(systemName: "arrow.right").font(.system(size: 14, weight: .semibold))
+                    VStack(spacing: 12) {
+                        SignInWithAppleButton(.continue) { request in
+                            let nonce = Self.randomNonceString()
+                            currentAppleNonce = nonce
+                            request.requestedScopes = [.email, .fullName]
+                            request.nonce = Self.sha256(nonce)
+                        } onCompletion: { result in
+                            handleAppleCompletion(result)
                         }
-                        .foregroundStyle(CampusTheme.paper).padding(.horizontal, 20).frame(height: 58)
-                        .background(CampusTheme.ink).clipShape(RoundedRectangle(cornerRadius: 17, style: .continuous))
+                        .signInWithAppleButtonStyle(.black)
+                        .frame(height: 56)
+                        .clipShape(RoundedRectangle(cornerRadius: 17, style: .continuous))
+                        .disabled(isSigningIn)
+
+                        Button {
+                            Haptics.impact(.light)
+                            signInWithGoogle()
+                        } label: {
+                            HStack {
+                                Image(systemName: "g.circle.fill").font(.system(size: 18))
+                                Text("GOOGLE İLE DEVAM ET").font(.system(size: 11, weight: .black, design: .rounded)).tracking(1.2)
+                                Spacer()
+                            }
+                            .foregroundStyle(CampusTheme.ink).padding(.horizontal, 20).frame(height: 56)
+                            .background(CampusTheme.surface).clipShape(RoundedRectangle(cornerRadius: 17, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 17, style: .continuous).stroke(CampusTheme.ink.opacity(0.12)))
+                        }
+                        .buttonStyle(PressableStyle())
+                        .disabled(isSigningIn)
                     }
-                    .buttonStyle(PressableStyle())
                 }
                 .frame(width: proxy.size.width - 44, height: proxy.size.height, alignment: .top)
                 .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
@@ -156,158 +146,81 @@ struct WelcomeView: View {
         .onAppear {
             withAnimation(.easeOut(duration: 0.55)) { appeared = true }
             withAnimation(.easeInOut(duration: 4).repeatForever(autoreverses: true)) { float = true }
-            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) { loginGlow = true }
-        }
-        .sheet(isPresented: $showLogin) {
-            LoginView(
-                requestCode: onRequestCode,
-                login: { email, code in
-                    let success = await onLogin(email, code)
-                    if success { showLogin = false }
-                    return success
-                }
-            )
-            .presentationDetents([.medium])
-            .presentationDragIndicator(.visible)
         }
     }
-}
 
-private struct LoginView: View {
-    @Environment(\.dismiss) private var dismiss
-    let requestCode: (String) async -> Bool
-    let login: (String, String) async -> Bool
-    @State private var email = ""
-    @State private var code = ""
-    @State private var codeRequested = false
-    @State private var isRequestingCode = false
-    @State private var isLoggingIn = false
-    @State private var resendCooldown = 0
-
-    private func startResendCooldown() { resendCooldown = 30 }
-
-    private var usernameIsValid: Bool {
-        let normalized = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        return UniversityDomain.isValid(normalized)
-    }
-    private var isValid: Bool {
-        codeRequested && usernameIsValid && code.count == 6
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            HStack {
-                VStack(alignment: .leading, spacing: 5) {
-                    Eyebrow(text: "tekrar hoş geldin", color: CampusTheme.ink.opacity(0.45))
-                    Text("Giriş yap").editorialTitle(38)
-                }
-                Spacer()
-                Button { dismiss() } label: {
-                    Image(systemName: "xmark").frame(width: 44, height: 44)
-                        .background(CampusTheme.ink.opacity(0.07), in: Circle())
-                }
-                .accessibilityLabel("Kapat")
+    private func handleAppleCompletion(_ result: Result<ASAuthorization, Error>) {
+        switch result {
+        case .success(let authorization):
+            guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+                  let tokenData = credential.identityToken,
+                  let idToken = String(data: tokenData, encoding: .utf8),
+                  let nonce = currentAppleNonce else {
+                appState.toast = "Apple ile giriş başarısız"
+                return
             }
-
-            VStack(spacing: 14) {
-                EditorialLoginField(title: "ÜNİVERSİTE E-POSTASI", text: $email, keyboard: .emailAddress)
-                    .disabled(codeRequested)
-                if codeRequested {
-                    EditorialLoginField(title: "GİRİŞ KODU", text: $code, keyboard: .numberPad)
-                        .onChange(of: code) { _, newValue in
-                            code = String(newValue.filter(\.isNumber).prefix(6))
-                        }
-                }
+            isSigningIn = true
+            Task {
+                await appState.signInWithApple(idToken: idToken, nonce: nonce)
+                isSigningIn = false
             }
+        case .failure(let error):
+            // Kullanıcı iptal ettiğinde de bu dal çalışır; ASAuthorizationError.canceled
+            // için sessizce geç, gerçek hatalarda toast göster.
+            let nsError = error as NSError
+            guard nsError.code != ASAuthorizationError.canceled.rawValue else { return }
+            appState.toast = error.localizedDescription
+        }
+    }
 
-            Text(codeRequested
-                 ? "E-postana gelen altı haneli kodu gir."
-                 : "Üniversite e-postana tek kullanımlık kod göndereceğiz.")
-                .font(.caption).foregroundStyle(CampusTheme.ink.opacity(0.48))
-
-            if codeRequested {
-                PrimaryEditorialButton(title: isLoggingIn ? "GİRİŞ YAPILIYOR…" : "GİRİŞ YAP", enabled: isValid && !isLoggingIn) {
-                    guard !isLoggingIn else { return }
-                    isLoggingIn = true
-                    Task {
-                        let success = await login(email, code)
-                        await MainActor.run { if !success { isLoggingIn = false } }
-                    }
+    private func signInWithGoogle() {
+        guard let rootViewController = UIApplication.shared.connectedScenes
+            .compactMap({ ($0 as? UIWindowScene)?.keyWindow })
+            .first?.rootViewController else { return }
+        isSigningIn = true
+        Task {
+            defer { isSigningIn = false }
+            do {
+                let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController)
+                guard let idToken = result.user.idToken?.tokenString else {
+                    appState.toast = "Google ile giriş başarısız"
+                    return
                 }
-                // Kod istendikten sonra e-posta alanı kilitleniyor. Kod gelmezse ya da adres
-                // yanlış yazıldıysa bu iki çıkış olmadan kullanıcının tek seçeneği ekranı
-                // kapatmak oluyordu.
-                HStack(spacing: 18) {
-                    Button(resendCooldown > 0 ? "Tekrar gönder (\(resendCooldown))" : "Kodu tekrar gönder") {
-                        guard resendCooldown == 0, !isRequestingCode else { return }
-                        isRequestingCode = true
-                        Task {
-                            let sent = await requestCode(email)
-                            await MainActor.run {
-                                isRequestingCode = false
-                                if sent { startResendCooldown() }
-                            }
-                        }
-                    }
-                    .disabled(resendCooldown > 0 || isRequestingCode)
-                    .foregroundStyle(resendCooldown > 0 || isRequestingCode ? CampusTheme.ink.opacity(0.32) : CampusTheme.violet)
+                await appState.signInWithGoogle(idToken: idToken, accessToken: result.user.accessToken.tokenString)
+            } catch {
+                let nsError = error as NSError
+                guard nsError.code != GIDSignInError.canceled.rawValue else { return }
+                appState.toast = error.localizedDescription
+            }
+        }
+    }
 
-                    Button("E-postayı değiştir") {
-                        codeRequested = false
-                        code = ""
-                        resendCooldown = 0
-                    }
-                    .foregroundStyle(CampusTheme.violet)
-
-                    Spacer()
-                }
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
-            } else {
-                PrimaryEditorialButton(title: isRequestingCode ? "GÖNDERİLİYOR…" : "KODU GÖNDER", enabled: usernameIsValid && !isRequestingCode) {
-                    guard !isRequestingCode else { return }
-                    isRequestingCode = true
-                    Task {
-                        let sent = await requestCode(email)
-                        await MainActor.run {
-                            isRequestingCode = false
-                            if sent {
-                                codeRequested = true
-                                startResendCooldown()
-                            }
-                        }
-                    }
+    /// Apple'ın kendi örnek koduyla birebir aynı: kriptografik olarak güvenli, URL-safe
+    /// karakter kümesinden rastgele bir dize üretir. Bu ham değer nonce olarak Supabase'e
+    /// gider; Apple'a giden istekte yalnızca SHA256 hash'i kullanılır.
+    private static func randomNonceString(length: Int = 32) -> String {
+        precondition(length > 0)
+        let charset: [Character] = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
+        var result = ""
+        var remainingLength = length
+        while remainingLength > 0 {
+            var randoms = [UInt8](repeating: 0, count: 16)
+            let status = SecRandomCopyBytes(kSecRandomDefault, randoms.count, &randoms)
+            precondition(status == errSecSuccess)
+            for random in randoms {
+                if remainingLength == 0 { break }
+                if random < charset.count {
+                    result.append(charset[Int(random)])
+                    remainingLength -= 1
                 }
             }
         }
-        .task(id: resendCooldown) {
-            guard resendCooldown > 0 else { return }
-            try? await Task.sleep(for: .seconds(1))
-            guard !Task.isCancelled else { return }
-            resendCooldown -= 1
-        }
-        .foregroundStyle(CampusTheme.ink)
-        .padding(24)
-        .background(CampusTheme.paper.ignoresSafeArea())
+        return result
     }
-}
 
-private struct EditorialLoginField: View {
-    let title: String
-    @Binding var text: String
-    let keyboard: UIKeyboardType
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            Eyebrow(text: title, color: CampusTheme.ink.opacity(0.4))
-            TextField("", text: $text)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .keyboardType(keyboard)
-                .font(.system(size: 17, weight: .semibold, design: .rounded))
-                .padding(.horizontal, 14)
-                .frame(height: 50)
-                .background(CampusTheme.surface, in: RoundedRectangle(cornerRadius: 12))
-        }
+    private static func sha256(_ input: String) -> String {
+        let hashed = SHA256.hash(data: Data(input.utf8))
+        return hashed.compactMap { String(format: "%02x", $0) }.joined()
     }
 }
 

@@ -6,12 +6,13 @@ import SwiftUI
 }
 
 #Preview("Karşılama") {
-    WelcomeView(onContinue: {})
+    WelcomeView()
+        .environment(AppState())
         .preferredColorScheme(.light)
 }
 
-#Preview("Onboarding — E-posta") {
-    OnboardingFlow(step: .email)
+#Preview("Onboarding — Kimlik") {
+    OnboardingFlow(step: .identity)
         .environment(AppState())
         .preferredColorScheme(.light)
 }

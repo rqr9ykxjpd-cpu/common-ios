@@ -46,7 +46,8 @@ zaman damgasına göre.
 ## 3. Durum
 
 ### Çalışan (backend'e bağlı)
-Kimlik doğrulama (OTP), profil kaydetme/geri yükleme, profil fotoğrafı ve galeri
+Kimlik doğrulama (Apple + Google, native `id_token` değişimi — e-posta/OTP kaldırıldı,
+bkz. "Bekleyen kurulum adımları"), profil kaydetme/geri yükleme, profil fotoğrafı ve galeri
 (Storage + imzalı URL), keşif ve eşleşme, gerçek zamanlı mesajlaşma, mesaj
 reaksiyonları, gönderi/yorum/beğeni, gönderi kaydetme, engelleme ve şikayet,
 bildirimler, story'ler, buluşma istekleri, kulüpler, kampüs yerleri,
@@ -77,27 +78,33 @@ her işlem "Supabase yapılandırması eksik" hatası verir (`UnconfiguredProduc
   Çökmez ama liste sebepsiz boş görünür; kullanıcıya mesaj gösterilmiyor.
 - **Test yok** — test target'ı bulunmuyor. `ProductService` protokolü zaten
   enjekte edilebilir olduğu için `AppState` testleri düşük maliyetle yazılabilir.
-- **Tek üniversiteye sabitlenmiş** — `UniversityDomain.accepted` ve
-  `profiles.university_domain` varsayılanı `yalova.edu.tr`. Yeni kampüs eklemek
-  hem kod hem migration değişikliği gerektiriyor.
+- **Üniversite doğrulaması yok** — `save_my_profile` artık hesabın e-posta
+  domain'ini kontrol etmiyor (`20260818220000_remove_domain_verification.sql`).
+  Apple/Google hesap e-postaları .edu.tr olmak zorunda değil; bu bilinçli bir
+  ürün kararı, geri getirmek istenirse RPC'ye tekrar bir domain kontrolü eklenir.
 
 ### Bekleyen kurulum adımları (kod değil, panel işi)
 
 Bunlar tamamlanmadan uygulamaya **hiç giriş yapılamaz**.
 
-1. **Custom SMTP** — Supabase, e-posta şablonu kaynağını düzenlemeyi buna
-   şart koşuyor. Ayrıca yerleşik servis saatte birkaç maille sınırlı.
-2. **E-posta şablonları** — `Confirm signup` ve `Magic Link` şablonları
-   varsayılan olarak **link** gönderiyor, uygulama ise **kod** bekliyor.
-   İkisine de `{{ .Token }}` eklenmeli. Bu yapılmadan giriş çalışmaz.
-3. **Uygulanmamış 3 migration** — sunucuda henüz yok:
-   - `20260818160000_saved_posts.sql` → Kaydedilenler
-   - `20260818180000_profile_visits.sql` → Profil ziyaretleri
-   - `20260818200000_unmatch.sql` → Eşleşmeyi bitir
-
-   Bu üçü olmadan ilgili ekranlar hata verir. SQL Editor'de sırayla çalıştırın;
-   hepsi idempotent. (Kopyalarken 4. tuzağa dikkat: panoyu kullanmayın.)
-4. **İlk gerçek giriş** — bugüne kadar hiçbir akış canlı sunucuya karşı uçtan
+1. **Apple Developer** — Xcode → Signing & Capabilities'te takımı seç; proje
+   zaten `Campus/Campus.entitlements` ile "Sign in with Apple" iste­ğinde
+   bulunuyor, otomatik imzalama App ID'yi buna göre günceller.
+2. **Google Cloud Console** — bir "iOS" ve bir "Web application" türünde OAuth
+   client ID oluştur (Bundle ID: `com.campus.social`). Üçünü de
+   `Campus/Configuration.local.xcconfig`'e yaz: `GOOGLE_CLIENT_ID` (iOS),
+   `GOOGLE_SERVER_CLIENT_ID` (Web — Supabase'in Google provider'ındaki Client ID
+   ile AYNI olmalı), `GOOGLE_REVERSED_CLIENT_ID` (iOS client ID'nin ters çevrilmiş
+   hali).
+3. **Supabase Auth providers** — Dashboard → Authentication → Providers →
+   Apple'ı aç (Authorized Client IDs'e `com.campus.social` ekle) ve Google'ı aç
+   (Client ID = yukarıdaki Web client ID).
+4. **GoogleSignIn-iOS paketi** — `project.pbxproj`'a elle eklendi
+   (`XCRemoteSwiftPackageReference "GoogleSignIn-iOS"`); ilk açılışta Xcode
+   paketi otomatik çeker, elle eklemeye gerek yok.
+5. **`20260818220000_remove_domain_verification.sql`** — sunucuda henüz
+   uygulanmamışsa SQL Editor'de çalıştırın; idempotent.
+6. **İlk gerçek giriş** — bugüne kadar hiçbir akış canlı sunucuya karşı uçtan
    uca çalıştırılmadı. Kayıt → fotoğraf → eşleşme → mesaj yolu ilk kez burada
    denenecek.
 
