@@ -136,6 +136,28 @@ struct WelcomeView: View {
                         .buttonStyle(PressableStyle())
                         .disabled(isSigningIn)
                     }
+
+#if DEBUG
+                    // Sunucu olmadan uygulamayı gezmek için. Yalnızca geliştirme
+                    // derlemesinde var; App Store'a giden derlemede bu blok yok.
+                    Button {
+                        Haptics.impact(.light)
+                        NotificationCenter.default.post(name: .campusUseSampleData, object: nil)
+                    } label: {
+                        HStack(spacing: 7) {
+                            Image(systemName: "hammer.fill").font(.system(size: 11, weight: .semibold))
+                            Text("ÖRNEK VERİYLE GEZ").font(.system(size: 10, weight: .black, design: .rounded)).tracking(1)
+                        }
+                        .foregroundStyle(CampusTheme.ink.opacity(0.55))
+                        .frame(maxWidth: .infinity).frame(height: 42)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(CampusTheme.ink.opacity(0.18), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                        )
+                    }
+                    .buttonStyle(PressableStyle())
+                    .padding(.top, 8)
+#endif
                 }
                 .frame(width: proxy.size.width - 44, height: proxy.size.height, alignment: .top)
                 .position(x: proxy.size.width / 2, y: proxy.size.height / 2)

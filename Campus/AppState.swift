@@ -383,6 +383,12 @@ final class AppState {
     }
 
     func loadFeed() async {
+        // Gönderinin yeri, sunucudan gelen yer *adı* `places` listesiyle eşleştirilerek
+        // çözülüyor ve dönüşüm anında sabitleniyor. Akış ekranı açılışta `loadFeed`'i
+        // kendi başına çağırdığı için bu, yerleri yükleyen `restoreBackendSession` ile
+        // yarışıyordu: akış önce biterse bütün gönderiler konum etiketini kaybediyor ve
+        // kullanıcı akışı elle yenileyene kadar geri gelmiyordu.
+        if places.isEmpty { await loadPlaces() }
         do {
             posts = try await service.fetchFeed().map(socialPost(from:))
         } catch {
