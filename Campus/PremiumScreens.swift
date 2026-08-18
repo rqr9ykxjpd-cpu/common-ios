@@ -393,7 +393,9 @@ struct ProfileDetailSheet: View {
                     Label(reason, systemImage: "sparkles")
                 }
                 Label(profile.relationshipIntent.title, systemImage: "heart.text.square")
-                Label(profile.activeLabel, systemImage: "clock")
+                if !profile.activeLabel.isEmpty {
+                    Label(profile.activeLabel, systemImage: "clock")
+                }
             }
             .font(.system(size: 14, weight: .medium, design: .rounded))
         }

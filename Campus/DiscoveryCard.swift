@@ -75,13 +75,17 @@ struct DiscoveryCard: View {
                             Spacer()
                         }
                         HStack(spacing: 8) {
-                            HStack(spacing: 5) {
-                                Circle()
-                                    .fill(profile.activeLabel.hasPrefix("Yakın") ? Color.green : .white.opacity(0.5))
-                                    .frame(width: 7, height: 7)
-                                Text(profile.activeLabel)
-                                    .font(.system(size: 10, weight: .bold, design: .rounded))
-                                    .foregroundStyle(.white.opacity(0.82))
+                            // Sunucu, bir aydan uzun süredir girmemiş kişilerde etiketi boş
+                            // döndürüyor; boş bir nokta ve boşluk göstermek yerine gizliyoruz.
+                            if !profile.activeLabel.isEmpty {
+                                HStack(spacing: 5) {
+                                    Circle()
+                                        .fill(profile.activeLabel.hasPrefix("Yakın") ? Color.green : .white.opacity(0.5))
+                                        .frame(width: 7, height: 7)
+                                    Text(profile.activeLabel)
+                                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                                        .foregroundStyle(.white.opacity(0.82))
+                                }
                             }
                             Text(profile.relationshipIntent.title)
                                 .font(.system(size: 10, weight: .bold, design: .rounded))
