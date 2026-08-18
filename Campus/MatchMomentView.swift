@@ -4,7 +4,7 @@ struct MatchMomentView: View {
     @Environment(AppState.self) private var appState
     let profile: StudentProfile
     let close: () -> Void
-    let message: () -> Void
+    let message: (String?) -> Void
     @State private var appeared = false
 
     var body: some View {
@@ -26,7 +26,7 @@ struct MatchMomentView: View {
                 Spacer()
                 ZStack {
                     portrait(profile, x: 58, rotation: 8)
-                    ProfileMedia(url: nil, data: appState.avatarData)
+                    ProfileMedia(url: appState.avatarURL, data: appState.avatarData)
                         .frame(width: 180, height: 250)
                         .clipped()
                         .rotationEffect(.degrees(-8))
@@ -45,13 +45,27 @@ struct MatchMomentView: View {
                     .font(.system(size: 14, design: .rounded)).foregroundStyle(.white.opacity(0.5)).multilineTextAlignment(.center).lineSpacing(4).padding(.top, 15)
                 Spacer()
                 VStack(spacing: 10) {
-                    PrimaryEditorialButton(title: "MESAJ GÖNDER", enabled: true, inverted: true, action: message)
+                    ForEach(conversationStarters, id: \.self) { starter in
+                        Button(starter) { message(starter) }
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                            .frame(maxWidth: .infinity, minHeight: 42)
+                            .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+                    }
+                    PrimaryEditorialButton(title: "KENDİ MESAJINI YAZ", enabled: true, inverted: true) { message(nil) }
                     Button("SEÇKİYE DÖN", action: close)
                         .font(.system(size: 10, weight: .bold, design: .rounded)).tracking(1.2).foregroundStyle(.white.opacity(0.5)).frame(height: 44)
                 }.padding(24)
             }
         }
         .onAppear { Haptics.success(); withAnimation(.spring(response: 0.65, dampingFraction: 0.65)) { appeared = true } }
+    }
+
+    private var conversationStarters: [String] {
+        let promptStarters = profile.prompts.prefix(2).map { "\($0.answer) — bunu biraz daha anlatsana?" }
+        if !promptStarters.isEmpty { return promptStarters }
+        return profile.interests.prefix(2).map { "\($0) ortak ilgimiz; kampüste favorin neresi?" }
     }
 
     private func portrait(_ profile: StudentProfile, x: CGFloat, rotation: Double) -> some View {

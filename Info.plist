@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  Backend yapılandırması. Değerler Campus/Configuration.xcconfig (ve git'e girmeyen
+	  Configuration.local.xcconfig) dosyalarından gelir.
+
+	  Bu dosya, Xcode'un ürettiği Info.plist'e ek olarak değil onun tabanı olarak kullanılır;
+	  GENERATE_INFOPLIST_FILE açık kaldığı için ikon, görünen ad, yönlendirme gibi üretilen
+	  anahtarlar buraya birleştirilir. Özel anahtarların INFOPLIST_KEY_* ile eklenememesinin
+	  sebebi, o mekanizmanın yalnızca Apple'ın tanıdığı anahtarları desteklemesi.
+	-->
+	<key>SUPABASE_URL</key>
+	<string>$(SUPABASE_URL)</string>
+	<key>SUPABASE_PUBLISHABLE_KEY</key>
+	<string>$(SUPABASE_PUBLISHABLE_KEY)</string>
+</dict>
+</plist>

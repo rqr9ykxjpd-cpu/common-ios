@@ -9,11 +9,12 @@ struct RootView: View {
             case .welcome:
                 WelcomeView(
                     onContinue: { appState.beginOnboarding() },
+                    isDemo: appState.service.isDemo,
                     onRequestCode: { email in
-                        Task { try? await appState.service.requestOTP(email: email) }
+                        await appState.requestLoginCode(email: email)
                     },
                     onLogin: { email, code in
-                        Task { await appState.signIn(email: email, code: code) }
+                        await appState.signIn(email: email, code: code)
                     }
                 )
                 .preferredColorScheme(.light)
@@ -25,6 +26,7 @@ struct RootView: View {
                     .preferredColorScheme(.light)
             }
         }
+        .task { await appState.restoreBackendSession() }
         .overlay(alignment: .top) {
             if let toast = appState.toast {
                 AppToast(message: toast)
@@ -66,8 +68,9 @@ private struct AppToast: View {
 
 struct WelcomeView: View {
     let onContinue: () -> Void
-    var onRequestCode: (String) -> Void = { _ in }
-    var onLogin: (String, String) -> Void = { _, _ in }
+    var isDemo = true
+    var onRequestCode: (String) async -> Bool = { _ in false }
+    var onLogin: (String, String) async -> Bool = { _, _ in false }
     @State private var appeared = false
     @State private var float = false
     @State private var loginGlow = false
@@ -150,10 +153,12 @@ struct WelcomeView: View {
         }
         .sheet(isPresented: $showLogin) {
             LoginView(
+                isDemo: isDemo,
                 requestCode: onRequestCode,
                 login: { email, code in
-                    showLogin = false
-                    onLogin(email, code)
+                    let success = await onLogin(email, code)
+                    if success { showLogin = false }
+                    return success
                 }
             )
             .presentationDetents([.medium])
@@ -164,17 +169,24 @@ struct WelcomeView: View {
 
 private struct LoginView: View {
     @Environment(\.dismiss) private var dismiss
-    let requestCode: (String) -> Void
-    let login: (String, String) -> Void
+    let isDemo: Bool
+    let requestCode: (String) async -> Bool
+    let login: (String, String) async -> Bool
     @State private var email = ""
     @State private var code = ""
     @State private var codeRequested = false
+    @State private var isRequestingCode = false
+    @State private var isLoggingIn = false
+    @State private var resendCooldown = 0
+
+    private func startResendCooldown() { resendCooldown = 30 }
 
     private var usernameIsValid: Bool {
-        email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "cem"
+        let normalized = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return isDemo ? normalized == "cem" : UniversityDomain.isValid(normalized)
     }
     private var isValid: Bool {
-        codeRequested && usernameIsValid && code == "1283"
+        codeRequested && usernameIsValid && (isDemo ? code == "1283" : code.count == 6)
     }
 
     var body: some View {
@@ -192,31 +204,80 @@ private struct LoginView: View {
             }
 
             VStack(spacing: 14) {
-                EditorialLoginField(title: "KULLANICI ADI", text: $email, keyboard: .default)
+                EditorialLoginField(title: isDemo ? "KULLANICI ADI" : "ÜNİVERSİTE E-POSTASI", text: $email, keyboard: isDemo ? .default : .emailAddress)
                     .disabled(codeRequested)
                 if codeRequested {
                     EditorialLoginField(title: "GİRİŞ KODU", text: $code, keyboard: .numberPad)
                         .onChange(of: code) { _, newValue in
-                            code = String(newValue.filter(\.isNumber).prefix(4))
+                            code = String(newValue.filter(\.isNumber).prefix(isDemo ? 4 : 6))
                         }
                 }
             }
 
             Text(codeRequested
-                 ? "Dört haneli giriş kodunu gir."
-                 : "Kullanıcı adını yazarak giriş kodu adımına geç.")
+                 ? (isDemo ? "Dört haneli demo kodunu gir." : "E-postana gelen altı haneli kodu gir.")
+                 : (isDemo ? "Kullanıcı adını yazarak giriş kodu adımına geç." : "Üniversite e-postana tek kullanımlık kod göndereceğiz."))
                 .font(.caption).foregroundStyle(CampusTheme.ink.opacity(0.48))
 
             if codeRequested {
-                PrimaryEditorialButton(title: "GİRİŞ YAP", enabled: isValid) {
-                    login(email, code)
+                PrimaryEditorialButton(title: isLoggingIn ? "GİRİŞ YAPILIYOR…" : "GİRİŞ YAP", enabled: isValid && !isLoggingIn) {
+                    guard !isLoggingIn else { return }
+                    isLoggingIn = true
+                    Task {
+                        let success = await login(email, code)
+                        await MainActor.run { if !success { isLoggingIn = false } }
+                    }
                 }
+                // Kod istendikten sonra e-posta alanı kilitleniyor. Kod gelmezse ya da adres
+                // yanlış yazıldıysa bu iki çıkış olmadan kullanıcının tek seçeneği ekranı
+                // kapatmak oluyordu.
+                HStack(spacing: 18) {
+                    Button(resendCooldown > 0 ? "Tekrar gönder (\(resendCooldown))" : "Kodu tekrar gönder") {
+                        guard resendCooldown == 0, !isRequestingCode else { return }
+                        isRequestingCode = true
+                        Task {
+                            let sent = await requestCode(email)
+                            await MainActor.run {
+                                isRequestingCode = false
+                                if sent { startResendCooldown() }
+                            }
+                        }
+                    }
+                    .disabled(resendCooldown > 0 || isRequestingCode)
+                    .foregroundStyle(resendCooldown > 0 || isRequestingCode ? CampusTheme.ink.opacity(0.32) : CampusTheme.violet)
+
+                    Button(isDemo ? "Kullanıcı adını değiştir" : "E-postayı değiştir") {
+                        codeRequested = false
+                        code = ""
+                        resendCooldown = 0
+                    }
+                    .foregroundStyle(CampusTheme.violet)
+
+                    Spacer()
+                }
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
             } else {
-                PrimaryEditorialButton(title: "KODU GÖNDER", enabled: usernameIsValid) {
-                    requestCode(email)
-                    codeRequested = true
+                PrimaryEditorialButton(title: isRequestingCode ? "GÖNDERİLİYOR…" : "KODU GÖNDER", enabled: usernameIsValid && !isRequestingCode) {
+                    guard !isRequestingCode else { return }
+                    isRequestingCode = true
+                    Task {
+                        let sent = await requestCode(email)
+                        await MainActor.run {
+                            isRequestingCode = false
+                            if sent {
+                                codeRequested = true
+                                startResendCooldown()
+                            }
+                        }
+                    }
                 }
             }
+        }
+        .task(id: resendCooldown) {
+            guard resendCooldown > 0 else { return }
+            try? await Task.sleep(for: .seconds(1))
+            guard !Task.isCancelled else { return }
+            resendCooldown -= 1
         }
         .foregroundStyle(CampusTheme.ink)
         .padding(24)

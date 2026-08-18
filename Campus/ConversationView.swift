@@ -82,8 +82,17 @@ struct ConversationView: View {
             .accessibilityLabel("\(conversation.profile.name) profilini aç")
             Spacer()
             Menu {
-                Button("Şikâyet et", role: .destructive) { appState.toast = "Şikâyet alındı" }
-                Button("Engelle", role: .destructive) { appState.toast = "Kullanıcı engellendi" }
+                Menu {
+                    ForEach(ReportReason.allCases) { reason in
+                        Button(reason.title) { appState.report(conversation.profile, reason: reason) }
+                    }
+                } label: {
+                    Label("Şikâyet et", systemImage: "flag")
+                }
+                Button("Engelle", role: .destructive) {
+                    appState.block(conversation.profile)
+                    dismiss()
+                }
             } label: {
                 Image(systemName: "ellipsis")
                     .font(.system(size: 17, weight: .semibold)).frame(width: 44, height: 44)

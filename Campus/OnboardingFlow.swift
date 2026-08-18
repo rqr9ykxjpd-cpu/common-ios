@@ -3,6 +3,9 @@ import SwiftUI
 struct OnboardingFlow: View {
     @Environment(AppState.self) private var appState
     let step: AppState.OnboardingStep
+    /// Async doğrulama sürerken buton aktif kalıyordu; hızlı çift dokunuş iki OTP e-postası
+    /// (hız sınırına takılır) ya da tüketilmiş token hatası üretiyordu.
+    @State private var isSubmitting = false
 
     var body: some View {
         @Bindable var appState = appState
@@ -12,12 +15,12 @@ struct OnboardingFlow: View {
                 OnboardingHeader(step: step) { appState.goBack(from: step) }
                 Group {
                     switch step {
-                    case .email: EmailStep(email: $appState.email) { submitEmail() }
-                    case .code: CodeStep(code: $appState.verificationCode, email: appState.email) { submitCode() }
+                    case .email: EmailStep(email: $appState.email, isSubmitting: isSubmitting) { submitEmail() }
+                    case .code: CodeStep(code: $appState.verificationCode, email: appState.email, isDemo: appState.service.isDemo, isSubmitting: isSubmitting) { submitCode() }
                     case .identity: IdentityStep(draft: $appState.draft) { appState.advance(from: step) }
                     case .preferences: PreferencesStep(draft: $appState.draft) { appState.advance(from: step) }
-                    case .interests: InterestsStep(selection: $appState.draft.interests) { appState.advance(from: step) }
-                    case .ready: ReadyStep(name: appState.draft.name) { appState.advance(from: step) }
+                    case .interests: InterestsStep(draft: $appState.draft) { appState.advance(from: step) }
+                    case .ready: ReadyStep(name: appState.draft.name, isSaving: appState.isFinishingOnboarding) { appState.advance(from: step) }
                     }
                 }
                 .id(step)
@@ -28,16 +31,24 @@ struct OnboardingFlow: View {
     }
 
     private func submitEmail() {
+        guard !isSubmitting else { return }
+        isSubmitting = true
         Task {
-            try? await appState.service.requestOTP(email: appState.email)
+            let sent = await appState.requestLoginCode(email: appState.email)
+            isSubmitting = false
+            guard sent else { return }
             Haptics.impact(.light)
             appState.advance(from: step)
         }
     }
 
     private func submitCode() {
+        guard !isSubmitting else { return }
+        isSubmitting = true
         Task {
-            try? await appState.service.verifyOTP(email: appState.email, code: appState.verificationCode)
+            let verified = await appState.verifyOnboardingCode()
+            isSubmitting = false
+            guard verified else { return }
             Haptics.success()
             appState.advance(from: step)
         }
@@ -109,6 +120,7 @@ private struct StepScaffold<Content: View, Footer: View>: View {
 
 private struct EmailStep: View {
     @Binding var email: String
+    let isSubmitting: Bool
     let submit: () -> Void
     @FocusState private var focused: Bool
 
@@ -135,7 +147,7 @@ private struct EmailStep: View {
                 .font(.system(size: 10, weight: .bold, design: .rounded))
                 .foregroundStyle(CampusTheme.ink.opacity(0.4))
             },
-            footer: PrimaryEditorialButton(title: "KODU GÖNDER", enabled: isValid, action: submit)
+            footer: PrimaryEditorialButton(title: isSubmitting ? "GÖNDERİLİYOR…" : "KODU GÖNDER", enabled: isValid && !isSubmitting, action: submit)
         )
         .onAppear { focused = true }
     }
@@ -144,21 +156,23 @@ private struct EmailStep: View {
 private struct CodeStep: View {
     @Binding var code: String
     let email: String
+    let isDemo: Bool
+    let isSubmitting: Bool
     let submit: () -> Void
     @FocusState private var focused: Bool
 
     var body: some View {
         StepScaffold(
             eyebrow: "gelen kutuna bak",
-            title: "Dört rakam,\ntek küçük adım.",
-            subtitle: "\(email) adresine gönderdiğimiz dört haneli kodu gir.",
+            title: isDemo ? "Dört rakam,\ntek küçük adım." : "Altı rakam,\ntek küçük adım.",
+            subtitle: "\(email) adresine gönderdiğimiz \(isDemo ? "dört" : "altı") haneli kodu gir.",
             content: ZStack {
                 TextField("", text: $code)
                     .keyboardType(.numberPad)
                     .focused($focused)
                     .opacity(0.01)
                 HStack(spacing: 8) {
-                    ForEach(0..<4, id: \.self) { index in
+                    ForEach(0..<(isDemo ? 4 : 6), id: \.self) { index in
                         Text(character(at: index))
                             .font(.system(size: 24, weight: .medium, design: .monospaced))
                             .frame(maxWidth: .infinity)
@@ -169,9 +183,9 @@ private struct CodeStep: View {
                 }
                 .onTapGesture { focused = true }
             },
-            footer: PrimaryEditorialButton(title: "DOĞRULA", enabled: code == "1283", action: submit)
+            footer: PrimaryEditorialButton(title: isSubmitting ? "DOĞRULANIYOR…" : "DOĞRULA", enabled: (isDemo ? code == "1283" : code.count == 6) && !isSubmitting, action: submit)
         )
-        .onChange(of: code) { _, newValue in code = String(newValue.filter(\.isNumber).prefix(4)) }
+        .onChange(of: code) { _, newValue in code = String(newValue.filter(\.isNumber).prefix(isDemo ? 4 : 6)) }
         .onAppear { focused = true }
     }
 
@@ -237,6 +251,13 @@ private struct PreferencesStep: View {
                         }
                     }
                 }
+                choiceSection(title: "TANIŞMA NİYETİN") {
+                    ForEach(RelationshipIntent.allCases) { option in
+                        choiceButton(option.title, selected: draft.relationshipIntent == option) {
+                            draft.relationshipIntent = option
+                        }
+                    }
+                }
             },
             footer: PrimaryEditorialButton(title: "DEVAM ET", enabled: valid, action: submit)
         )
@@ -268,38 +289,61 @@ private struct PreferencesStep: View {
 }
 
 private struct InterestsStep: View {
-    @Binding var selection: Set<String>
+    @Binding var draft: ProfileDraft
     let submit: () -> Void
     let options = ["Canlı müzik", "Sinema", "Gece yürüyüşü", "Tasarım", "Koşu", "Analog", "Kahve", "Sergiler", "Kitaplar", "Elektronik", "Fotoğraf", "Girişim"]
+
+    private var complete: Bool {
+        draft.interests.count >= 3 && draft.prompts.count == 3 && draft.prompts.allSatisfy {
+            !$0.answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+    }
 
     var body: some View {
         StepScaffold(
             eyebrow: "ortak frekanslar",
-            title: "Nerede denk\ngelebilirsiniz?",
-            subtitle: "Seni anlatan en az üç şey seç. Algoritmadan önce sohbeti düşün.",
-            content: FlowLayout(spacing: 9) {
-                ForEach(options, id: \.self) { option in
-                    Button {
-                        Haptics.selection()
-                        if selection.contains(option) { selection.remove(option) } else if selection.count < 6 { selection.insert(option) }
-                    } label: {
-                        Text(option)
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
-                            .foregroundStyle(selection.contains(option) ? CampusTheme.paper : CampusTheme.ink)
-                            .padding(.horizontal, 15).padding(.vertical, 12)
-                            .background(selection.contains(option) ? CampusTheme.ink : .clear)
-                            .overlay(Capsule().stroke(CampusTheme.ink.opacity(0.22)))
-                            .clipShape(Capsule())
-                    }.buttonStyle(PressableStyle())
+            title: "Sohbete bir\nipucu bırak.",
+            subtitle: "En az üç ilgi seç ve profilindeki üç kısa soruyu yanıtla.",
+            content: ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    FlowLayout(spacing: 9) {
+                        ForEach(options, id: \.self) { option in
+                            Button {
+                                Haptics.selection()
+                                if draft.interests.contains(option) { draft.interests.remove(option) }
+                                else if draft.interests.count < 6 { draft.interests.insert(option) }
+                            } label: {
+                                Text(option)
+                                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(draft.interests.contains(option) ? CampusTheme.paper : CampusTheme.ink)
+                                    .padding(.horizontal, 15).padding(.vertical, 12)
+                                    .background(draft.interests.contains(option) ? CampusTheme.ink : .clear)
+                                    .overlay(Capsule().stroke(CampusTheme.ink.opacity(0.22)))
+                                    .clipShape(Capsule())
+                            }.buttonStyle(PressableStyle())
+                        }
+                    }
+                    ForEach(draft.prompts.indices, id: \.self) { index in
+                        VStack(alignment: .leading, spacing: 7) {
+                            Text(draft.prompts[index].question)
+                                .font(.system(size: 11, weight: .bold, design: .rounded))
+                                .foregroundStyle(CampusTheme.violet)
+                            TextField("Kısa cevabın...", text: $draft.prompts[index].answer, axis: .vertical)
+                                .lineLimit(2...3)
+                                .padding(12)
+                                .background(CampusTheme.ink.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))
+                        }
+                    }
                 }
             },
-            footer: PrimaryEditorialButton(title: "SEÇİMİ TAMAMLA · \(selection.count)/6", enabled: selection.count >= 3, action: submit)
+            footer: PrimaryEditorialButton(title: "PROFİLİ TAMAMLA · \(draft.interests.count)/6", enabled: complete, action: submit)
         )
     }
 }
 
 private struct ReadyStep: View {
     let name: String
+    var isSaving = false
     let submit: () -> Void
 
     var body: some View {
@@ -319,8 +363,13 @@ private struct ReadyStep: View {
                 Text("Kampüsün akışı, yeni insanlar ve\nyeni sohbetler seni bekliyor.")
                     .font(.system(size: 15, design: .rounded)).foregroundStyle(.white.opacity(0.5)).multilineTextAlignment(.center).lineSpacing(4)
                 Spacer()
-                PrimaryEditorialButton(title: "COMMON'A GİR", enabled: true, inverted: true, action: submit)
-                    .padding(.horizontal, 24)
+                PrimaryEditorialButton(
+                    title: isSaving ? "KAYDEDİLİYOR…" : "COMMON'A GİR",
+                    enabled: !isSaving,
+                    inverted: true,
+                    action: submit
+                )
+                .padding(.horizontal, 24)
             }.padding(.vertical, 22)
         }
     }

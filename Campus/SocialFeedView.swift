@@ -59,6 +59,7 @@ struct SocialFeedView: View {
                         .padding(.bottom, 24)
                     }
                     .scrollContentBackground(.hidden)
+                    .refreshable { await appState.loadFeed() }
                     .onAppear {
                         proxy.scrollTo("feed-top", anchor: .top)
                     }
@@ -95,6 +96,7 @@ struct SocialFeedView: View {
             .sheet(isPresented: $showNotifications) {
                 NotificationsView()
             }
+            .task { await appState.loadFeed() }
             .fullScreenCover(item: Binding(get: { appState.selectedStory }, set: { appState.selectedStory = $0 })) { story in
                 StoryViewer(
                     stories: appState.stories,
@@ -407,14 +409,20 @@ struct PostCard: View {
                     ShareLink(item: "\(post.author.name): \(post.caption)") {
                         Label("Paylaş", systemImage: "square.and.arrow.up")
                     }
-                    if post.isMine {
-                        Button("Gönderiyi sil", systemImage: "trash", role: .destructive) {
+                    if post.isMine || appState.isDemoAdmin {
+                        Button(appState.isDemoAdmin && !post.isMine ? "Yönetici olarak kaldır" : "Gönderiyi sil", systemImage: "trash", role: .destructive) {
                             showDeleteConfirmation = true
                         }
-                    } else {
-                        Button("Şikâyet et", role: .destructive) {
-                            appState.toast = "Gönderi şikâyeti alındı"
+                    }
+                    if !post.isMine {
+                        Menu {
+                            ForEach(ReportReason.allCases) { reason in
+                                Button(reason.title) { appState.report(post.author, reason: reason) }
+                            }
+                        } label: {
+                            Label("Şikâyet et", systemImage: "flag")
                         }
+                        Button("Kullanıcıyı engelle", role: .destructive) { appState.block(post.author) }
                     }
                 } label: {
                     Image(systemName: "ellipsis")

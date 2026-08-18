@@ -7,12 +7,12 @@ struct ProfileEditorView: View {
     @State private var draft = ProfileDraft()
     @State private var avatarData: Data?
     @State private var galleryData: [Data] = []
+    @State private var baselineAvatarData: Data?
+    @State private var baselineGalleryData: [Data] = []
     @State private var avatarItem: PhotosPickerItem?
     @State private var galleryItems: [PhotosPickerItem] = []
     @State private var loaded = false
     @State private var showDiscardAlert = false
-    @State private var showSignOutAlert = false
-    @State private var showDeleteAccountAlert = false
 
     private let interests = ["Canlı müzik", "Sinema", "Gece yürüyüşü", "Tasarım", "Koşu", "Analog", "Kahve", "Sergiler", "Kitaplar", "Elektronik", "Fotoğraf", "Girişim"]
     private let years = ["Hazırlık", "1. sınıf", "2. sınıf", "3. sınıf", "4. sınıf", "Lisansüstü"]
@@ -22,11 +22,14 @@ struct ProfileEditorView: View {
         !draft.department.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         draft.gender != nil &&
         draft.datingPreference != nil &&
-        draft.bio.count <= 220
+        draft.bio.count <= 220 &&
+        draft.interests.count >= 3 &&
+        draft.prompts.count == 3 &&
+        draft.prompts.allSatisfy { !$0.answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     }
 
     private var changed: Bool {
-        draft != appState.draft || avatarData != appState.avatarData || galleryData != appState.profileGalleryData
+        draft != appState.draft || avatarData != baselineAvatarData || galleryData != baselineGalleryData
     }
 
     var body: some View {
@@ -36,37 +39,20 @@ struct ProfileEditorView: View {
                 photos
                 basicInformation
                 about
+                promptAnswers
                 interestSelection
                 preferences
                 accountInformation
-                AppButton(title: "Değişiklikleri kaydet", systemName: "checkmark", enabled: valid) { save() }
-                VStack(spacing: CampusTheme.Space.sm) {
-                    Button { showSignOutAlert = true } label: {
-                        Label("Oturumu kapat", systemImage: "rectangle.portrait.and.arrow.right")
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-                            .foregroundStyle(CampusTheme.ink)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 48)
-                            .background(CampusTheme.surface, in: RoundedRectangle(cornerRadius: CampusTheme.Radius.control))
-                            .overlay(RoundedRectangle(cornerRadius: CampusTheme.Radius.control).stroke(CampusTheme.hairline))
-                    }
-                    .buttonStyle(PressableStyle())
-
-                    Button(role: .destructive) { showDeleteAccountAlert = true } label: {
-                        Label("Hesabı sil", systemImage: "trash")
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 48)
-                    }
-                    .buttonStyle(PressableStyle())
-                }
             }
             .padding(.horizontal, CampusTheme.Space.lg)
             .padding(.top, CampusTheme.Space.sm)
-            .padding(.bottom, CampusTheme.Space.xxl)
+            .padding(.bottom, CampusTheme.Space.lg)
         }
         .background(CampusTheme.paper.ignoresSafeArea())
         .foregroundStyle(CampusTheme.ink)
+        // Kaydet butonu kaydırma içeriğinin sonundayken alt çubuğun altında kalıp
+        // tıklanamıyordu; forma ait birincil eylem olarak sabitleniyor.
+        .safeAreaInset(edge: .bottom, spacing: 0) { saveBar }
         .toolbar(.hidden, for: .navigationBar)
         .onAppear { loadOnce() }
         .onChange(of: avatarItem) { _, item in
@@ -90,18 +76,24 @@ struct ProfileEditorView: View {
         } message: {
             Text("Yaptığın profil değişiklikleri kaybolacak.")
         }
-        .alert("Oturumu kapat?", isPresented: $showSignOutAlert) {
-            Button("Vazgeç", role: .cancel) {}
-            Button("Oturumu kapat", role: .destructive) { appState.signOut() }
-        } message: {
-            Text("Profilin ve hesabın silinmez. Aynı e-posta ve giriş koduyla kaldığın yerden devam edebilirsin.")
+    }
+
+    private var saveBar: some View {
+        VStack(spacing: 6) {
+            if !valid {
+                Text("Ad, bölüm, cinsiyet, tanışma tercihi, 3 ilgi alanı ve 3 soru cevabı zorunlu.")
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .foregroundStyle(CampusTheme.muted)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            AppButton(title: "Değişiklikleri kaydet", systemName: "checkmark", enabled: valid) { save() }
         }
-        .alert("Hesabı kalıcı olarak sil?", isPresented: $showDeleteAccountAlert) {
-            Button("Vazgeç", role: .cancel) {}
-            Button("Hesabımı sil", role: .destructive) { appState.deleteAccount() }
-        } message: {
-            Text("Profilin, fotoğrafların ve bu cihazdaki hesap verilerin silinir. Bu işlem geri alınamaz.")
-        }
+        .padding(.horizontal, CampusTheme.Space.lg)
+        .padding(.top, 10)
+        .padding(.bottom, 6)
+        .background(CampusTheme.surface)
+        .overlay(alignment: .top) { Rectangle().fill(CampusTheme.hairline).frame(height: 0.5) }
     }
 
     private var header: some View {
@@ -126,6 +118,7 @@ struct ProfileEditorView: View {
 
     private var photos: some View {
         let currentAvatarData = avatarData
+        let currentAvatarURL = appState.avatarURL
         let galleryButtonTitle = galleryData.isEmpty ? "Galeri fotoğrafları ekle" : "Galeriyi değiştir"
 
         return VStack(alignment: .leading, spacing: CampusTheme.Space.md) {
@@ -133,7 +126,7 @@ struct ProfileEditorView: View {
             HStack(alignment: .top, spacing: CampusTheme.Space.md) {
                 PhotosPicker(selection: $avatarItem, matching: .images) {
                     ZStack(alignment: .bottomTrailing) {
-                        ProfileMedia(url: nil, data: currentAvatarData)
+                        ProfileMedia(url: currentAvatarURL, data: currentAvatarData)
                             .frame(width: 104, height: 128)
                             .clipShape(RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous))
                         Image(systemName: "camera.fill")
@@ -199,9 +192,11 @@ struct ProfileEditorView: View {
                 ProfileTextField(title: "Bölüm", text: $draft.department)
                 DatePicker("Doğum tarihi", selection: $draft.birthDate, in: ...Calendar.current.date(byAdding: .year, value: -18, to: .now)!, displayedComponents: .date)
                     .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .environment(\.locale, Locale(identifier: "tr_TR"))
                 Picker("Sınıf", selection: $draft.year) {
                     ForEach(years, id: \.self) { Text($0).tag($0) }
                 }
+                .tint(CampusTheme.violet)
             }
         }
     }
@@ -222,6 +217,25 @@ struct ProfileEditorView: View {
                     .lineLimit(4...7)
                     .padding(12)
                     .background(CampusTheme.ink.opacity(0.045), in: RoundedRectangle(cornerRadius: CampusTheme.Radius.control))
+            }
+        }
+    }
+
+    private var promptAnswers: some View {
+        VStack(alignment: .leading, spacing: CampusTheme.Space.md) {
+            AppSectionHeader(title: "Profil soruları")
+            Text("Keşifte görünmek için üç soruyu da yanıtla.")
+                .font(.system(size: 12, design: .rounded)).foregroundStyle(CampusTheme.muted)
+            ForEach(draft.prompts.indices, id: \.self) { index in
+                AppSurface {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(draft.prompts[index].question)
+                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .foregroundStyle(CampusTheme.violet)
+                        TextField("Kısa ve sana ait bir cevap...", text: $draft.prompts[index].answer, axis: .vertical)
+                            .lineLimit(2...4)
+                    }
+                }
             }
         }
     }
@@ -258,12 +272,20 @@ struct ProfileEditorView: View {
                         Text(option.title).tag(ProfileGender?.some(option))
                     }
                 }
+                .tint(CampusTheme.violet)
                 Picker("Kimlerle tanışmak istersin?", selection: $draft.datingPreference) {
                     Text("Seç").tag(DatingPreference?.none)
                     ForEach(DatingPreference.allCases) { option in
                         Text(option.title).tag(DatingPreference?.some(option))
                     }
                 }
+                .tint(CampusTheme.violet)
+                Picker("Tanışma niyetin", selection: $draft.relationshipIntent) {
+                    ForEach(RelationshipIntent.allCases) { option in
+                        Text(option.title).tag(option)
+                    }
+                }
+                .tint(CampusTheme.violet)
                 Text("Cinsiyet ve tanışma tercihi zorunludur.")
                     .font(.system(size: 12, design: .rounded))
                     .foregroundStyle(CampusTheme.muted)
@@ -311,15 +333,50 @@ struct ProfileEditorView: View {
     private func loadOnce() {
         guard !loaded else { return }
         draft = appState.draft
+        if draft.prompts.count != 3 {
+            draft.prompts = [
+                ProfilePrompt(question: "Kampüste beni nerede bulursun?", answer: ""),
+                ProfilePrompt(question: "İlk buluşma fikrim", answer: ""),
+                ProfilePrompt(question: "Beraber deneyelim", answer: "")
+            ]
+        }
         avatarData = appState.avatarData
         galleryData = appState.profileGalleryData
         loaded = true
+        Task { await hydrateExistingPhotos() }
+    }
+
+    // Sunucudaki mevcut fotoğraflar yalnızca imzalı URL olarak biliniyor (bkz. AppState.avatarURL/
+    // galleryURLs); editör Data tabanlı önizleme/kaydetme akışını kullandığından burada bir kerelik
+    // indirip yerel baseline'a alıyoruz — böylece "değişiklik var mı?" karşılaştırması yanlış pozitif
+    // vermez ve kaydetmeden çıkıldığında mevcut fotoğraflar kaybolmuş gibi görünmez.
+    private func hydrateExistingPhotos() async {
+        if avatarData == nil, let url = appState.avatarURL {
+            avatarData = try? await downloadImageData(url)
+        }
+        if galleryData.isEmpty, !appState.galleryURLs.isEmpty {
+            var hydrated: [Data] = []
+            for url in appState.galleryURLs {
+                if let data = try? await downloadImageData(url) { hydrated.append(data) }
+            }
+            galleryData = hydrated
+        }
+        baselineAvatarData = avatarData
+        baselineGalleryData = galleryData
+    }
+
+    private func downloadImageData(_ url: URL) async throws -> Data {
+        let (data, _) = try await URLSession.shared.data(from: url)
+        return data
     }
 
     private func save() {
         guard valid else { return }
-        appState.saveProfile(draft, avatar: avatarData, gallery: galleryData)
-        dismiss()
+        Task {
+            if await appState.saveProfile(draft, avatar: avatarData, gallery: galleryData) {
+                dismiss()
+            }
+        }
     }
 }
 

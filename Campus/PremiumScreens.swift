@@ -5,6 +5,7 @@ struct PremiumDiscoverView: View {
     @State private var drag: CGSize = .zero
     @State private var detailVisible = false
     @State private var showChats = false
+    @State private var showFilters = false
     @State private var matchConversation: MatchConversationRoute?
 
     var body: some View {
@@ -15,14 +16,26 @@ struct PremiumDiscoverView: View {
             VStack(spacing: 0) {
                 topBar
                 if let profile = appState.profiles.first {
-                    editorialCard(profile)
-                        .padding(.horizontal, 16)
-                        .padding(.top, 10)
-                        .offset(drag)
-                        .rotationEffect(.degrees(Double(drag.width / 35)))
-                        .contentShape(RoundedRectangle(cornerRadius: CampusTheme.Radius.hero, style: .continuous))
-                        .onTapGesture { detailVisible = true }
-                        .gesture(swipeGesture)
+                    ZStack {
+                        DiscoveryCard(profile: profile)
+                            .overlay(alignment: .top) {
+                                HStack {
+                                    decisionStamp("TANIŞ", color: CampusTheme.acid, rotation: -12)
+                                        .opacity(drag.width > 0 ? swipeProgress : 0)
+                                    Spacer()
+                                    decisionStamp("GEÇ", color: .white, rotation: 12)
+                                        .opacity(drag.width < 0 ? swipeProgress : 0)
+                                }
+                                .padding(20)
+                            }
+                            .offset(drag)
+                            .rotationEffect(.degrees(Double(drag.width / 35)))
+                            .contentShape(RoundedRectangle(cornerRadius: CampusTheme.Radius.hero, style: .continuous))
+                            .onTapGesture { detailVisible = true }
+                            .gesture(swipeGesture)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 10)
                     controls
                 } else {
                     emptyState
@@ -31,8 +44,17 @@ struct PremiumDiscoverView: View {
             .padding(.bottom, 8)
 
         }
+        .task {
+            if appState.profiles.isEmpty { await appState.loadDiscovery(reset: true) }
+            await appState.loadConversations()
+        }
         .fullScreenCover(isPresented: $showChats) {
             PremiumMatchesView(close: { showChats = false })
+        }
+        .sheet(isPresented: $showFilters) {
+            DiscoveryFilterSheet(filters: appState.discoveryFilters) { filters in
+                Task { await appState.applyDiscoveryFilters(filters) }
+            }
         }
         .sheet(isPresented: $detailVisible) {
             if let profile = appState.profiles.first { ProfileDetailSheet(profile: profile) }
@@ -40,8 +62,9 @@ struct PremiumDiscoverView: View {
         .fullScreenCover(item: Binding(get: { appState.currentMatch }, set: { appState.currentMatch = $0 })) { profile in
             MatchMomentView(profile: profile) {
                 appState.currentMatch = nil
-            } message: {
+            } message: { starter in
                 let conversationID = appState.conversationID(for: profile)
+                if let starter { Task { await appState.send(starter, in: conversationID) } }
                 appState.currentMatch = nil
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
                     matchConversation = MatchConversationRoute(id: conversationID)
@@ -63,6 +86,17 @@ struct PremiumDiscoverView: View {
                     .foregroundStyle(.white.opacity(0.5))
             }
             Spacer()
+            Button {
+                Haptics.impact(.light)
+                showFilters = true
+            } label: {
+                Image(systemName: "line.3.horizontal.decrease.circle")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .background(.white.opacity(0.1), in: Circle())
+            }
+            .buttonStyle(PressableStyle())
             Button {
                 Haptics.impact(.light)
                 showChats = true
@@ -88,94 +122,53 @@ struct PremiumDiscoverView: View {
         .frame(height: 62)
     }
 
-    private func editorialCard(_ profile: StudentProfile) -> some View {
-        GeometryReader { proxy in
-            let height = proxy.size.height
-            VStack(spacing: 0) {
-                ZStack(alignment: .topLeading) {
-                    ProfileMedia(url: profile.imageURL, data: nil, assetName: profile.imageAssetName)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: height * 0.64)
-                    .clipped()
 
-                    LinearGradient(colors: [.black.opacity(0.35), .clear, .black.opacity(0.72)], startPoint: .top, endPoint: .bottom)
+    /// Kaydırma sırasında kararın ne yönde olduğunu gösterir. Sürükleme hareketi vardı ama
+    /// hiçbir görsel karşılığı yoktu; kullanıcı kartı bırakana kadar ne olacağını bilmiyordu.
+    private var swipeProgress: CGFloat {
+        min(abs(drag.width) / 110, 1)
+    }
 
-                    VStack {
-                        HStack {
-                            Label("%\(profile.compatibility) uyum", systemImage: "sparkles")
-                                .font(.system(size: 10, weight: .bold, design: .rounded))
-                                .padding(.horizontal, 11).frame(height: 30)
-                                .background(.black.opacity(0.35), in: Capsule())
-                            Spacer()
-                            Image(systemName: "checkmark.seal.fill")
-                                .foregroundStyle(CampusTheme.acid)
-                        }
-                        Spacer()
-                        HStack(alignment: .lastTextBaseline) {
-                            Text(profile.name).font(.system(size: 35, weight: .bold, design: .rounded))
-                            Text("\(profile.age)").font(.title3.weight(.medium))
-                            Spacer()
-                        }
-                    }
-                    .foregroundStyle(.white)
-                    .padding(16)
-                }
-
-                VStack(alignment: .leading, spacing: 11) {
-                    HStack {
-                        Label(profile.department, systemImage: "graduationcap.fill")
-                        Spacer()
-                        Text(profile.year)
-                    }
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundStyle(CampusTheme.ink.opacity(0.55))
-
-                    Text(profile.bio)
-                        .font(.system(size: 15, weight: .regular, design: .rounded))
-                        .foregroundStyle(CampusTheme.ink.opacity(0.72))
-                        .lineSpacing(3)
-                        .lineLimit(2)
-
-                    HStack(spacing: 7) {
-                        ForEach(profile.interests.prefix(3), id: \.self) { item in
-                            Text(item)
-                                .font(.system(size: 11, weight: .semibold, design: .rounded))
-                                .padding(.horizontal, 9)
-                                .frame(height: 28)
-                                .background(CampusTheme.ink.opacity(0.055), in: Capsule())
-                        }
-                        Spacer()
-                    }
-                }
-                .foregroundStyle(CampusTheme.ink)
-                .padding(18)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .background(CampusTheme.paper)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(.white.opacity(0.16), lineWidth: 1))
-            .shadow(color: .black.opacity(0.3), radius: 24, y: 12)
-        }
+    private func decisionStamp(_ text: String, color: Color, rotation: Double) -> some View {
+        Text(text)
+            .font(.system(size: 22, weight: .black, design: .rounded))
+            .tracking(1.5)
+            .foregroundStyle(color)
+            .padding(.horizontal, 14)
+            .frame(height: 46)
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(color, lineWidth: 3))
+            .rotationEffect(.degrees(rotation))
     }
 
     private var controls: some View {
         HStack(spacing: 10) {
-            actionButton(icon: "xmark", label: "Geç", fill: .white.opacity(0.08), color: .white) { dismiss(-1) }
-            Button { detailVisible = true } label: {
-                VStack(spacing: 4) {
-                    Image(systemName: "person.text.rectangle").font(.system(size: 17, weight: .bold))
-                    Text("Profil").font(.system(size: 11, weight: .bold, design: .rounded))
-                }
-                .foregroundStyle(.white)
-                .frame(width: 72, height: 52)
-                .background(.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 16))
+            iconButton(systemName: "arrow.uturn.backward", tint: appState.lastPassedProfile == nil ? .white.opacity(0.3) : CampusTheme.acid) {
+                appState.undoLastPass()
             }
-            .buttonStyle(PressableStyle())
+            .disabled(appState.lastPassedProfile == nil || !appState.service.isDemo)
+            .accessibilityLabel("Son kararı geri al")
+
+            actionButton(icon: "xmark", label: "Geç", fill: .white.opacity(0.08), color: .white) { dismiss(-1) }
             actionButton(icon: "heart.fill", label: "Tanış", fill: CampusTheme.acid, color: CampusTheme.ink) { dismiss(1) }
+
+            iconButton(systemName: "person.text.rectangle", tint: .white) { detailVisible = true }
+                .accessibilityLabel("Profilin tamamını gör")
         }
         .padding(.horizontal, 16)
         .padding(.top, 12)
         .padding(.bottom, 4)
+    }
+
+    private func iconButton(systemName: String, tint: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(tint)
+                .frame(width: 52, height: 52)
+                .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(CampusTheme.line))
+        }
+        .buttonStyle(PressableStyle())
     }
 
     private func actionButton(icon: String, label: String, fill: Color, color: Color, action: @escaping () -> Void) -> some View {
@@ -195,6 +188,17 @@ struct PremiumDiscoverView: View {
 
     private var emptyState: some View {
         VStack(spacing: 18) {
+            if appState.isLoadingDiscovery {
+                ProgressView().tint(CampusTheme.acid)
+                Text("Öneriler hazırlanıyor").foregroundStyle(.white)
+            } else if let error = appState.discoveryError {
+                Image(systemName: "wifi.exclamationmark")
+                    .font(.system(size: 34, weight: .light))
+                    .foregroundStyle(CampusTheme.coral)
+                Text(error).foregroundStyle(.white.opacity(0.7)).multilineTextAlignment(.center)
+                Button("Tekrar dene") { Task { await appState.loadDiscovery(reset: true) } }
+                    .foregroundStyle(CampusTheme.acid)
+            } else {
             Image(systemName: "person.2.slash")
                 .font(.system(size: 34, weight: .light))
                 .foregroundStyle(CampusTheme.acid)
@@ -209,6 +213,9 @@ struct PremiumDiscoverView: View {
             Text("Yeni öneriler olduğunda burada görünecek.")
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white.opacity(0.42))
+            Button("Filtreleri değiştir") { showFilters = true }
+                .foregroundStyle(CampusTheme.acid)
+            }
         }
         .padding(.horizontal, 28)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -249,6 +256,7 @@ struct ProfileDetailSheet: View {
                 gallery
                 identity
                 compatibility
+                prompts
                 interests
                 if let place = profile.visiblePlace { visiblePlace(place) }
                 posts
@@ -261,22 +269,42 @@ struct ProfileDetailSheet: View {
         .safeAreaInset(edge: .bottom, spacing: 0) { decisionBar }
     }
 
+    private var galleryPageCount: Int {
+        !profile.galleryImageURLs.isEmpty ? profile.galleryImageURLs.count : profile.galleryAssetNames.count
+    }
+
     private var gallery: some View {
         ZStack(alignment: .topTrailing) {
             TabView(selection: $selectedPhoto) {
-                ForEach(Array(profile.galleryAssetNames.enumerated()), id: \.offset) { index, asset in
-                    ProfileMedia(url: nil, data: nil, assetName: asset)
+                if !profile.galleryImageURLs.isEmpty {
+                    ForEach(Array(profile.galleryImageURLs.enumerated()), id: \.offset) { index, url in
+                        ProfileMedia(url: url, data: nil, assetName: nil)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 460)
+                            .clipped()
+                            .tag(index)
+                    }
+                } else if profile.galleryAssetNames.isEmpty {
+                    ProfileMedia(url: profile.imageURL, data: nil, assetName: profile.imageAssetName)
                         .frame(maxWidth: .infinity)
                         .frame(height: 460)
                         .clipped()
-                        .tag(index)
+                        .tag(0)
+                } else {
+                    ForEach(Array(profile.galleryAssetNames.enumerated()), id: \.offset) { index, asset in
+                        ProfileMedia(url: nil, data: nil, assetName: asset)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 460)
+                            .clipped()
+                            .tag(index)
+                    }
                 }
             }
             .frame(height: 460)
             .tabViewStyle(.page(indexDisplayMode: .never))
 
             HStack(spacing: 5) {
-                ForEach(profile.galleryAssetNames.indices, id: \.self) { index in
+                ForEach(0..<galleryPageCount, id: \.self) { index in
                     Capsule()
                         .fill(index == selectedPhoto ? .white : .white.opacity(0.42))
                         .frame(width: index == selectedPhoto ? 20 : 6, height: 6)
@@ -330,12 +358,32 @@ struct ProfileDetailSheet: View {
         AppSurface {
             VStack(alignment: .leading, spacing: CampusTheme.Space.md) {
                 AppSectionHeader(title: "Neden uyumlusunuz?")
-                Label("Benzer kampüs planlarını seviyorsunuz", systemImage: "person.2.fill")
-                Label("Ortak ilgi alanlarınız var", systemImage: "sparkles")
+                ForEach(profile.compatibilityReasons, id: \.self) { reason in
+                    Label(reason, systemImage: "sparkles")
+                }
+                Label(profile.relationshipIntent.title, systemImage: "heart.text.square")
+                Label(profile.activeLabel, systemImage: "clock")
             }
             .font(.system(size: 14, weight: .medium, design: .rounded))
         }
         .padding(.horizontal, CampusTheme.Space.lg)
+    }
+
+    @ViewBuilder
+    private var prompts: some View {
+        if !profile.prompts.isEmpty {
+            VStack(alignment: .leading, spacing: CampusTheme.Space.md) {
+                AppSectionHeader(title: "Profilinden")
+                ForEach(profile.prompts) { prompt in
+                    AppSurface {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(prompt.question).font(.caption.bold()).foregroundStyle(CampusTheme.violet)
+                            Text(prompt.answer).font(.system(size: 17, weight: .medium, design: .rounded))
+                        }.frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+            }.padding(.horizontal, CampusTheme.Space.lg)
+        }
     }
 
     private var interests: some View {
@@ -394,8 +442,14 @@ struct ProfileDetailSheet: View {
 
     private var safetyActions: some View {
         Menu {
-            Button("Şikâyet et", role: .destructive) { appState.toast = "Şikâyet alındı" }
-            Button("Kullanıcıyı engelle", role: .destructive) { appState.toast = "Kullanıcı engellendi" }
+            Menu {
+                ForEach(ReportReason.allCases) { reason in
+                    Button(reason.title) { appState.report(profile, reason: reason) }
+                }
+            } label: {
+                Label("Şikâyet et", systemImage: "flag")
+            }
+            Button("Kullanıcıyı engelle", role: .destructive) { appState.block(profile) }
         } label: {
             Label("Güvenlik seçenekleri", systemImage: "shield")
                 .font(.system(size: 13, weight: .semibold, design: .rounded))
@@ -457,6 +511,7 @@ struct PremiumMatchesView: View {
                 .padding(.top, CampusTheme.Space.md)
                 .padding(.bottom, CampusTheme.Space.xxl)
             }
+            .refreshable { await appState.loadConversations() }
             .background(CampusTheme.paper.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
         }
@@ -481,7 +536,7 @@ struct PremiumMatchesView: View {
             AppSectionHeader(title: "Yeni bağlantılar")
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: CampusTheme.Space.md) {
-                    ForEach(StudentProfile.samples) { profile in
+                    ForEach(appState.conversations.map(\.profile)) { profile in
                         NavigationLink {
                             SocialPersonDetailView(profile: profile, place: profile.visiblePlace)
                         } label: {
@@ -553,6 +608,65 @@ struct PremiumMatchesView: View {
     }
 }
 
+struct DiscoveryFilterSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var draft: DiscoveryFilters
+    let apply: (DiscoveryFilters) -> Void
+    private let years = ["Hazırlık", "1. sınıf", "2. sınıf", "3. sınıf", "4. sınıf", "Lisansüstü"]
+    private let departments = ["Psikoloji", "Endüstri Mühendisliği", "İşletme", "Bilgisayar Mühendisliği", "Hukuk"]
+
+    init(filters: DiscoveryFilters, apply: @escaping (DiscoveryFilters) -> Void) {
+        _draft = State(initialValue: filters)
+        self.apply = apply
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Yaş aralığı") {
+                    Stepper("En az \(draft.minimumAge)", value: $draft.minimumAge, in: 18...draft.maximumAge)
+                    Stepper("En fazla \(draft.maximumAge)", value: $draft.maximumAge, in: draft.minimumAge...99)
+                }
+                Section("Sınıf") {
+                    ForEach(years, id: \.self) { year in
+                        toggleRow(year, selected: draft.academicYears.contains(year)) {
+                            toggle(year, in: &draft.academicYears)
+                        }
+                    }
+                }
+                Section("Bölüm") {
+                    ForEach(departments, id: \.self) { department in
+                        toggleRow(department, selected: draft.departments.contains(department)) {
+                            toggle(department, in: &draft.departments)
+                        }
+                    }
+                }
+                Section("Öncelikler") {
+                    Toggle("En az bir ortak ilgi", isOn: $draft.requiresCommonInterest)
+                    Toggle("Yalnızca aynı kampüs", isOn: $draft.campusOnly)
+                }
+            }
+            .navigationTitle("Tanış filtreleri")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Vazgeç") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Uygula") { apply(draft); dismiss() }.fontWeight(.semibold)
+                }
+            }
+        }
+    }
+
+    private func toggleRow(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack { Text(title); Spacer(); if selected { Image(systemName: "checkmark").foregroundStyle(CampusTheme.violet) } }
+        }.foregroundStyle(CampusTheme.ink)
+    }
+
+    private func toggle(_ value: String, in values: inout Set<String>) {
+        if values.contains(value) { values.remove(value) } else { values.insert(value) }
+    }
+}
+
 private struct MatchConversationRoute: Identifiable {
     let id: UUID
 }
@@ -581,7 +695,7 @@ struct PremiumProfileView: View {
                         settingsRow("02", "Tanışmak istediğin kişi", "scope")
                         settingsRow("03", "Güvenlik ve doğrulama", "checkmark.shield")
                     }
-                    Button("OTURUMU KAPAT") { appState.signOut() }
+                    Button("OTURUMU KAPAT") { Task { await appState.signOut() } }
                         .font(.system(size: 9, weight: .bold, design: .rounded)).tracking(1.4).foregroundStyle(CampusTheme.ink.opacity(0.4))
                 }
                 .padding(22).padding(.bottom, 90)

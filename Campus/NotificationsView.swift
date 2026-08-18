@@ -44,6 +44,8 @@ struct NotificationsView: View {
                 .padding(.bottom, CampusTheme.Space.xxl)
             }
             .background(CampusTheme.paper.ignoresSafeArea())
+            .refreshable { await appState.loadNotifications() }
+            .task { await appState.loadNotifications() }
             .toolbar(.hidden, for: .navigationBar)
             .sheet(item: $selectedProfile) { profile in
                 NavigationStack {

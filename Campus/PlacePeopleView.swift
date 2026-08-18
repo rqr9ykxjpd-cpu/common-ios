@@ -188,6 +188,27 @@ struct SocialPersonDetailView: View {
                     .frame(width: 44, height: 44).background(.black.opacity(0.55), in: Circle())
             }
             .padding(16)
+
+            HStack {
+                Spacer()
+                Menu {
+                    Menu {
+                        ForEach(ReportReason.allCases) { reason in
+                            Button(reason.title) { appState.report(profile, reason: reason) }
+                        }
+                    } label: {
+                        Label("Şikâyet et", systemImage: "flag")
+                    }
+                    Button("Kullanıcıyı engelle", role: .destructive) {
+                        appState.block(profile)
+                        dismiss()
+                    }
+                } label: {
+                    Image(systemName: "ellipsis").foregroundStyle(.white)
+                        .frame(width: 44, height: 44).background(.black.opacity(0.55), in: Circle())
+                }
+            }
+            .padding(16)
         }
         .toolbar(.hidden, for: .navigationBar)
         .fullScreenCover(item: $conversationRoute) { route in

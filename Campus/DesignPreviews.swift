@@ -40,7 +40,7 @@ import SwiftUI
 }
 
 #Preview("Eşleşme Anı") {
-    MatchMomentView(profile: StudentProfile.samples[1], close: {}, message: {})
+        MatchMomentView(profile: StudentProfile.samples[1], close: {}, message: { _ in })
         .preferredColorScheme(.dark)
 }
 
