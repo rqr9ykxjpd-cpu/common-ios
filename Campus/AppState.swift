@@ -308,15 +308,24 @@ final class AppState {
         defer { isFinishingOnboarding = false }
         do {
             try await service.saveProfile(draft)
-            // Kayıt sırasında seçilen fotoğraf da hemen yüklenmeli; aksi halde kullanıcı
-            // fotoğrafını seçmiş olmasına rağmen Tanış'ta boş kartla görünür.
-            if let avatarData {
-                avatarURL = try await service.updateAvatar(avatarData)
-            }
         } catch {
             showError(error, fallback: "Profilin kaydedilemedi.")
             return
         }
+
+        // Fotoğraf yüklemesi ayrı ele alınıyor. Aynı `do` bloğundayken profil sunucuya
+        // kaydedilmiş olmasına rağmen "Profilin kaydedilemedi" deniyor ve kullanıcı kayıt
+        // ekranında kalıyordu — yani tek bir fotoğraf yüzünden uygulamaya hiç giremiyordu.
+        // Profil hazırsa içeri alıyoruz; fotoğrafı Profil > Düzenle'den sonradan ekler.
+        var photoFailed = false
+        if let avatarData {
+            do {
+                avatarURL = try await service.updateAvatar(avatarData)
+            } catch {
+                photoFailed = true
+            }
+        }
+
         persistSession()
         // Kayıt akışıyla giren kullanıcı da anlık mesajları almalı; bunlar yalnızca `signIn` ve
         // `restoreBackendSession` içinde kuruluyordu, yeni kullanıcı uygulamayı yeniden
@@ -329,8 +338,14 @@ final class AppState {
         await loadMeetingRequests()
         try? await service.touchLastActive()
         startMessageListener()
-    
+
         withAnimation(.smooth(duration: 0.55)) { route = .app }
+        if photoFailed {
+            showError("Profilin kaydedildi, fotoğrafın yüklenemedi. Profil'den tekrar deneyebilirsin.")
+        } else {
+            let name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            show(name.isEmpty ? "Hoş geldin!" : "Hoş geldin, \(name)!")
+        }
     }
 
     func goBack(from step: OnboardingStep) {

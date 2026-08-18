@@ -42,7 +42,10 @@ struct RootView: View {
         }
         .task(id: appState.toast) {
             guard let toast = appState.toast else { return }
-            try? await Task.sleep(for: .seconds(2.4))
+            // Süre metnin uzunluğuna göre: "Gönderi paylaşıldı" ile iki satırlık bir hata
+            // açıklaması aynı sürede kaybolunca uzun olan okunamıyordu.
+            let readingTime = 1.6 + Double(toast.text.count) * 0.045
+            try? await Task.sleep(for: .seconds(min(max(readingTime, 2.4), 6)))
             guard !Task.isCancelled, appState.toast == toast else { return }
             withAnimation(.snappy) { appState.toast = nil }
         }
@@ -58,7 +61,7 @@ private struct AppToast: View {
                 .foregroundStyle(message.kind == .error ? CampusTheme.coral : CampusTheme.acid)
             Text(message.text)
                 .font(.system(size: 13, weight: .semibold, design: .rounded))
-                .lineLimit(2)
+                .lineLimit(3)
             Spacer(minLength: 0)
         }
         .foregroundStyle(CampusTheme.paper)

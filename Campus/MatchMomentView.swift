@@ -63,9 +63,24 @@ struct MatchMomentView: View {
     }
 
     private var conversationStarters: [String] {
-        let promptStarters = profile.prompts.prefix(2).map { "\($0.answer) — bunu biraz daha anlatsana?" }
+        let promptStarters = profile.prompts
+            .filter { !$0.answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            .prefix(2)
+            .map { "\($0.answer) — bunu biraz daha anlatsana?" }
         if !promptStarters.isEmpty { return promptStarters }
-        return profile.interests.prefix(2).map { "\($0) ortak ilgimiz; kampüste favorin neresi?" }
+
+        // Önceden karşı tarafın ilk iki ilgi alanı "ortak ilgimiz" diye sunuluyordu;
+        // gerçekten paylaşılıp paylaşılmadığına bakılmıyordu. Ortak olanı ortak diye,
+        // olmayanı merak sorusu olarak soruyoruz.
+        let mine = Set(appState.draft.interests)
+        let shared = profile.interests.filter { mine.contains($0) }
+        if !shared.isEmpty {
+            return shared.prefix(2).map { "\($0) ortak ilgimiz; kampüste favorin neresi?" }
+        }
+        if let ilk = profile.interests.first {
+            return ["\(ilk) ile nasıl tanıştın?", "Kampüste en sevdiğin köşe neresi?"]
+        }
+        return ["Selam! Kampüste en sevdiğin köşe neresi?"]
     }
 
     private func portrait(_ profile: StudentProfile, x: CGFloat, rotation: Double) -> some View {

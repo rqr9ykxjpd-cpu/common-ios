@@ -47,6 +47,24 @@ struct ConversationView: View {
                     .onChange(of: conversation.messages.count) { _, _ in scrollToBottom(proxy, conversation: conversation, animated: true) }
                 }
                 composer
+            } else {
+                // Sohbet bulunamadığında ekran tamamen boş kalıyordu. Eşleşme başka bir
+                // cihazdan sonlandırılmış ya da liste henüz yüklenmemiş olabilir.
+                VStack(spacing: 14) {
+                    Image(systemName: "bubble.left.and.exclamationmark.bubble.right")
+                        .font(.system(size: 34, weight: .light))
+                        .foregroundStyle(CampusTheme.ink.opacity(0.35))
+                    Text("Bu sohbet bulunamadı.")
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    Text("Eşleşme sonlandırılmış olabilir.")
+                        .font(.system(size: 13, design: .rounded))
+                        .foregroundStyle(CampusTheme.ink.opacity(0.5))
+                    Button("Geri dön") { dismiss() }
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(CampusTheme.violet)
+                        .padding(.top, 4)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .background(CampusTheme.paper.ignoresSafeArea())
@@ -116,16 +134,43 @@ struct ConversationView: View {
         .overlay(alignment: .bottom) { Rectangle().fill(CampusTheme.hairline).frame(height: 0.5) }
     }
 
+    /// Karşı tarafla gerçekten paylaşılan ilgi alanları. Bu not daha önce sabit bir
+    /// cümleydi ("İkiniz de sergiler ve canlı müzikle ilgileniyorsunuz") ve kimin
+    /// sohbeti olursa olsun aynı şeyi yazıyordu — yani doğru olmayan bir bilgi.
+    private var sharedInterests: [String] {
+        guard let conversation else { return [] }
+        let mine = Set(appState.draft.interests)
+        return conversation.profile.interests.filter { mine.contains($0) }
+    }
+
+    /// Ortak ilgi yoksa hiç gösterilmiyor: uydurma bir yakınlık kurmaktansa susmak daha iyi.
+    @ViewBuilder
     private var connectionNote: some View {
-        HStack(spacing: 9) {
-            Image(systemName: "sparkles").foregroundStyle(CampusTheme.violet)
-            Text("İkiniz de sergiler ve canlı müzikle ilgileniyorsunuz.")
-                .font(.system(size: 12, design: .rounded))
-                .foregroundStyle(CampusTheme.ink.opacity(0.65))
+        let shared = sharedInterests
+        if !shared.isEmpty {
+            HStack(spacing: 9) {
+                Image(systemName: "sparkles").foregroundStyle(CampusTheme.violet)
+                Text(connectionText(for: shared))
+                    .font(.system(size: 12, design: .rounded))
+                    .foregroundStyle(CampusTheme.ink.opacity(0.65))
+            }
+            .padding(.horizontal, 13).padding(.vertical, 10)
+            .background(CampusTheme.violet.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+            .padding(.bottom, 8)
         }
-        .padding(.horizontal, 13).padding(.vertical, 10)
-        .background(CampusTheme.violet.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
-        .padding(.bottom, 8)
+    }
+
+    private func connectionText(for shared: [String]) -> String {
+        let lowered = shared.map { $0.lowercased(with: Locale(identifier: "tr_TR")) }
+        switch lowered.count {
+        case 1:
+            return "İkiniz de \(lowered[0]) ile ilgileniyorsunuz."
+        case 2:
+            return "İkiniz de \(lowered[0]) ve \(lowered[1]) ile ilgileniyorsunuz."
+        default:
+            let ilk = lowered.prefix(2).joined(separator: ", ")
+            return "İkiniz de \(ilk) ve \(lowered.count - 2) ortak ilgi alanını paylaşıyorsunuz."
+        }
     }
 
     private var composer: some View {
