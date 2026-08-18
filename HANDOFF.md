@@ -22,9 +22,8 @@ SUPABASE_PUBLISHABLE_KEY = <Supabase panel > Project Settings > API Keys > publi
 > `//` dizisi xcconfig'de yorum başlatır. URL'deki çift eğik çizgi bu yüzden
 > `$()` ile bölünerek kaçırılmak zorunda. Yukarıdaki yazım doğrudur.
 
-Bu iki değer boşsa uygulama **demo moduna** düşer (`DemoProductService`) ve
-tamamen yerel örnek veriyle çalışır. Demo girişi: kullanıcı adı `cem`, kod `1283`.
-Bu arka kapı yalnızca demo modunda çalışır, gerçek anahtarlar eklenince ölür.
+Bu dosya olmadan uygulama **hiçbir şey yapamaz**: açılır ama her işlem
+"Supabase yapılandırması eksik" hatası verir. Demo modu ve örnek veri yoktur.
 
 **Supabase projesi:** `campus`, bölge West EU (Ireland).
 Migration'lar `supabase/migrations/` altında, uygulanma sırası dosya adındaki
@@ -35,8 +34,8 @@ zaman damgasına göre.
 ## 2. Mimari
 
 - `ProductService` protokolü backend'i soyutlar.
-  - `DemoProductService` — yerel örnek veri
-  - `SupabaseProductService` — gerçek backend
+  - `SupabaseProductService` — tek gerçek uygulama
+  - `UnconfiguredProductService` — yapılandırma eksikken net hata verir
 - `AppState` (`@Observable`) tüm uygulama durumunu tutar, servisi enjekte alır.
 - Güvenlik **veritabanı seviyesinde** (RLS + `security definer` RPC'ler).
   İstemciye güvenilmez: bildirimler trigger'larla üretilir, engelleme RPC ile
