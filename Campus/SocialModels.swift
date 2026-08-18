@@ -134,3 +134,17 @@ struct CampusStory: Identifiable, Hashable {
 
 }
 
+
+/// Profilini görüntüleyen biri. Kayıt sunucuda tutuluyor ve yalnızca profil
+/// sahibi görebiliyor; 30 günden eski ziyaretler listelenmez.
+struct ProfileVisit: Identifiable, Hashable {
+    let id: UUID
+    let profile: StudentProfile
+    let visitedAt: Date
+
+    init(profile: StudentProfile, visitedAt: Date) {
+        self.id = profile.id
+        self.profile = profile
+        self.visitedAt = visitedAt
+    }
+}

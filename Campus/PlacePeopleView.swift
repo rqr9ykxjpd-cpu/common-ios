@@ -242,6 +242,9 @@ struct SocialPersonDetailView: View {
             .padding(16)
         }
         .toolbar(.hidden, for: .navigationBar)
+        // Ziyaret yalnızca birinin profili kasıtlı olarak açıldığında kaydedilir;
+        // keşif destesinde kart çevirmek ziyaret sayılmaz.
+        .task { appState.recordProfileVisit(profile) }
         .fullScreenCover(item: $conversationRoute) { route in
             NavigationStack { ConversationView(conversationID: route.id) }
         }

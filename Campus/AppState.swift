@@ -43,6 +43,8 @@ final class AppState {
     var stories: [CampusStory] = []
     var notifications: [AppNotification] = []
     var meetingRequests: [MeetingRequest] = []
+    /// Profilini görüntüleyenler; yalnızca sahibine görünür.
+    var profileVisits: [ProfileVisit] = []
     /// Kampüs yerleri, `places` tablosundan gelir.
     var places: [CampusPlace] = []
     /// Kulüpler, `clubs` tablosundan gelir.
@@ -154,6 +156,7 @@ final class AppState {
             await loadStories()
             await loadClubs()
             await loadMeetingRequests()
+            await loadProfileVisits()
             try? await service.touchLastActive()
             startMessageListener()
             withAnimation(.smooth(duration: 0.55)) { route = .app }
@@ -197,6 +200,7 @@ final class AppState {
             await loadStories()
             await loadClubs()
             await loadMeetingRequests()
+            await loadProfileVisits()
             try? await service.touchLastActive()
             startMessageListener()
             // Geçerli oturum ve tamamlanmış profil varken karşılama ekranında bırakmak
@@ -608,6 +612,19 @@ final class AppState {
 
     /// Buluşma isteklerini sunucudan yükler. Bu liste şimdiye kadar yalnızca bellekte
     /// yaşıyordu; uygulama kapanınca gönderilen ve gelen istekler kayboluyordu.
+    /// Profilini görüntüleyenler. Kayıt yalnızca sunucudaki RPC ile oluşuyor ve
+    /// listeyi yalnızca profil sahibi görebiliyor.
+    func loadProfileVisits() async {
+        if let visits = try? await service.fetchProfileVisits() { profileVisits = visits }
+    }
+
+    /// Birinin profili kasıtlı olarak açıldığında çağrılır. Keşif destesinde
+    /// kart çevirmek ziyaret sayılmaz — orada niyet "bakınmak", "profiline gitmek" değil.
+    func recordProfileVisit(_ profile: StudentProfile) {
+        guard profile.id != currentUserID else { return }
+        Task { try? await service.recordProfileVisit(profile.id) }
+    }
+
     func loadMeetingRequests() async {
         do {
             meetingRequests = try await service.fetchMeetingRequests()
@@ -630,6 +647,7 @@ final class AppState {
             do {
                 try await service.sendMeetingRequest(to: profile.id, placeID: place.id)
                 await loadMeetingRequests()
+            await loadProfileVisits()
                 toast = "\(profile.name) için \(place.name) buluşma isteği gönderildi"
                 Haptics.success()
             } catch {
@@ -913,6 +931,7 @@ final class AppState {
         stories = []
         notifications = []
         meetingRequests = []
+        profileVisits = []
         currentMatch = nil
         selectedConversation = nil
         selectedStory = nil

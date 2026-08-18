@@ -541,6 +541,25 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         }
     }
 
+    func recordProfileVisit(_ profileID: UUID) async throws {
+        try await client.rpc("record_profile_visit", params: ProfileVisitParams(target: profileID)).execute()
+    }
+
+    func fetchProfileVisits() async throws -> [ProfileVisit] {
+        let rows: [ProfileVisitRow] = try await client.rpc("get_my_profile_visits").execute().value
+        let avatarURLs = await signedURLs(bucket: "profile-photos", paths: rows.compactMap(\.avatarPath))
+        return rows.map { row in
+            let age = max(18, Calendar.current.dateComponents([.year], from: row.birthDate, to: .now).year ?? 18)
+            let profile = StudentProfile(
+                id: row.visitorID, name: row.name, age: age, university: row.university,
+                department: row.department, year: row.academicYear, bio: row.bio,
+                interests: [], imageURL: row.avatarPath.flatMap { avatarURLs[$0] },
+                compatibility: 0, isVerified: row.isVerified
+            )
+            return ProfileVisit(profile: profile, visitedAt: row.lastVisitedAt)
+        }
+    }
+
     func setPostSaved(_ postID: UUID, saved: Bool) async throws {
         guard let userID = currentUserID else { throw BackendServiceError.missingSession }
         if saved {
@@ -1495,6 +1514,33 @@ private struct PostRow: Decodable {
             liked: liked,
             saved: saved
         )
+    }
+}
+
+private struct ProfileVisitParams: Encodable {
+    let target: UUID
+}
+
+private struct ProfileVisitRow: Decodable {
+    let visitorID: UUID
+    let name: String
+    let birthDate: Date
+    let university: String
+    let department: String
+    let academicYear: String
+    let bio: String
+    let avatarPath: String?
+    let isVerified: Bool
+    let lastVisitedAt: Date
+
+    enum CodingKeys: String, CodingKey {
+        case name, university, department, bio
+        case visitorID = "visitor_id"
+        case birthDate = "birth_date"
+        case academicYear = "academic_year"
+        case avatarPath = "avatar_path"
+        case isVerified = "is_verified"
+        case lastVisitedAt = "last_visited_at"
     }
 }
 

@@ -104,6 +104,9 @@ protocol ProductService: Sendable {
     /// Yer görünürlüğü. `placeID` nil ise görünürlük kapatılır.
     func setVisiblePlace(_ placeID: UUID?) async throws
     func fetchPeopleAtPlace(_ placeID: UUID) async throws -> [StudentProfile]
+    /// Profil ziyaretleri. Kayıt yalnızca RPC ile oluşur; istemci doğrudan yazamaz.
+    func recordProfileVisit(_ profileID: UUID) async throws
+    func fetchProfileVisits() async throws -> [ProfileVisit]
 }
 
 struct BackendConfiguration: Sendable {
@@ -180,6 +183,8 @@ struct UnconfiguredProductService: ProductService {
     func setClubMembership(_ clubID: UUID, joined: Bool) async throws { try fail() }
     func setVisiblePlace(_ placeID: UUID?) async throws { try fail() }
     func fetchPeopleAtPlace(_ placeID: UUID) async throws -> [StudentProfile] { try fail() }
+    func recordProfileVisit(_ profileID: UUID) async throws { try fail() }
+    func fetchProfileVisits() async throws -> [ProfileVisit] { try fail() }
 }
 
 enum ProductServiceFactory {

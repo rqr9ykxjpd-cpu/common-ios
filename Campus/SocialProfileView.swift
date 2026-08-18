@@ -3,6 +3,7 @@ import SwiftUI
 struct SocialProfileView: View {
     @Environment(AppState.self) private var appState
     @State private var showSaved = false
+    @State private var showVisits = false
     @State private var showComposer = false
     @State private var showMeetingRequests = false
     @State private var showSignOutAlert = false
@@ -41,6 +42,7 @@ struct SocialProfileView: View {
             }
             .sheet(isPresented: $showCardPreview) { OwnCardPreviewView() }
             .sheet(isPresented: $showSaved) { savedPostsSheet }
+            .sheet(isPresented: $showVisits) { visitorsSheet }
             .sheet(isPresented: $showComposer) { CreatePostView() }
             .sheet(isPresented: $showMeetingRequests) {
                 MeetingRequestsView()
@@ -169,6 +171,7 @@ struct SocialProfileView: View {
             Rectangle()
                 .fill(CampusTheme.hairline)
                 .frame(width: 1, height: 34)
+            metric(value: "\(appState.profileVisits.count)", label: "Ziyaretçi")
         }
         .padding(.vertical, CampusTheme.Space.sm)
     }
@@ -252,10 +255,56 @@ struct SocialProfileView: View {
 
     private var actions: some View {
         HStack(spacing: CampusTheme.Space.sm) {
-            // "Ziyaretçiler" kaldırıldı: profil görüntülemeleri hiçbir yerde kaydedilmiyordu,
-            // liste her zaman boştu. Kaydedilenler ise artık gerçekten kalıcı.
+            AppButton(title: "Ziyaretçiler", systemName: "eye", role: .secondary) { showVisits = true }
             AppButton(title: "Kaydedilenler", systemName: "bookmark", role: .secondary) { showSaved = true }
             AppButton(title: "Gönderi", systemName: "plus", role: .accent) { showComposer = true }
+        }
+    }
+
+    private var visitorsSheet: some View {
+        NavigationStack {
+            ScrollView {
+                if appState.profileVisits.isEmpty {
+                    ContentUnavailableView(
+                        "Henüz ziyaretçi yok",
+                        systemImage: "eye",
+                        description: Text("Profilini görüntüleyenler burada görünecek. Son 30 gün gösterilir.")
+                    )
+                    .padding(.top, CampusTheme.Space.xxl)
+                } else {
+                    LazyVStack(spacing: CampusTheme.Space.sm) {
+                        ForEach(appState.profileVisits) { visit in
+                            HStack(spacing: CampusTheme.Space.md) {
+                                ProfileMedia(url: visit.profile.imageURL, data: nil, assetName: nil)
+                                    .frame(width: 48, height: 48)
+                                    .clipShape(Circle())
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(visit.profile.name)
+                                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                                    Text(visit.profile.department)
+                                        .font(.system(size: 12, design: .rounded))
+                                        .foregroundStyle(CampusTheme.muted)
+                                }
+                                Spacer(minLength: 0)
+                                Text(visit.visitedAt.formatted(.relative(presentation: .named)))
+                                    .font(.system(size: 11, design: .rounded))
+                                    .foregroundStyle(CampusTheme.muted)
+                            }
+                            .padding(CampusTheme.Space.md)
+                            .background(CampusTheme.surface, in: RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous))
+                        }
+                    }
+                    .padding(CampusTheme.Space.lg)
+                }
+            }
+            .background(CampusTheme.paper.ignoresSafeArea())
+            .refreshable { await appState.loadProfileVisits() }
+            .task { await appState.loadProfileVisits() }
+            .navigationTitle("Ziyaretçiler")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) { Button("Bitti") { showVisits = false } }
+            }
         }
     }
 
