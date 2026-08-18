@@ -17,7 +17,7 @@ struct PremiumDiscoverView: View {
                 topBar
                 if let profile = appState.profiles.first {
                     ZStack {
-                        DiscoveryCard(profile: profile)
+                        DiscoveryCard(profile: profile, highlightedInterests: appState.draft.interests)
                             .overlay(alignment: .top) {
                                 HStack {
                                     decisionStamp("TANIŞ", color: CampusTheme.acid, rotation: -12)
@@ -207,22 +207,53 @@ struct PremiumDiscoverView: View {
                 Button("Tekrar dene") { Task { await appState.loadDiscovery(reset: true) } }
                     .foregroundStyle(CampusTheme.acid)
             } else {
-            Image(systemName: "person.2.slash")
-                .font(.system(size: 34, weight: .light))
-                .foregroundStyle(CampusTheme.acid)
-            Text("Şimdilik hepsi bu.")
-                .editorialTitle(40)
-                .foregroundStyle(.white)
-                .multilineTextAlignment(.center)
-            Text("Yeni insanlar katıldıkça burada göreceksin.")
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.58))
-                .multilineTextAlignment(.center)
-            Text("Yeni öneriler olduğunda burada görünecek.")
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
-                .foregroundStyle(.white.opacity(0.42))
-            Button("Filtreleri değiştir") { showFilters = true }
-                .foregroundStyle(CampusTheme.acid)
+                let activeFilters = appState.discoveryFilters.activeCount
+                Image(systemName: activeFilters > 0 ? "line.3.horizontal.decrease.circle" : "person.2.slash")
+                    .font(.system(size: 34, weight: .light))
+                    .foregroundStyle(CampusTheme.acid)
+                Text(activeFilters > 0 ? "Filtrelerine uyan\nkimse kalmadı." : "Şimdilik hepsi bu.")
+                    .editorialTitle(38)
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+
+                // Liste boş kalınca sebebin filtreler mi yoksa gerçekten kimsenin olmaması mı
+                // olduğu anlaşılmıyordu; kullanıcı filtreyi daralttığını unutmuş olabilir.
+                if activeFilters > 0 {
+                    Text("\(activeFilters) filtren açık. Gevşetirsen daha fazla kişi görürsün.")
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.58))
+                        .multilineTextAlignment(.center)
+                    VStack(spacing: 10) {
+                        Button {
+                            Haptics.impact(.light)
+                            Task { await appState.applyDiscoveryFilters(DiscoveryFilters()) }
+                        } label: {
+                            Text("FİLTRELERİ TEMİZLE")
+                                .font(.system(size: 11, weight: .black, design: .rounded)).tracking(1)
+                                .foregroundStyle(CampusTheme.ink)
+                                .padding(.horizontal, 22).frame(height: 46)
+                                .background(CampusTheme.acid, in: Capsule())
+                        }
+                        .buttonStyle(PressableStyle())
+                        Button("Filtreleri düzenle") { showFilters = true }
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.6))
+                    }
+                } else {
+                    Text("Yeni insanlar katıldıkça burada göreceksin.")
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.58))
+                        .multilineTextAlignment(.center)
+                    Button {
+                        Haptics.impact(.light)
+                        Task { await appState.loadDiscovery(reset: true) }
+                    } label: {
+                        Label("Yenile", systemImage: "arrow.clockwise")
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .foregroundStyle(CampusTheme.acid)
+                    }
+                    .buttonStyle(PressableStyle())
+                }
             }
         }
         .padding(.horizontal, 28)

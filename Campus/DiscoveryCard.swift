@@ -7,6 +7,9 @@ struct DiscoveryCard: View {
     let profile: StudentProfile
     /// Uyum yüzdesi karşı tarafa göre hesaplanır; kendi kartını önizlerken anlamsız olduğu için gizlenir.
     var showsCompatibility = true
+    /// Kullanıcının kendi ilgi alanları. Kesişenler kartta vurgulanır — "neden bu kişi"
+    /// sorusunun cevabı listede düz metin olarak kayboluyordu.
+    var highlightedInterests: Set<String> = []
     @State private var photoIndex = 0
 
     /// Gösterilecek fotoğraflar. Galeri boşsa ana profil fotoğrafına düşer.
@@ -124,6 +127,14 @@ struct DiscoveryCard: View {
         .onChange(of: profile.id) { _, _ in photoIndex = 0 }
     }
 
+    /// Ortak olanlar başa alınır ki ilk üçte mutlaka görünsünler.
+    private var sortedInterests: [String] {
+        profile.interests.sorted { lhs, rhs in
+            let l = highlightedInterests.contains(lhs), r = highlightedInterests.contains(rhs)
+            return l == r ? lhs < rhs : l
+        }
+    }
+
     private func step(_ delta: Int) {
         guard photos.count > 1 else { return }
         let next = photoIndex + delta
@@ -178,12 +189,23 @@ struct DiscoveryCard: View {
             }
 
             HStack(spacing: 7) {
-                ForEach(profile.interests.prefix(3), id: \.self) { item in
-                    Text(item)
-                        .font(.system(size: 11, weight: .semibold, design: .rounded))
-                        .padding(.horizontal, 9)
-                        .frame(height: 26)
-                        .background(CampusTheme.ink.opacity(0.055), in: Capsule())
+                // Ortak ilgi alanları önce ve vurgulu gösteriliyor; hepsi aynı görünürken
+                // hangisinin paylaşıldığı anlaşılmıyordu.
+                ForEach(sortedInterests.prefix(3), id: \.self) { item in
+                    let shared = highlightedInterests.contains(item)
+                    HStack(spacing: 4) {
+                        if shared {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 8, weight: .black))
+                        }
+                        Text(item)
+                            .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    }
+                    .foregroundStyle(shared ? CampusTheme.violet : CampusTheme.ink)
+                    .padding(.horizontal, 9)
+                    .frame(height: 26)
+                    .background(shared ? CampusTheme.violet.opacity(0.12) : CampusTheme.ink.opacity(0.055), in: Capsule())
+                    .overlay(Capsule().stroke(shared ? CampusTheme.violet.opacity(0.35) : .clear))
                 }
                 Spacer()
             }
