@@ -77,48 +77,21 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         )
     }
 
-    /// Google'ın id_token'ındaki `nonce` Supabase'e de iletilmek zorunda.
+    /// `nonce` ham (hash'lenmemiş) değer olmalı — Apple ile aynı kural. Google'a giden
+    /// istekte SHA256'sı kullanılır, Supabase de gönderdiğimiz ham değeri hash'leyip
+    /// id_token'daki nonce ile karşılaştırır.
     ///
-    /// Nonce'u biz üretmiyoruz: GoogleSignIn'in altındaki AppAuth, yetkilendirme isteğini
-    /// kurarken kendiliğinden bir tane üretiyor (`OIDAuthorizationRequest`) ve
-    /// GoogleSignIn 7.1'in public API'sinde bunu devre dışı bırakmanın ya da dışarıdan
-    /// vermenin bir yolu yok. Sonuçta token'da nonce var, biz göndermeyince Supabase
-    /// "passed nonce and nonce in id_token should either both exist or not" diyip reddediyordu.
-    ///
-    /// Token'daki değeri geri iletmek güvenlik zayıflatmıyor: asıl tekrar-oynatma kontrolü
-    /// AppAuth içinde zaten yapılıyor — id_token'ın nonce'u kendi isteğinin nonce'uyla
-    /// eşleşmezse "Nonce mismatch" ile reddediyor (OpenID Connect Core §3.1.3.7 #11).
-    /// Supabase tarafında token'ın imzası, issuer'ı ve audience'ı ayrıca doğrulanıyor.
-    func signInWithGoogle(idToken: String, accessToken: String) async throws {
+    /// Nonce'u kendimiz üretmek zorundayız: vermezsek GoogleSignIn'in altındaki AppAuth
+    /// kendiliğinden üretiyor ve ne gönderirsek gönderelim karşılaştırma tutmuyordu.
+    func signInWithGoogle(idToken: String, accessToken: String, nonce: String) async throws {
         try await client.auth.signInWithIdToken(
             credentials: OpenIDConnectCredentials(
                 provider: .google,
                 idToken: idToken,
                 accessToken: accessToken,
-                nonce: Self.nonceClaim(in: idToken)
+                nonce: nonce
             )
         )
-    }
-
-    /// JWT'nin yük bölümünü çözüp `nonce` iddiasını okur. İmza doğrulaması burada
-    /// yapılmaz — o Supabase'in işi; buradaki tek amaç alanı okuyup geri iletmek.
-    static func nonceClaim(in idToken: String) -> String? {
-        let parts = idToken.split(separator: ".")
-        guard parts.count >= 2 else { return nil }
-
-        // base64url → base64: karakterleri çevir ve 4'ün katına tamamla.
-        var payload = String(parts[1])
-            .replacingOccurrences(of: "-", with: "+")
-            .replacingOccurrences(of: "_", with: "/")
-        let remainder = payload.count % 4
-        if remainder > 0 { payload += String(repeating: "=", count: 4 - remainder) }
-
-        guard let data = Data(base64Encoded: payload),
-              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let nonce = object["nonce"] as? String,
-              !nonce.isEmpty
-        else { return nil }
-        return nonce
     }
 
     func restoreSession() async throws -> UUID? {

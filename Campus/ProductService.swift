@@ -54,7 +54,7 @@ protocol ProductService: Sendable {
     var currentUserEmail: String? { get }
 
     func signInWithApple(idToken: String, nonce: String) async throws
-    func signInWithGoogle(idToken: String, accessToken: String) async throws
+    func signInWithGoogle(idToken: String, accessToken: String, nonce: String) async throws
     func restoreSession() async throws -> UUID?
     func signOut() async throws
     func deleteAccount() async throws
@@ -141,7 +141,7 @@ struct UnconfiguredProductService: ProductService {
     private func fail() throws -> Never { throw BackendServiceError.missingConfiguration }
 
     func signInWithApple(idToken: String, nonce: String) async throws { try fail() }
-    func signInWithGoogle(idToken: String, accessToken: String) async throws { try fail() }
+    func signInWithGoogle(idToken: String, accessToken: String, nonce: String) async throws { try fail() }
     func restoreSession() async throws -> UUID? { nil }
     func signOut() async throws {}
     func deleteAccount() async throws { try fail() }

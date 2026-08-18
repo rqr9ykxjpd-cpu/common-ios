@@ -129,9 +129,9 @@ final class AppState {
     }
 
     @discardableResult
-    func signInWithGoogle(idToken: String, accessToken: String) async -> Bool {
+    func signInWithGoogle(idToken: String, accessToken: String, nonce: String) async -> Bool {
         do {
-            try await service.signInWithGoogle(idToken: idToken, accessToken: accessToken)
+            try await service.signInWithGoogle(idToken: idToken, accessToken: accessToken, nonce: nonce)
             return try await completeSocialSignIn()
         } catch {
             toast = error.localizedDescription

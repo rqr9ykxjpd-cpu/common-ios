@@ -203,12 +203,30 @@ struct WelcomeView: View {
         Task {
             defer { isSigningIn = false }
             do {
-                let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController)
+                // Apple akışıyla birebir aynı desen: ham nonce bizde kalır, Google'a
+                // SHA256'sı gider (id_token'a o yazılır), Supabase'e ham hali gider ve
+                // o da hash'leyip token'daki değerle karşılaştırır.
+                //
+                // Nonce'u kendimiz vermek zorundayız: vermezsek GoogleSignIn'in altındaki
+                // AppAuth kendiliğinden bir tane üretiyor, Supabase ise gönderilen nonce'u
+                // hash'leyerek karşılaştırdığı için ham değeri geri iletmek de çözmüyordu
+                // ("nonces mismatch"). Dışarıdan nonce vermek GoogleSignIn 9'da mümkün.
+                let nonce = Self.randomNonceString()
+                let result = try await GIDSignIn.sharedInstance.signIn(
+                    withPresenting: rootViewController,
+                    hint: nil,
+                    additionalScopes: nil,
+                    nonce: Self.sha256(nonce)
+                )
                 guard let idToken = result.user.idToken?.tokenString else {
                     appState.toast = "Google ile giriş başarısız"
                     return
                 }
-                await appState.signInWithGoogle(idToken: idToken, accessToken: result.user.accessToken.tokenString)
+                await appState.signInWithGoogle(
+                    idToken: idToken,
+                    accessToken: result.user.accessToken.tokenString,
+                    nonce: nonce
+                )
             } catch {
                 let nsError = error as NSError
                 guard nsError.code != GIDSignInError.canceled.rawValue else { return }
