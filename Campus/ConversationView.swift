@@ -8,6 +8,7 @@ struct ConversationView: View {
     @State private var showProfile = false
     @State private var replyingTo: Message?
     @State private var activeMessageActions: UUID?
+    @State private var showUnmatchAlert = false
     @FocusState private var focused: Bool
 
     private var conversation: Conversation? { appState.conversations.first { $0.id == conversationID } }
@@ -52,6 +53,15 @@ struct ConversationView: View {
         .foregroundStyle(CampusTheme.ink)
         .toolbar(.hidden, for: .navigationBar)
         .onAppear { appState.markConversationRead(conversationID) }
+        .alert("Eşleşme sonlandırılsın mı?", isPresented: $showUnmatchAlert) {
+            Button("Vazgeç", role: .cancel) {}
+            Button("Eşleşmeyi bitir", role: .destructive) {
+                appState.unmatch(conversationID)
+                dismiss()
+            }
+        } message: {
+            Text("Sohbet ikinizden de kaldırılır. Karşı taraf engellenmez; ileride tekrar eşleşebilirsiniz.")
+        }
         .sheet(isPresented: $showProfile) {
             if let profile = conversation?.profile {
                 NavigationStack {
@@ -89,6 +99,7 @@ struct ConversationView: View {
                 } label: {
                     Label("Şikâyet et", systemImage: "flag")
                 }
+                Button("Eşleşmeyi bitir", role: .destructive) { showUnmatchAlert = true }
                 Button("Engelle", role: .destructive) {
                     appState.block(conversation.profile)
                     dismiss()

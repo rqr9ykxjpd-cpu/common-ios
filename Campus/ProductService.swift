@@ -107,6 +107,8 @@ protocol ProductService: Sendable {
     /// Profil ziyaretleri. Kayıt yalnızca RPC ile oluşur; istemci doğrudan yazamaz.
     func recordProfileVisit(_ profileID: UUID) async throws
     func fetchProfileVisits() async throws -> [ProfileVisit]
+    /// Eşleşmeyi sonlandırır. Engellemekten farklı: karşı taraf engellenmiş olmaz.
+    func unmatch(_ matchID: UUID) async throws
 }
 
 struct BackendConfiguration: Sendable {
@@ -185,6 +187,7 @@ struct UnconfiguredProductService: ProductService {
     func fetchPeopleAtPlace(_ placeID: UUID) async throws -> [StudentProfile] { try fail() }
     func recordProfileVisit(_ profileID: UUID) async throws { try fail() }
     func fetchProfileVisits() async throws -> [ProfileVisit] { try fail() }
+    func unmatch(_ matchID: UUID) async throws { try fail() }
 }
 
 enum ProductServiceFactory {

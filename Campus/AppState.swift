@@ -24,7 +24,7 @@ final class AppState {
     }
 
     enum OnboardingStep: Int, Equatable, CaseIterable {
-        case email, code, identity, preferences, interests, ready
+        case email, code, identity, preferences, interests, photo, ready
     }
 
     var route: Route
@@ -287,6 +287,11 @@ final class AppState {
         defer { isFinishingOnboarding = false }
         do {
             try await service.saveProfile(draft)
+            // Kayıt sırasında seçilen fotoğraf da hemen yüklenmeli; aksi halde kullanıcı
+            // fotoğrafını seçmiş olmasına rağmen Tanış'ta boş kartla görünür.
+            if let avatarData {
+                avatarURL = try await service.updateAvatar(avatarData)
+            }
         } catch {
             toast = error.localizedDescription
             return
@@ -515,6 +520,25 @@ final class AppState {
                 toast = "\(profile.name) engellendi"
                 Haptics.success()
             } catch {
+                toast = error.localizedDescription
+            }
+        }
+    }
+
+    /// Eşleşmeyi sonlandırır. Engellemeden farklı olarak karşı taraf engellenmiş olmaz;
+    /// tek çıkış yolu engellemek olduğu için insanlar sıkıldıkları kişiyi engellemek
+    /// zorunda kalıyordu.
+    func unmatch(_ conversationID: UUID) {
+        let previous = conversations
+        conversations.removeAll { $0.id == conversationID }
+        if selectedConversation?.id == conversationID { selectedConversation = nil }
+        Task {
+            do {
+                try await service.unmatch(conversationID)
+                toast = "Eşleşme sonlandırıldı"
+                Haptics.success()
+            } catch {
+                conversations = previous
                 toast = error.localizedDescription
             }
         }

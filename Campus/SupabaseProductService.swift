@@ -541,6 +541,10 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         }
     }
 
+    func unmatch(_ matchID: UUID) async throws {
+        try await client.rpc("unmatch", params: UnmatchParams(matchUUID: matchID)).execute()
+    }
+
     func recordProfileVisit(_ profileID: UUID) async throws {
         try await client.rpc("record_profile_visit", params: ProfileVisitParams(target: profileID)).execute()
     }
@@ -1515,6 +1519,11 @@ private struct PostRow: Decodable {
             saved: saved
         )
     }
+}
+
+private struct UnmatchParams: Encodable {
+    let matchUUID: UUID
+    enum CodingKeys: String, CodingKey { case matchUUID = "match_uuid" }
 }
 
 private struct ProfileVisitParams: Encodable {

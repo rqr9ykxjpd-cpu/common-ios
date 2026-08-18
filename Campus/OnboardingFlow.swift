@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 struct OnboardingFlow: View {
     @Environment(AppState.self) private var appState
@@ -20,6 +21,7 @@ struct OnboardingFlow: View {
                     case .identity: IdentityStep(draft: $appState.draft) { appState.advance(from: step) }
                     case .preferences: PreferencesStep(draft: $appState.draft) { appState.advance(from: step) }
                     case .interests: InterestsStep(draft: $appState.draft) { appState.advance(from: step) }
+                    case .photo: PhotoStep(avatarData: $appState.avatarData) { appState.advance(from: step) }
                     case .ready: ReadyStep(name: appState.draft.name, isSaving: appState.isFinishingOnboarding) { appState.advance(from: step) }
                     }
                 }
@@ -430,5 +432,78 @@ struct FlowLayout: Layout {
             points.append(CGPoint(x: x, y: y)); x += size.width + spacing; rowHeight = max(rowHeight, size.height)
         }
         return (CGSize(width: width, height: y + rowHeight), points)
+    }
+}
+
+
+/// Kayıt akışında fotoğraf adımı. Bu adım yokken kullanıcı kaydını fotoğrafsız
+/// tamamlayabiliyordu; Tanış'ta gri bir kartla görünüyor, kimse beğenmiyor ve
+/// uygulamanın boş olduğunu düşünüyordu.
+private struct PhotoStep: View {
+    @Binding var avatarData: Data?
+    let submit: () -> Void
+    @State private var item: PhotosPickerItem?
+    @State private var isLoading = false
+
+    var body: some View {
+        // Değerler önce yerele alınıyor: StepScaffold içeriği izole olmayan bir bağlamda
+        // değerlendirildiği için doğrudan @State okumak eşzamanlılık uyarısı üretiyor.
+        let currentAvatar = avatarData
+        let loading = isLoading
+        return StepScaffold(
+            eyebrow: "son adım",
+            title: "Bir fotoğrafla\ntanışalım.",
+            subtitle: "Yüzünün net göründüğü güncel bir fotoğraf seç. Sonradan değiştirebilirsin.",
+            content: VStack(spacing: 16) {
+                PhotosPicker(selection: $item, matching: .images) {
+                    ZStack(alignment: .bottomTrailing) {
+                        ProfileMedia(url: nil, data: currentAvatar)
+                            .frame(width: 168, height: 208)
+                            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(CampusTheme.ink.opacity(0.12)))
+                        if loading {
+                            ProgressView().tint(.white).padding(12)
+                        } else {
+                            Image(systemName: currentAvatar == nil ? "plus" : "arrow.triangle.2.circlepath")
+                                .font(.system(size: 15, weight: .bold))
+                                .foregroundStyle(CampusTheme.paper)
+                                .frame(width: 38, height: 38)
+                                .background(CampusTheme.ink, in: Circle())
+                                .padding(9)
+                        }
+                    }
+                }
+                .buttonStyle(PressableStyle())
+                .accessibilityLabel(currentAvatar == nil ? "Profil fotoğrafı seç" : "Profil fotoğrafını değiştir")
+
+                if currentAvatar == nil {
+                    Text("Fotoğrafı olmayan profiller keşifte çok az görüntüleniyor.")
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .foregroundStyle(CampusTheme.ink.opacity(0.45))
+                        .multilineTextAlignment(.center)
+                }
+            }
+            .frame(maxWidth: .infinity),
+            footer: VStack(spacing: 10) {
+                PrimaryEditorialButton(title: "DEVAM ET", enabled: currentAvatar != nil && !loading, action: submit)
+                // Zorunlu tutmuyoruz: fotoğrafı olmayan biri kayıt akışında tıkanıp
+                // uygulamayı hiç kullanamamaktansa sonradan ekleyebilsin.
+                Button("Şimdilik atla") { submit() }
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundStyle(CampusTheme.ink.opacity(0.45))
+            }
+        )
+        .onChange(of: item) { _, newItem in
+            guard newItem != nil else { return }
+            isLoading = true
+            Task {
+                let raw = try? await newItem?.loadTransferable(type: Data.self)
+                let prepared = raw.flatMap(ImageCompression.prepareForUpload)
+                await MainActor.run {
+                    if let prepared { avatarData = prepared }
+                    isLoading = false
+                }
+            }
+        }
     }
 }

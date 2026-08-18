@@ -57,7 +57,8 @@ struct ProfileEditorView: View {
         .onAppear { loadOnce() }
         .onChange(of: avatarItem) { _, item in
             Task {
-                let data = try? await item?.loadTransferable(type: Data.self)
+                let raw = try? await item?.loadTransferable(type: Data.self)
+                let data = raw.flatMap(ImageCompression.prepareForUpload)
                 await MainActor.run { avatarData = data }
             }
         }
@@ -65,7 +66,8 @@ struct ProfileEditorView: View {
             Task {
                 var loadedImages: [Data] = []
                 for item in items.prefix(5) {
-                    if let data = try? await item.loadTransferable(type: Data.self) { loadedImages.append(data) }
+                    if let raw = try? await item.loadTransferable(type: Data.self),
+                       let data = ImageCompression.prepareForUpload(raw) { loadedImages.append(data) }
                 }
                 await MainActor.run { galleryData = loadedImages }
             }

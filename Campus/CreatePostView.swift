@@ -51,7 +51,7 @@ struct CreatePostView: View {
             .toolbar(.hidden, for: .navigationBar)
             .safeAreaInset(edge: .bottom, spacing: 0) { bottomControls }
             .sheet(isPresented: $showCamera) {
-                CameraPicker { image in imageData = image.jpegData(compressionQuality: 0.88) }
+                CameraPicker { image in imageData = image.jpegData(compressionQuality: 0.9).flatMap(ImageCompression.prepareForUpload) }
                     .ignoresSafeArea()
             }
             .alert("Kamera kullanılamıyor", isPresented: $showCameraUnavailable) {
@@ -61,7 +61,8 @@ struct CreatePostView: View {
             }
             .onChange(of: selectedItem) { _, item in
                 Task {
-                    let loaded = try? await item?.loadTransferable(type: Data.self)
+                    let raw = try? await item?.loadTransferable(type: Data.self)
+                    let loaded = raw.flatMap(ImageCompression.prepareForUpload)
                     await MainActor.run { imageData = loaded }
                 }
             }
