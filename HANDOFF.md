@@ -50,17 +50,19 @@ Kimlik doğrulama (OTP), profil kaydetme/geri yükleme, profil fotoğrafı ve ga
 (Storage + imzalı URL), keşif ve eşleşme, gerçek zamanlı mesajlaşma, mesaj
 reaksiyonları, gönderi/yorum/beğeni, gönderi kaydetme, engelleme ve şikayet,
 bildirimler, story'ler, buluşma istekleri, kulüpler, kampüs yerleri,
-yer görünürlüğü.
+yer görünürlüğü, profil ziyaretleri (7 gün saklanır, kişi başına tek satır),
+eşleşmeyi bitirme.
+
+**Görünüm:** Koyu mod bir tercih olarak var (Profil > Görünüm: Sistem/Açık/Koyu,
+`UserDefaults`'ta saklanır). Karşılama ve kayıt akışı bilinçli olarak her zaman
+açık modda — kullanıcı o aşamada ayara ulaşamıyor. Tanış, story, eşleşme anı ve
+kayıt sonu ekranları tasarımı gereği her iki modda da koyu (`CampusTheme.canvasDark`).
 
 **Demo modu yoktur.** `Configuration.local.xcconfig` olmadan uygulama açılır ama
 her işlem "Supabase yapılandırması eksik" hatası verir (`UnconfiguredProductService`).
 Örnek/sahte veri, demo girişi ve demo yönetici yetkileri tamamen kaldırıldı.
 
 ### Eksik
-- **Profil ziyaretleri** — "Ziyaretçiler" özelliği kaldırıldı: profil
-  görüntülemeleri hiçbir yerde kaydedilmiyordu, liste her zaman boştu.
-  Yeniden eklenecekse önce ürün kararı gerekiyor: kim kimin ziyaretini
-  görebilir, kullanıcı kapatabilmeli mi, kayıt ne kadar saklanır.
 - **Push bildirimi** — `device_tokens` tablosu ve `registerDeviceToken` servis
   metodu hazır. Eksik: iOS izin akışı, token kaydı, APNs'e istek atan Edge
   Function. Apple Developer hesabı ve APNs `.p8` anahtarı gerekiyor.
@@ -68,9 +70,11 @@ her işlem "Supabase yapılandırması eksik" hatası verir (`UnconfiguredProduc
   her görseli **tek tek, sırayla** indiriyor (N+1). Sayfalama yok.
   Çözüm: `createSignedUrls` toplu çağrısı + `AsyncImage` ile tembel yükleme.
 - **Erişilebilirlik** — Dynamic Type desteklenmiyor (~228 sabit punto),
-  dark mode yok (`.preferredColorScheme(.light)` ile kilitli), lokalizasyon
-  altyapısı yok (tüm metinler Türkçe hardcoded), bazı kontrast oranları
-  WCAG AA altında.
+  lokalizasyon altyapısı yok (tüm metinler Türkçe hardcoded), bazı kontrast
+  oranları WCAG AA altında. İkon butonlarının etiketleri tamamlandı.
+- **Sessiz hata yolları** — `loadProfileVisits`, `loadPlaces`, `loadClubs`,
+  `fetchPeopleAtPlace`, `fetchStoryViews` sunucu hatasını `try?` ile yutuyor.
+  Çökmez ama liste sebepsiz boş görünür; kullanıcıya mesaj gösterilmiyor.
 - **Test yok** — test target'ı bulunmuyor. `ProductService` protokolü zaten
   enjekte edilebilir olduğu için `AppState` testleri düşük maliyetle yazılabilir.
 - **Tek üniversiteye sabitlenmiş** — `UniversityDomain.accepted` ve
@@ -78,11 +82,24 @@ her işlem "Supabase yapılandırması eksik" hatası verir (`UnconfiguredProduc
   hem kod hem migration değişikliği gerektiriyor.
 
 ### Bekleyen kurulum adımları (kod değil, panel işi)
+
+Bunlar tamamlanmadan uygulamaya **hiç giriş yapılamaz**.
+
 1. **Custom SMTP** — Supabase, e-posta şablonu kaynağını düzenlemeyi buna
    şart koşuyor. Ayrıca yerleşik servis saatte birkaç maille sınırlı.
 2. **E-posta şablonları** — `Confirm signup` ve `Magic Link` şablonları
    varsayılan olarak **link** gönderiyor, uygulama ise **kod** bekliyor.
    İkisine de `{{ .Token }}` eklenmeli. Bu yapılmadan giriş çalışmaz.
+3. **Uygulanmamış 3 migration** — sunucuda henüz yok:
+   - `20260818160000_saved_posts.sql` → Kaydedilenler
+   - `20260818180000_profile_visits.sql` → Profil ziyaretleri
+   - `20260818200000_unmatch.sql` → Eşleşmeyi bitir
+
+   Bu üçü olmadan ilgili ekranlar hata verir. SQL Editor'de sırayla çalıştırın;
+   hepsi idempotent. (Kopyalarken 4. tuzağa dikkat: panoyu kullanmayın.)
+4. **İlk gerçek giriş** — bugüne kadar hiçbir akış canlı sunucuya karşı uçtan
+   uca çalıştırılmadı. Kayıt → fotoğraf → eşleşme → mesaj yolu ilk kez burada
+   denenecek.
 
 ---
 
