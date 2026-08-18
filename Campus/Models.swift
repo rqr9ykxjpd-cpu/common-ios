@@ -34,6 +34,19 @@ struct DiscoveryFilters: Equatable, Codable {
     var departments: Set<String> = []
     var requiresCommonInterest = false
     var campusOnly = true
+
+    /// Varsayılandan sapan filtre sayısı. Keşif boş geldiğinde sebebin filtreler
+    /// olup olmadığı görünmüyordu; buton üzerinde rozetle gösteriliyor.
+    var activeCount: Int {
+        let base = DiscoveryFilters()
+        var count = 0
+        if minimumAge != base.minimumAge || maximumAge != base.maximumAge { count += 1 }
+        if !academicYears.isEmpty { count += 1 }
+        if !departments.isEmpty { count += 1 }
+        if requiresCommonInterest != base.requiresCommonInterest { count += 1 }
+        if campusOnly != base.campusOnly { count += 1 }
+        return count
+    }
 }
 
 struct DiscoveryReactionResult: Sendable {

@@ -7,6 +7,17 @@ struct DiscoveryCard: View {
     let profile: StudentProfile
     /// Uyum yüzdesi karşı tarafa göre hesaplanır; kendi kartını önizlerken anlamsız olduğu için gizlenir.
     var showsCompatibility = true
+    @State private var photoIndex = 0
+
+    /// Gösterilecek fotoğraflar. Galeri boşsa ana profil fotoğrafına düşer.
+    private var photos: [URL] {
+        profile.galleryImageURLs.isEmpty ? [profile.imageURL].compactMap { $0 } : profile.galleryImageURLs
+    }
+
+    private var currentPhoto: URL? {
+        guard !photos.isEmpty else { return nil }
+        return photos[min(photoIndex, photos.count - 1)]
+    }
 
     var body: some View {
         GeometryReader { proxy in
@@ -18,12 +29,27 @@ struct DiscoveryCard: View {
                 // çocuklarından çıkarmaya bırakmak, katmanlar farklı yükseklikler isteyince
                 // fotoğrafla bilgi paneli arasında boşluk bırakıyor ya da katmanı kırpıyordu.
                 ZStack(alignment: .topLeading) {
-                    ProfileMedia(url: profile.imageURL, data: nil, assetName: profile.imageAssetName)
+                    ProfileMedia(url: currentPhoto, data: nil, assetName: nil)
                         .frame(width: width, height: photoHeight)
                         .clipped()
+                        .id(photoIndex)
 
                     LinearGradient(colors: [.black.opacity(0.38), .clear, .black.opacity(0.75)], startPoint: .top, endPoint: .bottom)
                         .frame(width: width, height: photoHeight)
+
+                    // Fotoğraf noktaları "sayfa çevirebilirsin" diyordu ama hiçbir şey
+                    // yapmıyordu; diğer fotoğrafları görmek için detay sayfasını açmak
+                    // gerekiyordu. Sağ/sol yarıya dokunmak artık gerçekten sayfa çeviriyor.
+                    if photos.count > 1 {
+                        HStack(spacing: 0) {
+                            Button { step(-1) } label: { Color.clear.contentShape(Rectangle()) }
+                                .accessibilityLabel("Önceki fotoğraf")
+                            Button { step(1) } label: { Color.clear.contentShape(Rectangle()) }
+                                .accessibilityLabel("Sonraki fotoğraf")
+                        }
+                        .buttonStyle(.plain)
+                        .frame(width: width, height: photoHeight)
+                    }
 
                     VStack(spacing: 0) {
                         HStack {
@@ -66,14 +92,15 @@ struct DiscoveryCard: View {
                     .padding(16)
                     .frame(width: width, height: photoHeight)
 
-                    if photoCount > 1 {
+                    if photos.count > 1 {
                         HStack(spacing: 4) {
-                            ForEach(0..<photoCount, id: \.self) { index in
+                            ForEach(0..<photos.count, id: \.self) { index in
                                 Capsule()
-                                    .fill(index == 0 ? .white : .white.opacity(0.45))
-                                    .frame(width: index == 0 ? 16 : 5, height: 5)
+                                    .fill(index == photoIndex ? .white : .white.opacity(0.45))
+                                    .frame(width: index == photoIndex ? 16 : 5, height: 5)
                             }
                         }
+                        .animation(.snappy(duration: 0.2), value: photoIndex)
                         .padding(.horizontal, 10)
                         .frame(height: 22)
                         .background(.black.opacity(0.3), in: Capsule())
@@ -92,11 +119,17 @@ struct DiscoveryCard: View {
             .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(.white.opacity(0.16), lineWidth: 1))
             .shadow(color: .black.opacity(0.3), radius: 24, y: 12)
         }
+        // SwiftUI kart görünümünü sonraki profil için yeniden kullanıyor; sıfırlamazsak
+        // yeni kişinin kartı önceki kişide kalınan fotoğraf numarasından açılır.
+        .onChange(of: profile.id) { _, _ in photoIndex = 0 }
     }
 
-    private var photoCount: Int {
-        let count = profile.galleryImageURLs.count
-        return max(count, 1)
+    private func step(_ delta: Int) {
+        guard photos.count > 1 else { return }
+        let next = photoIndex + delta
+        guard next >= 0, next < photos.count else { return }
+        photoIndex = next
+        Haptics.impact(.light)
     }
 
     /// Kartın alt paneli. `compatibilityReasons`, `prompts` ve `activeLabel` backend'den zaten

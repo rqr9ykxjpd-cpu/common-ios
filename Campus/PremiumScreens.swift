@@ -90,11 +90,23 @@ struct PremiumDiscoverView: View {
                 Haptics.impact(.light)
                 showFilters = true
             } label: {
-                Image(systemName: "line.3.horizontal.decrease.circle")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 44, height: 44)
-                    .background(.white.opacity(0.1), in: Circle())
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: "line.3.horizontal.decrease.circle")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 44, height: 44)
+                        .background(.white.opacity(0.1), in: Circle())
+                    if appState.discoveryFilters.activeCount > 0 {
+                        Text("\(appState.discoveryFilters.activeCount)")
+                            .font(.system(size: 10, weight: .bold, design: .rounded))
+                            .foregroundStyle(CampusTheme.ink)
+                            .frame(width: 17, height: 17)
+                            .background(CampusTheme.acid, in: Circle())
+                    }
+                }
+                .accessibilityLabel(appState.discoveryFilters.activeCount > 0
+                    ? "Filtreler, \(appState.discoveryFilters.activeCount) aktif"
+                    : "Filtreler")
             }
             .buttonStyle(PressableStyle())
             Button {
