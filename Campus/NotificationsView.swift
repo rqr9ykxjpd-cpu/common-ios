@@ -131,7 +131,7 @@ struct NotificationsView: View {
             return
         }
         guard let actor = notification.actor else {
-            appState.toast = notification.body
+            appState.show(notification.body)
             return
         }
         if notification.kind == .message || notification.kind == .match {

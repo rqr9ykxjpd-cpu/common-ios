@@ -10,6 +10,48 @@ struct SocialFeedView: View {
     @State private var showNotifications = false
     @State private var selectedPostAuthor: StudentProfile?
 
+    /// Akış boşken iki ayrı durum var ve bunlar karıştırılmamalı: bir yer filtresi
+    /// seçiliyken o noktada paylaşım olmaması, ile akışta gerçekten hiç gönderi olmaması.
+    /// Önceden ikisine de "Bu noktadan henüz paylaşım yok" deniyor ve filtre seçili
+    /// olmasa bile "Tüm akışı göster" düğmesi gösteriliyordu — o düğme hiçbir şey
+    /// yapmıyordu. İlk kullanıcının gördüğü ilk ekran da burası.
+    @ViewBuilder
+    private var feedEmptyState: some View {
+        VStack(spacing: 10) {
+            if let place = appState.selectedPlaceFilter {
+                Image(systemName: "mappin.slash").font(.title2)
+                Text("\(place.name) için henüz paylaşım yok.")
+                    .font(.subheadline.bold())
+                    .multilineTextAlignment(.center)
+                Button("Tüm akışı göster") { appState.selectedPlaceFilter = nil }
+                    .font(.caption.bold())
+                    .foregroundStyle(CampusTheme.violet)
+            } else {
+                Image(systemName: "photo.on.rectangle.angled").font(.title2)
+                Text("Akış henüz boş.")
+                    .font(.subheadline.bold())
+                Text("İlk paylaşımı sen yapabilirsin.")
+                    .font(.caption)
+                    .foregroundStyle(CampusTheme.ink.opacity(0.45))
+                Button {
+                    Haptics.impact(.light)
+                    showPostComposer = true
+                } label: {
+                    Text("BİR ŞEY PAYLAŞ")
+                        .font(.system(size: 11, weight: .black, design: .rounded)).tracking(1)
+                        .foregroundStyle(CampusTheme.paper)
+                        .padding(.horizontal, 22).frame(height: 44)
+                        .background(CampusTheme.ink, in: Capsule())
+                }
+                .buttonStyle(PressableStyle())
+                .padding(.top, 4)
+            }
+        }
+        .foregroundStyle(CampusTheme.ink.opacity(0.55))
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 48)
+    }
+
     private var visiblePosts: [SocialPost] {
         guard let place = appState.selectedPlaceFilter else { return appState.posts }
         return appState.posts.filter { $0.place?.id == place.id }
@@ -35,14 +77,7 @@ struct SocialFeedView: View {
                             clubsSection
                             Divider().opacity(0.35).padding(.vertical, 14)
                             if visiblePosts.isEmpty {
-                                VStack(spacing: 10) {
-                                    Image(systemName: "photo.on.rectangle.angled").font(.title2)
-                                    Text("Bu noktadan henüz paylaşım yok.").font(.subheadline.bold())
-                                    Button("Tüm akışı göster") { appState.selectedPlaceFilter = nil }
-                                        .font(.caption.bold()).foregroundStyle(CampusTheme.violet)
-                                }
-                                .foregroundStyle(CampusTheme.ink.opacity(0.55))
-                                .frame(maxWidth: .infinity).padding(.vertical, 48)
+                                feedEmptyState
                             } else {
                                 ForEach(visiblePosts) { post in
                                     PostCard(

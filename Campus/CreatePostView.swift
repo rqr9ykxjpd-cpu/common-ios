@@ -221,10 +221,10 @@ struct CreatePostView: View {
         if isStory {
             guard let imageData else { return }
             appState.publishStory(imageData: imageData, caption: cleanCaption, place: selectedPlace)
-            appState.toast = "Story paylaşıldı"
+            appState.show("Story paylaşıldı")
         } else {
             appState.publishPost(imageData: imageData, caption: cleanCaption, place: selectedPlace)
-            appState.toast = "Gönderi paylaşıldı"
+            appState.show("Gönderi paylaşıldı")
         }
         dismiss()
     }

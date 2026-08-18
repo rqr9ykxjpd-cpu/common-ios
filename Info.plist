@@ -2,6 +2,11 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Uygulamanın tüm metinleri Türkçe. Bunu bildirmezsek iOS uygulamayı İngilizce
+	     sayıyor ve sistemin sağladığı her şey - "Sign in with Apple" düğmesi, uyarı
+	     düğmeleri, tarih biçimleri - Türkçe telefonda bile İngilizce çıkıyor. -->
+	<key>CFBundleDevelopmentRegion</key>
+	<string>tr</string>
 	<!--
 	  Backend yapılandırması. Değerler Campus/Configuration.xcconfig (ve git'e girmeyen
 	  Configuration.local.xcconfig) dosyalarından gelir.

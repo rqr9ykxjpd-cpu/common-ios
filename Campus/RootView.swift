@@ -50,13 +50,13 @@ struct RootView: View {
 }
 
 private struct AppToast: View {
-    let message: String
+    let message: AppToastMessage
 
     var body: some View {
         HStack(spacing: CampusTheme.Space.sm) {
-            Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(CampusTheme.acid)
-            Text(message)
+            Image(systemName: message.systemImage)
+                .foregroundStyle(message.kind == .error ? CampusTheme.coral : CampusTheme.acid)
+            Text(message.text)
                 .font(.system(size: 13, weight: .semibold, design: .rounded))
                 .lineLimit(2)
             Spacer(minLength: 0)
@@ -137,27 +137,6 @@ struct WelcomeView: View {
                         .disabled(isSigningIn)
                     }
 
-#if DEBUG
-                    // Sunucu olmadan uygulamayı gezmek için. Yalnızca geliştirme
-                    // derlemesinde var; App Store'a giden derlemede bu blok yok.
-                    Button {
-                        Haptics.impact(.light)
-                        NotificationCenter.default.post(name: .campusUseSampleData, object: nil)
-                    } label: {
-                        HStack(spacing: 7) {
-                            Image(systemName: "hammer.fill").font(.system(size: 11, weight: .semibold))
-                            Text("ÖRNEK VERİYLE GEZ").font(.system(size: 10, weight: .black, design: .rounded)).tracking(1)
-                        }
-                        .foregroundStyle(CampusTheme.ink.opacity(0.55))
-                        .frame(maxWidth: .infinity).frame(height: 42)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .stroke(CampusTheme.ink.opacity(0.18), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
-                        )
-                    }
-                    .buttonStyle(PressableStyle())
-                    .padding(.top, 8)
-#endif
                 }
                 .frame(width: proxy.size.width - 44, height: proxy.size.height, alignment: .top)
                 .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
@@ -178,7 +157,7 @@ struct WelcomeView: View {
                   let tokenData = credential.identityToken,
                   let idToken = String(data: tokenData, encoding: .utf8),
                   let nonce = currentAppleNonce else {
-                appState.toast = "Apple ile giriş başarısız"
+                appState.showError("Apple ile giriş tamamlanamadı.")
                 return
             }
             isSigningIn = true
@@ -191,7 +170,7 @@ struct WelcomeView: View {
             // için sessizce geç, gerçek hatalarda toast göster.
             let nsError = error as NSError
             guard nsError.code != ASAuthorizationError.canceled.rawValue else { return }
-            appState.toast = error.localizedDescription
+            appState.showError(error, fallback: "Apple ile giriş yapılamadı.")
         }
     }
 
@@ -219,7 +198,7 @@ struct WelcomeView: View {
                     nonce: Self.sha256(nonce)
                 )
                 guard let idToken = result.user.idToken?.tokenString else {
-                    appState.toast = "Google ile giriş başarısız"
+                    appState.showError("Google ile giriş tamamlanamadı.")
                     return
                 }
                 await appState.signInWithGoogle(
@@ -230,7 +209,7 @@ struct WelcomeView: View {
             } catch {
                 let nsError = error as NSError
                 guard nsError.code != GIDSignInError.canceled.rawValue else { return }
-                appState.toast = error.localizedDescription
+                appState.showError(error, fallback: "Google ile giriş yapılamadı.")
             }
         }
     }

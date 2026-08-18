@@ -93,7 +93,22 @@ final class AppState {
     var joinedClubIDs: Set<UUID> = []
     var isFinishingOnboarding = false
     var isAccountActionInProgress = false
-    var toast: String?
+    var toast: AppToastMessage?
+
+    /// Kısa bilgi mesajı gösterir (yeşil tik).
+    func show(_ message: String) {
+        toast = AppToastMessage(text: message, kind: .info)
+    }
+
+    /// Hata gösterir (kırmızı ünlem). Ham sunucu metni kullanıcıya çıkmaz; bkz. `UserFacingError`.
+    func showError(_ error: Error, fallback: String) {
+        toast = AppToastMessage(text: UserFacingError.message(error, fallback: fallback), kind: .error)
+    }
+
+    /// Kendi ürettiğimiz, hataya karşılık gelen mesajlar için.
+    func showError(_ message: String) {
+        toast = AppToastMessage(text: message, kind: .error)
+    }
 
     /// Seçilen görünüm. Değişince anında kaydedilir; uygulama yeniden açıldığında korunur.
     var appearance: Appearance = .system {
@@ -123,7 +138,7 @@ final class AppState {
             try await service.signInWithApple(idToken: idToken, nonce: nonce)
             return try await completeSocialSignIn()
         } catch {
-            toast = error.localizedDescription
+            showError(error, fallback: "Apple ile giriş yapılamadı.")
             return false
         }
     }
@@ -134,7 +149,7 @@ final class AppState {
             try await service.signInWithGoogle(idToken: idToken, accessToken: accessToken, nonce: nonce)
             return try await completeSocialSignIn()
         } catch {
-            toast = error.localizedDescription
+            showError(error, fallback: "Google ile giriş yapılamadı.")
             return false
         }
     }
@@ -157,14 +172,16 @@ final class AppState {
         persistSession()
         await loadMyProfilePhotos()
         await loadNotifications()
-        await loadPlaces()
+        await loadPlaces(silently: true)
         await loadStories()
-        await loadClubs()
+        await loadClubs(silently: true)
         await loadMeetingRequests()
-        await loadProfileVisits()
+        await loadProfileVisits(silently: true)
         try? await service.touchLastActive()
         startMessageListener()
         withAnimation(.smooth(duration: 0.55)) { route = .app }
+        let name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        show(name.isEmpty ? "Hoş geldin!" : "Hoş geldin, \(name)!")
         return true
     }
 
@@ -189,7 +206,7 @@ final class AppState {
             let profile = try await service.fetchMyProfile()
             guard let profile else {
                 // Oturum var ama profil yok: kayıt akışı yarıda kalmış.
-                toast = "Profilini tamamlaman gerekiyor"
+                showError("Profilini tamamlaman gerekiyor.")
                 withAnimation(.smooth(duration: 0.45)) { route = .onboarding(.identity) }
                 return
             }
@@ -197,11 +214,11 @@ final class AppState {
             if !email.isEmpty { persistSession() }
             await loadMyProfilePhotos()
             await loadNotifications()
-            await loadPlaces()
+            await loadPlaces(silently: true)
             await loadStories()
-            await loadClubs()
+            await loadClubs(silently: true)
             await loadMeetingRequests()
-            await loadProfileVisits()
+            await loadProfileVisits(silently: true)
             try? await service.touchLastActive()
             startMessageListener()
             // Geçerli oturum ve tamamlanmış profil varken karşılama ekranında bırakmak
@@ -211,7 +228,7 @@ final class AppState {
             }
         } catch {
             route = .welcome
-            toast = error.localizedDescription
+            showError(error, fallback: "Oturum geri yüklenemedi.")
         }
     }
 
@@ -224,9 +241,12 @@ final class AppState {
     }
 
     private func loadMyProfilePhotos() async {
-        if let result = try? await service.fetchMyProfilePhotos() {
+        do {
+            let result = try await service.fetchMyProfilePhotos()
             avatarURL = result.avatarURL
             galleryURLs = result.galleryURLs
+        } catch {
+            showError(error, fallback: "Profil fotoğrafların yüklenemedi.")
         }
     }
 
@@ -294,7 +314,7 @@ final class AppState {
                 avatarURL = try await service.updateAvatar(avatarData)
             }
         } catch {
-            toast = error.localizedDescription
+            showError(error, fallback: "Profilin kaydedilemedi.")
             return
         }
         persistSession()
@@ -303,9 +323,9 @@ final class AppState {
         // başlatana kadar gelen mesajları görmüyordu.
         await loadMyProfilePhotos()
         await loadNotifications()
-        await loadPlaces()
+        await loadPlaces(silently: true)
         await loadStories()
-        await loadClubs()
+        await loadClubs(silently: true)
         await loadMeetingRequests()
         try? await service.touchLastActive()
         startMessageListener()
@@ -334,7 +354,7 @@ final class AppState {
                 profiles.append(contentsOf: candidates.filter { !existing.contains($0.id) })
             }
         } catch {
-            discoveryError = error.localizedDescription
+            discoveryError = UserFacingError.message(error, fallback: "Yeni profiller yüklenemedi.")
         }
     }
 
@@ -360,7 +380,7 @@ final class AppState {
             }
             if profiles.count < 3 { await loadDiscovery() }
         } catch {
-            discoveryError = error.localizedDescription
+            discoveryError = UserFacingError.message(error, fallback: "İşlemin kaydedilemedi.")
         }
     }
 
@@ -377,7 +397,7 @@ final class AppState {
                 guard let refreshedIndex = posts.firstIndex(where: { $0.id == postID }) else { return }
                 posts[refreshedIndex].liked = !newLiked
                 posts[refreshedIndex].likeCount += newLiked ? -1 : 1
-                toast = error.localizedDescription
+                showError(error, fallback: "Beğeni kaydedilemedi.")
             }
         }
     }
@@ -392,7 +412,7 @@ final class AppState {
         do {
             posts = try await service.fetchFeed().map(socialPost(from:))
         } catch {
-            toast = error.localizedDescription
+            showError(error, fallback: "Akış yüklenemedi.")
         }
     }
 
@@ -405,7 +425,7 @@ final class AppState {
                 posts.insert(socialPost(from: post), at: 0)
                 Haptics.success()
             } catch {
-                toast = error.localizedDescription
+                showError(error, fallback: "Gönderi paylaşılamadı.")
             }
         }
     }
@@ -416,7 +436,7 @@ final class AppState {
         do {
             stories = try await service.fetchStories()
         } catch {
-            toast = error.localizedDescription
+            showError(error, fallback: "Story'ler yüklenemedi.")
         }
     }
 
@@ -428,7 +448,7 @@ final class AppState {
             await loadClubs()
                 Haptics.success()
             } catch {
-                toast = error.localizedDescription
+                showError(error, fallback: "Story paylaşılamadı.")
             }
         }
     }
@@ -445,7 +465,7 @@ final class AppState {
                 if let refreshed = posts.firstIndex(where: { $0.id == postID }) {
                     posts[refreshed].saved = !newSaved
                 }
-                toast = error.localizedDescription
+                showError(error, fallback: "Kaydetme işlemi tamamlanamadı.")
             }
         }
     }
@@ -460,10 +480,10 @@ final class AppState {
             do {
                 try await service.deletePost(postID)
                 posts.removeAll { $0.id == postID }
-                toast = "Gönderi silindi"
+                show("Gönderi silindi")
                 Haptics.success()
             } catch {
-                toast = error.localizedDescription
+                showError(error, fallback: "Gönderi silinemedi.")
             }
         }
     }
@@ -472,13 +492,13 @@ final class AppState {
         guard let removed = stories.first(where: { $0.id == storyID && $0.isMine }) else { return }
         stories.removeAll { $0.id == storyID }
         if selectedStory?.id == storyID { selectedStory = nil }
-        toast = "Story silindi"
+        show("Story silindi")
         Haptics.success()
         Task {
             do { try await service.deleteStory(storyID) }
             catch {
                 stories.insert(removed, at: 0)
-                toast = error.localizedDescription
+                showError(error, fallback: "Story silinemedi.")
             }
         }
     }
@@ -493,7 +513,7 @@ final class AppState {
                 posts[refreshedIndex].comments.append(socialComment(from: comment))
                 Haptics.impact(.light)
             } catch {
-                toast = error.localizedDescription
+                showError(error, fallback: "Yorum gönderilemedi.")
             }
         }
     }
@@ -506,10 +526,10 @@ final class AppState {
                 try await service.deleteComment(commentID)
                 guard let refreshedIndex = posts.firstIndex(where: { $0.id == postID }) else { return }
                 posts[refreshedIndex].comments.removeAll { $0.id == commentID }
-                toast = "Yorum silindi"
+                show("Yorum silindi")
                 Haptics.success()
             } catch {
-                toast = error.localizedDescription
+                showError(error, fallback: "Yorum silinemedi.")
             }
         }
     }
@@ -523,10 +543,10 @@ final class AppState {
                 posts.removeAll { $0.author.id == profile.id }
                 notifications.removeAll { $0.actor?.id == profile.id }
                 if selectedConversation?.profile.id == profile.id { selectedConversation = nil }
-                toast = "\(profile.name) engellendi"
+                show("\(profile.name) engellendi")
                 Haptics.success()
             } catch {
-                toast = error.localizedDescription
+                showError(error, fallback: "Engelleme işlemi tamamlanamadı.")
             }
         }
     }
@@ -541,11 +561,11 @@ final class AppState {
         Task {
             do {
                 try await service.unmatch(conversationID)
-                toast = "Eşleşme sonlandırıldı"
+                show("Eşleşme sonlandırıldı")
                 Haptics.success()
             } catch {
                 conversations = previous
-                toast = error.localizedDescription
+                showError(error, fallback: "Eşleşme sonlandırılamadı.")
             }
         }
     }
@@ -554,10 +574,10 @@ final class AppState {
         Task {
             do {
                 try await service.reportUser(profile.id, reason: reason, details: nil)
-                toast = "Şikâyetin alındı, incelenecek"
+                show("Şikâyetin alındı, incelenecek")
                 Haptics.success()
             } catch {
-                toast = error.localizedDescription
+                showError(error, fallback: "Şikayet gönderilemedi.")
             }
         }
     }
@@ -609,11 +629,11 @@ final class AppState {
             galleryURLs = try await service.updateGallery(gallery)
         
             persistAccount()
-            toast = "Profilin güncellendi"
+            show("Profilin güncellendi")
             Haptics.success()
             return true
         } catch {
-            toast = error.localizedDescription
+            showError(error, fallback: "Profil değişiklikleri kaydedilemedi.")
             return false
         }
     }
@@ -628,9 +648,14 @@ final class AppState {
             try? await service.markStoryViewed(storyID)
             // İzleyen listesini yalnızca story sahibi görebilir; başkasının story'sinde
             // bu sorgu boş döneceği için hiç yapmıyoruz.
-            guard isMine, let records = try? await service.fetchStoryViews(storyID),
-                  let index = stories.firstIndex(where: { $0.id == storyID }) else { return }
-            stories[index].viewRecords = records
+            guard isMine else { return }
+            do {
+                let records = try await service.fetchStoryViews(storyID)
+                guard let index = stories.firstIndex(where: { $0.id == storyID }) else { return }
+                stories[index].viewRecords = records
+            } catch {
+                showError(error, fallback: "Story'yi kimlerin gördüğü yüklenemedi.")
+            }
         }
     }
 
@@ -644,8 +669,15 @@ final class AppState {
     /// yaşıyordu; uygulama kapanınca gönderilen ve gelen istekler kayboluyordu.
     /// Profilini görüntüleyenler. Kayıt yalnızca sunucudaki RPC ile oluşuyor ve
     /// listeyi yalnızca profil sahibi görebiliyor.
-    func loadProfileVisits() async {
-        if let visits = try? await service.fetchProfileVisits() { profileVisits = visits }
+    /// - Parameter silently: Girişte diğer yüklemelerle birlikte çağrıldığında `true`.
+    ///   Ağ yoksa arka arkaya beş ayrı hata mesajı göstermek yerine sessiz kalıyoruz;
+    ///   kullanıcı listeyi kendisi yenilediğinde ise sebebi görmesi gerekiyor.
+    func loadProfileVisits(silently: Bool = false) async {
+        do {
+            profileVisits = try await service.fetchProfileVisits()
+        } catch {
+            if !silently { showError(error, fallback: "Ziyaretçilerin yüklenemedi.") }
+        }
     }
 
     /// Birinin profili kasıtlı olarak açıldığında çağrılır. Keşif destesinde
@@ -659,13 +691,17 @@ final class AppState {
         do {
             meetingRequests = try await service.fetchMeetingRequests()
         } catch {
-            toast = error.localizedDescription
+            showError(error, fallback: "Buluşma istekleri yüklenemedi.")
         }
     }
 
-    func loadPlaces() async {
-        if let loaded = try? await service.fetchPlaces(), !loaded.isEmpty {
-            places = loaded
+    /// - Parameter silently: bkz. `loadProfileVisits(silently:)`.
+    func loadPlaces(silently: Bool = false) async {
+        do {
+            let loaded = try await service.fetchPlaces()
+            if !loaded.isEmpty { places = loaded }
+        } catch {
+            if !silently { showError(error, fallback: "Kampüs yerleri yüklenemedi.") }
         }
     }
 
@@ -678,11 +714,11 @@ final class AppState {
                 try await service.sendMeetingRequest(to: profile.id, placeID: place.id)
                 await loadMeetingRequests()
             await loadProfileVisits()
-                toast = "\(profile.name) için \(place.name) buluşma isteği gönderildi"
+                show("\(profile.name) için \(place.name) buluşma isteği gönderildi")
                 Haptics.success()
             } catch {
                 meetingRequests.removeAll { $0.id == optimistic.id }
-                toast = error.localizedDescription
+                showError(error, fallback: "Buluşma isteği gönderilemedi.")
             }
         }
     }
@@ -692,7 +728,7 @@ final class AppState {
         let previous = meetingRequests[index].status
         meetingRequests[index].status = accept ? .accepted : .declined
         notifications.removeAll { $0.meetingRequestID == requestID }
-        toast = accept ? "Buluşma isteği kabul edildi" : "Buluşma isteği reddedildi"
+        show(accept ? "Buluşma isteği kabul edildi" : "Buluşma isteği reddedildi")
         Haptics.success()
         Task {
             do {
@@ -701,7 +737,7 @@ final class AppState {
                 if let refreshed = meetingRequests.firstIndex(where: { $0.id == requestID }) {
                     meetingRequests[refreshed].status = previous
                 }
-                toast = error.localizedDescription
+                showError(error, fallback: "Buluşma isteği yanıtlanamadı.")
             }
         }
     }
@@ -714,14 +750,14 @@ final class AppState {
         let previous = currentVisiblePlace
         let turningOff = currentVisiblePlace?.id == place.id
         currentVisiblePlace = turningOff ? nil : place
-        toast = turningOff ? "Yer görünürlüğün kapatıldı" : "Şu an \(place.name) konumunda görünürsün"
+        show(turningOff ? "Yer görünürlüğün kapatıldı" : "Şu an \(place.name) konumunda görünürsün")
         Haptics.success()
         Task {
             do {
                 try await service.setVisiblePlace(turningOff ? nil : place.id)
             } catch {
                 currentVisiblePlace = previous
-                toast = error.localizedDescription
+                showError(error, fallback: "Konum görünürlüğü değiştirilemedi.")
             }
         }
     }
@@ -729,7 +765,12 @@ final class AppState {
     /// Bir yerde şu an görünen kişiler. Bu liste koda gömülü sabit isimlerdi; herkese
     /// aynı sahte kişiler gösteriliyordu.
     func peopleAtPlace(_ place: CampusPlace) async -> [StudentProfile] {
-        return (try? await service.fetchPeopleAtPlace(place.id)) ?? []
+        do {
+            return try await service.fetchPeopleAtPlace(place.id)
+        } catch {
+            showError(error, fallback: "Buradaki kişiler yüklenemedi.")
+            return []
+        }
     }
 
     func isJoined(to club: CampusClub) -> Bool {
@@ -738,10 +779,14 @@ final class AppState {
 
     /// Kulüpleri ve üyeliklerini sunucudan yükler. Liste eskiden koda gömülüydü ve
     /// katılma bilgisi yalnızca bellekte tutulduğu için uygulama kapanınca kayboluyordu.
-    func loadClubs() async {
-        if let result = try? await service.fetchClubs() {
+    /// - Parameter silently: bkz. `loadProfileVisits(silently:)`.
+    func loadClubs(silently: Bool = false) async {
+        do {
+            let result = try await service.fetchClubs()
             clubs = result.clubs
             joinedClubIDs = result.joinedIDs
+        } catch {
+            if !silently { showError(error, fallback: "Kulüpler yüklenemedi.") }
         }
     }
 
@@ -749,10 +794,10 @@ final class AppState {
         let willJoin = !joinedClubIDs.contains(club.id)
         if willJoin {
             joinedClubIDs.insert(club.id)
-            toast = "\(club.name) kulübüne katıldın"
+            show("\(club.name) kulübüne katıldın")
         } else {
             joinedClubIDs.remove(club.id)
-            toast = "\(club.name) üyeliğinden ayrıldın"
+            show("\(club.name) üyeliğinden ayrıldın")
         }
         Haptics.success()
         Task {
@@ -761,7 +806,7 @@ final class AppState {
                 await loadClubs()
             } catch {
                 if willJoin { joinedClubIDs.remove(club.id) } else { joinedClubIDs.insert(club.id) }
-                toast = error.localizedDescription
+                showError(error, fallback: "Kulüp üyeliği güncellenemedi.")
             }
         }
     }
@@ -770,7 +815,7 @@ final class AppState {
         do {
             conversations = try await service.fetchConversations()
         } catch {
-            discoveryError = error.localizedDescription
+            showError(error, fallback: "Sohbetler yüklenemedi.")
         }
     }
 
@@ -799,7 +844,7 @@ final class AppState {
         do {
             notifications = try await service.fetchNotifications().map(appNotification(from:))
         } catch {
-            toast = error.localizedDescription
+            showError(error, fallback: "Bildirimler yüklenemedi.")
         }
     }
 
@@ -812,7 +857,7 @@ final class AppState {
                 if let refreshed = notifications.firstIndex(where: { $0.id == notificationID }) {
                     notifications[refreshed].isRead = false
                 }
-                toast = error.localizedDescription
+                showError(error, fallback: "Bildirim güncellenemedi.")
             }
         }
     }
@@ -826,7 +871,7 @@ final class AppState {
             do { try await service.markAllNotificationsRead() }
             catch {
                 notifications = previous
-                toast = error.localizedDescription
+                showError(error, fallback: "Bildirimler güncellenemedi.")
             }
         }
     }
@@ -863,7 +908,10 @@ final class AppState {
         conversations[index].unreadCount = 0
         Task {
             do { try await service.markConversationRead(matchID: conversationID) }
-            catch { discoveryError = error.localizedDescription }
+            // Kullanıcının başlatmadığı arka plan işi: başarısız olursa okunmadı rozeti
+            // kalır, başka bir sonucu yok. Hata göstermek gürültü olurdu; Tanış ekranına
+            // yazmak ise büsbütün yanlıştı — orası keşif hataları için.
+            catch { }
         }
     }
 
@@ -883,8 +931,7 @@ final class AppState {
             if let refreshedIndex = conversations.firstIndex(where: { $0.id == conversationID }) {
                 conversations[refreshedIndex].messages.removeAll { $0.id == message.id }
             }
-            discoveryError = error.localizedDescription
-            toast = "Mesaj gönderilemedi"
+            showError(error, fallback: "Mesaj gönderilemedi.")
         }
     }
 
@@ -902,7 +949,7 @@ final class AppState {
                 guard let refreshedConversation = conversations.firstIndex(where: { $0.id == conversationID }),
                       let refreshedMessage = conversations[refreshedConversation].messages.firstIndex(where: { $0.id == messageID }) else { return }
                 conversations[refreshedConversation].messages[refreshedMessage].reaction = previous
-                toast = error.localizedDescription
+                showError(error, fallback: "Tepki kaydedilemedi.")
             }
         }
     }
@@ -916,7 +963,7 @@ final class AppState {
             try await service.signOut()
             clearSession(keepAccountData: true)
         } catch {
-            toast = error.localizedDescription
+            showError(error, fallback: "Çıkış yapılamadı.")
         }
     }
 
@@ -928,7 +975,7 @@ final class AppState {
             try await service.deleteAccount()
             clearSession(keepAccountData: false)
         } catch {
-            toast = error.localizedDescription
+            showError(error, fallback: "Hesap silinemedi.")
         }
     }
 
