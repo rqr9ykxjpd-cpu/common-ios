@@ -286,6 +286,56 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         return posts
     }
 
+    /// Kaydedilen gönderiler doğrudan `saved_posts` üzerinden çekiliyor.
+    ///
+    /// Önceden bu liste yüklü akıştan süzülüyordu (`posts.filter(\.saved)`) ama akış
+    /// yalnızca son 100 gönderiyi getiriyor. Eski bir gönderiyi kaydeden kişi onu yer
+    /// imlerinde bulamıyordu: kayıt sunucuda duruyor, uygulama göstermiyordu.
+    func fetchSavedPosts() async throws -> [BackendPost] {
+        guard let userID = currentUserID else { throw BackendServiceError.missingSession }
+        let saved: [SavedPostRow] = try await client
+            .from("saved_posts")
+            .select("post_id")
+            .eq("user_id", value: userID)
+            .order("created_at", ascending: false)
+            .execute()
+            .value
+        let ids = saved.map(\.postID)
+        guard !ids.isEmpty else { return [] }
+
+        let rows: [PostRow] = try await client
+            .from("posts")
+            .select("id,author_id,caption,media_path,place_name,created_at,author:profiles!posts_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),comments(id,post_id,author_id,body,created_at,author:profiles!comments_author_id_fkey(name))")
+            .`in`("id", values: ids)
+            .order("created_at", ascending: false)
+            .execute()
+            .value
+        let avatarURLs = await signedURLs(bucket: "profile-photos", paths: rows.compactMap { $0.author.avatarPath })
+        let likeRows: [PostLikeRow] = rows.isEmpty ? [] : ((try? await client
+            .from("post_likes")
+            .select("post_id,user_id")
+            .`in`("post_id", values: rows.map(\.id))
+            .execute()
+            .value) ?? [])
+
+        var posts: [BackendPost] = []
+        for row in rows {
+            var imageData: Data?
+            if let mediaPath = row.mediaPath {
+                imageData = try? await client.storage.from("post-media").download(path: mediaPath)
+            }
+            let postLikes = likeRows.filter { $0.postID == row.id }
+            posts.append(row.backendPost(
+                imageData: imageData,
+                authorAvatarURL: row.author.avatarPath.flatMap { avatarURLs[$0] },
+                likeCount: postLikes.count,
+                liked: postLikes.contains { $0.userID == userID },
+                saved: true
+            ))
+        }
+        return posts
+    }
+
     func createPost(caption: String, placeName: String?, imageData: Data?) async throws -> BackendPost {
         guard let userID = currentUserID else { throw BackendServiceError.missingSession }
         var mediaPath: String?

@@ -69,7 +69,6 @@ final class AppState {
     var isLoadingDiscovery = false
     var isReactingToProfile = false
     var discoveryError: String?
-    var lastPassedProfile: StudentProfile?
     var conversations: [Conversation] = []
     var posts: [SocialPost] = []
     var stories: [CampusStory] = []
@@ -399,7 +398,6 @@ final class AppState {
         do {
             let result = try await service.reactToProfile(profileID: profile.id, liked: liked)
             profiles.removeAll { $0.id == profile.id }
-            lastPassedProfile = liked ? nil : profile
             if result.matched, let matchID = result.matchID {
                 currentMatch = profile
                 _ = conversationID(for: profile, matchID: matchID)
@@ -480,26 +478,56 @@ final class AppState {
         }
     }
 
+    /// Gönderi hem akışta hem kaydedilenler listesinde bulunabilir; ikisi de güncelleniyor.
+    ///
+    /// Önceden yalnızca akışa bakılıyordu (`guard let index = posts.firstIndex...`).
+    /// Kaydedilenler sayfasında akışta olmayan eski bir gönderinin yer imini kaldırmaya
+    /// çalışınca guard'a takılıyor ve düğme hiçbir şey yapmıyordu.
     func toggleSaved(postID: UUID) {
-        guard let index = posts.firstIndex(where: { $0.id == postID }) else { return }
-        let newSaved = !posts[index].saved
-        posts[index].saved = newSaved
+        let current = posts.first(where: { $0.id == postID })?.saved
+            ?? savedPosts.contains(where: { $0.id == postID })
+        let newSaved = !current
+
+        applySaved(newSaved, to: postID)
         Haptics.impact(.light)
         Task {
             do {
                 try await service.setPostSaved(postID, saved: newSaved)
             } catch {
-                if let refreshed = posts.firstIndex(where: { $0.id == postID }) {
-                    posts[refreshed].saved = !newSaved
-                }
+                applySaved(!newSaved, to: postID)
                 showError(error, fallback: "Kaydetme işlemi tamamlanamadı.")
             }
         }
     }
 
+    private func applySaved(_ saved: Bool, to postID: UUID) {
+        if let index = posts.firstIndex(where: { $0.id == postID }) {
+            posts[index].saved = saved
+        }
+        if saved {
+            if !savedPosts.contains(where: { $0.id == postID }),
+               var post = posts.first(where: { $0.id == postID }) {
+                post.saved = true
+                savedPosts.insert(post, at: 0)
+            }
+        } else {
+            savedPosts.removeAll { $0.id == postID }
+        }
+    }
+
     /// Kaydedilen gönderiler. Yer imi butonu yalnızca yerel durumu değiştiriyordu ve
     /// kaydedilenleri görecek bir ekran da yoktu; buton hiçbir işe yaramıyordu.
-    var savedPosts: [SocialPost] { posts.filter(\.saved) }
+    /// Kaydedilen gönderiler sunucudan ayrıca çekiliyor; akıştan süzmek yetmiyordu
+    /// çünkü akış yalnızca son 100 gönderiyi getiriyor.
+    private(set) var savedPosts: [SocialPost] = []
+
+    func loadSavedPosts() async {
+        do {
+            savedPosts = try await service.fetchSavedPosts().map(socialPost(from:))
+        } catch {
+            showError(error, fallback: "Kaydedilenler yüklenemedi.")
+        }
+    }
 
     func deletePost(_ postID: UUID) {
         guard posts.contains(where: { $0.id == postID && $0.isMine }) else { return }
@@ -1054,7 +1082,6 @@ final class AppState {
         selectedPlaceFilter = nil
         currentVisiblePlace = nil
         joinedClubIDs = []
-        lastPassedProfile = nil
 
         // Geçici bayraklar da sıfırlanmalı. Çıkış bir yükleme sürerken yapılırsa
         // `isLoadingDiscovery` true kalıyor ve sonraki girişte `loadDiscovery`

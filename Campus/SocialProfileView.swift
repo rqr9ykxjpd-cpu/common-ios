@@ -42,7 +42,7 @@ struct SocialProfileView: View {
                 NavigationStack { ProfileEditorView() }
             }
             .sheet(isPresented: $showCardPreview) { OwnCardPreviewView() }
-            .sheet(isPresented: $showSaved) { savedPostsSheet }
+            .sheet(isPresented: $showSaved) { savedPostsSheet.task { await appState.loadSavedPosts() } }
             .sheet(isPresented: $showVisits) { visitorsSheet }
             .sheet(isPresented: $showComposer) { CreatePostView() }
             .sheet(isPresented: $showMeetingRequests) {

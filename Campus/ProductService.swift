@@ -82,6 +82,9 @@ protocol ProductService: Sendable {
     func messageStream() -> AsyncStream<RealtimeMessage>
     func setPostLiked(_ postID: UUID, liked: Bool) async throws
     func setPostSaved(_ postID: UUID, saved: Bool) async throws
+    /// Kaydedilen gönderiler. Akıştan süzmek yetmiyor: akış yalnızca son 100 gönderiyi
+    /// getirdiği için eski bir gönderiyi kaydeden kişi onu yer imlerinde bulamıyordu.
+    func fetchSavedPosts() async throws -> [BackendPost]
     func fetchNotifications() async throws -> [BackendNotification]
     func markNotificationRead(_ notificationID: UUID) async throws
     func markAllNotificationsRead() async throws
@@ -167,6 +170,7 @@ struct UnconfiguredProductService: ProductService {
     func messageStream() -> AsyncStream<RealtimeMessage> { AsyncStream { $0.finish() } }
     func setPostLiked(_ postID: UUID, liked: Bool) async throws { try fail() }
     func setPostSaved(_ postID: UUID, saved: Bool) async throws { try fail() }
+    func fetchSavedPosts() async throws -> [BackendPost] { try fail() }
     func fetchNotifications() async throws -> [BackendNotification] { try fail() }
     func markNotificationRead(_ notificationID: UUID) async throws { try fail() }
     func markAllNotificationsRead() async throws { try fail() }
