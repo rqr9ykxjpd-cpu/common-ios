@@ -83,5 +83,6 @@ olursa uygulama içinde bildiririz.
 
 ## İletişim
 
-<!-- BURASI DOLDURULACAK: yayın öncesi gerçek iletişim adresi yazılmalı -->
-**E-posta:** _______________
+**E-posta:** 220207018@yalova.edu.tr
+
+Şikayetlere ve veri taleplerine 24 saat içinde dönüyoruz.

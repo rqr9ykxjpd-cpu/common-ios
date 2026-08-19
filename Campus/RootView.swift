@@ -165,6 +165,7 @@ struct WelcomeView: View {
                         .disabled(isSigningIn)
                     }
 
+                    legalConsent
                 }
                 .frame(width: proxy.size.width - 44, height: proxy.size.height, alignment: .top)
                 .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
@@ -177,6 +178,26 @@ struct WelcomeView: View {
             withAnimation(.easeInOut(duration: 4).repeatForever(autoreverses: true)) { float = true }
         }
     }
+
+    /// Kullanıcı içeriği barındıran uygulamalarda Apple, koşulların kayıt sırasında
+    /// kabul edilmesini ve metinlerin uygulamadan okunabilmesini şart koşuyor. Ayrı
+    /// bir onay kutusu yerine giriş eylemine bağlıyoruz; yerleşik ve kabul gören
+    /// biçim bu.
+    private var legalConsent: some View {
+        // Tek bir cümle: parçalara bölünce satırlar ortalanınca tırtıklı duruyordu
+        // ve bağlantılar düz metinden ayırt edilemiyordu. Markdown bağlantıları
+        // `tint` rengini alıyor, dolayısıyla tıklanabilir oldukları belli oluyor.
+        Text("Devam ederek [Kullanım Koşulları](\(Self.kosullarURL)) ve [Gizlilik Politikası](\(Self.gizlilikURL)) metinlerini kabul etmiş olursun.")
+            .font(.system(size: 11, design: .rounded))
+            .foregroundStyle(CampusTheme.ink.opacity(0.45))
+            .multilineTextAlignment(.center)
+            .tint(CampusTheme.violet)
+            .padding(.horizontal, 8)
+            .padding(.top, 16)
+    }
+
+    private static let kosullarURL = URL(string: "https://rqr9ykxjpd-cpu.github.io/common-ios/kosullar.html")!
+    private static let gizlilikURL = URL(string: "https://rqr9ykxjpd-cpu.github.io/common-ios/gizlilik.html")!
 
     private func handleAppleCompletion(_ result: Result<ASAuthorization, Error>) {
         switch result {
