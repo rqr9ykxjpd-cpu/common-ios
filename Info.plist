@@ -9,6 +9,11 @@
 	     (açıklama metni kullanıcıya gösterilen izin penceresinde çıkıyor) ve
 	     App Store incelemesi de doğrudan reddediyor. Kamera düğmesi bu yüzden
 	     denenmemişti; denenseydi uygulama kapanacaktı. -->
+	<!-- Yalnızca HTTPS kullanıyoruz; bu Apple'ın muafiyet kapsamında. Bu anahtar
+	     olmadan App Store Connect her yüklemede ihracat beyanı soruyor ve build
+	     o cevap verilene kadar test edilemiyor. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSCameraUsageDescription</key>
 	<string>Gönderi ve story paylaşırken fotoğraf çekebilmen için kameraya erişmemiz gerekiyor.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
