@@ -10,6 +10,9 @@ struct SocialProfileView: View {
     @State private var showDeleteAccountAlert = false
     @State private var showEditor = false
     @State private var showCardPreview = false
+    /// Izgaradan açılan gönderi. Gönderiler tıklanabilir değildi: kendi
+    /// paylaşımını açıp yorumlarını okumanın ya da silmenin yolu yoktu.
+    @State private var selectedPost: SocialPost?
 
     private var displayName: String { appState.draft.name.isEmpty ? "Cem" : appState.draft.name }
     private var department: String { appState.draft.department.isEmpty ? "Bölümünü ekle" : appState.draft.department }
@@ -39,6 +42,32 @@ struct SocialProfileView: View {
                 NavigationStack { ProfileEditorView() }
             }
             .sheet(isPresented: $showCardPreview) { OwnCardPreviewView() }
+            .sheet(item: $selectedPost) { secili in
+                // Kartın beğeni/kaydetme sonrası güncel kalması için gönderiyi anlık
+                // listeden okuyoruz; `item` yalnızca hangisi olduğunu taşıyor.
+                let guncel = appState.currentUserPosts.first(where: { $0.id == secili.id }) ?? secili
+                NavigationStack {
+                    ScrollView {
+                        PostCard(
+                            post: guncel,
+                            toggleLike: { appState.toggleLike(postID: guncel.id) },
+                            toggleSaved: { appState.toggleSaved(postID: guncel.id) },
+                            openProfile: {},
+                            delete: {
+                                appState.deletePost(guncel.id)
+                                selectedPost = nil
+                            }
+                        )
+                        .padding(.vertical, CampusTheme.Space.md)
+                    }
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("Kapat") { selectedPost = nil }
+                        }
+                    }
+                }
+            }
             .sheet(isPresented: $showSaved) { savedPostsSheet.task { await appState.loadSavedPosts() } }
             .sheet(isPresented: $showVisits) { visitorsSheet }
             .sheet(isPresented: $showComposer) { CreatePostView() }
@@ -218,7 +247,7 @@ struct SocialProfileView: View {
                 listRow(
                     icon: "rectangle.portrait.on.rectangle.portrait.angled",
                     title: "Kartın nasıl görünüyor?",
-                    detail: "Tanış'ta karşı tarafın gördüğü hali"
+                    detail: "Tanış'ta karşı tarafın gördüğü hali — buradan düzenleyebilirsin"
                 ) { showCardPreview = true }
 
                 listDivider
@@ -471,20 +500,34 @@ struct SocialProfileView: View {
             } else {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 3), count: 3), spacing: 3) {
                     ForEach(appState.currentUserPosts) { post in
-                        if post.imageURL != nil || post.imageAssetName != nil || post.localImageData != nil {
-                            ProfileMedia(url: post.imageURL, data: post.localImageData, assetName: post.imageAssetName)
-                                .aspectRatio(1, contentMode: .fill)
-                                .clipped()
-                        } else {
-                            Text(post.caption)
-                                .font(.system(size: 12, weight: .bold, design: .rounded))
-                                .foregroundStyle(CampusTheme.ink)
-                                .lineLimit(5)
-                                .padding(10)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                        Button {
+                            Haptics.impact(.light)
+                            selectedPost = post
+                        } label: {
+                            // Hücre kare: yükseklik `aspectRatio(.fit)` ile hücrenin kendi
+                            // genişliğinden türüyor. Eskiden `contentMode: .fill` vardı; o,
+                            // görseli hücreden taşırıyor ve `clipped()` hücreye değil taşmış
+                            // çerçeveye göre kestiği için gönderiler birbirinin üstüne
+                            // biniyordu.
+                            Color.clear
                                 .aspectRatio(1, contentMode: .fit)
-                                .background(CampusTheme.acid.opacity(0.35))
+                                .overlay {
+                                    if post.imageURL != nil || post.imageAssetName != nil || post.localImageData != nil {
+                                        ProfileMedia(url: post.imageURL, data: post.localImageData, assetName: post.imageAssetName)
+                                    } else {
+                                        Text(post.caption)
+                                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                                            .foregroundStyle(CampusTheme.ink)
+                                            .lineLimit(5)
+                                            .padding(10)
+                                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                                            .background(CampusTheme.acid.opacity(0.35))
+                                    }
+                                }
+                                .clipped()
+                                .contentShape(Rectangle())
                         }
+                        .buttonStyle(PressableStyle())
                     }
                 }
                 .clipShape(RoundedRectangle(cornerRadius: CampusTheme.Radius.control))
