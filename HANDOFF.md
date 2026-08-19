@@ -107,7 +107,13 @@ Bunlar tamamlanmadan uygulamaya **hiç giriş yapılamaz**.
    client ID) açık.
 3. ✅ **GoogleSignIn-iOS paketi** — `project.pbxproj`'a elle eklendi
    (`XCRemoteSwiftPackageReference "GoogleSignIn-iOS"`), `Package.resolved`'da
-   7.1.0'a kilitli. İlk açılışta Xcode paketi otomatik çeker.
+   **9.2.0**'a kilitli. İlk açılışta Xcode paketi otomatik çeker.
+
+   > 7.1.0'dan yükseltildi ve **geri düşürülmemeli**: nonce'u dışarıdan vermek
+   > yalnızca 9.x'te mümkün (`signIn(withPresenting:hint:additionalScopes:nonce:)`).
+   > 7.1'de AppAuth kendiliğinden nonce üretiyor, Supabase ise gönderilen nonce'un
+   > SHA256'sını token'daki değerle karşılaştırdığı için giriş "nonces mismatch"
+   > ile reddediliyordu.
 4. ✅ **Migration'lar** — `20260818220000_remove_domain_verification.sql`,
    `20260818230000_truthful_active_label.sql`, `20260819000000_drop_profile_prompts.sql`
    sunucuda çalıştırıldı. Üçü de idempotent; yeni bir Supabase projesine
