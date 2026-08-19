@@ -100,6 +100,12 @@ update public.profiles set is_verified = true where discovery_enabled and not is
 grant select (badge) on public.profiles to authenticated;
 
 -- Keşif adayları
+--
+-- `create or replace function` dönüş tipini değiştiremez (RETURNS TABLE'a yeni
+-- sütun eklemek de buna girer) — önce düşürmek zorundayız, aksi halde
+-- "cannot change return type of existing function" hatasıyla tüm migration
+-- geri sarılır.
+drop function if exists public.get_discovery_candidates(integer, integer);
 create or replace function public.get_discovery_candidates(page_limit integer default 20, page_offset integer default 0)
 returns table (
   id uuid, name text, birth_date date, university text, department text,
@@ -109,7 +115,7 @@ returns table (
   prompt_keys text[], prompt_answers text[], compatibility integer,
   compatibility_reasons text[], active_label text
 )
-language sql security definer set search_path = '' as $$
+language sql stable security definer set search_path = '' as $$
   with me as (
     select p.id, p.gender, p.dating_preference, p.academic_year,
       coalesce(dp.min_age, 18) as min_age, coalesce(dp.max_age, 30) as max_age,
@@ -177,6 +183,7 @@ grant execute on function public.get_discovery_candidates(integer, integer) to a
 
 
 -- Yerdeki kişiler
+drop function if exists public.get_people_at_place(uuid);
 create or replace function public.get_people_at_place(target_place uuid)
 returns table (
   id uuid, name text, birth_date date, university text, department text,
@@ -209,6 +216,7 @@ grant execute on function public.get_people_at_place(uuid) to authenticated;
 
 
 -- Profil ziyaretçileri
+drop function if exists public.get_my_profile_visits();
 create or replace function public.get_my_profile_visits()
 returns table (
   visitor_id uuid, name text, birth_date date, university text, department text,
@@ -238,6 +246,7 @@ grant execute on function public.get_my_profile_visits() to authenticated;
 
 
 -- Kendi profilim (rozetimi kendi ekranımda da görebilmek için)
+drop function if exists public.get_my_profile();
 create or replace function public.get_my_profile()
 returns table (
   name text, birth_date date, gender public.profile_gender,
