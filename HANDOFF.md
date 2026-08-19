@@ -12,20 +12,33 @@ open Campus.xcodeproj
 ```
 
 **Backend'e bağlanmak için** `Campus/Configuration.local.xcconfig` dosyası gerekir.
-Bu dosya `.gitignore`'da — repoda yoktur, elle oluşturulur:
+Bu dosya `.gitignore`'da — repoda yoktur, elle oluşturulur. Git'e hiç
+girmediği için ekibe yeni katılan biri bu dosyayı bir başkasından (Slack/DM,
+dosya olarak) elle almak zorunda — repoyu klonlamak yetmez:
 
 ```
-SUPABASE_URL = https:/$()/dddfioyzdguafjpsfscs.supabase.co
+SUPABASE_SLASH = /
+SUPABASE_HOST = ucaatxhjmdfrholysnip.supabase.co
+SUPABASE_URL = https:$(SUPABASE_SLASH)$(SUPABASE_SLASH)$(SUPABASE_HOST)
+
 SUPABASE_PUBLISHABLE_KEY = <Supabase panel > Project Settings > API Keys > publishable>
+
+GOOGLE_CLIENT_ID = <Google Cloud Console > iOS OAuth client ID>
+GOOGLE_SERVER_CLIENT_ID = <Google Cloud Console > Web application OAuth client ID>
+GOOGLE_REVERSED_CLIENT_ID = <GOOGLE_CLIENT_ID'nin ters çevrilmiş hali>
 ```
 
-> `//` dizisi xcconfig'de yorum başlatır. URL'deki çift eğik çizgi bu yüzden
-> `$()` ile bölünerek kaçırılmak zorunda. Yukarıdaki yazım doğrudur.
+> `//` dizisi xcconfig'de yorum başlatır. URL'i doğrudan yazarsan
+> (`SUPABASE_URL = https://abc.supabase.co`) değer `https:` olarak kesilir ve
+> uygulama sessizce bozuk bir client ile çalışır. Bu yüzden slash'lar
+> `SUPABASE_SLASH` değişkenine alınıp birleştiriliyor — yukarıdaki yazım doğrudur.
 
 Bu dosya olmadan uygulama **hiçbir şey yapamaz**: açılır ama her işlem
 "Supabase yapılandırması eksik" hatası verir. Demo modu ve örnek veri yoktur.
+Yanlış proje URL'siyle de aynı sonuç: uygulama açılır ama giriş dahil hiçbir
+şey çalışmaz — hata sessiz olabilir, önce bu dosyadaki `SUPABASE_HOST`'u kontrol edin.
 
-**Supabase projesi:** `campus`, bölge West EU (Ireland).
+**Supabase projesi:** `ucaatxhjmdfrholysnip.supabase.co`.
 Migration'lar `supabase/migrations/` altında, uygulanma sırası dosya adındaki
 zaman damgasına göre.
 
@@ -47,7 +60,7 @@ zaman damgasına göre.
 
 ### Çalışan (backend'e bağlı)
 Kimlik doğrulama (Apple + Google, native `id_token` değişimi — e-posta/OTP kaldırıldı,
-bkz. "Bekleyen kurulum adımları"), profil kaydetme/geri yükleme, profil fotoğrafı ve galeri
+bkz. "Kurulum adımları"), profil kaydetme/geri yükleme, profil fotoğrafı ve galeri
 (Storage + imzalı URL), keşif ve eşleşme, gerçek zamanlı mesajlaşma, mesaj
 reaksiyonları, gönderi/yorum/beğeni, gönderi kaydetme, engelleme ve şikayet,
 bildirimler, story'ler, buluşma istekleri, kulüpler, kampüs yerleri,
@@ -80,40 +93,37 @@ her işlem "Supabase yapılandırması eksik" hatası verir (`UnconfiguredProduc
   Apple/Google hesap e-postaları .edu.tr olmak zorunda değil; bu bilinçli bir
   ürün kararı, geri getirmek istenirse RPC'ye tekrar bir domain kontrolü eklenir.
 
-### Bekleyen kurulum adımları (kod değil, panel işi)
+### Kurulum adımları (kod değil, panel işi)
 
 Bunlar tamamlanmadan uygulamaya **hiç giriş yapılamaz**.
 
-1. **Apple Developer** — Xcode → Signing & Capabilities'te takımı seç; proje
-   zaten `Campus/Campus.entitlements` ile "Sign in with Apple" iste­ğinde
-   bulunuyor, otomatik imzalama App ID'yi buna göre günceller.
-2. **Google Cloud Console** — bir "iOS" ve bir "Web application" türünde OAuth
-   client ID oluştur (Bundle ID: `com.campus.social`). Üçünü de
-   `Campus/Configuration.local.xcconfig`'e yaz: `GOOGLE_CLIENT_ID` (iOS),
+1. ✅ **Google Cloud Console** — "iOS" ve "Web application" türünde OAuth
+   client ID oluşturuldu (Bundle ID: `com.campus.social`). Üç değer de
+   `Campus/Configuration.local.xcconfig`'e yazılı: `GOOGLE_CLIENT_ID` (iOS),
    `GOOGLE_SERVER_CLIENT_ID` (Web — Supabase'in Google provider'ındaki Client ID
-   ile AYNI olmalı), `GOOGLE_REVERSED_CLIENT_ID` (iOS client ID'nin ters çevrilmiş
-   hali).
-3. **Supabase Auth providers** — Dashboard → Authentication → Providers →
-   Apple'ı aç (Authorized Client IDs'e `com.campus.social` ekle) ve Google'ı aç
-   (Client ID = yukarıdaki Web client ID).
-4. **GoogleSignIn-iOS paketi** — `project.pbxproj`'a elle eklendi
-   (`XCRemoteSwiftPackageReference "GoogleSignIn-iOS"`); ilk açılışta Xcode
-   paketi otomatik çeker, elle eklemeye gerek yok.
-5. **Bekleyen migration'lar** — sunucuda henüz uygulanmamışsa SQL Editor'de
-   sırayla çalıştırın; ikisi de idempotent:
-   - `20260818220000_remove_domain_verification.sql`
-   - `20260818230000_truthful_active_label.sql` — aktiflik etiketi ("Bu hafta
-     aktif" her şeyi yakalıyordu, üç ay girmeyen de öyle görünüyordu).
-     Uygulanmazsa uygulama çalışır, yalnızca etiket yanlış kalır.
-   - `20260819000000_drop_profile_prompts.sql` — profil soruları kaldırıldı.
-     **Bu uygulanmadan profil kaydı hiç çalışmaz**: eski fonksiyon üç soruyu
-     zorunlu tutuyor, uygulama artık göndermiyor.
-6. **Apple sağlayıcısı** — Supabase'de şu an **kapalı**. Uygulamada Apple
-   düğmesi var; açılmadan basılırsa hata veriyor. Authentication → Providers →
-   Apple → aç, Authorized Client IDs'e `com.campus.social`. App Store için de
-   gerekli: Google gibi üçüncü taraf girişi sunan uygulamalarda Apple girişi
-   zorunlu.
-7. **İlk gerçek giriş** — bugüne kadar hiçbir akış canlı sunucuya karşı uçtan
+   ile AYNI), `GOOGLE_REVERSED_CLIENT_ID` (iOS client ID'nin ters çevrilmiş hali).
+2. ✅ **Supabase Auth providers** — Authentication → Providers'ta hem Apple
+   (Authorized Client IDs: `com.campus.social`) hem Google (Client ID = Web
+   client ID) açık.
+3. ✅ **GoogleSignIn-iOS paketi** — `project.pbxproj`'a elle eklendi
+   (`XCRemoteSwiftPackageReference "GoogleSignIn-iOS"`), `Package.resolved`'da
+   7.1.0'a kilitli. İlk açılışta Xcode paketi otomatik çeker.
+4. ✅ **Migration'lar** — `20260818220000_remove_domain_verification.sql`,
+   `20260818230000_truthful_active_label.sql`, `20260819000000_drop_profile_prompts.sql`
+   sunucuda çalıştırıldı. Üçü de idempotent; yeni bir Supabase projesine
+   taşınırsa tekrar sırayla çalıştırmak güvenli.
+5. ⬜ **Apple Developer (her makinede ayrı)** — Xcode açan her geliştirici
+   kendi makinesinde Signing & Capabilities'te kendi takımını seçmeli; proje
+   zaten `Campus/Campus.entitlements` ile "Sign in with Apple" istiyor,
+   otomatik imzalama App ID'yi buna göre günceller. Bu, git ile taşınmaz —
+   yeni bir Mac'te her seferinde elle yapılır.
+6. ⬜ **`Configuration.local.xcconfig` her makinede ayrı** — `.gitignore`'da,
+   `git clone`/`git pull` bu dosyayı hiç getirmez. Yeni bir geliştirici repoyu
+   çekince uygulama "Supabase yapılandırması eksik" hatasıyla açılır (ya da
+   eski/yanlış bir kopyası varsa yanlış projeye bağlanır, hata sessiz kalabilir).
+   Dosyanın içeriği (yukarıdaki §1) mevcut bir geliştiriciden elle alınmalı —
+   secret değiller (service_role hariç), ama repoya commit edilmemeli.
+7. ⬜ **İlk gerçek giriş** — bugüne kadar hiçbir akış canlı sunucuya karşı uçtan
    uca çalıştırılmadı. Kayıt → fotoğraf → eşleşme → mesaj yolu ilk kez burada
    denenecek.
 
@@ -156,7 +166,7 @@ Bunlar bu projede bizzat yaşandı; tekrar düşmemek için not edildi.
 edebilirsiniz (DDL çalıştıramaz, yalnızca okur):
 
 ```bash
-URL="https://dddfioyzdguafjpsfscs.supabase.co"
+URL="https://ucaatxhjmdfrholysnip.supabase.co"
 KEY="<publishable key>"
 curl -s -o /dev/null -w "%{http_code}\n" \
   "$URL/rest/v1/profiles?select=id&limit=1" \
