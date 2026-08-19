@@ -480,10 +480,14 @@ struct PostCard: View {
         return min(max(size.height / size.width, enGenis), enUzun)
     }
 
+    /// Sunucudan gelen gönderilerde boyut ancak görsel indikten sonra bilinir;
+    /// `ProfileMedia` yükleyince buraya yazıyor.
+    @State private var remoteImageSize: CGSize?
+
     private var imageSize: CGSize? {
         if let data = post.localImageData, let image = UIImage(data: data) { return image.size }
         if let name = post.imageAssetName, let image = UIImage(named: name) { return image.size }
-        return nil
+        return remoteImageSize
     }
 
     var body: some View {
@@ -548,19 +552,25 @@ struct PostCard: View {
                 // çekilmiş bir fotoğraf bu kutuya sığmadığı için üstünden ve altından
                 // kesiliyor, yüzün yarısı kayboluyordu. Artık fotoğrafın kendi oranı
                 // kullanılıyor; yalnızca aşırı uçlar sınırlanıyor (bkz. displayAspect).
-                GeometryReader { proxy in
-                    ProfileMedia(url: post.imageURL, data: post.localImageData, assetName: post.imageAssetName)
-                        .frame(width: proxy.size.width, height: proxy.size.width * displayAspect)
-                        .clipped()
-                        .contentShape(Rectangle())
-                        .onTapGesture(count: 2) {
-                            if !post.liked { toggleLike() }
-                        }
-                        .accessibilityAction(named: "Beğen") {
-                            if !post.liked { toggleLike() }
-                        }
-                }
-                .frame(height: UIScreen.main.bounds.width * displayAspect)
+                // Yükseklik artık tek bir kaynaktan, kartın kendi genişliğinden
+                // türetiliyor. Eskiden GeometryReader'ın içi kart genişliğini, dış
+                // çerçevesi ise ekran genişliğini kullanıyordu; ikisi eşit olmadığı
+                // her durumda görsel taşıp altındaki yazının üstüne biniyordu.
+                Color.clear
+                    .aspectRatio(1 / displayAspect, contentMode: .fit)
+                    .overlay {
+                        ProfileMedia(url: post.imageURL, data: post.localImageData,
+                                     assetName: post.imageAssetName,
+                                     onNaturalSize: { remoteImageSize = $0 })
+                    }
+                    .clipped()
+                    .contentShape(Rectangle())
+                    .onTapGesture(count: 2) {
+                        if !post.liked { toggleLike() }
+                    }
+                    .accessibilityAction(named: "Beğen") {
+                        if !post.liked { toggleLike() }
+                    }
             } else {
                 Text(post.caption)
                     .font(.system(size: 25, weight: .bold, design: .rounded))
@@ -1084,10 +1094,42 @@ private struct StoryViewersSheet: View {
     }
 }
 
+/// Görseli kendimiz indiriyoruz ki gerçek boyutunu öğrenebilelim; `AsyncImage`
+/// bunu vermiyor. `URLSession.shared` kendi önbelleğini kullandığı için aynı
+/// görsel ikinci kez gösterildiğinde ağa çıkılmıyor.
+private struct MeasuredRemoteImage<Fallback: View>: View {
+    let url: URL
+    let onNaturalSize: (CGSize) -> Void
+    @ViewBuilder let fallback: () -> Fallback
+    @State private var image: UIImage?
+
+    var body: some View {
+        Group {
+            if let image {
+                Image(uiImage: image).resizable().scaledToFill()
+            } else {
+                fallback()
+            }
+        }
+        .task(id: url) {
+            guard let (data, _) = try? await URLSession.shared.data(from: url),
+                  let indirilen = UIImage(data: data)
+            else { return }
+            image = indirilen
+            onNaturalSize(indirilen.size)
+        }
+    }
+}
+
 struct ProfileMedia: View {
     let url: URL?
     let data: Data?
     var assetName: String? = nil
+    /// Verilirse görselin gerçek boyutu, indikten sonra bir kez bildirilir.
+    /// Gönderi kartı doğru oranı ancak böyle öğrenebiliyor: `AsyncImage` yalnızca
+    /// bir `Image` veriyor, boyutunu okumanın yolu yok. Yalnızca boyutu isteyen
+    /// çağıranlar bu yolu kullanır; avatarlar `AsyncImage` üzerinde kalır.
+    var onNaturalSize: ((CGSize) -> Void)? = nil
 
     var body: some View {
         Group {
@@ -1096,11 +1138,15 @@ struct ProfileMedia: View {
             } else if let assetName {
                 Image(assetName).resizable().scaledToFill()
             } else if let url {
-                AsyncImage(url: url) { phase in
-                    if let image = phase.image {
-                        image.resizable().scaledToFill()
-                    } else {
-                        fallback
+                if let onNaturalSize {
+                    MeasuredRemoteImage(url: url, onNaturalSize: onNaturalSize, fallback: { fallback })
+                } else {
+                    AsyncImage(url: url) { phase in
+                        if let image = phase.image {
+                            image.resizable().scaledToFill()
+                        } else {
+                            fallback
+                        }
                     }
                 }
             } else {

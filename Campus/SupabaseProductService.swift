@@ -731,11 +731,18 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         }
     }
 
+    /// `post_likes`, `saved_posts` ve `club_members` tablolarında `authenticated`
+    /// rolüne UPDATE yetkisi verilmemiş. Varsayılan `upsert` ON CONFLICT DO UPDATE
+    /// ürettiği ve Postgres bu yetkiyi çakışma olmasa bile baştan aradığı için bu
+    /// çağrılar her seferinde izin hatasıyla dönüyordu. Satırın kendisi bilginin
+    /// tamamı olduğundan güncellenecek bir şey yok: `ignoreDuplicates` ile
+    /// DO NOTHING üretiyoruz, o da yalnızca INSERT yetkisi istiyor.
     func setPostLiked(_ postID: UUID, liked: Bool) async throws {
         guard let userID = currentUserID else { throw BackendServiceError.missingSession }
         if liked {
             try await client.from("post_likes")
-                .upsert(PostLikeInsert(postID: postID, userID: userID), returning: .minimal)
+                .upsert(PostLikeInsert(postID: postID, userID: userID), returning: .minimal,
+                        ignoreDuplicates: true)
                 .execute()
         } else {
             try await client.from("post_likes")
@@ -773,7 +780,8 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         guard let userID = currentUserID else { throw BackendServiceError.missingSession }
         if saved {
             try await client.from("saved_posts")
-                .upsert(SavedPostInsert(postID: postID, userID: userID), returning: .minimal)
+                .upsert(SavedPostInsert(postID: postID, userID: userID), returning: .minimal,
+                        ignoreDuplicates: true)
                 .execute()
         } else {
             try await client.from("saved_posts")
@@ -1022,7 +1030,8 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         guard let userID = currentUserID else { throw BackendServiceError.missingSession }
         if joined {
             try await client.from("club_members")
-                .upsert(ClubMemberInsert(clubID: clubID, userID: userID), returning: .minimal)
+                .upsert(ClubMemberInsert(clubID: clubID, userID: userID), returning: .minimal,
+                        ignoreDuplicates: true)
                 .execute()
         } else {
             try await client.from("club_members")
