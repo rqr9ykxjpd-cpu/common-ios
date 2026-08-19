@@ -147,6 +147,9 @@ struct SocialFeedView: View {
                 NotificationsView()
             }
             .task { await appState.loadFeed(); await appState.loadStories() }
+#if DEBUG
+            .onAppear { if appState.opensComposer { showPostComposer = true } }
+#endif
             .fullScreenCover(item: Binding(get: { appState.selectedStory }, set: { appState.selectedStory = $0 })) { story in
                 StoryViewer(
                     stories: appState.stories,
@@ -456,6 +459,27 @@ struct PostCard: View {
     @State private var showComments = false
     @State private var showDeleteConfirmation = false
 
+    /// Görselin gösterileceği yükseklik oranı (yükseklik = genişlik × bu değer).
+    ///
+    /// Fotoğrafın kendi oranı kullanılıyor; yalnızca uç değerler sınırlanıyor:
+    /// çok geniş panoramalar şeride, çok uzun ekran görüntüleri de tek gönderiyle
+    /// bütün akışı kaplayacak bir sütuna dönüşmesin diye. Sınırlar Instagram'ın
+    /// kullandığı aralıkla aynı: 1.91:1 ile 4:5.
+    private var displayAspect: CGFloat {
+        let enGenis: CGFloat = 0.524   // 1.91:1
+        // 1.34: telefonun kendi 4:3 dikey fotoğrafı tam sığsın. Instagram 1.25 (4:5)
+        // kullanıyor ama o sınırda standart bir iPhone karesi hâlâ %6 kesiliyordu.
+        let enUzun: CGFloat = 1.34
+        guard let size = imageSize, size.width > 0 else { return 1 }
+        return min(max(size.height / size.width, enGenis), enUzun)
+    }
+
+    private var imageSize: CGSize? {
+        if let data = post.localImageData, let image = UIImage(data: data) { return image.size }
+        if let name = post.imageAssetName, let image = UIImage(named: name) { return image.size }
+        return nil
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 13) {
             HStack(spacing: 11) {
@@ -514,9 +538,13 @@ struct PostCard: View {
             .padding(.horizontal, 20)
 
             if post.imageURL != nil || post.imageAssetName != nil || post.localImageData != nil {
+                // Görsel önceden sabit 0.72 orana (geniş format) zorlanıyordu. Dikey
+                // çekilmiş bir fotoğraf bu kutuya sığmadığı için üstünden ve altından
+                // kesiliyor, yüzün yarısı kayboluyordu. Artık fotoğrafın kendi oranı
+                // kullanılıyor; yalnızca aşırı uçlar sınırlanıyor (bkz. displayAspect).
                 GeometryReader { proxy in
                     ProfileMedia(url: post.imageURL, data: post.localImageData, assetName: post.imageAssetName)
-                        .frame(width: proxy.size.width, height: proxy.size.width * 0.72)
+                        .frame(width: proxy.size.width, height: proxy.size.width * displayAspect)
                         .clipped()
                         .contentShape(Rectangle())
                         .onTapGesture(count: 2) {
@@ -526,7 +554,7 @@ struct PostCard: View {
                             if !post.liked { toggleLike() }
                         }
                 }
-                .frame(height: UIScreen.main.bounds.width * 0.72)
+                .frame(height: UIScreen.main.bounds.width * displayAspect)
             } else {
                 Text(post.caption)
                     .font(.system(size: 25, weight: .bold, design: .rounded))

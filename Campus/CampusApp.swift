@@ -26,6 +26,7 @@ struct CampusApp: App {
             if let index = arguments.firstIndex(of: "-tab"), index + 1 < arguments.count {
                 state.initialTab = ["feed": 0, "discover": 1, "profile": 2][arguments[index + 1]] ?? 0
             }
+            if arguments.contains("-compose") { state.opensComposer = true }
             if onboarding {
                 let adlar: [String: AppState.OnboardingStep] = [
                     "identity": .identity, "preferences": .preferences,

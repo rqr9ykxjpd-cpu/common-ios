@@ -203,6 +203,8 @@ final class AppState {
 #if DEBUG
     /// `-tab <ad>` ile açılan sekme. Yalnızca geliştirme derlemesinde.
     var initialTab = 0
+    /// `-compose` ile paylaşım ekranı açılışta gösterilir.
+    var opensComposer = false
     /// `-onboarding <adım>` ile açıldığında oturum geri yüklemesi rotayı ezmesin diye.
     /// Yalnızca geliştirme derlemesinde var.
     var skipsSessionRestore = false

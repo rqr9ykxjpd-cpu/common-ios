@@ -35,16 +35,19 @@ struct CreatePostView: View {
             ZStack {
                 (isStory ? Color.black : CampusTheme.paper).ignoresSafeArea()
                 ScrollView {
+                    // Önceden beş bölüm vardı ve dördü (Kamera, Galeri, açıklama, yer)
+                    // birebir aynı yuvarlak kutuydu — hiçbiri öne çıkmıyordu. Ayrıca
+                    // tür seçici en alttaydı: ne paylaştığını yazdıktan SONRA seçiyordun,
+                    // oysa tür ekranın tamamını değiştiriyor.
                     VStack(alignment: .leading, spacing: CampusTheme.Space.lg) {
-                        header
-                        preview
-                        sourceControls
-                        captionField
-                        placeMenu
+                        topBar          // kapat + tür seçimi
+                        preview         // fotoğraf: ekranın kahramanı
+                        captionField    // kutusuz, doğrudan sayfada
+                        placeChip       // küçük bir ayrıntı, tam genişlik kutu değil
                     }
                     .padding(.horizontal, CampusTheme.Space.lg)
                     .padding(.top, CampusTheme.Space.sm)
-                    .padding(.bottom, 128)
+                    .padding(.bottom, 120)
                 }
             }
             .foregroundStyle(isStory ? .white : CampusTheme.ink)
@@ -74,145 +77,130 @@ struct CreatePostView: View {
         .preferredColorScheme(isStory ? .dark : nil)
     }
 
-    private var header: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Paylaş").font(.system(size: 28, weight: .bold, design: .rounded))
-                Text(isStory ? "24 saat görünür" : "YÜ akışında yayınlanır")
-                    .font(.system(size: 12, design: .rounded))
-                    .foregroundStyle(isStory ? .white.opacity(0.58) : CampusTheme.muted)
-            }
-            Spacer()
+    /// Kapatma ve tür seçimi. Tür yukarıda, çünkü ekranın tamamını o belirliyor:
+    /// story koyu zeminde ve fotoğraf zorunlu, gönderi açık zeminde ve metin yeterli.
+    private var topBar: some View {
+        HStack(spacing: CampusTheme.Space.md) {
             Button { dismiss() } label: {
                 Image(systemName: "xmark").font(.system(size: 15, weight: .bold))
-                    .frame(width: 44, height: 44).background(controlBackground, in: Circle())
+                    .frame(width: 40, height: 40).background(controlBackground, in: Circle())
             }
             .buttonStyle(PressableStyle())
             .accessibilityLabel("Kapat")
+
+            HStack(spacing: 4) {
+                ForEach(ComposerContentType.allCases) { type in
+                    Button {
+                        withAnimation(.snappy) { contentType = type }
+                        Haptics.selection()
+                    } label: {
+                        Text(type.title)
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .foregroundStyle(contentType == type ? CampusTheme.ink : (isStory ? .white.opacity(0.65) : CampusTheme.muted))
+                            .frame(maxWidth: .infinity).frame(height: 36)
+                            .background(contentType == type ? CampusTheme.paper : .clear, in: Capsule())
+                    }
+                    .buttonStyle(PressableStyle())
+                }
+            }
+            .padding(3)
+            .background(controlBackground, in: Capsule())
+            .overlay(Capsule().stroke(controlStroke))
+            .frame(maxWidth: 220)
+
+            Spacer(minLength: 0)
         }
     }
 
+    /// Fotoğraf ekranın kahramanı: dokununca galeri açılıyor, köşedeki küçük düğme
+    /// kamerayı açıyor. Önceden altta iki ayrı tam genişlik düğme vardı ("Kamera",
+    /// "Galeri") ve fotoğraf seçildikten sonra da yer kaplamaya devam ediyorlardı.
     private var preview: some View {
-        ZStack {
-            if let imageData {
-                ProfileMedia(url: nil, data: imageData)
-                    .frame(maxWidth: .infinity).frame(height: isStory ? 470 : 280).clipped()
-            } else if isStory {
-                emptyMediaPreview(height: 470)
-            } else {
-                VStack(alignment: .leading, spacing: CampusTheme.Space.md) {
-                    Label("METİN GÖNDERİSİ", systemImage: "text.alignleft")
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
-                        .tracking(1.1)
-                        .foregroundStyle(CampusTheme.violet)
-                    Text(cleanCaption.isEmpty ? "Aklından geçenleri kampüsle paylaş." : cleanCaption)
-                        .font(.system(size: cleanCaption.isEmpty ? 22 : 25, weight: .bold, design: .rounded))
-                        .foregroundStyle(cleanCaption.isEmpty ? CampusTheme.muted : CampusTheme.ink)
-                        .lineLimit(6)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Spacer(minLength: 0)
-                    Text("Fotoğraf eklemek isteğe bağlı")
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
-                        .foregroundStyle(CampusTheme.muted)
-                }
-                .padding(CampusTheme.Space.xl)
-                .frame(maxWidth: .infinity, minHeight: 220, alignment: .topLeading)
-                .background(CampusTheme.acid.opacity(0.3))
+        // Değerler kapanışa girmeden önce yerel değişkene alınıyor: `PhotosPicker`'ın
+        // etiketi Sendable bir kapanış ve oradan doğrudan özellik okumak uyarı üretiyor.
+        let currentImage = imageData
+        let story = isStory
+        let background = controlBackground
+
+        return ZStack(alignment: .bottomTrailing) {
+            PhotosPicker(selection: $selectedItem, matching: .images) {
+                ComposerPreview(imageData: currentImage, isStory: story, background: background)
             }
+            .buttonStyle(PressableStyle())
+            .accessibilityLabel(imageData == nil ? "Galeriden fotoğraf seç" : "Fotoğrafı değiştir")
+
+            Button {
+                if UIImagePickerController.isSourceTypeAvailable(.camera) { showCamera = true }
+                else { showCameraUnavailable = true }
+            } label: {
+                Image(systemName: "camera.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(CampusTheme.ink)
+                    .frame(width: 44, height: 44)
+                    .background(CampusTheme.paper, in: Circle())
+                    .overlay(Circle().stroke(CampusTheme.ink.opacity(0.12)))
+                    .shadow(color: .black.opacity(0.15), radius: 8, y: 3)
+            }
+            .buttonStyle(PressableStyle())
+            .padding(14)
+            .accessibilityLabel("Kamerayla çek")
         }
         .clipShape(RoundedRectangle(cornerRadius: CampusTheme.Radius.hero, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: CampusTheme.Radius.hero).stroke(controlStroke))
+        .overlay(RoundedRectangle(cornerRadius: CampusTheme.Radius.hero, style: .continuous).stroke(controlStroke))
         .animation(.snappy, value: contentType)
     }
 
-    private func emptyMediaPreview(height: CGFloat) -> some View {
-        RoundedRectangle(cornerRadius: CampusTheme.Radius.hero, style: .continuous)
-            .fill(controlBackground).frame(height: height)
-            .overlay {
-                VStack(spacing: CampusTheme.Space.md) {
-                    Image(systemName: "photo.badge.plus").font(.system(size: 36, weight: .light))
-                    Text("Bir fotoğraf ekle").font(.system(size: 17, weight: .semibold, design: .rounded))
-                    Text("Kamerayı kullan veya galerinden seç").font(.system(size: 13, design: .rounded)).opacity(0.58)
-                }
-            }
-    }
 
-    private var sourceControls: some View {
-        let background = isStory ? Color.white.opacity(0.11) : CampusTheme.surface
-        let stroke = isStory ? Color.white.opacity(0.18) : CampusTheme.hairline
-
-        return HStack(spacing: CampusTheme.Space.md) {
-            sourceButton(title: "Kamera", systemName: "camera.fill") {
-                if UIImagePickerController.isSourceTypeAvailable(.camera) { showCamera = true }
-                else { showCameraUnavailable = true }
-            }
-            PhotosPicker(selection: $selectedItem, matching: .images) {
-                Label("Galeri", systemImage: "photo.on.rectangle")
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
-                    .frame(maxWidth: .infinity).frame(height: 48)
-                    .background(background, in: RoundedRectangle(cornerRadius: CampusTheme.Radius.control))
-                    .overlay(RoundedRectangle(cornerRadius: CampusTheme.Radius.control).stroke(stroke))
-            }.buttonStyle(PressableStyle())
-        }
-    }
-
-    private func sourceButton(title: String, systemName: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Label(title, systemImage: systemName)
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                .frame(maxWidth: .infinity).frame(height: 48)
-                .background(controlBackground, in: RoundedRectangle(cornerRadius: CampusTheme.Radius.control))
-                .overlay(RoundedRectangle(cornerRadius: CampusTheme.Radius.control).stroke(controlStroke))
-        }.buttonStyle(PressableStyle())
-    }
-
+    /// Kutusuz. Önceden çerçeveli bir kutuydu ve altındaki "yer" kutusuyla,
+    /// üstündeki kaynak düğmeleriyle aynı görünüyordu; hangisinin asıl alan olduğu
+    /// anlaşılmıyordu. Yazı doğrudan sayfada.
     private var captionField: some View {
-        TextField(isStory ? "Story'e kısa bir not ekle..." : "Bu an hakkında bir şey söyle...", text: $caption, axis: .vertical)
-            .font(.system(size: 15, design: .rounded)).lineLimit(2...5).padding(CampusTheme.Space.lg)
-            .background(controlBackground, in: RoundedRectangle(cornerRadius: CampusTheme.Radius.control))
-            .overlay(RoundedRectangle(cornerRadius: CampusTheme.Radius.control).stroke(controlStroke))
+        TextField(
+            isStory ? "Story'e kısa bir not ekle…" : "Bu an hakkında bir şey söyle…",
+            text: $caption,
+            axis: .vertical
+        )
+        .font(.system(size: 17, design: .rounded))
+        .lineSpacing(3)
+        .lineLimit(3...8)
+        .textFieldStyle(.plain)
+        .padding(.horizontal, 2)
     }
 
-    private var placeMenu: some View {
+    /// Küçük bir çip. Yer isteğe bağlı bir ayrıntı; tam genişlik bir kutuyu hak etmiyor.
+    private var placeChip: some View {
         Menu {
             Button("Yer ekleme") { selectedPlace = nil }
             ForEach(appState.places) { place in
                 Button("\(place.name) · \(place.area)") { selectedPlace = place }
             }
         } label: {
-            HStack {
-                Image(systemName: "mappin.and.ellipse")
-                Text(selectedPlace?.name ?? "Yer ekle").font(.system(size: 14, weight: .semibold, design: .rounded))
-                Spacer(); Image(systemName: "chevron.down")
+            HStack(spacing: 6) {
+                Image(systemName: selectedPlace == nil ? "mappin" : "mappin.circle.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                Text(selectedPlace?.name ?? "Yer ekle")
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .lineLimit(1)
             }
-            .padding(.horizontal, CampusTheme.Space.lg).frame(height: 48)
-            .background(controlBackground, in: RoundedRectangle(cornerRadius: CampusTheme.Radius.control))
-            .overlay(RoundedRectangle(cornerRadius: CampusTheme.Radius.control).stroke(controlStroke))
+            .foregroundStyle(selectedPlace == nil ? (isStory ? .white.opacity(0.7) : CampusTheme.muted) : CampusTheme.violet)
+            .padding(.horizontal, 13)
+            .frame(height: 38)
+            .background(controlBackground, in: Capsule())
+            .overlay(Capsule().stroke(controlStroke))
         }
     }
 
     private var bottomControls: some View {
-        VStack(spacing: CampusTheme.Space.md) {
-            HStack(spacing: CampusTheme.Space.sm) {
-                ForEach(ComposerContentType.allCases) { type in
-                    Button {
-                        withAnimation(.snappy) { contentType = type }
-                        Haptics.selection()
-                    } label: {
-                        Label(type.title, systemImage: type.systemName)
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
-                            .foregroundStyle(contentType == type ? CampusTheme.ink : (isStory ? .white.opacity(0.68) : CampusTheme.muted))
-                            .frame(maxWidth: .infinity).frame(height: 44)
-                            .background(contentType == type ? CampusTheme.acid : .clear, in: Capsule())
-                    }.buttonStyle(PressableStyle())
-                }
-            }
-            .padding(4).background(.ultraThinMaterial, in: Capsule())
-            .overlay(Capsule().stroke(isStory ? .white.opacity(0.2) : CampusTheme.hairline))
-
-            AppButton(title: isStory ? "Story'yi paylaş" : "Gönderiyi paylaş", systemName: "arrow.up", role: isStory ? .accent : .primary, enabled: canPublish) { publish() }
-        }
-        .padding(.horizontal, CampusTheme.Space.lg).padding(.top, CampusTheme.Space.md).padding(.bottom, CampusTheme.Space.sm)
+        // Tür seçici yukarı taşındı; burada yalnızca asıl eylem kalıyor.
+        AppButton(
+            title: isStory ? "Story'yi paylaş" : "Gönderiyi paylaş",
+            systemName: "arrow.up",
+            role: isStory ? .accent : .primary,
+            enabled: canPublish
+        ) { publish() }
+        .padding(.horizontal, CampusTheme.Space.lg)
+        .padding(.top, CampusTheme.Space.md)
+        .padding(.bottom, CampusTheme.Space.sm)
         .background(.ultraThinMaterial)
     }
 
@@ -255,5 +243,52 @@ private struct CameraPicker: UIViewControllerRepresentable {
             parent.dismiss()
         }
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) { parent.dismiss() }
+    }
+}
+
+/// Fotoğraf seçilmeden önceki alan. Ayrı bir `View`: `PhotosPicker`'ın etiketi
+/// farklı bir aktör bağlamında değerlendiriliyor ve oradan `CreatePostView`'ın
+/// metotları çağrılamıyor.
+/// Önizlemenin tamamı ayrı bir `View`.
+///
+/// `PhotosPicker`'ın etiketi farklı bir aktör bağlamında değerlendiriliyor; oradan
+/// `CreatePostView`'ın özelliklerine erişmek uyarı üretiyordu.
+private struct ComposerPreview: View {
+    let imageData: Data?
+    let isStory: Bool
+    let background: Color
+
+    /// Uç oranlar sınırlanıyor: panorama şeride, çok uzun ekran görüntüsü de bütün
+    /// ekranı kaplayan bir sütuna dönüşmesin. Üst sınır 1.34, çünkü telefonun kendi
+    /// 4:3 dikey fotoğrafı hiç kırpılmadan sığmalı.
+    private func height(for size: CGSize) -> CGFloat {
+        guard size.width > 0 else { return 260 }
+        let width = UIScreen.main.bounds.width - CampusTheme.Space.lg * 2
+        return width * min(max(size.height / size.width, 0.524), 1.34)
+    }
+
+    var body: some View {
+        if let imageData, let image = UIImage(data: imageData) {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+                .frame(maxWidth: .infinity)
+                .frame(height: height(for: image.size))
+                .clipped()
+        } else {
+            RoundedRectangle(cornerRadius: CampusTheme.Radius.hero, style: .continuous)
+                .fill(background)
+                .frame(height: isStory ? 420 : 260)
+                .overlay {
+                    VStack(spacing: CampusTheme.Space.sm) {
+                        Image(systemName: "photo.badge.plus").font(.system(size: 32, weight: .light))
+                        Text(isStory ? "Story için bir fotoğraf seç" : "Fotoğraf ekle")
+                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        Text(isStory ? "Story fotoğrafsız paylaşılamaz" : "İstersen sadece yazı da paylaşabilirsin")
+                            .font(.system(size: 12, design: .rounded)).opacity(0.55)
+                    }
+                    .foregroundStyle(isStory ? .white : CampusTheme.ink)
+                }
+        }
     }
 }
