@@ -118,7 +118,15 @@ struct CampusStory: Identifiable, Hashable {
     var isMine: Bool
     let expiresAt: Date
 
-    init(id: UUID = UUID(), author: StudentProfile, imageURL: URL? = nil, imageAssetName: String? = nil, localImageData: Data? = nil, caption: String, place: CampusPlace? = nil, viewed: Bool = false, viewRecords: [StoryViewRecord] = [], isMine: Bool = false, expiresAt: Date = .now.addingTimeInterval(86_400)) {
+    /// Story'nin ekranda kalma süresi. Tek kaynak burası: paylaşırken sunucuya
+    /// gönderilen bitiş zamanı da bundan hesaplanıyor.
+    ///
+    /// Sunucudaki `expires_at` sütununun varsayılanı hâlâ 24 saat, ama istemci
+    /// değeri her zaman açıkça gönderdiği için o varsayılan hiç kullanılmıyor;
+    /// süreyi değiştirmek için veritabanına dokunmak gerekmiyor.
+    static let lifetime: TimeInterval = 10 * 60 * 60
+
+    init(id: UUID = UUID(), author: StudentProfile, imageURL: URL? = nil, imageAssetName: String? = nil, localImageData: Data? = nil, caption: String, place: CampusPlace? = nil, viewed: Bool = false, viewRecords: [StoryViewRecord] = [], isMine: Bool = false, expiresAt: Date = .now.addingTimeInterval(CampusStory.lifetime)) {
         self.id = id
         self.author = author
         self.imageURL = imageURL

@@ -941,7 +941,9 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
             try await client.from("stories")
                 .insert(StoryInsert(authorID: userID, mediaPath: path,
                                     caption: caption.trimmingCharacters(in: .whitespacesAndNewlines),
-                                    placeID: placeID), returning: .minimal)
+                                    placeID: placeID,
+                                    expiresAt: Date().addingTimeInterval(CampusStory.lifetime)),
+                        returning: .minimal)
                 .execute()
         } catch {
             // Satır eklenemezse yüklenen dosya sahipsiz kalmasın.
@@ -1180,11 +1182,15 @@ private struct StoryInsert: Encodable {
     let mediaPath: String
     let caption: String
     let placeID: UUID?
+    /// Süreyi sunucunun sütun varsayılanına bırakmıyoruz; tek kaynak
+    /// `CampusStory.lifetime` olsun ki süre değiştirmek migration gerektirmesin.
+    let expiresAt: Date
     enum CodingKeys: String, CodingKey {
         case authorID = "author_id"
         case mediaPath = "media_path"
         case caption
         case placeID = "place_id"
+        case expiresAt = "expires_at"
     }
 }
 
