@@ -135,18 +135,31 @@ struct WelcomeView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 17, style: .continuous))
                         .disabled(isSigningIn)
 
+                        // Apple'ın düğmesi sistem bileşeni: ortalanmış, sistem yazı tipi,
+                        // logo metnin hemen solunda. Google düğmesi ise sola dayalı,
+                        // büyük harf ve bambaşka bir yazı tipiyle duruyordu — yan yana
+                        // iki ayrı uygulamadan gelmiş gibi görünüyorlardı. Aşağısı
+                        // Apple'ınkinin ölçülerine ve ritmine göre kuruldu.
                         Button {
                             Haptics.impact(.light)
                             signInWithGoogle()
                         } label: {
-                            HStack {
-                                Image(systemName: "g.circle.fill").font(.system(size: 18))
-                                Text("GOOGLE İLE DEVAM ET").font(.system(size: 11, weight: .black, design: .rounded)).tracking(1.2)
-                                Spacer()
+                            HStack(spacing: 8) {
+                                Text("G")
+                                    .font(.system(size: 20, weight: .bold, design: .default))
+                                    .foregroundStyle(Color(red: 0.26, green: 0.52, blue: 0.96))
+                                Text("Google ile Devam Et")
+                                    .font(.system(size: 19, weight: .medium))
+                                    .foregroundStyle(CampusTheme.ink)
                             }
-                            .foregroundStyle(CampusTheme.ink).padding(.horizontal, 20).frame(height: 56)
-                            .background(CampusTheme.surface).clipShape(RoundedRectangle(cornerRadius: 17, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: 17, style: .continuous).stroke(CampusTheme.ink.opacity(0.12)))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 56)
+                            .background(CampusTheme.surface, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 17, style: .continuous)
+                                    .stroke(CampusTheme.ink.opacity(0.15))
+                            )
+                            .contentShape(RoundedRectangle(cornerRadius: 17, style: .continuous))
                         }
                         .buttonStyle(PressableStyle())
                         .disabled(isSigningIn)
