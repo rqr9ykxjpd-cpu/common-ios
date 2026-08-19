@@ -113,7 +113,36 @@ final class AppState {
     /// artık gereksiz.
     func showError(_ error: Error, fallback: String) {
         guard !isCancellation(error) else { return }
+        if isClockSkew(error), recoverFromClockSkew() { return }
         toast = AppToastMessage(text: UserFacingError.message(error, fallback: fallback), kind: .error)
+    }
+
+    /// Sunucunun jetonu üreten servisiyle isteği doğrulayan servisin saatleri
+    /// bir-iki saniye ayrıştığında PostgREST isteği "JWT issued at future" diye
+    /// reddediyor. Cihazın saatiyle ilgisi yok, kullanıcının yapabileceği bir şey
+    /// yok ve kendiliğinden geçiyor.
+    private func isClockSkew(_ error: Error) -> Bool {
+        String(describing: error).contains("PGRST303")
+    }
+
+    /// Hata göstermek yerine kısa bir bekleyip ekranı bir kez kendimiz tazeliyoruz.
+    /// Dakikada bir denenir: ikinci kez üst üste gelirse artık gizlemiyoruz, çünkü
+    /// o zaman geçici bir sapma değil gerçekten bozuk bir şey var demektir.
+    /// `true` dönerse hata yutuldu.
+    private func recoverFromClockSkew() -> Bool {
+        let now = Date()
+        if let last = lastClockSkewRecovery, now.timeIntervalSince(last) < 60 { return false }
+        lastClockSkewRecovery = now
+        Task {
+            try? await Task.sleep(for: .seconds(2))
+            guard route == .app else { return }
+            await loadPlaces(silently: true)
+            await loadFeed()
+            await loadStories()
+            await loadConversations()
+            await loadNotifications()
+        }
+        return true
     }
 
     /// Sunucuya ulaşılamaması ile oturumun geçersiz olması ayrı şeyler; ilkinde
@@ -129,6 +158,8 @@ final class AppState {
         let nsError = error as NSError
         return nsError.domain == NSURLErrorDomain && kodlar.contains(nsError.code)
     }
+
+    private var lastClockSkewRecovery: Date?
 
     private func isCancellation(_ error: Error) -> Bool {
         if error is CancellationError { return true }

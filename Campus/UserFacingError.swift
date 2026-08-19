@@ -98,6 +98,12 @@ enum UserFacingError {
     /// Sıra önemli: daha özel kalıplar üstte. Her satır "bu parçaların hepsi geçiyorsa"
     /// biçiminde okunur.
     private static let table: [([String], String)] = [
+        // Sunucunun jetonu üreten servisiyle isteği doğrulayan servisin saatleri
+        // ayrıştığında çıkıyor. Kullanıcının yapabileceği bir şey yok ve kısa
+        // sürede kendiliğinden geçiyor; `AppState` zaten bir kez sessizce yeniden
+        // deniyor, bu metin ancak o da tutmazsa görünüyor.
+        (["pgrst303"], "Sunucuyla saat farkı oluştu. Birkaç saniye sonra tekrar dene."),
+
         // — Giriş —
         (["nonce"], "Giriş doğrulaması tamamlanamadı. Lütfen tekrar dene."),
         (["provider is not enabled"], "Bu giriş yöntemi şu anda kullanılamıyor. Diğer seçeneği dene."),
