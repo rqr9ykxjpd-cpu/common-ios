@@ -118,10 +118,15 @@ enum UserFacingError {
         (["violates foreign key"], "İşlem tamamlanamadı: ilgili kayıt bulunamadı."),
         (["value too long"], "Girdiğin metin çok uzun."),
 
-        // — Sunucu kurulumu eksik. Kullanıcıya "sen yanlış yaptın" dedirtmemek önemli. —
-        (["pgrst205"], "Bu özellik sunucuda henüz hazır değil."),
-        (["pgrst202"], "Bu özellik sunucuda henüz hazır değil."),
-        (["schema cache"], "Bu özellik sunucuda henüz hazır değil."),
+        // — Sunucu kurulumu eksik ya da uygulama sunucudan yeni. —
+        //
+        // Bunu gören kişi öğrenci; ne migration çalıştırabilir ne de sorun onda.
+        // "Hazır değil" demek onu çıkmaza sokuyordu: ne yapacağını bilmiyor, kendi
+        // hatası sanıyor. Sorunun bizde olduğunu söyleyip suçu üstleniyoruz.
+        // Geliştiricinin ihtiyacı olan ham hata zaten DEBUG'da konsola yazılıyor.
+        (["pgrst205"], "Şu an bu işlem yapılamıyor, sorun bizde. Birazdan tekrar dene."),
+        (["pgrst202"], "Şu an bu işlem yapılamıyor, sorun bizde. Birazdan tekrar dene."),
+        (["schema cache"], "Şu an bu işlem yapılamıyor, sorun bizde. Birazdan tekrar dene."),
 
         // — Dosya yükleme —
         (["payload too large"], "Dosya çok büyük. Daha küçük bir fotoğraf dene."),
