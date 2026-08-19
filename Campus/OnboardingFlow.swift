@@ -380,6 +380,7 @@ private struct PhotoStep: View {
     @Binding var avatarData: Data?
     let submit: () -> Void
     @State private var item: PhotosPickerItem?
+    @State private var cropCandidate: IdentifiableImage?
     @State private var isLoading = false
 
     var body: some View {
@@ -435,11 +436,20 @@ private struct PhotoStep: View {
             isLoading = true
             Task {
                 let raw = try? await newItem?.loadTransferable(type: Data.self)
-                let prepared = raw.flatMap(ImageCompression.prepareForUpload)
+                let picked = raw.flatMap(UIImage.init(data:))
                 await MainActor.run {
-                    if let prepared { avatarData = prepared }
+                    // Doğrudan kaydetmiyoruz: önce dairesel çerçeveye göre konumlandırılıyor.
+                    if let picked { cropCandidate = IdentifiableImage(image: picked) }
                     isLoading = false
                 }
+            }
+        }
+        .fullScreenCover(item: $cropCandidate) { candidate in
+            AvatarCropView(image: candidate.image) {
+                cropCandidate = nil
+            } onConfirm: { data in
+                avatarData = data
+                cropCandidate = nil
             }
         }
     }

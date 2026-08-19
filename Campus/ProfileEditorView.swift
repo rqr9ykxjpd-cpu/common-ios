@@ -10,6 +10,8 @@ struct ProfileEditorView: View {
     @State private var baselineAvatarData: Data?
     @State private var baselineGalleryData: [Data] = []
     @State private var avatarItem: PhotosPickerItem?
+    /// Kırpma ekranında bekleyen fotoğraf.
+    @State private var cropCandidate: IdentifiableImage?
     @State private var galleryItems: [PhotosPickerItem] = []
     @State private var loaded = false
     @State private var showDiscardAlert = false
@@ -54,10 +56,21 @@ struct ProfileEditorView: View {
         .toolbar(.hidden, for: .navigationBar)
         .onAppear { loadOnce() }
         .onChange(of: avatarItem) { _, item in
+            // Seçilen fotoğraf doğrudan kaydedilmiyor: önce dairesel çerçeveye göre
+            // konumlandırılıyor. Aksi halde kadraj neredeyse her fotoğrafta ortadan
+            // kırpılıyor ve kullanıcının yapabileceği bir şey olmuyordu.
             Task {
-                let raw = try? await item?.loadTransferable(type: Data.self)
-                let data = raw.flatMap(ImageCompression.prepareForUpload)
-                await MainActor.run { avatarData = data }
+                guard let raw = try? await item?.loadTransferable(type: Data.self),
+                      let picked = UIImage(data: raw) else { return }
+                await MainActor.run { cropCandidate = IdentifiableImage(image: picked) }
+            }
+        }
+        .fullScreenCover(item: $cropCandidate) { candidate in
+            AvatarCropView(image: candidate.image) {
+                cropCandidate = nil
+            } onConfirm: { data in
+                avatarData = data
+                cropCandidate = nil
             }
         }
         .onChange(of: galleryItems) { _, items in
@@ -78,22 +91,59 @@ struct ProfileEditorView: View {
         }
     }
 
+    /// Kaydetme çubuğu.
+    ///
+    /// Önceden her durumda aynı görünüyordu: dolu bir kutunun içinde "Değişiklikleri
+    /// kaydet" ve üstünde sürekli duran bir uyarı satırı. Ne değiştiğini, neyin eksik
+    /// olduğunu söylemiyordu; sadece bir düğme duruyordu.
+    ///
+    /// Artık üç hâli var: değişiklik yoksa sessiz, eksik varsa **ne eksik olduğunu
+    /// tek tek** söylüyor, hazırsa kaydetmeye çağırıyor.
     private var saveBar: some View {
-        VStack(spacing: 6) {
-            if !valid {
-                Text("Ad, bölüm, cinsiyet ve en az 3 ilgi alanı zorunlu.")
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
+        VStack(spacing: 8) {
+            if !missingFields.isEmpty {
+                HStack(alignment: .top, spacing: 7) {
+                    Image(systemName: "exclamationmark.circle.fill")
+                        .font(.system(size: 13))
+                        .foregroundStyle(CampusTheme.coral)
+                    Text(missingFields.joined(separator: " · "))
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .foregroundStyle(CampusTheme.ink.opacity(0.7))
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                }
+            } else if !changed {
+                Text("Her şey kayıtlı")
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
                     .foregroundStyle(CampusTheme.muted)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            AppButton(title: "Değişiklikleri kaydet", systemName: "checkmark", enabled: valid) { save() }
+
+            AppButton(
+                title: changed ? "Değişiklikleri kaydet" : "Kaydedildi",
+                systemName: changed ? "arrow.up" : "checkmark",
+                enabled: valid && changed
+            ) { save() }
         }
         .padding(.horizontal, CampusTheme.Space.lg)
-        .padding(.top, 10)
-        .padding(.bottom, 6)
-        .background(CampusTheme.surface)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
+        .background(.ultraThinMaterial)
         .overlay(alignment: .top) { Rectangle().fill(CampusTheme.hairline).frame(height: 0.5) }
+    }
+
+    /// Neyin eksik olduğu tek tek. "Şunlar zorunlu" demek, hangisinin eksik olduğunu
+    /// kullanıcıya aratıyordu.
+    private var missingFields: [String] {
+        var missing: [String] = []
+        if draft.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { missing.append("Ad") }
+        if draft.department.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { missing.append("Bölüm") }
+        if draft.gender == nil { missing.append("Cinsiyet") }
+        if draft.interests.count < InterestCatalog.minimumSelection {
+            missing.append("\(InterestCatalog.minimumSelection - draft.interests.count) ilgi alanı daha")
+        }
+        if draft.bio.count > 220 { missing.append("Hakkımda çok uzun") }
+        return missing
     }
 
     private var header: some View {

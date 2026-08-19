@@ -11,6 +11,7 @@ struct SocialFeedView: View {
     @State private var selectedClub: CampusClub?
     @State private var showChats = false
     @State private var showNotifications = false
+    @State private var showPlacesWall = false
     @State private var selectedPostAuthor: StudentProfile?
 
     /// Akış boşken iki ayrı durum var ve bunlar karıştırılmamalı: bir yer filtresi
@@ -146,6 +147,9 @@ struct SocialFeedView: View {
             .sheet(isPresented: $showNotifications) {
                 NotificationsView()
             }
+            .sheet(isPresented: $showPlacesWall) {
+                PlacesWallView { place in appState.selectedPlaceFilter = place }
+            }
             .task { await appState.loadFeed(); await appState.loadStories() }
 #if DEBUG
             .onAppear { if appState.opensComposer { showPostComposer = true } }
@@ -266,55 +270,50 @@ struct SocialFeedView: View {
         }
     }
 
+    /// Akışta tek satır. Önceden başlık, "YER SEÇ" yazısı ve yatay kaydırılan
+    /// çiplerden oluşan bir kart vardı: yerlerin çoğu ekrana sığmıyor, hangisinde
+    /// kim olduğu görünmüyor ve kart akışta yer kaplıyordu. Artık dokununca yerlerin
+    /// tamamının listelendiği duvar açılıyor.
     private var meetingPlaces: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            HStack(spacing: 7) {
+        Button {
+            Haptics.impact(.light)
+            showPlacesWall = true
+        } label: {
+            HStack(spacing: CampusTheme.Space.md) {
                 Image(systemName: "mappin.and.ellipse")
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(CampusTheme.violet)
+                    .frame(width: 26)
+
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Nerede tanışabiliriz?")
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                    if let activePlace = appState.currentVisiblePlace {
-                        Text("Şu an \(activePlace.name) konumunda görünürsün")
-                            .font(.system(size: 11, weight: .semibold, design: .rounded))
-                            .foregroundStyle(CampusTheme.violet)
-                    }
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .foregroundStyle(CampusTheme.ink)
+                    Text(subtitleForPlaces)
+                        .font(.system(size: 12, design: .rounded))
+                        .foregroundStyle(appState.currentVisiblePlace == nil ? CampusTheme.muted : CampusTheme.violet)
+                        .lineLimit(1)
                 }
-                Spacer()
-                Text(appState.currentVisiblePlace == nil ? "YER SEÇ" : "BURADASIN")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .tracking(0.7)
-                    .foregroundStyle(appState.currentVisiblePlace == nil ? CampusTheme.ink.opacity(0.38) : CampusTheme.violet)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.caption.bold())
+                    .foregroundStyle(CampusTheme.muted)
             }
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 7) {
-                    placeChip(title: "Tümü", icon: "square.grid.2x2", place: nil)
-                    ForEach(Array(appState.places.enumerated()), id: \.element.id) { index, place in
-                        placeChip(title: place.name, icon: placeIcon(index), place: place)
-                    }
-                }
-            }
-            // Kulüp kartlarındaki gibi: sondaki çip kart kenarında sertçe kesiliyordu.
-            .mask(
-                LinearGradient(
-                    stops: [
-                        .init(color: .black, location: 0),
-                        .init(color: .black, location: 0.9),
-                        .init(color: .black.opacity(0), location: 1)
-                    ],
-                    startPoint: .leading, endPoint: .trailing
-                )
-            )
+            .padding(.horizontal, CampusTheme.Space.md)
+            .frame(minHeight: 62)
+            .background(CampusTheme.surface, in: RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous).stroke(CampusTheme.hairline))
+            .contentShape(Rectangle())
         }
-        .padding(CampusTheme.Space.lg)
-        .background(CampusTheme.surface, in: RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous)
-                .stroke(CampusTheme.hairline)
-        }
+        .buttonStyle(PressableStyle())
         .padding(.horizontal, 16)
         .padding(.top, 12)
+    }
+
+    private var subtitleForPlaces: String {
+        if let active = appState.currentVisiblePlace { return "Şu an \(active.name) konumunda görünürsün" }
+        if let filter = appState.selectedPlaceFilter { return "Akış: \(filter.name)" }
+        return "\(appState.places.count) kampüs noktası"
     }
 
     private var clubsSection: some View {
@@ -401,30 +400,6 @@ struct SocialFeedView: View {
         .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
-    private func placeChip(title: String, icon: String, place: CampusPlace?) -> some View {
-        let selected = place == nil ? appState.selectedPlaceFilter == nil : appState.selectedPlaceFilter?.id == place?.id
-        return Button {
-            if let place {
-                selectedPeoplePlace = place
-            } else {
-                appState.selectedPlaceFilter = nil
-            }
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: icon).font(.system(size: 12, weight: .semibold))
-                Text(title).font(.system(size: 12, weight: .semibold, design: .rounded)).lineLimit(1)
-            }
-            .foregroundStyle(selected ? .white : CampusTheme.ink)
-            .padding(.horizontal, 11)
-            .frame(height: 44)
-            .background(selected ? CampusTheme.violet : CampusTheme.ink.opacity(0.055), in: Capsule())
-        }
-        .buttonStyle(PressableStyle())
-    }
-
-    private func placeIcon(_ index: Int) -> String {
-        ["cup.and.saucer.fill", "mug.fill", "person.3.fill", "building.columns.fill", "books.vertical.fill"][index]
-    }
 }
 
 private struct AddStoryBubble: View {
