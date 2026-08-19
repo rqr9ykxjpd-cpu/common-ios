@@ -316,6 +316,7 @@ struct SampleProductService: ProductService {
         )
     }
     func deleteStory(_ storyID: UUID) async throws { await store.removeStory(storyID) }
+    func purgeMyExpiredStories() async {}
     func markStoryViewed(_ storyID: UUID) async throws { await store.markStoryViewed(storyID) }
     func fetchStoryViews(_ storyID: UUID) async throws -> [StoryViewRecord] {
         await store.storyViews(storyID)

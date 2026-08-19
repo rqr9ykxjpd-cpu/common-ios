@@ -506,6 +506,9 @@ final class AppState {
     /// Story'leri sunucudan yükler. Bu liste akışın en üstünde duruyor ama şimdiye kadar
     /// yalnızca bellekteydi; uygulama kapanınca paylaşılan story kayboluyordu.
     func loadStories() async {
+        // Kendi süresi dolmuş story'lerini de temizliyoruz: aksi halde her paylaşım
+        // depolamada kalıcı olarak yer kaplıyor. En-iyi-çaba, sonucu beklenmiyor.
+        Task { await service.purgeMyExpiredStories() }
         do {
             stories = try await service.fetchStories()
         } catch {

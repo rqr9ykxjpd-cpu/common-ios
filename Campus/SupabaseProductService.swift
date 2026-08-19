@@ -149,9 +149,56 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         try await client.auth.signOut()
     }
 
+    /// Önce depolamadaki dosyalar, sonra hesap.
+    ///
+    /// `delete_my_account` eskiden `storage.objects`'ten de siliyordu; Supabase
+    /// doğrudan silmeyi engellediği için hesap silme de kırıktı (bkz. 20260819210000).
+    /// Dosyalar artık burada, Storage API üzerinden temizleniyor.
     func deleteAccount() async throws {
+        guard let userID = currentUserID else { throw BackendServiceError.missingSession }
+        await removeAllFiles(ownedBy: userID)
         try await client.rpc("delete_my_account").execute()
         try? await client.auth.signOut()
+    }
+
+    /// Kullanıcının üç kovadaki tüm dosyalarını siler. Dosya yolları
+    /// `<kullanıcı-kimliği>/...` biçiminde, yani klasör listelenebiliyor.
+    private func removeAllFiles(ownedBy userID: UUID) async {
+        let folder = userID.uuidString.lowercased()
+        for bucket in ["profile-photos", "post-media", "story-media"] {
+            guard let files = try? await client.storage.from(bucket).list(path: folder) else { continue }
+            let paths = files.map { "\(folder)/\($0.name)" }
+            guard !paths.isEmpty else { continue }
+            _ = try? await client.storage.from(bucket).remove(paths: paths)
+        }
+    }
+
+    /// Süresi dolmuş kendi story'lerini siler (satır + dosya).
+    ///
+    /// Story'ler 24 saat sonra görünmez oluyordu ama ne satır ne dosya siliniyordu;
+    /// her paylaşım depolamada kalıcı olarak yer kaplıyordu. Zamanlanmış bir görev
+    /// yerine uygulama açılışında kendi eskilerini temizliyor: ek altyapı gerekmiyor
+    /// ve herkes yalnızca kendi dosyasına dokunuyor.
+    func purgeMyExpiredStories() async {
+        guard let userID = currentUserID else { return }
+        let rows: [ExpiredStoryRow]? = try? await client
+            .from("stories")
+            .select("id,media_path")
+            .eq("author_id", value: userID)
+            .lt("expires_at", value: Date())
+            .execute()
+            .value
+        guard let rows, !rows.isEmpty else { return }
+
+        let paths = rows.compactMap(\.mediaPath)
+        if !paths.isEmpty {
+            _ = try? await client.storage.from("story-media").remove(paths: paths)
+        }
+        _ = try? await client
+            .from("stories")
+            .delete(returning: .minimal)
+            .`in`("id", values: rows.map(\.id))
+            .execute()
     }
 
     func saveProfile(_ draft: ProfileDraft) async throws {
@@ -1758,4 +1805,10 @@ private struct ProfileBadgeRow: Decodable {
 private struct MediaPathRow: Decodable {
     let mediaPath: String?
     enum CodingKeys: String, CodingKey { case mediaPath = "media_path" }
+}
+
+private struct ExpiredStoryRow: Decodable {
+    let id: UUID
+    let mediaPath: String?
+    enum CodingKeys: String, CodingKey { case id, mediaPath = "media_path" }
 }

@@ -99,6 +99,9 @@ protocol ProductService: Sendable {
     func fetchStories() async throws -> [CampusStory]
     func publishStory(imageData: Data, caption: String, placeID: UUID?) async throws
     func deleteStory(_ storyID: UUID) async throws
+    /// Süresi dolmuş kendi story'lerini siler (satır + dosya). Aksi halde her
+    /// paylaşım depolamada kalıcı olarak yer kaplıyor.
+    func purgeMyExpiredStories() async
     func markStoryViewed(_ storyID: UUID) async throws
     func fetchStoryViews(_ storyID: UUID) async throws -> [StoryViewRecord]
     /// Kulüpler ve kullanıcının üye olduğu kulüplerin kimlikleri.
@@ -183,6 +186,7 @@ struct UnconfiguredProductService: ProductService {
     func fetchStories() async throws -> [CampusStory] { try fail() }
     func publishStory(imageData: Data, caption: String, placeID: UUID?) async throws { try fail() }
     func deleteStory(_ storyID: UUID) async throws { try fail() }
+    func purgeMyExpiredStories() async {}
     func markStoryViewed(_ storyID: UUID) async throws { try fail() }
     func fetchStoryViews(_ storyID: UUID) async throws -> [StoryViewRecord] { try fail() }
     func fetchClubs() async throws -> (clubs: [CampusClub], joinedIDs: Set<UUID>) { try fail() }
