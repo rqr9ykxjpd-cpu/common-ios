@@ -949,8 +949,25 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
 
     func markStoryViewed(_ storyID: UUID) async throws {
         guard let userID = currentUserID else { throw BackendServiceError.missingSession }
+        // `view_count` sütunu baştan vardı ama kimse artırmıyordu: upsert yalnızca
+        // gönderdiği sütunları güncellediği için sayı sonsuza kadar 1'de kalıyordu.
+        // PostgREST üzerinden `view_count = view_count + 1` yazılamadığından mevcut
+        // değeri okuyup üstüne yazıyoruz. RLS herkese kendi satırını okuma ve
+        // güncelleme izni veriyor, bu yüzden ayrı bir sunucu fonksiyonu gerekmiyor.
+        let mevcut: [StoryViewCountRow] = try await client.from("story_views")
+            .select("view_count")
+            .eq("story_id", value: storyID)
+            .eq("viewer_id", value: userID)
+            .limit(1)
+            .execute()
+            .value
         try await client.from("story_views")
-            .upsert(StoryViewUpsert(storyID: storyID, viewerID: userID, lastViewedAt: Date()), returning: .minimal)
+            .upsert(
+                StoryViewUpsert(storyID: storyID, viewerID: userID,
+                                viewCount: (mevcut.first?.viewCount ?? 0) + 1,
+                                lastViewedAt: Date()),
+                returning: .minimal
+            )
             .execute()
     }
 
@@ -1165,12 +1182,19 @@ private struct StoryInsert: Encodable {
 private struct StoryViewUpsert: Encodable {
     let storyID: UUID
     let viewerID: UUID
+    let viewCount: Int
     let lastViewedAt: Date
     enum CodingKeys: String, CodingKey {
         case storyID = "story_id"
         case viewerID = "viewer_id"
+        case viewCount = "view_count"
         case lastViewedAt = "last_viewed_at"
     }
+}
+
+private struct StoryViewCountRow: Decodable {
+    let viewCount: Int
+    enum CodingKeys: String, CodingKey { case viewCount = "view_count" }
 }
 
 private struct StoryViewRow: Decodable {
