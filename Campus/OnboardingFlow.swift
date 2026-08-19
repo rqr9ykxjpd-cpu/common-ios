@@ -208,8 +208,21 @@ private struct InterestsStep: View {
                         }
                     }
                 }
-                .padding(.bottom, 8)
-            },
+                // Alta boşluk: son satır düğmeyle tam ortadan kesiliyordu ve "bozuk"
+                // görünüyordu. Boşluk + aşağıdaki solma "devamı var" diyor.
+                .padding(.bottom, 28)
+            }
+            .scrollIndicators(.hidden)
+            .mask(
+                LinearGradient(
+                    stops: [
+                        .init(color: .black, location: 0),
+                        .init(color: .black, location: 0.94),
+                        .init(color: .black.opacity(0), location: 1)
+                    ],
+                    startPoint: .top, endPoint: .bottom
+                )
+            ),
             footer: PrimaryEditorialButton(
                 title: "PROFİLİ TAMAMLA · \(draft.interests.count)/\(InterestCatalog.maximumSelection)",
                 enabled: complete,

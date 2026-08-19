@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct SocialFeedView: View {
+    /// Kulüpler kaçıncı gönderiden sonra gösterilsin.
+    private static let clubsAfterPostCount = 3
+
     @Environment(AppState.self) private var appState
     @State private var showStoryComposer = false
     @State private var showPostComposer = false
@@ -74,12 +77,16 @@ struct SocialFeedView: View {
                             Color.clear.frame(height: 1).id("feed-top")
                             storyRail
                             meetingPlaces
-                            clubsSection
                             Divider().opacity(0.35).padding(.vertical, 14)
                             if visiblePosts.isEmpty {
                                 feedEmptyState
+                                clubsSection
                             } else {
-                                ForEach(visiblePosts) { post in
+                                // Kulüpler akışın içinde: önceden story'ler, yerler ve
+                                // kulüpler üst üste gelip ilk gönderiye ulaşmak yaklaşık
+                                // bir buçuk ekran kaydırma gerektiriyordu. Sosyal bir
+                                // uygulamada içerik bu kadar geriye düşmemeli.
+                                ForEach(Array(visiblePosts.enumerated()), id: \.element.id) { index, post in
                                     PostCard(
                                         post: post,
                                         toggleLike: { appState.toggleLike(postID: post.id) },
@@ -88,6 +95,14 @@ struct SocialFeedView: View {
                                         delete: { appState.deletePost(post.id) }
                                     )
                                     Divider().opacity(0.35).padding(.vertical, 20)
+                                    if index == Self.clubsAfterPostCount - 1 {
+                                        clubsSection
+                                        Divider().opacity(0.35).padding(.vertical, 14)
+                                    }
+                                }
+                                // Akışta o kadar gönderi yoksa kulüpler sona ekleniyor.
+                                if visiblePosts.count < Self.clubsAfterPostCount {
+                                    clubsSection
                                 }
                             }
                         }
@@ -170,12 +185,15 @@ struct SocialFeedView: View {
             }
             .buttonStyle(PressableStyle())
 
+            // Asit yeşili yalnızca birincil eylemde ("Paylaş") kalıyor. İkincil bir
+            // gezinme ikonunda da kullanılınca göz oraya gidiyor, asıl eyleme değil;
+            // marka rengi her yerde olunca vurgu olmaktan çıkıyor.
             Button { showChats = true } label: {
                 Image(systemName: "message.fill")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(CampusTheme.ink)
                     .frame(width: 44, height: 44)
-                    .background(CampusTheme.acid, in: Circle())
+                    .background(CampusTheme.ink.opacity(0.06), in: Circle())
             }
             .buttonStyle(PressableStyle())
             .accessibilityLabel("Sohbetler")
@@ -274,6 +292,17 @@ struct SocialFeedView: View {
                     }
                 }
             }
+            // Kulüp kartlarındaki gibi: sondaki çip kart kenarında sertçe kesiliyordu.
+            .mask(
+                LinearGradient(
+                    stops: [
+                        .init(color: .black, location: 0),
+                        .init(color: .black, location: 0.9),
+                        .init(color: .black.opacity(0), location: 1)
+                    ],
+                    startPoint: .leading, endPoint: .trailing
+                )
+            )
         }
         .padding(CampusTheme.Space.lg)
         .background(CampusTheme.surface, in: RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous))
@@ -310,6 +339,18 @@ struct SocialFeedView: View {
                 }
                 .padding(.horizontal, 16)
             }
+            // Sağdaki kart ekran kenarında sertçe kesiliyordu; yatay kaydırıldığı
+            // anlaşılmıyor, bozuk sanılıyordu. İnce bir solma "devamı var" diyor.
+            .mask(
+                LinearGradient(
+                    stops: [
+                        .init(color: .black, location: 0),
+                        .init(color: .black, location: 0.92),
+                        .init(color: .black.opacity(0), location: 1)
+                    ],
+                    startPoint: .leading, endPoint: .trailing
+                )
+            )
         }
         .padding(.top, 14)
     }
