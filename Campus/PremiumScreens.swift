@@ -506,6 +506,7 @@ struct PremiumMatchesView: View {
                 VStack(alignment: .leading, spacing: CampusTheme.Space.xl) {
                     header
                     newConnections
+                    meetSuggestions
                     AppSectionHeader(title: "Mesajlar")
                     if appState.conversations.isEmpty {
                         emptyConversations
@@ -528,6 +529,11 @@ struct PremiumMatchesView: View {
                 .padding(.bottom, CampusTheme.Space.xxl)
             }
             .refreshable { await appState.loadConversations() }
+            .task {
+                // Kullanıcı Tanış sekmesine hiç uğramadan buraya gelebilir; o durumda
+                // aday listesi boş olur ve öneri şeridi hiç görünmezdi.
+                if appState.profiles.isEmpty { await appState.loadDiscovery() }
+            }
             .background(CampusTheme.paper.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
         }
@@ -547,27 +553,50 @@ struct PremiumMatchesView: View {
         }
     }
 
-    private var newConnections: some View {
-        VStack(alignment: .leading, spacing: CampusTheme.Space.md) {
-            AppSectionHeader(title: "Yeni bağlantılar")
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: CampusTheme.Space.md) {
-                    ForEach(appState.conversations.map(\.profile)) { profile in
-                        NavigationLink {
-                            SocialPersonDetailView(profile: profile, place: nil)
-                        } label: {
-                            VStack(spacing: 7) {
-                                ProfileMedia(url: profile.imageURL, data: nil, assetName: profile.imageAssetName)
-                                    .frame(width: 68, height: 68)
-                                    .clipShape(Circle())
-                                    .overlay(Circle().stroke(CampusTheme.violet, lineWidth: 2))
-                                Text(profile.name)
-                                    .font(.system(size: 12, weight: .semibold, design: .rounded))
-                                    .foregroundStyle(CampusTheme.ink)
-                            }
+    /// Sohbeti olan kişiler. Hiç yoksa bölüm tamamen gizleniyor: eskiden boş bir
+    /// başlık ve altında bomboş bir şerit kalıyordu.
+    @ViewBuilder private var newConnections: some View {
+        if !appState.conversations.isEmpty {
+            VStack(alignment: .leading, spacing: CampusTheme.Space.md) {
+                AppSectionHeader(title: "Yeni bağlantılar")
+                circleStrip(appState.conversations.map(\.profile))
+            }
+        }
+    }
+
+    /// Henüz sohbet etmediğin, tanışabileceğin kişiler. Uygulamaya yeni katılanlar
+    /// da buraya düşüyor: gizlilik kuralı gereği bir hesap gönderi paylaşana kadar
+    /// doğrudan okunamıyor, tanışma adayları ise sunucudaki
+    /// `get_discovery_candidates` üzerinden geldiği için yeni hesaplar görünebiliyor.
+    @ViewBuilder private var meetSuggestions: some View {
+        let sohbetEdilenler = Set(appState.conversations.map(\.profile.id))
+        let oneriler = appState.profiles.filter { !sohbetEdilenler.contains($0.id) }
+        if !oneriler.isEmpty {
+            VStack(alignment: .leading, spacing: CampusTheme.Space.md) {
+                AppSectionHeader(title: "Tanışabileceklerin")
+                circleStrip(Array(oneriler.prefix(12)))
+            }
+        }
+    }
+
+    private func circleStrip(_ profiles: [StudentProfile]) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: CampusTheme.Space.md) {
+                ForEach(profiles) { profile in
+                    NavigationLink {
+                        SocialPersonDetailView(profile: profile, place: nil)
+                    } label: {
+                        VStack(spacing: 7) {
+                            ProfileMedia(url: profile.imageURL, data: nil, assetName: profile.imageAssetName)
+                                .frame(width: 68, height: 68)
+                                .clipShape(Circle())
+                                .overlay(Circle().stroke(CampusTheme.violet, lineWidth: 2))
+                            Text(profile.name)
+                                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                                .foregroundStyle(CampusTheme.ink)
                         }
-                        .buttonStyle(PressableStyle())
                     }
+                    .buttonStyle(PressableStyle())
                 }
             }
         }

@@ -916,7 +916,10 @@ struct StoryViewer: View {
             Spacer()
             if story.isMine {
                 Button { showViewers = true } label: {
-                    Label("\(viewRecords(story.id).reduce(0) { $0 + $1.viewCount })", systemImage: "eye.fill")
+                    // Göz işareti kaç *kişi* izlediğini gösteriyor: aynı kişinin tekrar
+                    // izlemesi sayıyı artırmaz. Kaç kez izlendiği izleyici listesinde,
+                    // kişi bazında ("3 kez") ve "Toplam izleme" özetinde duruyor.
+                    Label("\(viewRecords(story.id).count)", systemImage: "eye.fill")
                         .font(.system(size: 12, weight: .bold, design: .rounded))
                         .padding(.horizontal, 12)
                         .frame(height: 44)
