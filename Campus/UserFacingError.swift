@@ -43,6 +43,7 @@ enum UserFacingError {
         // aratmak her hata turunda ayrı bir gidiş geliş demekti; artık ekran
         // görüntüsü tek başına yeterli. Release'de bu blok yok.
         print("[Campus] ham hata: \(error)")
+        DebugErrorLog.append(error, context: fallback)
         return friendly + "\n⟨" + String(describing: error).prefix(160) + "⟩"
 #else
         return friendly
@@ -143,3 +144,41 @@ enum UserFacingError {
         (["timeout"], "İşlem zaman aşımına uğradı. Tekrar dene.")
     ]
 }
+
+#if DEBUG
+/// Hataları cihazdaki bir dosyaya yazar.
+///
+/// `print` çıktısı yalnızca hata ayıklayıcıya gidiyor; cihaz bağlıyken bile
+/// dışarıdan okunamıyor (`log collect` root istiyor, `devicectl --console`
+/// uygulamanın stdout'unu iletmiyor). Dosya ise `devicectl device copy` ile
+/// çekilebiliyor — böylece telefonda oluşan bir hatanın tam metnine, kullanıcıdan
+/// ekran görüntüsü istemeden ulaşılabiliyor.
+///
+/// Yalnızca geliştirme derlemesinde; App Store sürümünde bu tip hiç derlenmiyor.
+enum DebugErrorLog {
+    private static let queue = DispatchQueue(label: "campus.debug.errorlog")
+
+    static var fileURL: URL? {
+        FileManager.default
+            .urls(for: .documentDirectory, in: .userDomainMask)
+            .first?
+            .appendingPathComponent("hatalar.log")
+    }
+
+    static func append(_ error: Error, context: String) {
+        guard let fileURL else { return }
+        let stamp = ISO8601DateFormatter().string(from: Date())
+        let line = "[\(stamp)] \(context)\n\(error)\n\n"
+        queue.async {
+            guard let data = line.data(using: .utf8) else { return }
+            if let handle = try? FileHandle(forWritingTo: fileURL) {
+                defer { try? handle.close() }
+                _ = try? handle.seekToEnd()
+                try? handle.write(contentsOf: data)
+            } else {
+                try? data.write(to: fileURL)
+            }
+        }
+    }
+}
+#endif
