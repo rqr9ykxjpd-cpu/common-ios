@@ -13,8 +13,26 @@ struct CampusApp: App {
     /// bunu tetikleyen bir düğme yok — kullanıcıya hiçbir yerde görünmez.
     private static func initialState() -> AppState {
 #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("-sample") {
-            return AppState(service: SampleProductService())
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("-sample") {
+            // `-onboarding` kayıt akışını baştan açar: örnek servis "sunucuda profil
+            // yok" der, uygulama da gerçek yeni kullanıcıdaki gibi kayıt akışına
+            // yönlendirir. Sunucu olmadan bu ekranları görmenin başka yolu yok.
+            // İsteğe bağlı olarak adım adı verilebilir: `-onboarding ready`
+            let onboarding = arguments.contains("-onboarding")
+            let state = AppState(service: SampleProductService(hasProfile: !onboarding))
+            if onboarding {
+                let adlar: [String: AppState.OnboardingStep] = [
+                    "identity": .identity, "preferences": .preferences,
+                    "interests": .interests, "photo": .photo, "ready": .ready
+                ]
+                let istenen = arguments.firstIndex(of: "-onboarding")
+                    .map { $0 + 1 }
+                    .flatMap { $0 < arguments.count ? adlar[arguments[$0]] : nil }
+                state.route = .onboarding(istenen ?? .identity)
+                state.skipsSessionRestore = true
+            }
+            return state
         }
 #endif
         return AppState()

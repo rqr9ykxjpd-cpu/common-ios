@@ -206,6 +206,14 @@ actor SampleStore {
 
 struct SampleProductService: ProductService {
     private let store = SampleStore()
+    /// `false` verilirse sunucuda profil yokmuş gibi davranır; `restoreBackendSession`
+    /// da kullanıcıyı kayıt akışına yönlendirir. Gerçek yeni kullanıcı yolunu sunucu
+    /// olmadan görebilmek için.
+    private let hasProfile: Bool
+
+    init(hasProfile: Bool = true) {
+        self.hasProfile = hasProfile
+    }
 
     var currentUserID: UUID? { SampleData.me.id }
     var currentUserEmail: String? { "ornek@yalova.edu.tr" }
@@ -219,7 +227,7 @@ struct SampleProductService: ProductService {
 
     // Profil
     func saveProfile(_ draft: ProfileDraft) async throws { await store.save(draft) }
-    func fetchMyProfile() async throws -> ProfileDraft? { await store.myDraft() }
+    func fetchMyProfile() async throws -> ProfileDraft? { hasProfile ? await store.myDraft() : nil }
     func fetchMyProfilePhotos() async throws -> ProfilePhotosResult {
         ProfilePhotosResult(avatarURL: nil, galleryURLs: [])
     }

@@ -14,6 +14,11 @@
 -- "uzun süredir yok" demektense hiçbir şey dememek daha az yanıltıcı, arayüz de
 -- boş etiketi zaten göstermiyor.
 --
+-- Ayrıca "tanışma niyeti" sorusu üründen kaldırıldı: artık kimseye sorulmuyor ve
+-- herkeste varsayılan değer duruyor. Bu yüzden uyum puanındaki +8 herkese eşit
+-- veriliyor (hiçbir şey ayırt etmiyor) ve "Tanışma niyetiniz benzer" satırı herkese
+-- gösterilerek gerçek olmayan bir yakınlık kuruyordu. İkisi de çıkarıldı.
+--
 -- Idempotent; tekrar çalıştırmak güvenlidir.
 
 begin;
@@ -92,11 +97,9 @@ language sql stable security definer set search_path = '' as $$
     coalesce((select array_agg(pp.prompt_key order by pp.position) from public.profile_prompts pp where pp.profile_id = c.id), '{}'),
     coalesce((select array_agg(pp.answer order by pp.position) from public.profile_prompts pp where pp.profile_id = c.id), '{}'),
     least(99, 55 + least(c.common_count * 10, 30)
-      + case when c.relationship_intent = (select relationship_intent from me) then 8 else 0 end
       + case when c.academic_year = (select academic_year from me) then 5 else 0 end)::integer as compatibility_score,
     array_remove(array[
       case when c.common_count > 0 then c.common_count || ' ortak ilgi alanı' end,
-      case when c.relationship_intent = (select relationship_intent from me) then 'Tanışma niyetiniz benzer' end,
       case when c.academic_year = (select academic_year from me) then 'Aynı sınıf düzeyi' end
     ], null),
     public.activity_label(c.last_active_at)

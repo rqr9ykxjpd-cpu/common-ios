@@ -91,6 +91,9 @@ final class AppState {
     var currentVisiblePlace: CampusPlace?
     var joinedClubIDs: Set<UUID> = []
     var isFinishingOnboarding = false
+    /// Kayıt akışının son adımındaki hata. Toast kaybolduğu için kullanıcı düğmenin
+    /// çalışmadığını sanıyordu; bu ekranda kalıcı olarak gösteriliyor.
+    private(set) var onboardingFailure: String?
     var isAccountActionInProgress = false
     var toast: AppToastMessage?
 
@@ -184,7 +187,16 @@ final class AppState {
         return true
     }
 
+#if DEBUG
+    /// `-onboarding <adım>` ile açıldığında oturum geri yüklemesi rotayı ezmesin diye.
+    /// Yalnızca geliştirme derlemesinde var.
+    var skipsSessionRestore = false
+#endif
+
     func restoreBackendSession() async {
+#if DEBUG
+        if skipsSessionRestore { return }
+#endif
         do {
             guard let userID = try await service.restoreSession() else {
                 // Sunucu oturumu bitmiş. Yerel bayrağı da düşürmezsek uygulama her açılışta
@@ -318,10 +330,13 @@ final class AppState {
         guard !isFinishingOnboarding else { return }
         isFinishingOnboarding = true
         defer { isFinishingOnboarding = false }
+        onboardingFailure = nil
         do {
             try await service.saveProfile(draft)
         } catch {
-            showError(error, fallback: "Profilin kaydedilemedi.")
+            let message = UserFacingError.message(error, fallback: "Profilin kaydedilemedi.")
+            onboardingFailure = message
+            showError(message)
             return
         }
 
@@ -351,6 +366,7 @@ final class AppState {
         try? await service.touchLastActive()
         startMessageListener()
 
+        onboardingFailure = nil
         withAnimation(.smooth(duration: 0.55)) { route = .app }
         if photoFailed {
             showError("Profilin kaydedildi, fotoğrafın yüklenemedi. Profil'den tekrar deneyebilirsin.")
@@ -1089,6 +1105,7 @@ final class AppState {
         isLoadingDiscovery = false
         isReactingToProfile = false
         isFinishingOnboarding = false
+        onboardingFailure = nil
         discoveryError = nil
         toast = nil
 

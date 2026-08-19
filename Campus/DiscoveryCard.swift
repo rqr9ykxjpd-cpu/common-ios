@@ -87,10 +87,6 @@ struct DiscoveryCard: View {
                                         .foregroundStyle(.white.opacity(0.82))
                                 }
                             }
-                            Text(profile.relationshipIntent.title)
-                                .font(.system(size: 10, weight: .bold, design: .rounded))
-                                .padding(.horizontal, 9).frame(height: 22)
-                                .background(.white.opacity(0.18), in: Capsule())
                             Spacer()
                         }
                         .padding(.top, 6)

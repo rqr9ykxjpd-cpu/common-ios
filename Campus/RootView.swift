@@ -41,6 +41,12 @@ struct RootView: View {
             if let toast = appState.toast {
                 AppToast(message: toast)
                     .padding(.horizontal, CampusTheme.Space.lg)
+                    // Alttaki ekranlar zemini `ignoresSafeArea` ile çizdiği için bu
+                    // katman da ekranın en tepesine hizalanıyordu: mesaj durum
+                    // çubuğunun ve çentiğin arkasında kalıp okunmuyordu. Hataların
+                    // tamamı buradan gösterildiği için kullanıcı "hiçbir şey olmuyor"
+                    // sanıyordu.
+                    .safeAreaPadding(.top)
                     .padding(.top, CampusTheme.Space.sm)
                     .transition(.move(edge: .top).combined(with: .opacity))
                     .zIndex(100)

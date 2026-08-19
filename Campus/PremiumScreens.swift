@@ -391,7 +391,6 @@ struct ProfileDetailSheet: View {
                 ForEach(profile.compatibilityReasons, id: \.self) { reason in
                     Label(reason, systemImage: "sparkles")
                 }
-                Label(profile.relationshipIntent.title, systemImage: "heart.text.square")
                 if !profile.activeLabel.isEmpty {
                     Label(profile.activeLabel, systemImage: "clock")
                 }

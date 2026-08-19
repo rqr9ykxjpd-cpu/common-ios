@@ -10,14 +10,24 @@ struct OnboardingFlow: View {
         ZStack {
             CampusTheme.paper.ignoresSafeArea()
             VStack(spacing: 0) {
-                OnboardingHeader(step: step) { appState.goBack(from: step) }
+                // Son adım bir kutlama ekranı: tüm ekranı kaplıyor. Başlık altında
+                // dururken koyu zemin `ignoresSafeArea` ile yukarı taşıp ilerleme
+                // çubuğunu kesiyordu; ayrıca 5/5 dolmuş bir çubuğun orada bir işi yok.
+                if step != .ready {
+                    OnboardingHeader(step: step) { appState.goBack(from: step) }
+                }
                 Group {
                     switch step {
                     case .identity: IdentityStep(draft: $appState.draft) { appState.advance(from: step) }
                     case .preferences: PreferencesStep(draft: $appState.draft) { appState.advance(from: step) }
                     case .interests: InterestsStep(draft: $appState.draft) { appState.advance(from: step) }
                     case .photo: PhotoStep(avatarData: $appState.avatarData) { appState.advance(from: step) }
-                    case .ready: ReadyStep(name: appState.draft.name, isSaving: appState.isFinishingOnboarding) { appState.advance(from: step) }
+                    case .ready:
+                        ReadyStep(
+                            name: appState.draft.name,
+                            isSaving: appState.isFinishingOnboarding,
+                            failure: appState.onboardingFailure
+                        ) { appState.advance(from: step) }
                     }
                 }
                 .id(step)
@@ -138,13 +148,6 @@ private struct PreferencesStep: View {
                         }
                     }
                 }
-                choiceSection(title: "TANIŞMA NİYETİN") {
-                    ForEach(RelationshipIntent.allCases) { option in
-                        choiceButton(option.title, selected: draft.relationshipIntent == option) {
-                            draft.relationshipIntent = option
-                        }
-                    }
-                }
             },
             footer: PrimaryEditorialButton(title: "DEVAM ET", enabled: valid, action: submit)
         )
@@ -178,46 +181,74 @@ private struct PreferencesStep: View {
 private struct InterestsStep: View {
     @Binding var draft: ProfileDraft
     let submit: () -> Void
-    let options = ["Canlı müzik", "Sinema", "Gece yürüyüşü", "Tasarım", "Koşu", "Analog", "Kahve", "Sergiler", "Kitaplar", "Elektronik", "Fotoğraf", "Girişim"]
 
-    private var complete: Bool {
-        draft.interests.count >= 3
-    }
+    private var complete: Bool { draft.interests.count >= InterestCatalog.minimumSelection }
+    private var full: Bool { draft.interests.count >= InterestCatalog.maximumSelection }
 
     var body: some View {
         StepScaffold(
             eyebrow: "ortak frekanslar",
             title: "Sohbete bir\nipucu bırak.",
-            subtitle: "En az üç ilgi alanı seç. Ortak ilgiler keşifte öne çıkarılır.",
+            subtitle: "En az \(InterestCatalog.minimumSelection) tane seç, \(InterestCatalog.maximumSelection) taneye kadar ekleyebilirsin. Ortak ilgiler keşifte öne çıkarılır.",
             content: ScrollView {
+                // Gruplu liste: tek yığın halinde kırk seçenek göz yoruyor, kimse
+                // sonuna kadar inmiyordu.
                 VStack(alignment: .leading, spacing: 22) {
-                    FlowLayout(spacing: 9) {
-                        ForEach(options, id: \.self) { option in
-                            Button {
-                                Haptics.selection()
-                                if draft.interests.contains(option) { draft.interests.remove(option) }
-                                else if draft.interests.count < 6 { draft.interests.insert(option) }
-                            } label: {
-                                Text(option)
-                                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                                    .foregroundStyle(draft.interests.contains(option) ? CampusTheme.paper : CampusTheme.ink)
-                                    .padding(.horizontal, 15).padding(.vertical, 12)
-                                    .background(draft.interests.contains(option) ? CampusTheme.ink : .clear)
-                                    .overlay(Capsule().stroke(CampusTheme.ink.opacity(0.22)))
-                                    .clipShape(Capsule())
-                            }.buttonStyle(PressableStyle())
+                    ForEach(InterestCatalog.grouped, id: \.baslik) { grup in
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text(grup.baslik.uppercased())
+                                .font(.system(size: 10, weight: .bold, design: .rounded))
+                                .tracking(1.2)
+                                .foregroundStyle(CampusTheme.ink.opacity(0.38))
+                            FlowLayout(spacing: 9) {
+                                ForEach(grup.secenekler, id: \.self) { option in
+                                    interestChip(option)
+                                }
+                            }
                         }
                     }
                 }
+                .padding(.bottom, 8)
             },
-            footer: PrimaryEditorialButton(title: "PROFİLİ TAMAMLA · \(draft.interests.count)/6", enabled: complete, action: submit)
+            footer: PrimaryEditorialButton(
+                title: "PROFİLİ TAMAMLA · \(draft.interests.count)/\(InterestCatalog.maximumSelection)",
+                enabled: complete,
+                action: submit
+            )
         )
+    }
+
+    private func interestChip(_ option: String) -> some View {
+        let selected = draft.interests.contains(option)
+        // Sınıra gelindiğinde seçili olmayanlar soluklaşıyor; önceden dokunulunca
+        // sessizce hiçbir şey olmuyor ve düğme bozuk sanılıyordu.
+        let disabled = !selected && full
+        return Button {
+            Haptics.selection()
+            if selected { draft.interests.remove(option) }
+            else if !full { draft.interests.insert(option) }
+        } label: {
+            Text(option)
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundStyle(selected ? CampusTheme.paper : CampusTheme.ink)
+                .padding(.horizontal, 15).padding(.vertical, 12)
+                .background(selected ? CampusTheme.ink : .clear)
+                .overlay(Capsule().stroke(CampusTheme.ink.opacity(0.22)))
+                .clipShape(Capsule())
+        }
+        .buttonStyle(PressableStyle())
+        .disabled(disabled)
+        .opacity(disabled ? 0.35 : 1)
     }
 }
 
 private struct ReadyStep: View {
     let name: String
     var isSaving = false
+    /// Kayıt başarısız olduysa sebebi. Kayıt akışının son adımı: burada hata yalnızca
+    /// üstte bir anlığına beliren toast'la gösterilince kullanıcı "düğme çalışmıyor"
+    /// sanıyordu. Sebebi ekranda kalıcı olarak duruyor.
+    var failure: String?
     let submit: () -> Void
 
     var body: some View {
@@ -237,8 +268,22 @@ private struct ReadyStep: View {
                 Text("Kampüsün akışı, yeni insanlar ve\nyeni sohbetler seni bekliyor.")
                     .font(.system(size: 15, design: .rounded)).foregroundStyle(.white.opacity(0.5)).multilineTextAlignment(.center).lineSpacing(4)
                 Spacer()
+                if let failure {
+                    HStack(alignment: .top, spacing: 9) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(CampusTheme.coral)
+                        Text(failure)
+                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.85))
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 0)
+                    }
+                    .padding(14)
+                    .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .padding(.horizontal, 24)
+                }
                 PrimaryEditorialButton(
-                    title: isSaving ? "KAYDEDİLİYOR…" : "COMMON'A GİR",
+                    title: isSaving ? "KAYDEDİLİYOR…" : (failure == nil ? "COMMON'A GİR" : "TEKRAR DENE"),
                     enabled: !isSaving,
                     inverted: true,
                     action: submit

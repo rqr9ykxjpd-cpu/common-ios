@@ -14,7 +14,6 @@ struct ProfileEditorView: View {
     @State private var loaded = false
     @State private var showDiscardAlert = false
 
-    private let interests = ["Canlı müzik", "Sinema", "Gece yürüyüşü", "Tasarım", "Koşu", "Analog", "Kahve", "Sergiler", "Kitaplar", "Elektronik", "Fotoğraf", "Girişim"]
     private let years = ["Hazırlık", "1. sınıf", "2. sınıf", "3. sınıf", "4. sınıf", "Lisansüstü"]
 
     private var valid: Bool {
@@ -221,27 +220,44 @@ struct ProfileEditorView: View {
     }
 
     private var interestSelection: some View {
-        VStack(alignment: .leading, spacing: CampusTheme.Space.md) {
+        let full = draft.interests.count >= InterestCatalog.maximumSelection
+        return VStack(alignment: .leading, spacing: CampusTheme.Space.md) {
             AppSectionHeader(title: "İlgi alanları")
-            ProfileFlowLayout(spacing: 8) {
-                ForEach(interests, id: \.self) { interest in
-                    let selected = draft.interests.contains(interest)
-                    Button {
-                        if selected { draft.interests.remove(interest) } else { draft.interests.insert(interest) }
-                    } label: {
-                        Text(interest)
-                            .font(.system(size: 13, weight: .medium, design: .rounded))
-                            .foregroundStyle(selected ? .white : CampusTheme.ink)
-                            .padding(.horizontal, 12).frame(height: 34)
-                            .background(selected ? CampusTheme.violet : CampusTheme.surface, in: Capsule())
-                            .overlay(Capsule().stroke(selected ? .clear : CampusTheme.hairline))
+            Text("\(draft.interests.count)/\(InterestCatalog.maximumSelection) seçili · en az \(InterestCatalog.minimumSelection) gerekli")
+                .font(.system(size: 12, design: .rounded))
+                .foregroundStyle(CampusTheme.muted)
+            ForEach(InterestCatalog.grouped, id: \.baslik) { grup in
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(grup.baslik.uppercased())
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .tracking(1.1)
+                        .foregroundStyle(CampusTheme.muted)
+                    ProfileFlowLayout(spacing: 8) {
+                        ForEach(grup.secenekler, id: \.self) { interest in
+                            let selected = draft.interests.contains(interest)
+                            // Sınıra gelindiğinde seçili olmayanlar soluk ve pasif:
+                            // önceden dokunulunca sessizce hiçbir şey olmuyordu.
+                            let disabled = !selected && full
+                            Button {
+                                if selected { draft.interests.remove(interest) }
+                                else if !full { draft.interests.insert(interest) }
+                            } label: {
+                                Text(interest)
+                                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                                    .foregroundStyle(selected ? .white : CampusTheme.ink)
+                                    .padding(.horizontal, 12).frame(height: 34)
+                                    .background(selected ? CampusTheme.violet : CampusTheme.surface, in: Capsule())
+                                    .overlay(Capsule().stroke(selected ? .clear : CampusTheme.hairline))
+                            }
+                            .buttonStyle(PressableStyle())
+                            .disabled(disabled)
+                            .opacity(disabled ? 0.35 : 1)
+                        }
                     }
-                    .buttonStyle(PressableStyle())
                 }
             }
         }
     }
-
     private var preferences: some View {
         AppSurface {
             VStack(alignment: .leading, spacing: 16) {
@@ -250,12 +266,6 @@ struct ProfileEditorView: View {
                     Text("Seç").tag(ProfileGender?.none)
                     ForEach(ProfileGender.allCases) { option in
                         Text(option.title).tag(ProfileGender?.some(option))
-                    }
-                }
-                .tint(CampusTheme.violet)
-                Picker("Tanışma niyetin", selection: $draft.relationshipIntent) {
-                    ForEach(RelationshipIntent.allCases) { option in
-                        Text(option.title).tag(option)
                     }
                 }
                 .tint(CampusTheme.violet)
