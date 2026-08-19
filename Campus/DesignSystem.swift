@@ -217,3 +217,49 @@ struct AppSurface<Content: View>: View {
             .overlay(RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous).stroke(CampusTheme.hairline))
     }
 }
+
+
+// MARK: - Klavye
+
+extension View {
+    /// Boş bir yere dokununca klavyeyi kapatır.
+    ///
+    /// `simultaneousGesture` kullanılıyor: `onTapGesture` alttaki düğme ve alanların
+    /// dokunuşlarını yiyebiliyor, bu ise onlarla birlikte çalışıyor.
+    func dismissesKeyboardOnTap() -> some View {
+        simultaneousGesture(TapGesture().onEnded { @MainActor in KeyboardDismiss.now() })
+    }
+}
+
+enum KeyboardDismiss {
+    @MainActor
+    static func now() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+}
+
+/// Klavyenin üstünde "Bitti" düğmesi. Tarih seçiciye ulaşmak için klavyeyi kapatmak
+/// gerekiyordu ve kapatmanın görünür bir yolu yoktu.
+struct KeyboardDoneToolbar: ViewModifier {
+    func body(content: Content) -> some View {
+        content.toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Bitti") { KeyboardDismiss.now() }
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+            }
+        }
+    }
+}
+
+extension View {
+    func keyboardDoneButton() -> some View { modifier(KeyboardDoneToolbar()) }
+}
+
+enum AgeLimit {
+    /// Kayıt için en geç doğum tarihi (18 yaş). Zorla açma yerine `.now` ile
+    /// güvenli düşüş: takvim hesabı teoride nil dönebiliyor.
+    static var latestBirthDate: Date {
+        Calendar.current.date(byAdding: .year, value: -18, to: .now) ?? .now
+    }
+}

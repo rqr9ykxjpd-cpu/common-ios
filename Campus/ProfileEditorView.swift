@@ -43,6 +43,9 @@ struct ProfileEditorView: View {
             .padding(.top, CampusTheme.Space.sm)
             .padding(.bottom, CampusTheme.Space.lg)
         }
+        .scrollDismissesKeyboard(.interactively)
+        .dismissesKeyboardOnTap()
+        .keyboardDoneButton()
         .background(CampusTheme.paper.ignoresSafeArea())
         .foregroundStyle(CampusTheme.ink)
         // Kaydet butonu kaydırma içeriğinin sonundayken alt çubuğun altında kalıp
@@ -188,7 +191,7 @@ struct ProfileEditorView: View {
                 AppSectionHeader(title: "Temel bilgiler")
                 ProfileTextField(title: "Ad", text: $draft.name)
                 ProfileTextField(title: "Bölüm", text: $draft.department)
-                DatePicker("Doğum tarihi", selection: $draft.birthDate, in: ...Calendar.current.date(byAdding: .year, value: -18, to: .now)!, displayedComponents: .date)
+                DatePicker("Doğum tarihi", selection: $draft.birthDate, in: ...AgeLimit.latestBirthDate, displayedComponents: .date)
                     .font(.system(size: 14, weight: .medium, design: .rounded))
                     .environment(\.locale, Locale(identifier: "tr_TR"))
                 Picker("Sınıf", selection: $draft.year) {

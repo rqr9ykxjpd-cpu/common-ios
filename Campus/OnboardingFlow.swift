@@ -35,6 +35,12 @@ struct OnboardingFlow: View {
             }
         }
         .foregroundStyle(CampusTheme.ink)
+        // Ad/bölüm yazarken klavye açık kalıyor ve altındaki tarih seçiciye ulaşmak
+        // zorlaşıyordu; kapatmanın görünür bir yolu da yoktu. Üç yol birden:
+        // boş yere dokunmak, kaydırmak, klavyenin üstündeki "Bitti".
+        .scrollDismissesKeyboard(.interactively)
+        .dismissesKeyboardOnTap()
+        .keyboardDoneButton()
     }
 }
 
@@ -117,7 +123,7 @@ private struct IdentityStep: View {
                 EditorialField(label: "BÖLÜMÜN", placeholder: "Endüstri Mühendisliği", text: $draft.department)
                 VStack(alignment: .leading, spacing: 8) {
                     Eyebrow(text: "doğum tarihin", color: CampusTheme.ink.opacity(0.42))
-                    DatePicker("", selection: $draft.birthDate, in: ...Calendar.current.date(byAdding: .year, value: -18, to: .now)!, displayedComponents: .date)
+                    DatePicker("", selection: $draft.birthDate, in: ...AgeLimit.latestBirthDate, displayedComponents: .date)
                         .labelsHidden()
                         .datePickerStyle(.compact)
                     Text("Common yalnızca 18 yaş ve üzeri öğrenciler içindir.")

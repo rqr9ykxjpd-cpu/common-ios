@@ -48,6 +48,9 @@ struct CreatePostView: View {
                 }
             }
             .foregroundStyle(isStory ? .white : CampusTheme.ink)
+            .scrollDismissesKeyboard(.interactively)
+            .dismissesKeyboardOnTap()
+            .keyboardDoneButton()
             .toolbar(.hidden, for: .navigationBar)
             .safeAreaInset(edge: .bottom, spacing: 0) { bottomControls }
             .sheet(isPresented: $showCamera) {
