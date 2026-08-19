@@ -200,15 +200,28 @@ struct SocialPersonDetailView: View {
                         .buttonStyle(PressableStyle())
 
                         if visiblePlace != nil {
-                            Button { sendRequest() } label: {
-                                Label(pendingRequest == nil ? "Buluşma isteği gönder" : "İstek gönderildi", systemImage: pendingRequest == nil ? "cup.and.saucer.fill" : "checkmark")
-                                    .font(.subheadline.bold())
-                                    .foregroundStyle(pendingRequest == nil ? CampusTheme.ink : CampusTheme.ink.opacity(0.55))
-                                    .frame(maxWidth: .infinity).frame(height: 50)
-                                    .background(pendingRequest == nil ? CampusTheme.acid : CampusTheme.ink.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
+                            // Metin eskiden "Buluşma isteği gönder"di ve kulağa çıkma
+                            // teklifi gibi geliyordu. Özellik aslında bunu yapmıyor:
+                            // ikisi de o an aynı yerde, bu yalnızca "buradayım, gelsene"
+                            // demek. Altındaki satır da atma eşiğini düşürüyor —
+                            // reddedilme gerçekten sessiz, ama bunu kimse bilmiyordu.
+                            VStack(spacing: 7) {
+                                Button { sendRequest() } label: {
+                                    Label(pendingRequest == nil ? "Burada buluşalım mı?" : "İstek gönderildi", systemImage: pendingRequest == nil ? "cup.and.saucer.fill" : "checkmark")
+                                        .font(.subheadline.bold())
+                                        .foregroundStyle(pendingRequest == nil ? CampusTheme.ink : CampusTheme.ink.opacity(0.55))
+                                        .frame(maxWidth: .infinity).frame(height: 50)
+                                        .background(pendingRequest == nil ? CampusTheme.acid : CampusTheme.ink.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
+                                }
+                                .buttonStyle(PressableStyle())
+                                .disabled(pendingRequest != nil)
+
+                                if pendingRequest == nil {
+                                    Text("Yanıtsız bırakılırsa sana bildirim gitmez.")
+                                        .font(.system(size: 11, design: .rounded))
+                                        .foregroundStyle(CampusTheme.ink.opacity(0.45))
+                                }
                             }
-                            .buttonStyle(PressableStyle())
-                            .disabled(pendingRequest != nil)
                         }
                     }
                     .foregroundStyle(CampusTheme.ink)
