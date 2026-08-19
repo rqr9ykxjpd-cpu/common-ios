@@ -190,6 +190,8 @@ final class AppState {
     }
 
 #if DEBUG
+    /// `-tab <ad>` ile açılan sekme. Yalnızca geliştirme derlemesinde.
+    var initialTab = 0
     /// `-onboarding <adım>` ile açıldığında oturum geri yüklemesi rotayı ezmesin diye.
     /// Yalnızca geliştirme derlemesinde var.
     var skipsSessionRestore = false

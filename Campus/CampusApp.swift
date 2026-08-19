@@ -21,6 +21,11 @@ struct CampusApp: App {
             // İsteğe bağlı olarak adım adı verilebilir: `-onboarding ready`
             let onboarding = arguments.contains("-onboarding")
             let state = AppState(service: SampleProductService(hasProfile: !onboarding))
+            // `-tab profile|discover|feed` doğrudan o sekmeyi açar. Ekranı görmeden
+            // tasarım değiştirmek körlemesine çalışmak olurdu.
+            if let index = arguments.firstIndex(of: "-tab"), index + 1 < arguments.count {
+                state.initialTab = ["feed": 0, "discover": 1, "profile": 2][arguments[index + 1]] ?? 0
+            }
             if onboarding {
                 let adlar: [String: AppState.OnboardingStep] = [
                     "identity": .identity, "preferences": .preferences,

@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct MainTabView: View {
+    @Environment(AppState.self) private var appState
     @State private var selection = 0
 
     var body: some View {
@@ -14,6 +15,9 @@ struct MainTabView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .safeAreaInset(edge: .bottom, spacing: 0) { bottomBar }
         .ignoresSafeArea(.keyboard)
+#if DEBUG
+        .onAppear { selection = appState.initialTab }
+#endif
     }
 
     private var bottomBar: some View {

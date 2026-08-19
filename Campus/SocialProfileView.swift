@@ -17,18 +17,15 @@ struct SocialProfileView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
+                // Ekran dört bölgeye ayrıldı. Önceden dokuz bölüm vardı ve hepsi aynı
+                // yuvarlak kartın içinde yüzüyordu — aynı köşe yarıçapı, aynı çerçeve,
+                // aynı ağırlık. Hiyerarşi olmadığı için hiçbiri öne çıkmıyordu.
                 VStack(alignment: .leading, spacing: CampusTheme.Space.xl) {
-                    topBar
-                    identity
-                    completion
-                    cardPreviewRow
-                    metrics
-                    about
-                    meetingRequests
-                    actions
-                    posts
-                    appearanceSection
-                    accountActions
+                    identityHeader      // kim olduğun
+                    completion          // yalnızca eksikse
+                    about               // kendi anlatın
+                    settingsList        // her şeyin yapıldığı tek liste
+                    posts               // ürettiklerin
                 }
                 .padding(.horizontal, CampusTheme.Space.lg)
                 .padding(.top, CampusTheme.Space.sm)
@@ -66,206 +63,276 @@ struct SocialProfileView: View {
         }
     }
 
-    private var topBar: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Profil")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                Text("Common'da nasıl göründüğünü yönet")
-                    .font(.system(size: 13, design: .rounded))
-                    .foregroundStyle(CampusTheme.muted)
-            }
-            Spacer()
-            Button { showEditor = true } label: {
-                Image(systemName: "pencil")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(CampusTheme.ink)
-                    .frame(width: 44, height: 44)
-                    .background(CampusTheme.surface, in: Circle())
+    /// Kim olduğun. Önceden üç ayrı parçaydı: "Profil / Common'da nasıl göründüğünü
+    /// yönet" başlığı, avatar bloğu ve altta yüzen sayaçlar. Başlık ekranın ne olduğunu
+    /// zaten belli olan bir şeyi tekrar ediyordu; sayaçlar ise tek kartsız bölüm olarak
+    /// ortada duruyordu. Üçü birleşti.
+    private var identityHeader: some View {
+        VStack(alignment: .leading, spacing: CampusTheme.Space.lg) {
+            HStack(alignment: .top, spacing: CampusTheme.Space.lg) {
+                ProfileMedia(url: appState.avatarURL, data: appState.avatarData)
+                    .frame(width: 88, height: 88)
+                    .clipShape(Circle())
                     .overlay(Circle().stroke(CampusTheme.hairline))
-            }
-            .buttonStyle(PressableStyle())
-            .accessibilityLabel("Profili düzenle")
-        }
-    }
 
-    /// "Tanış'ta nasıl görünüyorum?" sorusunun cevabı. Profil alanlarını doldururken karşı
-    /// tarafın gördüğü kartı görememek, neyin eksik kaldığını da görünmez kılıyordu.
-    private var cardPreviewRow: some View {
-        Button { showCardPreview = true } label: {
-            HStack(spacing: CampusTheme.Space.md) {
-                Image(systemName: "rectangle.portrait.on.rectangle.portrait.angled")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(CampusTheme.ink)
-                    .frame(width: 46, height: 46)
-                    .background(CampusTheme.acid, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Kartın nasıl görünüyor?")
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
-                    Text("Tanış'ta karşı tarafın gördüğü hali")
-                        .font(.system(size: 12, design: .rounded))
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(displayName)
+                        .font(.system(size: 26, weight: .bold, design: .rounded))
+                        .lineLimit(1)
+                    Text("\(department) · \(appState.draft.year)")
+                        .font(.system(size: 14, design: .rounded))
                         .foregroundStyle(CampusTheme.muted)
+                        .lineLimit(1)
+                    // Önceden herkeste "Doğrulanmış YÜ öğrencisi" yazıyordu; üniversite
+                    // doğrulaması diye bir şey yok, yani herkes için yanlıştı.
+                    if let badgeTitle = appState.myBadge.title,
+                       let badgeIcon = appState.myBadge.systemImage {
+                        Label(badgeTitle, systemImage: badgeIcon)
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .foregroundStyle(CampusTheme.violet)
+                            .padding(.top, 1)
+                    }
                 }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption.bold())
-                    .foregroundStyle(CampusTheme.ink.opacity(0.3))
+                Spacer(minLength: 0)
             }
-            .foregroundStyle(CampusTheme.ink)
-            .padding(CampusTheme.Space.md)
-            .background(CampusTheme.surface, in: RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous).stroke(CampusTheme.hairline))
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(PressableStyle())
-    }
 
-    private var identity: some View {
-        HStack(spacing: CampusTheme.Space.lg) {
-            ProfileMedia(url: appState.avatarURL, data: appState.avatarData)
-                .frame(width: 92, height: 92)
-                .clipShape(Circle())
-                .overlay(Circle().stroke(CampusTheme.surface, lineWidth: 3))
-            VStack(alignment: .leading, spacing: 6) {
-                Text(displayName)
-                    .font(.system(size: 27, weight: .bold, design: .rounded))
-                Text("\(department) · \(appState.draft.year)")
-                    .font(.system(size: 14, design: .rounded))
-                    .foregroundStyle(CampusTheme.muted)
-                // Önceden herkeste "Doğrulanmış YÜ öğrencisi" yazıyordu; üniversite
-                // doğrulaması diye bir şey yok, yani herkes için yanlıştı. Artık
-                // yalnızca gerçekten rozeti olanda ve rozetin kendi adıyla.
-                if let badgeTitle = appState.myBadge.title,
-                   let badgeIcon = appState.myBadge.systemImage {
-                    Label(badgeTitle, systemImage: badgeIcon)
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
-                        .foregroundStyle(CampusTheme.violet)
+            HStack(spacing: CampusTheme.Space.sm) {
+                statPill(value: appState.currentUserPosts.count, label: "gönderi")
+                Button { showVisits = true } label: {
+                    statPill(value: appState.profileVisits.count, label: "ziyaretçi")
                 }
+                .buttonStyle(PressableStyle())
+                Spacer(minLength: 0)
+                Button { showEditor = true } label: {
+                    Text("DÜZENLE")
+                        .font(.system(size: 11, weight: .black, design: .rounded))
+                        .tracking(1)
+                        .foregroundStyle(CampusTheme.paper)
+                        .padding(.horizontal, 18)
+                        .frame(height: 38)
+                        .background(CampusTheme.ink, in: Capsule())
+                }
+                .buttonStyle(PressableStyle())
+                .accessibilityLabel("Profili düzenle")
             }
-            Spacer(minLength: 0)
         }
         .foregroundStyle(CampusTheme.ink)
     }
 
-    @ViewBuilder
-    private var completion: some View {
-        if appState.profileCompletion < 100 {
-            AppSurface {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Text("Profilini tamamla")
-                            .font(.system(size: 15, weight: .bold, design: .rounded))
-                        Spacer()
-                        Text("%\(appState.profileCompletion)")
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
-                    }
-                    ProgressView(value: Double(appState.profileCompletion), total: 100)
-                        .tint(CampusTheme.violet)
-                    Text("Daha iyi eşleşmeler için fotoğrafını, bio'nu ve ilgi alanlarını tamamla.")
-                        .font(.system(size: 13, design: .rounded))
-                        .foregroundStyle(CampusTheme.muted)
-                    NavigationLink("Eksikleri tamamla") { ProfileEditorView() }
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .foregroundStyle(CampusTheme.violet)
-                }
-            }
-        }
-    }
-
-    private var metrics: some View {
-        HStack(spacing: 0) {
-            metric(value: "\(appState.currentUserPosts.count)", label: "Gönderi")
-            Rectangle()
-                .fill(CampusTheme.hairline)
-                .frame(width: 1, height: 34)
-            metric(value: "\(appState.profileVisits.count)", label: "Ziyaretçi")
-        }
-        .padding(.vertical, CampusTheme.Space.sm)
-    }
-
-    private func metric(value: String, label: String) -> some View {
-        VStack(spacing: 4) {
-            Text(value)
-                .font(.system(size: 18, weight: .bold, design: .rounded))
+    /// Sayaçlar artık ayrı bir bölüm değil, adın hemen altında küçük etiketler.
+    private func statPill(value: Int, label: String) -> some View {
+        HStack(spacing: 5) {
+            Text("\(value)")
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .monospacedDigit()
             Text(label)
-                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .font(.system(size: 12, design: .rounded))
                 .foregroundStyle(CampusTheme.muted)
         }
         .foregroundStyle(CampusTheme.ink)
-        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 12)
+        .frame(height: 38)
+        .background(CampusTheme.ink.opacity(0.05), in: Capsule())
     }
 
-    private var about: some View {
-        AppSurface {
-            VStack(alignment: .leading, spacing: CampusTheme.Space.md) {
-                Text("Hakkımda")
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
-                if appState.draft.bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    Text("Kendinden, kampüste sevdiğin şeylerden veya tanışmak istediğin insanlardan kısaca bahset.")
-                        .foregroundStyle(CampusTheme.muted)
-                } else {
-                    Text(appState.draft.bio)
-                        .foregroundStyle(CampusTheme.ink.opacity(0.82))
-                }
-                if !appState.draft.interests.isEmpty {
-                    ProfileFlowLayout(spacing: 7) {
-                        ForEach(appState.draft.interests.sorted(), id: \.self) { interest in
-                            Text(interest)
-                                .font(.system(size: 12, weight: .medium, design: .rounded))
-                                .padding(.horizontal, 10)
-                                .frame(height: 30)
-                                .background(CampusTheme.ink.opacity(0.055), in: Capsule())
-                        }
+    /// Yalnızca eksikse ve tek satır. Önceden ekranın beşte birini kaplayan bir kart
+    /// halinde her zaman duruyordu: yüzde, ilerleme çubuğu, iki satır açıklama ve bir
+    /// bağlantı. Bu bir dürtme, ekranın kahramanı değil.
+    @ViewBuilder
+    private var completion: some View {
+        if appState.profileCompletion < 100 {
+            Button { showEditor = true } label: {
+                HStack(spacing: CampusTheme.Space.md) {
+                    ZStack {
+                        Circle().stroke(CampusTheme.ink.opacity(0.1), lineWidth: 3)
+                        Circle()
+                            .trim(from: 0, to: Double(appState.profileCompletion) / 100)
+                            .stroke(CampusTheme.violet, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                            .rotationEffect(.degrees(-90))
                     }
+                    .frame(width: 28, height: 28)
+
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Profilin %\(appState.profileCompletion) tamam")
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        Text("Eksikleri tamamla, keşifte daha çok görün")
+                            .font(.system(size: 12, design: .rounded))
+                            .foregroundStyle(CampusTheme.muted)
+                    }
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right")
+                        .font(.caption.bold())
+                        .foregroundStyle(CampusTheme.muted)
                 }
+                .foregroundStyle(CampusTheme.ink)
+                .padding(.horizontal, CampusTheme.Space.md)
+                .frame(minHeight: 58)
+                .background(CampusTheme.violet.opacity(0.07), in: RoundedRectangle(cornerRadius: CampusTheme.Radius.control, style: .continuous))
+                .contentShape(Rectangle())
             }
-            .font(.system(size: 14, design: .rounded))
-            .lineSpacing(4)
+            .buttonStyle(PressableStyle())
         }
     }
 
-    private var meetingRequests: some View {
-        Button { showMeetingRequests = true } label: {
+    /// Kartsız. Bio senin kendi anlatın; sayfanın üstünde yüzen bir kutuya değil,
+    /// doğrudan sayfaya ait. Kart sayısını azaltmak hiyerarşiyi geri getiriyor.
+    private var about: some View {
+        VStack(alignment: .leading, spacing: CampusTheme.Space.md) {
+            Text("Hakkımda")
+                .font(.system(size: 17, weight: .bold, design: .rounded))
+                .foregroundStyle(CampusTheme.ink)
+            if appState.draft.bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Text("Kendinden, kampüste sevdiğin şeylerden veya tanışmak istediğin insanlardan kısaca bahset.")
+                    .foregroundStyle(CampusTheme.muted)
+            } else {
+                Text(appState.draft.bio)
+                    .foregroundStyle(CampusTheme.ink.opacity(0.82))
+            }
+            if !appState.draft.interests.isEmpty {
+                ProfileFlowLayout(spacing: 7) {
+                    ForEach(appState.draft.interests.sorted(), id: \.self) { interest in
+                        Text(interest)
+                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .foregroundStyle(CampusTheme.ink)
+                            .padding(.horizontal, 11)
+                            .frame(height: 30)
+                            .background(CampusTheme.ink.opacity(0.055), in: Capsule())
+                    }
+                }
+                .padding(.top, 2)
+            }
+        }
+        .font(.system(size: 14, design: .rounded))
+        .lineSpacing(4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Profilden yapılan her şey tek listede. Önceden dört ayrı yüzen kart vardı
+    /// (kart önizleme, buluşma istekleri, görünüm, hesap) ve aralarında üç düğmelik
+    /// bir sıra. Hepsi aynı ağırlıkta olduğu için hiçbiri öne çıkmıyor, ekran da
+    /// gereksiz uzuyordu.
+    private var settingsList: some View {
+        @Bindable var state = appState
+        return VStack(alignment: .leading, spacing: CampusTheme.Space.md) {
+            VStack(spacing: 0) {
+                listRow(
+                    icon: "rectangle.portrait.on.rectangle.portrait.angled",
+                    title: "Kartın nasıl görünüyor?",
+                    detail: "Tanış'ta karşı tarafın gördüğü hali"
+                ) { showCardPreview = true }
+
+                listDivider
+                listRow(icon: "bookmark", title: "Kaydedilenler",
+                        detail: "Sonra bakmak için işaretlediklerin") { showSaved = true }
+
+                listDivider
+                listRow(icon: "eye", title: "Ziyaretçiler",
+                        detail: "Profiline son 7 günde bakanlar",
+                        trailing: appState.profileVisits.isEmpty ? nil : "\(appState.profileVisits.count)") { showVisits = true }
+
+                listDivider
+                listRow(icon: "cup.and.saucer", title: "Buluşma istekleri",
+                        detail: "Gelen ve gönderilen isteklerin",
+                        badge: appState.pendingIncomingMeetingRequestCount) { showMeetingRequests = true }
+            }
+            .background(CampusTheme.surface, in: RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous).stroke(CampusTheme.hairline))
+
+            // Görünüm ayrı duruyor: satır değil, seçim.
+            VStack(alignment: .leading, spacing: 10) {
+                Text("GÖRÜNÜM")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .tracking(1)
+                    .foregroundStyle(CampusTheme.muted)
+                Picker("Görünüm", selection: $state.appearance) {
+                    ForEach(AppState.Appearance.allCases) { option in
+                        Text(option.title).tag(option)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+            .padding(.top, CampusTheme.Space.sm)
+
+            VStack(spacing: 0) {
+                listRow(icon: "rectangle.portrait.and.arrow.right", title: "Çıkış yap",
+                        detail: "Bu cihazdaki oturumu kapat",
+                        disabled: appState.isAccountActionInProgress) { showSignOutAlert = true }
+                listDivider
+                listRow(icon: "trash", title: "Hesabı kalıcı sil",
+                        detail: "Geri alınamaz",
+                        destructive: true,
+                        disabled: appState.isAccountActionInProgress) { showDeleteAccountAlert = true }
+            }
+            .background(CampusTheme.surface, in: RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous).stroke(CampusTheme.hairline))
+            .padding(.top, CampusTheme.Space.sm)
+
+            if appState.isAccountActionInProgress {
+                HStack(spacing: 8) {
+                    ProgressView()
+                    Text("Hesap işlemi tamamlanıyor…")
+                }
+                .font(.caption)
+                .foregroundStyle(CampusTheme.muted)
+            }
+        }
+    }
+
+    private var listDivider: some View {
+        Divider().overlay(CampusTheme.hairline).padding(.leading, 58)
+    }
+
+    /// Liste satırı. İkonlar nötr: asit yeşili kartlar iki ayrı satırda kullanılıyordu
+    /// ve marka rengi her yerde olunca vurgu olmaktan çıkıyordu.
+    private func listRow(
+        icon: String,
+        title: String,
+        detail: String,
+        trailing: String? = nil,
+        badge: Int = 0,
+        destructive: Bool = false,
+        disabled: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
             HStack(spacing: CampusTheme.Space.md) {
-                Image(systemName: "cup.and.saucer.fill")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(CampusTheme.ink)
-                    .frame(width: 44, height: 44)
-                    .background(CampusTheme.acid, in: Circle())
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Buluşma İstekleri")
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
-                    Text("Gelen ve gönderilen isteklerini yönet")
+                Image(systemName: icon)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(destructive ? CampusTheme.coral : CampusTheme.ink)
+                    .frame(width: 30, height: 30)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .foregroundStyle(destructive ? CampusTheme.coral : CampusTheme.ink)
+                    Text(detail)
                         .font(.system(size: 12, design: .rounded))
                         .foregroundStyle(CampusTheme.muted)
                 }
-                Spacer()
-                if appState.pendingIncomingMeetingRequestCount > 0 {
-                    Text("\(appState.pendingIncomingMeetingRequestCount)")
+                Spacer(minLength: 0)
+                if badge > 0 {
+                    Text("\(badge)")
                         .font(.system(size: 12, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
-                        .frame(width: 24, height: 24)
-                        .background(CampusTheme.coral, in: Circle())
-                        .accessibilityLabel("\(appState.pendingIncomingMeetingRequestCount) bekleyen istek")
+                        .frame(minWidth: 22, minHeight: 22)
+                        .background(CampusTheme.coral, in: Capsule())
+                        .accessibilityLabel("\(badge) bekleyen")
+                } else if let trailing {
+                    Text(trailing)
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(CampusTheme.muted)
+                        .monospacedDigit()
                 }
                 Image(systemName: "chevron.right")
                     .font(.caption.bold())
                     .foregroundStyle(CampusTheme.muted)
             }
-            .foregroundStyle(CampusTheme.ink)
-            .padding(CampusTheme.Space.lg)
-            .background(CampusTheme.surface, in: RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: CampusTheme.Radius.card).stroke(CampusTheme.hairline))
+            .padding(.horizontal, CampusTheme.Space.md)
+            .frame(minHeight: 60)
+            .contentShape(Rectangle())
         }
         .buttonStyle(PressableStyle())
-    }
-
-    private var actions: some View {
-        HStack(spacing: CampusTheme.Space.sm) {
-            AppButton(title: "Ziyaretçiler", systemName: "eye", role: .secondary) { showVisits = true }
-            AppButton(title: "Kaydedilenler", systemName: "bookmark", role: .secondary) { showSaved = true }
-            AppButton(title: "Gönderi", systemName: "plus", role: .accent) { showComposer = true }
-        }
+        .disabled(disabled)
+        .opacity(disabled ? 0.45 : 1)
     }
 
     private var visitorsSheet: some View {
@@ -366,74 +433,6 @@ struct SocialProfileView: View {
         }
     }
 
-    /// Görünüm tercihi. Koyu mod zorunlu değil; isteyen buradan açıyor,
-    /// varsayılan cihazın kendi ayarını izliyor.
-    private var appearanceSection: some View {
-        @Bindable var state = appState
-        return VStack(alignment: .leading, spacing: CampusTheme.Space.md) {
-            AppSectionHeader(title: "Görünüm")
-            AppSurface {
-                VStack(alignment: .leading, spacing: CampusTheme.Space.md) {
-                    Picker("Görünüm", selection: $state.appearance) {
-                        ForEach(AppState.Appearance.allCases) { option in
-                            Label(option.title, systemImage: option.icon).tag(option)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    Text(appState.appearance == .system
-                         ? "Cihazının ayarını izler."
-                         : "Uygulama her zaman \(appState.appearance.title.lowercased()) görünümde açılır.")
-                        .font(.system(size: 11, design: .rounded))
-                        .foregroundStyle(CampusTheme.muted)
-                }
-            }
-        }
-    }
-
-    private var accountActions: some View {
-        VStack(alignment: .leading, spacing: CampusTheme.Space.md) {
-            AppSectionHeader(title: "Hesap")
-            AppSurface {
-                VStack(spacing: 0) {
-                    Button { showSignOutAlert = true } label: {
-                        accountRow("Çıkış yap", detail: "Bu cihazdaki oturumu kapat", icon: "rectangle.portrait.and.arrow.right", destructive: false)
-                    }
-                    .disabled(appState.isAccountActionInProgress)
-                    Divider().overlay(CampusTheme.hairline)
-                    Button(role: .destructive) { showDeleteAccountAlert = true } label: {
-                        accountRow("Hesabı kalıcı sil", detail: "Tüm hesap verilerini geri alınamaz biçimde sil", icon: "trash", destructive: true)
-                    }
-                    .disabled(appState.isAccountActionInProgress)
-                }
-            }
-            if appState.isAccountActionInProgress {
-                HStack(spacing: 8) {
-                    ProgressView()
-                    Text("Hesap işlemi tamamlanıyor…")
-                }
-                .font(.caption)
-                .foregroundStyle(CampusTheme.muted)
-            }
-        }
-    }
-
-    private func accountRow(_ title: String, detail: String, icon: String, destructive: Bool) -> some View {
-        HStack(spacing: CampusTheme.Space.md) {
-            Image(systemName: icon)
-                .frame(width: 36, height: 36)
-                .background((destructive ? CampusTheme.coral : CampusTheme.ink).opacity(0.1), in: Circle())
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title).font(.system(size: 14, weight: .semibold, design: .rounded))
-                Text(detail).font(.system(size: 11, design: .rounded)).foregroundStyle(CampusTheme.muted)
-            }
-            Spacer()
-            Image(systemName: "chevron.right").font(.caption.bold()).foregroundStyle(CampusTheme.muted)
-        }
-        .foregroundStyle(destructive ? CampusTheme.coral : CampusTheme.ink)
-        .frame(minHeight: 62)
-        .contentShape(Rectangle())
-    }
-
     @ViewBuilder
     private var posts: some View {
         VStack(alignment: .leading, spacing: CampusTheme.Space.md) {
@@ -450,6 +449,21 @@ struct SocialProfileView: View {
                             .font(.system(size: 13, design: .rounded))
                             .foregroundStyle(CampusTheme.muted)
                             .multilineTextAlignment(.center)
+                        // Paylaşım düğmesi profilin tepesindeki üçlü sıradan kaldırıldı
+                        // (akış başlığındaki "Paylaş" ile birebir aynı işi yapıyordu).
+                        // Boş durumda burada durması hem daha yerinde hem keşfedilebilir.
+                        Button {
+                            Haptics.impact(.light)
+                            showComposer = true
+                        } label: {
+                            Text("BİR ŞEY PAYLAŞ")
+                                .font(.system(size: 11, weight: .black, design: .rounded)).tracking(1)
+                                .foregroundStyle(CampusTheme.paper)
+                                .padding(.horizontal, 22).frame(height: 42)
+                                .background(CampusTheme.ink, in: Capsule())
+                        }
+                        .buttonStyle(PressableStyle())
+                        .padding(.top, 4)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
