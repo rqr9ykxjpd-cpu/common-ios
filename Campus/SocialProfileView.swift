@@ -132,9 +132,15 @@ struct SocialProfileView: View {
                 Text("\(department) · \(appState.draft.year)")
                     .font(.system(size: 14, design: .rounded))
                     .foregroundStyle(CampusTheme.muted)
-                Label("Doğrulanmış YÜ öğrencisi", systemImage: "checkmark.seal.fill")
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
-                    .foregroundStyle(CampusTheme.violet)
+                // Önceden herkeste "Doğrulanmış YÜ öğrencisi" yazıyordu; üniversite
+                // doğrulaması diye bir şey yok, yani herkes için yanlıştı. Artık
+                // yalnızca gerçekten rozeti olanda ve rozetin kendi adıyla.
+                if let badgeTitle = appState.myBadge.title,
+                   let badgeIcon = appState.myBadge.systemImage {
+                    Label(badgeTitle, systemImage: badgeIcon)
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundStyle(CampusTheme.violet)
+                }
             }
             Spacer(minLength: 0)
         }

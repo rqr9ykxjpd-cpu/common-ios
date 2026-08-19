@@ -63,9 +63,10 @@ struct DiscoveryCard: View {
                                     .background(.black.opacity(0.35), in: Capsule())
                             }
                             Spacer()
-                            if profile.isVerified {
-                                Image(systemName: "checkmark.seal.fill")
+                            if let badgeIcon = profile.badge.systemImage {
+                                Image(systemName: badgeIcon)
                                     .foregroundStyle(CampusTheme.acid)
+                                    .accessibilityLabel(profile.badge.title ?? "")
                             }
                         }
                         Spacer()

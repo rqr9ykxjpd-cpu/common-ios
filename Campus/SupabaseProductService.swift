@@ -20,6 +20,7 @@ struct BackendPost: Sendable {
     let authorYear: String
     let authorBio: String
     let authorVerified: Bool
+    let authorBadge: ProfileBadge
     let authorAvatarURL: URL?
     let caption: String
     let placeName: String?
@@ -168,7 +169,7 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         guard let userID = currentUserID else { throw BackendServiceError.missingSession }
         let matches: [MatchRow] = try await client
             .from("matches")
-            .select("id,user_a,user_b,created_at,user_a_profile:profiles!matches_user_a_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),user_b_profile:profiles!matches_user_b_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified)")
+            .select("id,user_a,user_b,created_at,user_a_profile:profiles!matches_user_a_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified,badge),user_b_profile:profiles!matches_user_b_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified,badge)")
             .is("unmatched_at", value: nil)
             .order("created_at", ascending: false)
             .execute()
@@ -248,7 +249,7 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
     func fetchFeed() async throws -> [BackendPost] {
         let rows: [PostRow] = try await client
             .from("posts")
-            .select("id,author_id,caption,media_path,place_name,created_at,author:profiles!posts_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),comments(id,post_id,author_id,body,created_at,author:profiles!comments_author_id_fkey(name))")
+            .select("id,author_id,caption,media_path,place_name,created_at,author:profiles!posts_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified,badge),comments(id,post_id,author_id,body,created_at,author:profiles!comments_author_id_fkey(name))")
             .order("created_at", ascending: false)
             .limit(100)
             .execute()
@@ -305,7 +306,7 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
 
         let rows: [PostRow] = try await client
             .from("posts")
-            .select("id,author_id,caption,media_path,place_name,created_at,author:profiles!posts_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),comments(id,post_id,author_id,body,created_at,author:profiles!comments_author_id_fkey(name))")
+            .select("id,author_id,caption,media_path,place_name,created_at,author:profiles!posts_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified,badge),comments(id,post_id,author_id,body,created_at,author:profiles!comments_author_id_fkey(name))")
             .`in`("id", values: ids)
             .order("created_at", ascending: false)
             .execute()
@@ -355,7 +356,7 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         let row: PostRow = try await client
             .from("posts")
             .insert(payload)
-            .select("id,author_id,caption,media_path,place_name,created_at,author:profiles!posts_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),comments(id,post_id,author_id,body,created_at,author:profiles!comments_author_id_fkey(name))")
+            .select("id,author_id,caption,media_path,place_name,created_at,author:profiles!posts_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified,badge),comments(id,post_id,author_id,body,created_at,author:profiles!comments_author_id_fkey(name))")
             .single()
             .execute()
             .value
@@ -400,6 +401,7 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         draft.department = row.department
         draft.year = row.academicYear
         draft.bio = row.bio
+        draft.badge = row.badge
         draft.interests = Set(row.interests)
         var filters = DiscoveryFilters()
         filters.minimumAge = row.minAge
@@ -620,7 +622,7 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
                 id: row.visitorID, name: row.name, age: age, university: row.university,
                 department: row.department, year: row.academicYear, bio: row.bio,
                 interests: [], imageURL: row.avatarPath.flatMap { avatarURLs[$0] },
-                compatibility: 0, isVerified: row.isVerified
+                compatibility: 0, isVerified: row.isVerified, badge: row.badge
             )
             return ProfileVisit(profile: profile, visitedAt: row.lastVisitedAt)
         }
@@ -708,8 +710,8 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
             .select("""
             id,requester_id,recipient_id,place_id,status,created_at,\
             place:places!meeting_requests_place_id_fkey(id,name,area),\
-            requester:profiles!meeting_requests_requester_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),\
-            recipient:profiles!meeting_requests_recipient_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified)
+            requester:profiles!meeting_requests_requester_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified,badge),\
+            recipient:profiles!meeting_requests_recipient_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified,badge)
             """)
             .order("created_at", ascending: false)
             .execute()
@@ -756,7 +758,7 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
             .from("stories")
             .select("""
             id,author_id,media_path,caption,place_id,created_at,expires_at,\
-            author:profiles!stories_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),\
+            author:profiles!stories_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified,badge),\
             place:places!stories_place_id_fkey(id,name,area),\
             story_views(viewer_id)
             """)
@@ -826,7 +828,7 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
                 department: row.department, year: row.academicYear, bio: row.bio,
                 interests: row.interests,
                 imageURL: row.avatarPath.flatMap { avatarURLs[$0] },
-                compatibility: 0, isVerified: row.isVerified,
+                compatibility: 0, isVerified: row.isVerified, badge: row.badge,
                 relationshipIntent: row.relationshipIntent, activeLabel: row.activeLabel
             )
         }
@@ -874,7 +876,7 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
     func fetchStoryViews(_ storyID: UUID) async throws -> [StoryViewRecord] {
         let rows: [StoryViewRow] = try await client
             .from("story_views")
-            .select("viewer_id,view_count,last_viewed_at,viewer:profiles!story_views_viewer_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified)")
+            .select("viewer_id,view_count,last_viewed_at,viewer:profiles!story_views_viewer_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified,badge)")
             .eq("story_id", value: storyID)
             .order("last_viewed_at", ascending: false)
             .execute()
@@ -927,6 +929,7 @@ private struct PlacePersonRow: Decodable {
     let bio: String
     let avatarPath: String?
     let isVerified: Bool
+    let badge: ProfileBadge
     let relationshipIntent: RelationshipIntent
     let interests: [String]
     let activeLabel: String
@@ -937,6 +940,7 @@ private struct PlacePersonRow: Decodable {
         case academicYear = "academic_year"
         case avatarPath = "avatar_path"
         case isVerified = "is_verified"
+        case badge
         case relationshipIntent = "relationship_intent"
         case activeLabel = "active_label"
     }
@@ -1138,6 +1142,7 @@ private struct DeviceTokenUpsert: Encodable {
 }
 
 private struct MyProfileRow: Decodable {
+    let badge: ProfileBadge
     let name: String
     let birthDate: Date
     let gender: String
@@ -1158,7 +1163,7 @@ private struct MyProfileRow: Decodable {
     let campusOnly: Bool
 
     enum CodingKeys: String, CodingKey {
-        case name, gender, university, department, bio, interests, departments
+        case name, gender, university, department, bio, interests, departments, badge
         case birthDate = "birth_date"
         case datingPreference = "dating_preference"
         case relationshipIntent = "relationship_intent"
@@ -1385,6 +1390,7 @@ private struct DiscoveryCandidateRow: Decodable {
     let avatarPath: String?
     let galleryPaths: [String]
     let isVerified: Bool
+    let badge: ProfileBadge
     let relationshipIntent: RelationshipIntent
     let interests: [String]
     let promptKeys: [String]
@@ -1400,6 +1406,7 @@ private struct DiscoveryCandidateRow: Decodable {
         case galleryPaths = "gallery_paths"
         case academicYear = "academic_year"
         case isVerified = "is_verified"
+        case badge
         case relationshipIntent = "relationship_intent"
         case promptKeys = "prompt_keys"
         case promptAnswers = "prompt_answers"
@@ -1413,7 +1420,7 @@ private struct DiscoveryCandidateRow: Decodable {
             id: id, name: name, age: age, university: university, department: department,
             year: academicYear, bio: bio, interests: interests, imageURL: avatarURL,
             galleryImageURLs: galleryURLs,
-            compatibility: compatibility, isVerified: isVerified,
+            compatibility: compatibility, isVerified: isVerified, badge: badge,
             compatibilityReasons: compatibilityReasons,
             relationshipIntent: relationshipIntent, activeLabel: activeLabel
         )
@@ -1478,13 +1485,14 @@ private struct SupabaseProfileRow: Decodable {
     let bio: String
     let avatarPath: String?
     let isVerified: Bool
+    let badge: ProfileBadge
 
     func studentProfile(avatarURL: URL?) -> StudentProfile {
         let age = max(18, Calendar.current.dateComponents([.year], from: birthDate, to: .now).year ?? 18)
         return StudentProfile(
             id: id, name: name, age: age, university: university, department: department,
             year: academicYear, bio: bio, interests: [], imageURL: avatarURL,
-            compatibility: 0, isVerified: isVerified, activeLabel: "Eşleşme"
+            compatibility: 0, isVerified: isVerified, badge: badge, activeLabel: "Eşleşme"
         )
     }
 
@@ -1494,6 +1502,7 @@ private struct SupabaseProfileRow: Decodable {
         case avatarPath = "avatar_path"
         case academicYear = "academic_year"
         case isVerified = "is_verified"
+        case badge
     }
 }
 
@@ -1557,6 +1566,7 @@ private struct PostRow: Decodable {
             authorYear: author.academicYear,
             authorBio: author.bio,
             authorVerified: author.isVerified,
+            authorBadge: author.badge,
             authorAvatarURL: authorAvatarURL,
             caption: caption,
             placeName: placeName,
@@ -1589,6 +1599,7 @@ private struct ProfileVisitRow: Decodable {
     let bio: String
     let avatarPath: String?
     let isVerified: Bool
+    let badge: ProfileBadge
     let lastVisitedAt: Date
 
     enum CodingKeys: String, CodingKey {
@@ -1598,6 +1609,7 @@ private struct ProfileVisitRow: Decodable {
         case academicYear = "academic_year"
         case avatarPath = "avatar_path"
         case isVerified = "is_verified"
+        case badge
         case lastVisitedAt = "last_visited_at"
     }
 }

@@ -114,8 +114,9 @@ struct PlacePeopleView: View {
             VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 5) {
                     Text("\(profile.name), \(profile.age)").font(.headline)
-                    if profile.isVerified {
-                        Image(systemName: "checkmark.seal.fill").foregroundStyle(CampusTheme.violet)
+                    if let badgeIcon = profile.badge.systemImage {
+                        Image(systemName: badgeIcon).foregroundStyle(CampusTheme.violet)
+                            .accessibilityLabel(profile.badge.title ?? "")
                     }
                 }
                 Text("\(profile.department) · \(profile.year)")
@@ -158,8 +159,9 @@ struct SocialPersonDetailView: View {
                     VStack(alignment: .leading, spacing: 14) {
                         HStack(alignment: .firstTextBaseline) {
                             Text("\(profile.name), \(profile.age)").editorialTitle(38)
-                            if profile.isVerified {
-                                Image(systemName: "checkmark.seal.fill").foregroundStyle(CampusTheme.violet)
+                            if let badgeIcon = profile.badge.systemImage {
+                                Image(systemName: badgeIcon).foregroundStyle(CampusTheme.violet)
+                                    .accessibilityLabel(profile.badge.title ?? "")
                             }
                         }
                         Text("\(profile.department) · \(profile.university) · \(profile.year)")

@@ -90,6 +90,8 @@ final class AppState {
     var selectedPlaceFilter: CampusPlace?
     var currentVisiblePlace: CampusPlace?
     var joinedClubIDs: Set<UUID> = []
+    /// Kendi rozetim. Sunucudan gelir; istemci kendine rozet veremez.
+    private(set) var myBadge: ProfileBadge = .none
     var isFinishingOnboarding = false
     /// Kayıt akışının son adımındaki hata. Toast kaybolduğu için kullanıcı düğmenin
     /// çalışmadığını sanıyordu; bu ekranda kalıcı olarak gösteriliyor.
@@ -247,6 +249,7 @@ final class AppState {
     /// kullanıcı başka bir cihazdan girdiğinde profili sunucuda dururken boş görünüyordu.
     private func applyRemoteProfile(_ profile: ProfileDraft) {
         draft = profile
+        myBadge = profile.badge
         discoveryFilters = profile.discoveryFilters
         persistAccount()
     }
@@ -1098,6 +1101,7 @@ final class AppState {
         selectedPlaceFilter = nil
         currentVisiblePlace = nil
         joinedClubIDs = []
+        myBadge = .none
 
         // Geçici bayraklar da sıfırlanmalı. Çıkış bir yükleme sürerken yapılırsa
         // `isLoadingDiscovery` true kalıyor ve sonraki girişte `loadDiscovery`
@@ -1159,7 +1163,8 @@ final class AppState {
             interests: [],
             imageURL: post.authorAvatarURL,
             compatibility: 0,
-            isVerified: post.authorVerified
+            isVerified: post.authorVerified,
+            badge: post.authorBadge
         )
         return SocialPost(
             id: post.id,
@@ -1243,10 +1248,13 @@ struct ProfileDraft: Equatable, Codable {
     /// ikisinin birbirinden ayrı düşüp tutarsız kalmasını da imkânsız kılıyor.
     var datingPreference: DatingPreference? { gender?.impliedDatingPreference }
     var relationshipIntent: RelationshipIntent = .both
+    /// Sunucudan gelir. `save_my_profile` bunu parametre olarak almıyor, yani
+    /// istemci kendine rozet veremiyor — buradaki değer yalnızca gösterim için.
+    var badge: ProfileBadge = .none
     var discoveryFilters = DiscoveryFilters()
 
     private enum CodingKeys: String, CodingKey {
-        case name, birthDate, university, department, year, bio, interests, gender, relationshipIntent, discoveryFilters
+        case name, birthDate, university, department, year, bio, interests, gender, relationshipIntent, badge, discoveryFilters
     }
 
     init() {}
@@ -1262,6 +1270,7 @@ struct ProfileDraft: Equatable, Codable {
         interests = try container.decodeIfPresent(Set<String>.self, forKey: .interests) ?? []
         gender = try container.decodeIfPresent(ProfileGender.self, forKey: .gender)
         relationshipIntent = try container.decodeIfPresent(RelationshipIntent.self, forKey: .relationshipIntent) ?? .both
+        badge = try container.decodeIfPresent(ProfileBadge.self, forKey: .badge) ?? .none
         discoveryFilters = try container.decodeIfPresent(DiscoveryFilters.self, forKey: .discoveryFilters) ?? DiscoveryFilters()
     }
 

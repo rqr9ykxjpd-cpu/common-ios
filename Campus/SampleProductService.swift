@@ -343,7 +343,8 @@ private extension BackendPost {
         BackendPost(
             id: id, authorID: authorID, authorName: authorName, authorBirthDate: authorBirthDate,
             authorUniversity: authorUniversity, authorDepartment: authorDepartment, authorYear: authorYear,
-            authorBio: authorBio, authorVerified: authorVerified, authorAvatarURL: authorAvatarURL,
+            authorBio: authorBio, authorVerified: authorVerified, authorBadge: authorBadge,
+            authorAvatarURL: authorAvatarURL,
             caption: caption, placeName: placeName, imageData: imageData, createdAt: createdAt,
             comments: comments ?? self.comments,
             likeCount: likeCount ?? self.likeCount,
@@ -395,6 +396,7 @@ enum SampleData {
         imageAssetName: "profile-berk",
         compatibility: 100,
         isVerified: true,
+        badge: .founder,
         relationshipIntent: .both
     )
 
@@ -419,7 +421,7 @@ enum SampleData {
             bio: "Analog fotoğraf çekiyorum, kampüsün her köşesinde bir kare arıyorum.",
             interests: ["Fotoğraf", "Sinema", "Kahve", "Sergi"],
             imageURL: nil, imageAssetName: "profile-ece",
-            compatibility: 92, isVerified: true,
+            compatibility: 92, isVerified: true, badge: .moderator,
             compatibilityReasons: ["3 ortak ilgi alanı", "İkiniz de kahve düşkünü"],
             relationshipIntent: .both, activeLabel: "Bugün aktif"
         ),
@@ -546,6 +548,7 @@ enum SampleData {
             authorYear: author.year,
             authorBio: author.bio,
             authorVerified: author.isVerified,
+            authorBadge: author.badge,
             authorAvatarURL: author.imageAssetName.flatMap(UIImageAsset.fileURL(named:)),
             caption: caption,
             placeName: place,
@@ -565,7 +568,7 @@ enum SampleData {
             id: UUID(), authorID: me.id, authorName: me.name,
             authorBirthDate: Calendar.current.date(byAdding: .year, value: -me.age, to: .now) ?? .now,
             authorUniversity: me.university, authorDepartment: me.department, authorYear: me.year,
-            authorBio: me.bio, authorVerified: me.isVerified,
+            authorBio: me.bio, authorVerified: me.isVerified, authorBadge: me.badge,
             authorAvatarURL: me.imageAssetName.flatMap(UIImageAsset.fileURL(named:)),
             caption: caption, placeName: placeName, imageData: imageData, createdAt: .now,
             comments: [], likeCount: 0, liked: false, saved: false

@@ -366,8 +366,9 @@ struct ProfileDetailSheet: View {
                 Text("\(profile.age)")
                     .font(.system(size: 22, weight: .medium, design: .rounded))
                     .foregroundStyle(CampusTheme.muted)
-                if profile.isVerified {
-                    Image(systemName: "checkmark.seal.fill").foregroundStyle(CampusTheme.violet)
+                if let badgeIcon = profile.badge.systemImage {
+                    Image(systemName: badgeIcon).foregroundStyle(CampusTheme.violet)
+                        .accessibilityLabel(profile.badge.title ?? "")
                 }
                 Spacer()
                 Text("%\(profile.compatibility) uyum")

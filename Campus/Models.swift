@@ -1,3 +1,35 @@
+/// Profilde görünen işaret.
+///
+/// Daha önce mavi tik `is_verified` alanından geliyordu — ama o alan aynı zamanda
+/// keşifte görünme kapısıydı ve herkeste açık olmak zorunda. Yani tik herkeste
+/// çıkıyordu ve hiçbir şey ifade etmiyordu. Rozet artık ayrı bir alan ve yalnızca
+/// sunucudan elle atanıyor; istemci kendine veremiyor.
+enum ProfileBadge: String, Codable, Hashable {
+    case none
+    case verified
+    case moderator
+    case founder
+
+    var systemImage: String? {
+        switch self {
+        case .none: nil
+        case .verified: "checkmark.seal.fill"
+        case .moderator: "shield.lefthalf.filled"
+        case .founder: "star.circle.fill"
+        }
+    }
+
+    /// Profil ekranında rozetin yanında yazan açıklama.
+    var title: String? {
+        switch self {
+        case .none: nil
+        case .verified: "Doğrulanmış hesap"
+        case .moderator: "Moderatör"
+        case .founder: "Common kurucusu"
+        }
+    }
+}
+
 import Foundation
 
 enum RelationshipIntent: String, Codable, CaseIterable, Identifiable {
@@ -56,11 +88,12 @@ struct StudentProfile: Identifiable, Hashable {
     let galleryImageURLs: [URL]
     let compatibility: Int
     let isVerified: Bool
+    let badge: ProfileBadge
     let compatibilityReasons: [String]
     let relationshipIntent: RelationshipIntent
     let activeLabel: String
 
-    init(id: UUID = UUID(), name: String, age: Int, university: String, department: String, year: String, bio: String, interests: [String], imageURL: URL?, imageAssetName: String? = nil, galleryImageURLs: [URL] = [], compatibility: Int, isVerified: Bool, compatibilityReasons: [String] = [], relationshipIntent: RelationshipIntent = .both, activeLabel: String = "Bugün aktif") {
+    init(id: UUID = UUID(), name: String, age: Int, university: String, department: String, year: String, bio: String, interests: [String], imageURL: URL?, imageAssetName: String? = nil, galleryImageURLs: [URL] = [], compatibility: Int, isVerified: Bool, badge: ProfileBadge = .none, compatibilityReasons: [String] = [], relationshipIntent: RelationshipIntent = .both, activeLabel: String = "Bugün aktif") {
         self.id = id
         self.name = name
         self.age = age
@@ -74,6 +107,7 @@ struct StudentProfile: Identifiable, Hashable {
         self.galleryImageURLs = galleryImageURLs
         self.compatibility = compatibility
         self.isVerified = isVerified
+        self.badge = badge
         self.compatibilityReasons = compatibilityReasons
         self.relationshipIntent = relationshipIntent
         self.activeLabel = activeLabel
