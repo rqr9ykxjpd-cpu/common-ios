@@ -78,6 +78,7 @@ struct SocialFeedView: View {
                             Color.clear.frame(height: 1).id("feed-top")
                             storyRail
                             meetingPlaces
+                            placeStrip
                             Divider().opacity(0.35).padding(.vertical, 14)
                             if visiblePosts.isEmpty {
                                 feedEmptyState
@@ -308,6 +309,66 @@ struct SocialFeedView: View {
         .buttonStyle(PressableStyle())
         .padding(.horizontal, 16)
         .padding(.top, 12)
+    }
+
+    /// Yerlerin kısa şeridi. Duvarı açmak her seferinde iki dokunuş demek; en çok
+    /// yapılan şey "şurada kim var?" diye bakmak, o yüzden buradan tek dokunuşla
+    /// doğrudan o yerdeki kişiler açılıyor. Tamamı için sağdaki "Tümü".
+    @ViewBuilder
+    private var placeStrip: some View {
+        if !appState.places.isEmpty {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(appState.places.prefix(8)) { place in
+                        Button {
+                            Haptics.impact(.light)
+                            selectedPeoplePlace = place
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: appState.currentVisiblePlace?.id == place.id ? "mappin.circle.fill" : "mappin")
+                                    .font(.system(size: 12, weight: .semibold))
+                                Text(place.name)
+                                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                                    .lineLimit(1)
+                            }
+                            .foregroundStyle(appState.currentVisiblePlace?.id == place.id ? CampusTheme.paper : CampusTheme.ink)
+                            .padding(.horizontal, 13)
+                            .frame(height: 38)
+                            .background(
+                                appState.currentVisiblePlace?.id == place.id ? CampusTheme.violet : CampusTheme.ink.opacity(0.055),
+                                in: Capsule()
+                            )
+                        }
+                        .buttonStyle(PressableStyle())
+                    }
+
+                    Button {
+                        Haptics.impact(.light)
+                        showPlacesWall = true
+                    } label: {
+                        Text("Tümü")
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .foregroundStyle(CampusTheme.violet)
+                            .padding(.horizontal, 14)
+                            .frame(height: 38)
+                            .overlay(Capsule().stroke(CampusTheme.violet.opacity(0.35)))
+                    }
+                    .buttonStyle(PressableStyle())
+                }
+                .padding(.horizontal, 16)
+            }
+            .mask(
+                LinearGradient(
+                    stops: [
+                        .init(color: .black, location: 0),
+                        .init(color: .black, location: 0.93),
+                        .init(color: .black.opacity(0), location: 1)
+                    ],
+                    startPoint: .leading, endPoint: .trailing
+                )
+            )
+            .padding(.top, 8)
+        }
     }
 
     private var subtitleForPlaces: String {
