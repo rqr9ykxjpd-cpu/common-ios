@@ -66,9 +66,54 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
     init(configuration: BackendConfiguration) {
         client = SupabaseClient(
             supabaseURL: configuration.url,
-            supabaseKey: configuration.publishableKey
+            supabaseKey: configuration.publishableKey,
+            options: SupabaseClientOptions(
+                db: SupabaseClientOptions.DatabaseOptions(decoder: Self.decoder)
+            )
         )
     }
+
+    /// Sunucudan gelen tarihleri çözer.
+    ///
+    /// Varsayılan çözücü yalnızca zaman damgası bekliyor. `profiles.birth_date` ise
+    /// Postgres'te `date` tipinde ve saatsiz geliyor ("2003-10-18"), bu yüzden
+    /// çözümleme "Invalid date format" ile patlıyordu.
+    ///
+    /// Bu tek alan beş ayrı yapıda okunuyor — kendi profilim, keşif adayları,
+    /// yerdeki kişiler, ziyaretçiler, sohbet ve gönderi yazarları. Yani hata
+    /// girişten Tanış'a kadar her şeyi kırıyordu; gerçek veri olmadığı için
+    /// bugüne kadar ortaya çıkmamıştı.
+    /// `ISO8601DateFormatter` Sendable değil; okuma amaçlı paylaşımı güvenli olduğu
+    /// için tip düzeyinde tutuluyor. Her tarih için yeniden kurmak yüz gönderilik bir
+    /// akışta gereksiz maliyet olurdu.
+    nonisolated(unsafe) private static let isoWithFraction: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+
+    nonisolated(unsafe) private static let isoWithoutFraction: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter
+    }()
+
+    private static let decoder: JSONDecoder = {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let raw = try decoder.singleValueContainer().decode(String.self)
+            if let date = isoWithFraction.date(from: raw) { return date }
+            if let date = isoWithoutFraction.date(from: raw) { return date }
+            if let date = postgresDateFormatter.date(from: raw) { return date }
+            throw DecodingError.dataCorrupted(
+                DecodingError.Context(
+                    codingPath: decoder.codingPath,
+                    debugDescription: "Tanınmayan tarih biçimi: \(raw)"
+                )
+            )
+        }
+        return decoder
+    }()
 
     /// `nonce` burada ham (hash'lenmemiş) değer olmalı; Apple'a giderken SHA256'sı gönderilir,
     /// Supabase ise dönen id_token'daki hash'i bu ham değerle yeniden hesaplayıp doğrular.
@@ -591,7 +636,7 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
                         try await channel.subscribeWithError()
                         bekleme = ilkBekleme
                         for await insertion in insertions {
-                            guard let row = try? insertion.decodeRecord(as: MessageRow.self, decoder: PostgrestClient.Configuration.jsonDecoder) else { continue }
+                            guard let row = try? insertion.decodeRecord(as: MessageRow.self, decoder: Self.decoder) else { continue }
                             continuation.yield(RealtimeMessage(
                                 matchID: row.matchID,
                                 id: row.id,
