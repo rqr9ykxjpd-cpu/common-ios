@@ -140,33 +140,44 @@ final class AppState {
     func signInWithApple(idToken: String, nonce: String) async -> Bool {
         do {
             try await service.signInWithApple(idToken: idToken, nonce: nonce)
-            return try await completeSocialSignIn()
         } catch {
             showError(error, fallback: "Apple ile giriş yapılamadı.")
             return false
         }
+        return await completeSocialSignIn()
     }
 
     @discardableResult
     func signInWithGoogle(idToken: String, accessToken: String, nonce: String) async -> Bool {
         do {
             try await service.signInWithGoogle(idToken: idToken, accessToken: accessToken, nonce: nonce)
-            return try await completeSocialSignIn()
         } catch {
             showError(error, fallback: "Google ile giriş yapılamadı.")
             return false
         }
+        return await completeSocialSignIn()
     }
 
     /// Apple/Google ikisi de aynı sonrası akışı paylaşır: yeni hesapsa onboarding'e,
     /// profili tamamlanmışsa doğrudan uygulamaya geçer.
-    private func completeSocialSignIn() async throws -> Bool {
+    /// Girişin kendisi başarılı olduktan sonrası. Buradaki bir hata "giriş yapılamadı"
+    /// değildir — oturum açıldı, profil yüklenemedi. Önceden ikisi tek `catch`'te
+    /// birleşiyordu ve profil çözümlenemediğinde kullanıcıya "Google ile giriş
+    /// yapılamadı" deniyordu; sebebi bambaşka bir yerdeyken yanlış yere baktırıyordu.
+    private func completeSocialSignIn() async -> Bool {
         currentUserID = service.currentUserID ?? currentUserID
         if let sessionEmail = service.currentUserEmail {
             email = sessionEmail.lowercased()
         }
         restoreOrCreateAccount(for: email)
-        let profile = try await service.fetchMyProfile()
+
+        let profile: ProfileDraft?
+        do {
+            profile = try await service.fetchMyProfile()
+        } catch {
+            showError(error, fallback: "Giriş yapıldı ama profilin yüklenemedi. Tekrar dene.")
+            return false
+        }
         guard let profile else {
             persistSession()
             withAnimation(.smooth(duration: 0.55)) { route = .onboarding(.identity) }

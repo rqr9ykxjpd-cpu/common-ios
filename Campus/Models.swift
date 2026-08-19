@@ -10,6 +10,13 @@ enum ProfileBadge: String, Codable, Hashable {
     case moderator
     case founder
 
+    /// Tanımadığımız bir değer gelirse çözümleme patlamasın: sunucuya ileride yeni
+    /// bir rozet eklenirse eski uygulamalar sadece rozeti göstermez, kırılmaz.
+    init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = ProfileBadge(rawValue: raw) ?? .none
+    }
+
     var systemImage: String? {
         switch self {
         case .none: nil
