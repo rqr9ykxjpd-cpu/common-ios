@@ -73,7 +73,7 @@ private struct AppToast: View {
                 .foregroundStyle(message.kind == .error ? CampusTheme.coral : CampusTheme.acid)
             Text(message.text)
                 .font(.system(size: 13, weight: .semibold, design: .rounded))
-                .lineLimit(3)
+                .lineLimit(6)
             Spacer(minLength: 0)
         }
         .foregroundStyle(CampusTheme.paper)

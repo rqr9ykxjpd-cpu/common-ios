@@ -37,11 +37,16 @@ enum UserFacingError {
     ///     Örnek: "Gönderi paylaşılamadı." Sonuna "Tekrar dene." gibi bir yönlendirme
     ///     eklemek gerekmiyor, burada ekleniyor.
     static func message(_ error: Error, fallback: String) -> String {
+        let friendly = known(error) ?? fallback
 #if DEBUG
+        // Geliştirme derlemesinde ham hata ekrana da yazılıyor. Konsoldan satır
+        // aratmak her hata turunda ayrı bir gidiş geliş demekti; artık ekran
+        // görüntüsü tek başına yeterli. Release'de bu blok yok.
         print("[Campus] ham hata: \(error)")
+        return friendly + "\n⟨" + String(describing: error).prefix(160) + "⟩"
+#else
+        return friendly
 #endif
-        if let known = known(error) { return known }
-        return fallback
     }
 
     private static func known(_ error: Error) -> String? {

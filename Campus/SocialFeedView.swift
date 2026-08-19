@@ -1,9 +1,6 @@
 import SwiftUI
 
 struct SocialFeedView: View {
-    /// Kulüpler kaçıncı gönderiden sonra gösterilsin.
-    private static let clubsAfterPostCount = 3
-
     @Environment(AppState.self) private var appState
     @State private var showStoryComposer = false
     @State private var showPostComposer = false
@@ -79,16 +76,12 @@ struct SocialFeedView: View {
                             storyRail
                             meetingPlaces
                             placeStrip
+                            clubsSection
                             Divider().opacity(0.35).padding(.vertical, 14)
                             if visiblePosts.isEmpty {
                                 feedEmptyState
-                                clubsSection
                             } else {
-                                // Kulüpler akışın içinde: önceden story'ler, yerler ve
-                                // kulüpler üst üste gelip ilk gönderiye ulaşmak yaklaşık
-                                // bir buçuk ekran kaydırma gerektiriyordu. Sosyal bir
-                                // uygulamada içerik bu kadar geriye düşmemeli.
-                                ForEach(Array(visiblePosts.enumerated()), id: \.element.id) { index, post in
+                                ForEach(visiblePosts) { post in
                                     PostCard(
                                         post: post,
                                         toggleLike: { appState.toggleLike(postID: post.id) },
@@ -97,14 +90,6 @@ struct SocialFeedView: View {
                                         delete: { appState.deletePost(post.id) }
                                     )
                                     Divider().opacity(0.35).padding(.vertical, 20)
-                                    if index == Self.clubsAfterPostCount - 1 {
-                                        clubsSection
-                                        Divider().opacity(0.35).padding(.vertical, 14)
-                                    }
-                                }
-                                // Akışta o kadar gönderi yoksa kulüpler sona ekleniyor.
-                                if visiblePosts.count < Self.clubsAfterPostCount {
-                                    clubsSection
                                 }
                             }
                         }
@@ -379,17 +364,13 @@ struct SocialFeedView: View {
 
     private var clubsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Label("YÜ Kulüpleri", systemImage: "person.3.fill")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundStyle(CampusTheme.ink)
-                Spacer()
-                Text("KATIL · TANIŞ · ÜRET")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .tracking(0.7)
-                    .foregroundStyle(CampusTheme.ink.opacity(0.38))
-            }
-            .padding(.horizontal, 16)
+            // "KATIL · TANIŞ · ÜRET" kaldırıldı: bir şey anlatmıyordu, yalnızca
+            // başlığın yanını dolduruyordu.
+            Text("YÜ KULÜPLERİ")
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .tracking(1)
+                .foregroundStyle(CampusTheme.muted)
+                .padding(.horizontal, 16)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
@@ -418,47 +399,36 @@ struct SocialFeedView: View {
         .padding(.top, 14)
     }
 
+    /// Daraltılmış kart. Önceden 210×166'lık, içinde ikon rozeti, kulüp adı, sonraki
+    /// etkinlik, üye sayısı ve "Katıl" bağlantısı olan bir kutuydu; iki tanesi bile
+    /// ekranı dolduruyordu. Artık ad, üye sayısı ve üyelik durumu — gerisi kulübe
+    /// dokununca zaten açılıyor.
     private func clubCard(_ club: CampusClub) -> some View {
         let joined = appState.isJoined(to: club)
-        return VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Image(systemName: club.icon)
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 38, height: 38)
-                    .background(Color(hex: club.accentHex), in: Circle())
-                Spacer()
-                if joined {
-                    Label("ÜYESİN", systemImage: "checkmark")
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color(hex: club.accentHex))
-                }
+        let accent = Color(hex: club.accentHex)
+        return HStack(spacing: 9) {
+            Image(systemName: club.icon)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 30, height: 30)
+                .background(accent, in: Circle())
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(club.name)
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundStyle(CampusTheme.ink)
+                    .lineLimit(1)
+                Text(joined ? "Üyesin" : "\(club.memberCount) üye")
+                    .font(.system(size: 11, design: .rounded))
+                    .foregroundStyle(joined ? accent : CampusTheme.muted)
+                    .lineLimit(1)
             }
-            Text(club.name)
-                .font(.system(size: 15, weight: .bold, design: .rounded))
-                .foregroundStyle(CampusTheme.ink)
-                .lineLimit(2)
-            Text(club.nextEvent)
-                .font(.system(size: 11, weight: .semibold, design: .rounded))
-                .foregroundStyle(CampusTheme.ink.opacity(0.48))
-                .lineLimit(1)
-            HStack {
-                Label("\(club.memberCount + (joined ? 1 : 0))", systemImage: "person.2.fill")
-                Spacer()
-                Text(joined ? "Aç" : "Katıl")
-                    .fontWeight(.bold)
-            }
-            .font(.caption)
-            .foregroundStyle(joined ? Color(hex: club.accentHex) : CampusTheme.violet)
         }
-        .padding(14)
-        .frame(width: 210, height: 166, alignment: .topLeading)
-        .background(CampusTheme.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color(hex: club.accentHex).opacity(joined ? 0.55 : 0.16), lineWidth: joined ? 1.5 : 1)
-        }
-        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .padding(.horizontal, 11)
+        .frame(height: 52)
+        .background(CampusTheme.surface, in: Capsule())
+        .overlay(Capsule().stroke(joined ? accent.opacity(0.5) : CampusTheme.hairline))
+        .contentShape(Capsule())
     }
 
 }
