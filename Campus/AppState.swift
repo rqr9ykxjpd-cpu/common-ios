@@ -116,6 +116,20 @@ final class AppState {
         toast = AppToastMessage(text: UserFacingError.message(error, fallback: fallback), kind: .error)
     }
 
+    /// Sunucuya ulaşılamaması ile oturumun geçersiz olması ayrı şeyler; ilkinde
+    /// kullanıcıyı çıkışa zorlamıyoruz.
+    private func isNetworkFailure(_ error: Error) -> Bool {
+        let kodlar: Set<Int> = [
+            NSURLErrorNotConnectedToInternet, NSURLErrorTimedOut,
+            NSURLErrorNetworkConnectionLost, NSURLErrorCannotConnectToHost,
+            NSURLErrorCannotFindHost, NSURLErrorDNSLookupFailed,
+            NSURLErrorInternationalRoamingOff, NSURLErrorDataNotAllowed,
+            NSURLErrorSecureConnectionFailed
+        ]
+        let nsError = error as NSError
+        return nsError.domain == NSURLErrorDomain && kodlar.contains(nsError.code)
+    }
+
     private func isCancellation(_ error: Error) -> Bool {
         if error is CancellationError { return true }
         if let urlError = error as? URLError, urlError.code == .cancelled { return true }
@@ -268,8 +282,16 @@ final class AppState {
                 withAnimation(.smooth(duration: 0.45)) { route = .app }
             }
         } catch {
-            route = .welcome
-            showError(error, fallback: "Oturum geri yüklenemedi.")
+            // Ağın kopması oturumun bittiği anlamına gelmiyor. Kampüs wifi'ında bir istek
+            // zaman aşımına uğradığında kullanıcıyı karşılama ekranına atmak, girişi
+            // düşmüş gibi gösteriyordu; oysa oturum Keychain'de duruyor ve profil de
+            // yerelde önbellekli. Kullanıcıyı olduğu yerde bırakıp durumu söylüyoruz.
+            if isNetworkFailure(error) {
+                showError(error, fallback: "Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene.")
+            } else {
+                route = .welcome
+                showError(error, fallback: "Oturum geri yüklenemedi.")
+            }
         }
     }
 
