@@ -37,10 +37,15 @@ struct PlacesWallView: View {
                     } else {
                         ForEach(grouped, id: \.alan) { grup in
                             VStack(alignment: .leading, spacing: CampusTheme.Space.md) {
-                                Text(grup.alan.uppercased())
-                                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                                    .tracking(1.1)
-                                    .foregroundStyle(CampusTheme.muted)
+                                // Tek grup varsa başlık bir şey anlatmıyor, sadece yer
+                                // kaplıyor. Yalnızca gerçekten birden fazla alan olduğunda
+                                // gösteriliyor.
+                                if grouped.count > 1 {
+                                    Text(grup.alan.uppercased())
+                                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                                        .tracking(1.1)
+                                        .foregroundStyle(CampusTheme.muted)
+                                }
 
                                 VStack(spacing: 0) {
                                     ForEach(Array(grup.yerler.enumerated()), id: \.element.id) { index, place in

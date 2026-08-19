@@ -273,40 +273,30 @@ grant execute on function public.get_my_profile() to authenticated;
 -- ---------------------------------------------------------------- yerler
 --
 -- Fakülte adları Yalova Üniversitesi'nin kendi iletişim sayfasından alındı
--- (yalova.edu.tr/iletisim). "Aytaç" kampüs çevresinde bilinen bir nokta olarak
--- eklendi. Ad benzersiz olduğu için tekrar çalıştırmak yeni satır üretmez.
-
--- Alan etiketleri üç farklı isimle yazılmıştı: 'YÜ', 'Merkez Kampüs' ve
--- 'Merkez Yerleşke'. Üçü de aynı yeri anlatıyor ama duvarda üç ayrı başlık
--- olarak görünüyordu. Kampüsteki her şey tek başlık altında toplanıyor;
--- kampüs dışı olanlar ayrı kalıyor.
-update public.places set area = 'Merkez Yerleşke'
-where area in ('YÜ', 'Merkez Kampüs', 'Merkez Yerleşke');
+-- (yalova.edu.tr/iletisim).
+--
+-- Alan etiketleri tek bir değere indiriliyor. Eskiden aynı kampüs için üç ayrı
+-- etiket vardı ("YÜ", "Yalova", "Merkez Kampüs") ve buraya bir de "Merkez Yerleşke"
+-- eklenince liste dört başlığa bölünmüş görünüyordu — oysa bu noktaların hepsi
+-- merkez kampüste.
 
 insert into public.places (name, area) values
-  -- Fakülteler (adlar yalova.edu.tr/iletisim sayfasından)
-  ('Mühendislik Fakültesi',              'Merkez Yerleşke'),
-  ('Sanat ve Tasarım Fakültesi',         'Merkez Yerleşke'),
-  ('Hukuk Fakültesi',                    'Merkez Yerleşke'),
-  ('İnsan ve Toplum Bilimleri Fakültesi','Merkez Yerleşke'),
-  ('İlahiyat Fakültesi',                 'Merkez Yerleşke'),
-  ('Sağlık Bilimleri Fakültesi',         'Merkez Yerleşke'),
-  ('Spor Bilimleri Fakültesi',           'Merkez Yerleşke'),
-  ('Tıp Fakültesi',                      'Merkez Yerleşke'),
-  -- Yüksekokul ve enstitü
-  ('Yabancı Diller Yüksekokulu',         'Merkez Yerleşke'),
-  ('Yalova Meslek Yüksekokulu',          'Merkez Yerleşke'),
-  ('Lisansüstü Eğitim Enstitüsü',        'Merkez Yerleşke'),
-  -- Kampüsteki ortak alanlar
-  ('Aytaç',                              'Merkez Yerleşke'),
-  ('Yemekhane',                          'Merkez Yerleşke'),
-  ('Spor Salonu',                        'Merkez Yerleşke'),
-  ('Kampüs Bahçesi',                     'Merkez Yerleşke'),
-  -- Kampüs dışı
-  ('Yalova Sahil',                       'Kampüs dışı')
+  ('Aytaç Cafe',                          'Merkez Kampüs'),
+  ('Mühendislik Fakültesi',               'Merkez Kampüs'),
+  ('Sanat ve Tasarım Fakültesi',          'Merkez Kampüs'),
+  ('Hukuk Fakültesi',                     'Merkez Kampüs'),
+  ('İnsan ve Toplum Bilimleri Fakültesi', 'Merkez Kampüs'),
+  ('İlahiyat Fakültesi',                  'Merkez Kampüs'),
+  ('Sağlık Bilimleri Fakültesi',          'Merkez Kampüs'),
+  ('Spor Bilimleri Fakültesi',            'Merkez Kampüs'),
+  ('Tıp Fakültesi',                       'Merkez Kampüs'),
+  ('Yabancı Diller Yüksekokulu',          'Merkez Kampüs'),
+  ('Yalova Meslek Yüksekokulu',           'Merkez Kampüs'),
+  ('Yemekhane',                           'Merkez Kampüs'),
+  ('Spor Salonu',                         'Merkez Kampüs')
 on conflict (name) do nothing;
 
--- Kampüs dışında kalanların etiketi de netleşsin.
-update public.places set area = 'Kampüs dışı' where name in ('Şamdan Kafe', 'Yalova Sahil');
+-- Eskiden eklenmiş kayıtların etiketleri de tek değere çekiliyor.
+update public.places set area = 'Merkez Kampüs' where area <> 'Merkez Kampüs';
 
 commit;
