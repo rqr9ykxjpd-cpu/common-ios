@@ -5,6 +5,16 @@
 	<!-- Uygulamanın tüm metinleri Türkçe. Bunu bildirmezsek iOS uygulamayı İngilizce
 	     sayıyor ve sistemin sağladığı her şey - "Sign in with Apple" düğmesi, uyarı
 	     düğmeleri, tarih biçimleri - Türkçe telefonda bile İngilizce çıkıyor. -->
+	<!-- Bunlar olmadan iOS ilgili özelliğe erişildiği anda uygulamayı ÇÖKERTİYOR
+	     (açıklama metni kullanıcıya gösterilen izin penceresinde çıkıyor) ve
+	     App Store incelemesi de doğrudan reddediyor. Kamera düğmesi bu yüzden
+	     denenmemişti; denenseydi uygulama kapanacaktı. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Gönderi ve story paylaşırken fotoğraf çekebilmen için kameraya erişmemiz gerekiyor.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Profil fotoğrafını ve paylaşımlarını seçebilmen için galerine erişmemiz gerekiyor.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Çektiğin fotoğrafı galerine kaydedebilmek için izin gerekiyor.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>tr</string>
 	<!--
