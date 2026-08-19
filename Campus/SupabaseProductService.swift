@@ -451,8 +451,31 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         return row.backendComment
     }
 
+    /// Önce depolamadaki dosya, sonra satır.
+    ///
+    /// Eskiden satır silinince bir tetikleyici `storage.objects`'ten de siliyordu,
+    /// ama Supabase doğrudan silmeyi engelliyor ("Direct deletion from storage tables
+    /// is not allowed") ve tetikleyici hata verince silmenin tamamı geri sarılıyordu.
+    /// Dosya silme artık burada, Storage API üzerinden.
+    ///
+    /// Dosya silinemezse satır yine de siliniyor: kullanıcı açısından önemli olan
+    /// gönderinin kaybolması. Geride kalan dosyaya kimse erişemiyor, yalnızca yer
+    /// kaplıyor — bunun için silmeyi engellemek yanlış olurdu.
     func deletePost(_ postID: UUID) async throws {
+        await removeMedia(bucket: "post-media", table: "posts", rowID: postID)
         try await client.from("posts").delete(returning: .minimal).eq("id", value: postID).execute()
+    }
+
+    /// Satırın `media_path` alanını okuyup depolamadaki dosyayı siler.
+    private func removeMedia(bucket: String, table: String, rowID: UUID) async {
+        let rows: [MediaPathRow]? = try? await client
+            .from(table)
+            .select("media_path")
+            .eq("id", value: rowID)
+            .execute()
+            .value
+        guard let path = rows?.first?.mediaPath else { return }
+        _ = try? await client.storage.from(bucket).remove(paths: [path])
     }
 
     func deleteComment(_ commentID: UUID) async throws {
@@ -771,7 +794,8 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
             .order("name")
             .execute()
             .value
-        return rows.map { CampusPlace(id: $0.id, name: $0.name, area: $0.area) }
+        let places = rows.map { CampusPlace(id: $0.id, name: $0.name, area: $0.area) }
+        return CampusPlaceOrder.sorted(places)
     }
 
     func fetchMeetingRequests() async throws -> [MeetingRequest] {
@@ -872,6 +896,7 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
     }
 
     func deleteStory(_ storyID: UUID) async throws {
+        await removeMedia(bucket: "story-media", table: "stories", rowID: storyID)
         try await client.from("stories").delete(returning: .minimal).eq("id", value: storyID).execute()
     }
 
@@ -1728,4 +1753,9 @@ private struct ProfileBadgeRow: Decodable {
     let id: UUID
     /// Kolon yoksa nil gelir; bkz. `badges(for:)`.
     let badge: ProfileBadge?
+}
+
+private struct MediaPathRow: Decodable {
+    let mediaPath: String?
+    enum CodingKeys: String, CodingKey { case mediaPath = "media_path" }
 }

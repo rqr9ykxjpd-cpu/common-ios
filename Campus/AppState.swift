@@ -105,8 +105,21 @@ final class AppState {
     }
 
     /// Hata gösterir (kırmızı ünlem). Ham sunucu metni kullanıcıya çıkmaz; bkz. `UserFacingError`.
+    ///
+    /// İptal edilen görevler hata sayılmaz. `loadStories` gibi yüklemeler ekran
+    /// kapandığında ya da yeni bir yükleme başladığında iptal ediliyor; bu
+    /// `CancellationError` olarak geliyordu ve kullanıcı sebepsiz yere
+    /// "Story'ler yüklenemedi" görüyordu. Ortada bir arıza yok, sadece istek
+    /// artık gereksiz.
     func showError(_ error: Error, fallback: String) {
+        guard !isCancellation(error) else { return }
         toast = AppToastMessage(text: UserFacingError.message(error, fallback: fallback), kind: .error)
+    }
+
+    private func isCancellation(_ error: Error) -> Bool {
+        if error is CancellationError { return true }
+        if let urlError = error as? URLError, urlError.code == .cancelled { return true }
+        return (error as NSError).code == NSURLErrorCancelled
     }
 
     /// Kendi ürettiğimiz, hataya karşılık gelen mesajlar için.

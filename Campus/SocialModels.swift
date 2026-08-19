@@ -148,3 +148,26 @@ struct ProfileVisit: Identifiable, Hashable {
         self.visitedAt = visitedAt
     }
 }
+
+/// Yerlerin gösterim sırası.
+///
+/// Alfabetik sıra en çok kullanılan noktaları listenin ortasına gömüyordu; akıştaki
+/// şeritte yalnızca ilk birkaçı görünüyor ve oraya "Aytaç Cafe", "Hukuk Fakültesi"
+/// gibi rastgele düşen isimler geliyordu. Kampüste en çok buluşulan yerler başta.
+enum CampusPlaceOrder {
+    /// Başa alınacaklar, bu sırayla.
+    static let pinned = ["Şamdan Kafe", "İİBF", "Mühendislik Fakültesi"]
+
+    static func sorted(_ places: [CampusPlace]) -> [CampusPlace] {
+        places.sorted { first, second in
+            let firstIndex = pinned.firstIndex(of: first.name)
+            let secondIndex = pinned.firstIndex(of: second.name)
+            switch (firstIndex, secondIndex) {
+            case let (a?, b?): return a < b
+            case (_?, nil): return true
+            case (nil, _?): return false
+            case (nil, nil): return first.name.localizedCaseInsensitiveCompare(second.name) == .orderedAscending
+            }
+        }
+    }
+}
