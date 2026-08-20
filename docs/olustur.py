@@ -9,6 +9,10 @@ import re, pathlib
 KLASOR = pathlib.Path(__file__).parent
 SAYFALAR = [("gizlilik", "Gizlilik Politikası"), ("kosullar", "Kullanım Koşulları")]
 
+# İngilizce sürümler. Uygulamanın arayüzü Türkçe; bunlar App Store incelemesi ve
+# Türkçe bilmeyen okuyucular için. Türkçe metin esas kabul ediliyor.
+INGILIZCE = [("privacy", "Privacy Policy"), ("terms", "Terms of Use")]
+
 KALIP = """<!doctype html>
 <html lang="tr">
 <head>
@@ -78,6 +82,13 @@ for ad, baslik in SAYFALAR:
     (KLASOR / f"{ad}.html").write_text(
         KALIP.format(baslik=baslik, govde=donustur(kaynak)), encoding="utf-8")
     print(f"  {ad}.html üretildi")
+
+for ad, baslik in INGILIZCE:
+    kaynak = (KLASOR / "en" / f"{ad}.md").read_text(encoding="utf-8")
+    (KLASOR / "en" / f"{ad}.html").write_text(
+        KALIP.format(baslik=baslik, govde=donustur(kaynak)).replace('lang="tr"', 'lang="en"'),
+        encoding="utf-8")
+    print(f"  en/{ad}.html üretildi")
 
 # --- Uygulama içi metinler -------------------------------------------------
 # Aynı .md dosyalarından Swift üretiliyor. Metni koda elle kopyalamak, web

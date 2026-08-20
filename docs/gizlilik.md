@@ -57,7 +57,7 @@ doğrulayan asgari bilgiyi iletirler; şifreni hiçbir zaman görmeyiz.
 
 ## Ne kadar süre tutuyoruz
 
-Hesabın açık olduğu sürece. Story'ler 24 saat sonra kendiliğinden kaybolur.
+Hesabın açık olduğu sürece. Story'ler 10 saat sonra kendiliğinden kaybolur.
 
 Hesabını uygulama içinden **Profil → Hesabı kalıcı olarak sil** yolundan
 silebilirsin. Sildiğinde profilin, gönderilerin, story'lerin, mesajların,

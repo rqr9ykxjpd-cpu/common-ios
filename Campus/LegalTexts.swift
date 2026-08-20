@@ -32,7 +32,7 @@ enum LegalTexts {
         .paragraf("Veriler, altyapı sağlayıcımız Supabase'in sunucularında saklanır. Bağlantılar şifreli (HTTPS) kurulur. Fotoğraflarına yalnızca giriş yapmış kullanıcılar, süreli ve imzalı bağlantılarla erişebilir."),
         .paragraf("Giriş için Google ve Apple'ın kimlik doğrulama servislerini kullanıyoruz. Bu servisler kendi gizlilik politikalarına tabidir ve bize yalnızca kimliğini doğrulayan asgari bilgiyi iletirler; şifreni hiçbir zaman görmeyiz."),
         .altbaslik("Ne kadar süre tutuyoruz"),
-        .paragraf("Hesabın açık olduğu sürece. Story'ler 24 saat sonra kendiliğinden kaybolur."),
+        .paragraf("Hesabın açık olduğu sürece. Story'ler 10 saat sonra kendiliğinden kaybolur."),
         .paragraf("Hesabını uygulama içinden Profil → Hesabı kalıcı olarak sil yolundan silebilirsin. Sildiğinde profilin, gönderilerin, story'lerin, mesajların, fotoğrafların ve eşleşmelerin sunuculardan kaldırılır. Bu işlem geri alınamaz."),
         .altbaslik("Yaş sınırı"),
         .paragraf("Common 18 yaşından küçüklerin kullanımına kapalıdır. 18 yaşından küçük olduğunu öğrendiğimiz hesapları kapatırız."),

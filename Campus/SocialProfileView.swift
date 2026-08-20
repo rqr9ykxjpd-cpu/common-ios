@@ -6,6 +6,7 @@ struct SocialProfileView: View {
     @State private var showVisits = false
     @State private var showTerms = false
     @State private var showPrivacy = false
+    @Environment(\.openURL) private var openURL
     @State private var showComposer = false
     @State private var showMeetingRequests = false
     @State private var showSignOutAlert = false
@@ -313,6 +314,15 @@ struct SocialProfileView: View {
                 listDivider
                 listRow(icon: "hand.raised", title: "Gizlilik Politikası",
                         detail: "Hangi bilgileri topluyoruz, ne yapıyoruz") { showPrivacy = true }
+                listDivider
+                // Kullanıcı içeriği olan uygulamalarda Apple ulaşılabilir bir
+                // iletişim adresi arıyor; kullanıcının da bir sorun olduğunda
+                // yazacak bir yeri olmalıydı.
+                listRow(icon: "envelope", title: "İletişim ve destek",
+                        detail: "Sorun, öneri veya şikayet için bize yaz") {
+                    guard let url = Self.destekURL else { return }
+                    openURL(url)
+                }
             }
             .background(CampusTheme.surface, in: RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous).stroke(CampusTheme.hairline))
@@ -334,6 +344,9 @@ struct SocialProfileView: View {
 
     /// Liste satırı. İkonlar nötr: asit yeşili kartlar iki ayrı satırda kullanılıyordu
     /// ve marka rengi her yerde olunca vurgu olmaktan çıkıyordu.
+    /// Destek adresi politika metinlerinde de yazan adresle aynı.
+    private static let destekURL = URL(string: "mailto:220207018@yalova.edu.tr?subject=Common%20destek")
+
     private func listRow(
         icon: String,
         title: String,
