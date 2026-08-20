@@ -519,6 +519,13 @@ struct PostCard: View {
     /// `ProfileMedia` yükleyince buraya yazıyor.
     @State private var remoteImageSize: CGSize?
 
+    /// Başlığın ikinci satırı. Yer varsa yer, yoksa kişinin bölümü ve sınıfı.
+    private var altSatir: String {
+        if let place = post.place { return "\(place.name) · \(place.area)" }
+        let parcalar = [post.author.department, post.author.year].filter { !$0.isEmpty }
+        return parcalar.isEmpty ? post.author.university : parcalar.joined(separator: " · ")
+    }
+
     private var imageSize: CGSize? {
         if let data = post.localImageData, let image = UIImage(data: data) { return image.size }
         if let name = post.imageAssetName, let image = UIImage(named: name) { return image.size }
@@ -540,10 +547,14 @@ struct PostCard: View {
                                 // görünüyordu ve işaret hiçbir şey ifade etmiyordu.
                                 ProfileBadgeLabel(badge: post.author.badge, compact: true)
                             }
-                            if let place = post.place {
-                                Text("\(place.name) · \(place.area)")
-                                    .font(.system(size: 10, weight: .medium, design: .rounded)).foregroundStyle(CampusTheme.ink.opacity(0.45))
-                            }
+                            // İkinci satır eskiden yalnızca gönderide yer varsa
+                            // çıkıyordu; yer yokken 42 puntoluk yuvarlağın yanında
+                            // tek satır kalıyor ve satır yüksekliği tutmuyordu.
+                            // Yer yoksa bölüm ve sınıf yazılıyor, satır hep iki.
+                            Text(altSatir)
+                                .font(.system(size: 10, weight: .medium, design: .rounded))
+                                .foregroundStyle(CampusTheme.ink.opacity(0.45))
+                                .lineLimit(1)
                         }
                     }
                     .foregroundStyle(CampusTheme.ink)
