@@ -38,7 +38,6 @@ struct PaywallView: View {
                     ozelKullaniciNotu
                     planSecimi
                     elYazisiNot
-                    yasalDipnot
                 }
                 .padding(.horizontal, 26)
                 // Alttaki eylem düğmesi `safeAreaInset` ile duruyor; yasal dipnot
@@ -67,27 +66,23 @@ struct PaywallView: View {
     }
 
     private var baslik: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 8) {
             Text("COMMON")
                 .font(.system(size: 11, weight: .black, design: .rounded))
                 .tracking(2)
                 .foregroundStyle(CampusTheme.acid)
 
-            Text(quota?.title ?? "Kampüs daha\nbüyük olsun.")
-                .font(.system(size: 36, weight: .bold, design: .serif))
+            // Tek satır ve alt açıklama yok: her şeyin tek ekrana sığması için
+            // en pahalı yer başlıktı.
+            Text(quota?.title.replacingOccurrences(of: "\n", with: " ") ?? "Sınırları kaldır.")
+                .font(.system(size: 32, weight: .bold, design: .serif))
                 .foregroundStyle(.white)
-                .lineSpacing(2)
-
-            Text(quota?.detail ?? "Ücretsiz kullanmaya devam edebilirsin. Plus ve Pro yalnızca sınırları kaldırıyor.")
-                .font(.system(size: 15, design: .rounded))
-                .foregroundStyle(.white.opacity(0.6))
-                .lineSpacing(3)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
         }
-        .padding(.top, 4)
-        .padding(.bottom, 18)
+        .padding(.bottom, 14)
     }
 
-    /// Kart değil, tipografik bir karşılaştırma. İki satır, tek fark.
     /// Üç kademeyi yan yana gösteren tablo. Kart yığını değil, gazete tablosu
     /// gibi: ince ayraçlar, sakin tipografi. Satırlar `PlanFeature.all`'dan
     /// geliyor — kuralı değiştirince tablo kendiliğinden güncelleniyor.
@@ -110,8 +105,10 @@ struct PaywallView: View {
                     Rectangle().fill(.white.opacity(0.09)).frame(height: 1)
                 }
                 HStack(spacing: 0) {
-                    Text(ozellik.label)
-                        .font(.system(size: 13, design: .rounded))
+                    Text(ozellik.label.replacingOccurrences(of: "\n", with: " "))
+                        .font(.system(size: 12.5, design: .rounded))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
                         .foregroundStyle(.white.opacity(0.75))
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -119,10 +116,10 @@ struct PaywallView: View {
                         hucre(ozellik.value(kademe), kademe: kademe)
                     }
                 }
-                .padding(.vertical, 10)
+                .padding(.vertical, 6)
             }
         }
-        .padding(.bottom, 10)
+        .padding(.bottom, 4)
     }
 
     private var sutunGenisligi: CGFloat { 62 }
@@ -142,21 +139,21 @@ struct PaywallView: View {
     /// söylüyor. Turuncu, sayfadaki tek sıcak renk — göz doğrudan buraya gidiyor.
     private var ozelKullaniciNotu: some View {
         Text("bu verilere erişmek için özel\nkullanıcılarımızdan olmalısın")
-            .font(.custom("BradleyHandITCTT-Bold", size: 20))
+            .font(.custom("BradleyHandITCTT-Bold", size: 16))
             .foregroundStyle(CampusTheme.coral)
             .lineSpacing(2)
             .rotationEffect(.degrees(-1.2))
             .padding(.top, 6)
-            .padding(.bottom, 24)
+            .padding(.bottom, 10)
     }
 
     /// Plan seçimi. Büyük kartlar yerine iki satır: seçili olan yanıyor.
     private var planSecimi: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 8) {
             planSatiri(.plus, fiyat: plusFiyat, not: nil)
             planSatiri(.pro, fiyat: proFiyat, not: "sınırsız")
         }
-        .padding(.bottom, 26)
+        .padding(.bottom, 14)
     }
 
     private func planSatiri(_ kademe: SubscriptionTier, fiyat: String, not: String?) -> some View {
@@ -190,7 +187,7 @@ struct PaywallView: View {
                 }
             }
             .padding(.horizontal, 16)
-            .frame(height: 64)
+            .frame(height: 50)
             .background(aktif ? .white.opacity(0.07) : .clear, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -204,22 +201,27 @@ struct PaywallView: View {
     /// Sayfanın kenarına elle iliştirilmiş bir not gibi. Apple'ın istediği
     /// zorunlu metinlerin arasında değil, kendi başına duruyor.
     private var elYazisiNot: some View {
+        // Tek satıra sıkıştırılıyor: sayfanın tamamı kaydırmadan görünsün diye
+        // metni kısaltmak yerine ölçeği düşürüyoruz, cümle aynen kalıyor.
         Text("merak etme, kimse senin Plus olduğunu bilmeyecek ☺")
-            .font(.custom("BradleyHandITCTT-Bold", size: 19))
+            .font(.custom("BradleyHandITCTT-Bold", size: 16))
             .foregroundStyle(CampusTheme.acid.opacity(0.85))
+            .lineLimit(1)
+            .minimumScaleFactor(0.72)
             .rotationEffect(.degrees(-1.5))
-            .padding(.bottom, 28)
+            .padding(.top, 2)
+            .padding(.bottom, 6)
     }
 
     /// Apple'ın abonelik ekranlarında zorunlu tuttuğu bilgiler.
     private var yasalDipnot: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Abonelik otomatik yenilenir. Dönem bitmeden en az 24 saat önce iptal etmezsen her hafta yeniden ücretlendirilirsin. İptali App Store hesap ayarlarından yapabilirsin.")
-                .font(.system(size: 11, design: .rounded))
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Haftalık abonelik otomatik yenilenir; dönem bitmeden 24 saat önce iptal etmezsen yeniden ücretlendirilirsin. İptal: App Store hesap ayarları.")
+                .font(.system(size: 10, design: .rounded))
                 .foregroundStyle(.white.opacity(0.4))
                 .lineSpacing(2)
 
-            HStack(spacing: 14) {
+            HStack(spacing: 12) {
                 Button("Satın alımları geri yükle") {}
                 Text("·").foregroundStyle(.white.opacity(0.25))
                 Button("Koşullar") {}
@@ -232,6 +234,17 @@ struct PaywallView: View {
     }
 
     private var eylem: some View {
+        VStack(spacing: 10) {
+            eylemDugmesi
+            yasalDipnot
+        }
+        .padding(.horizontal, 26)
+        .padding(.top, 10)
+        .padding(.bottom, 6)
+        .background(CampusTheme.canvasDark.opacity(0.97))
+    }
+
+    private var eylemDugmesi: some View {
         Button {} label: {
             Text("\(secili.title.uppercased())'A GEÇ")
                 .font(.system(size: 13, weight: .black, design: .rounded))
@@ -242,9 +255,5 @@ struct PaywallView: View {
                 .background(CampusTheme.acid, in: Capsule())
         }
         .buttonStyle(PressableStyle())
-        .padding(.horizontal, 26)
-        .padding(.top, 12)
-        .padding(.bottom, 10)
-        .background(CampusTheme.canvasDark.opacity(0.94))
     }
 }
