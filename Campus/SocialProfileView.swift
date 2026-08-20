@@ -8,6 +8,7 @@ struct SocialProfileView: View {
     @State private var showPrivacy = false
     @State private var showPaywall = false
     @State private var showPhoto = false
+    @State private var enUstte = true
     @Environment(\.openURL) private var openURL
     @State private var showComposer = false
     @State private var showMeetingRequests = false
@@ -24,6 +25,7 @@ struct SocialProfileView: View {
 
     var body: some View {
         NavigationStack {
+            ScrollViewReader { proxy in
             ScrollView {
                 // Ekran dört bölgeye ayrıldı. Önceden dokuz bölüm vardı ve hepsi aynı
                 // yuvarlak kartın içinde yüzüyordu — aynı köşe yarıçapı, aynı çerçeve,
@@ -38,6 +40,33 @@ struct SocialProfileView: View {
                 .padding(.horizontal, CampusTheme.Space.lg)
                 .padding(.top, CampusTheme.Space.sm)
                 .padding(.bottom, CampusTheme.Space.xxl)
+            }
+            // Sayfanın burada bittiği sanılıyordu: gönderi yokken boş kart ekranı
+            // dolduruyor ve altındaki bölümlerden hiçbiri görünmüyordu.
+            .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, yeni in
+                let ustte = yeni < 40
+                if ustte != enUstte { withAnimation(.easeOut(duration: 0.2)) { enUstte = ustte } }
+            }
+            .overlay(alignment: .bottom) {
+                if enUstte {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.35)) { proxy.scrollTo("hesabin", anchor: .top) }
+                    } label: {
+                        Label("Ayarlar ve daha fazlası", systemImage: "chevron.down")
+                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .foregroundStyle(CampusTheme.ink)
+                            .padding(.horizontal, 14).frame(height: 38)
+                            .background(CampusTheme.surface, in: Capsule())
+                            .overlay(Capsule().stroke(CampusTheme.hairline))
+                            .shadow(color: .black.opacity(0.10), radius: 10, y: 4)
+                    }
+                    .buttonStyle(PressableStyle())
+                    // Sekme çubuğu kaydırma alanının üstüne çiziliyor; ipucu
+                    // onun arkasında kalmasın diye yukarıda duruyor.
+                    .padding(.bottom, 96)
+                    .transition(.opacity)
+                }
+            }
             }
             .background(CampusTheme.paper.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
@@ -266,7 +295,7 @@ struct SocialProfileView: View {
         return VStack(alignment: .leading, spacing: CampusTheme.Space.md) {
             // Bölüm başlıkları eklendi: sayfa başlıksız bir liste yığınıydı ve
             // aşağıda bir şey olduğu anlaşılmıyordu, kullanıcı hiç kaydırmıyordu.
-            AppSectionHeader(title: "Hesabın")
+            AppSectionHeader(title: "Hesabın").id("hesabin")
             VStack(spacing: 0) {
                 listRow(
                     icon: "rectangle.portrait.on.rectangle.portrait.angled",
@@ -561,9 +590,9 @@ struct SocialProfileView: View {
             AppSectionHeader(title: "Gönderilerim")
             if appState.currentUserPosts.isEmpty {
                 AppSurface {
-                    VStack(spacing: 10) {
+                    VStack(spacing: 8) {
                         Image(systemName: "photo.on.rectangle.angled")
-                            .font(.system(size: 24, weight: .regular))
+                            .font(.system(size: 20, weight: .regular))
                             .foregroundStyle(CampusTheme.violet)
                         // El yazısı, sayfanın geri kalanının aksine bir davet gibi
                         // dursun: boş durum bir hata değil, bir başlangıç.
@@ -592,7 +621,7 @@ struct SocialProfileView: View {
                         .padding(.top, 4)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
+                    .padding(.vertical, 6)
                 }
             } else {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 3), count: 3), spacing: 3) {
