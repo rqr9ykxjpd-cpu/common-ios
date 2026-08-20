@@ -29,10 +29,15 @@ struct CampusApp: App {
             if arguments.contains("-compose") { state.opensComposer = true }
             if arguments.contains("-club") { state.opensFirstClub = true }
             if arguments.contains("-paywall") { state.opensPaywall = true }
+            if arguments.contains("-pronote") { state.opensProNote = true }
             // `-tier plus` / `-tier pro`: kademeye bağlı ekranları görmek için.
             if let i = arguments.firstIndex(of: "-tier"), i + 1 < arguments.count {
                 state.tier = ["plus": .plus, "pro": .pro][arguments[i + 1]] ?? .free
             }
+            // Örnek veri modunda doğrudan uygulamaya giriyoruz. Eskiden açılış
+            // yolu cihazda saklı oturum bayrağına bakıyordu; ekran görüntüsü
+            // alırken bazen karşılama ekranı çıkıyor, bazen çıkmıyordu.
+            if !onboarding { state.route = .app }
             if onboarding {
                 let adlar: [String: AppState.OnboardingStep] = [
                     "identity": .identity, "preferences": .preferences,

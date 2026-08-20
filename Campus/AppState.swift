@@ -278,6 +278,7 @@ final class AppState {
     var opensFirstClub = false
     /// Yalnızca geliştirme derlemesinde: Plus ekranını açar (tasarım kontrolü).
     var opensPaywall = false
+    var opensProNote = false
     /// `-onboarding <adım>` ile açıldığında oturum geri yüklemesi rotayı ezmesin diye.
     /// Yalnızca geliştirme derlemesinde var.
     var skipsSessionRestore = false

@@ -156,6 +156,9 @@ struct SocialFeedView: View {
             .sheet(isPresented: Binding(get: { appState.opensPaywall }, set: { appState.opensPaywall = $0 })) {
                 PaywallView()
             }
+            .sheet(isPresented: Binding(get: { appState.opensProNote }, set: { appState.opensProNote = $0 })) {
+                ProUpsellSheet().presentationDetents([.height(320)])
+            }
 #endif
             .fullScreenCover(item: Binding(get: { appState.selectedStory }, set: { appState.selectedStory = $0 })) { story in
                 StoryViewer(

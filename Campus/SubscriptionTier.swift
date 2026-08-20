@@ -27,11 +27,18 @@ enum SubscriptionTier: Int, Comparable, Codable {
     /// Bu sayı burada yalnızca arayüzde göstermek için; asıl sınır sunucuda
     /// uygulanıyor. İstemcideki bir sayaç, uygulamayı kurcalayan biri için
     /// hiçbir engel değil.
-    var likeQuota: Int {
+    /// `nil` sınırsız demek (Pro).
+    var likeQuota: Int? {
         switch self {
         case .free: 5
-        case .plus, .pro: 10
+        case .plus: 10
+        case .pro: nil
         }
+    }
+
+    /// Karşılaştırma listesinde görünen metin.
+    var quotaText: String {
+        likeQuota.map { "\($0) kişi" } ?? "Sınırsız"
     }
 
     /// Kendi mesajını silip düzenleyebilme.
