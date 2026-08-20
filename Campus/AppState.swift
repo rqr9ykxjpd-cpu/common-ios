@@ -834,9 +834,9 @@ final class AppState {
         let storyID = story.id
         let isMine = story.isMine
         Task {
-            // Kendi story'ni açmak izlenme sayılmıyordu diye bir kural yoktu: sahibi
-            // de izleyici olarak kaydediliyor ve kendi listesinde kendini görüyordu.
-            if !isMine { try? await service.markStoryViewed(storyID) }
+            // Sahibinin kendi açışları da sayılıyor: kullanıcı bunu bilerek istedi,
+            // sayacın çalıştığını tek hesapla da görebilmek için.
+            try? await service.markStoryViewed(storyID)
             // İzleyen listesini yalnızca story sahibi görebilir; başkasının story'sinde
             // bu sorgu boş döneceği için hiç yapmıyoruz.
             guard isMine else { return }
