@@ -757,7 +757,9 @@ final class AppState {
     }
 
     var currentUserProfile: StudentProfile {
-        StudentProfile(id: currentUserID, name: draft.name.isEmpty ? "Cem" : draft.name, age: draft.age, university: draft.university, department: draft.department.isEmpty ? "Öğrenci" : draft.department, year: draft.year, bio: draft.bio, interests: Array(draft.interests).sorted(), imageURL: avatarURL, compatibility: 100, isVerified: true)
+        // Yedek ad "Cem"di: adını henüz girmemiş bir kullanıcı kendini başkasının
+        // adıyla görüyordu. Rozet de aktarılmıyordu.
+        StudentProfile(id: currentUserID, name: draft.name.isEmpty ? "Sen" : draft.name, age: draft.age, university: draft.university, department: draft.department.isEmpty ? "Öğrenci" : draft.department, year: draft.year, bio: draft.bio, interests: Array(draft.interests).sorted(), imageURL: avatarURL, compatibility: 100, isVerified: true, badge: myBadge)
     }
 
     /// Keşifte başkalarının gördüğü haliyle kendi kartın. Uyum yüzdesi ve nedenleri karşı tarafa
@@ -952,7 +954,12 @@ final class AppState {
     /// aynı sahte kişiler gösteriliyordu.
     func peopleAtPlace(_ place: CampusPlace) async -> [StudentProfile] {
         do {
-            return try await service.fetchPeopleAtPlace(place.id)
+            let digerleri = try await service.fetchPeopleAtPlace(place.id)
+            // Sunucu sorgusu kişinin kendisini eliyor. "Buradayım" dedikten sonra
+            // listede kendini görmemek, görünür olup olmadığını belirsiz bırakıyor:
+            // insan kendi adını görene kadar işe yaradığından emin olamıyor.
+            guard currentVisiblePlace?.id == place.id else { return digerleri }
+            return [currentUserProfile] + digerleri.filter { $0.id != currentUserID }
         } catch {
             showError(error, fallback: "Buradaki kişiler yüklenemedi.")
             return []
