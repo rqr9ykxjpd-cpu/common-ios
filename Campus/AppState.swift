@@ -764,6 +764,9 @@ final class AppState {
             galleryImageURLs: galleryURLs,
             compatibility: 0,
             isVerified: true,
+            // Rozet hiç aktarılmıyordu: kullanıcı kendi kartına baktığında
+            // kurucu/moderatör rozetini göremiyordu.
+            badge: myBadge,
             compatibilityReasons: [],
             relationshipIntent: draft.relationshipIntent,
             activeLabel: "Yakın zamanda aktif"

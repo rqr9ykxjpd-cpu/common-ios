@@ -63,10 +63,16 @@ struct DiscoveryCard: View {
                                     .background(.black.opacity(0.35), in: Capsule())
                             }
                             Spacer()
-                            if let badgeIcon = profile.badge.systemImage {
-                                Image(systemName: badgeIcon)
-                                    .foregroundStyle(CampusTheme.acid)
-                                    .accessibilityLabel(profile.badge.title ?? "")
+                            // Çıplak bir ikon ne anlama geldiğini söylemiyordu.
+                            // Rozetler zaten çok az hesapta olduğu için yazılı
+                            // etiket kartı kalabalıklaştırmıyor.
+                            if let badgeIcon = profile.badge.systemImage,
+                               let badgeTitle = profile.badge.title {
+                                Label(badgeTitle, systemImage: badgeIcon)
+                                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                                    .foregroundStyle(CampusTheme.ink)
+                                    .padding(.horizontal, 11).frame(height: 30)
+                                    .background(CampusTheme.acid, in: Capsule())
                             }
                         }
                         Spacer()

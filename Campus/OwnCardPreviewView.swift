@@ -46,12 +46,15 @@ struct OwnCardPreviewView: View {
                             missingList
                         }
 
-                        editButton
                     }
                     .padding(.vertical, CampusTheme.Space.lg)
                 }
             }
         }
+        // Sayfanın aşağı çekilerek kapandığını gösteren tutamak. Elle çizgi
+        // çizmek yerine sistemin kendi göstergesi kullanılıyor: kullanıcı bu
+        // hareketi zaten başka uygulamalardan tanıyor.
+        .presentationDragIndicator(.visible)
         .fullScreenCover(isPresented: $showEditor) {
             NavigationStack { ProfileEditorView() }
         }
@@ -65,15 +68,13 @@ struct OwnCardPreviewView: View {
             Haptics.impact(.light)
             showEditor = true
         } label: {
-            Text("KARTINI DÜZENLE")
-                .font(.system(size: 12, weight: .black, design: .rounded)).tracking(1)
+            Label("Düzenle", systemImage: "pencil")
+                .font(.system(size: 13, weight: .bold, design: .rounded))
                 .foregroundStyle(CampusTheme.ink)
-                .frame(maxWidth: .infinity).frame(height: 52)
+                .padding(.horizontal, 14).frame(height: 44)
                 .background(CampusTheme.acid, in: Capsule())
         }
         .buttonStyle(PressableStyle())
-        .padding(.horizontal, CampusTheme.Space.lg)
-        .padding(.top, CampusTheme.Space.sm)
     }
 
     private var header: some View {
@@ -86,6 +87,7 @@ struct OwnCardPreviewView: View {
                     .foregroundStyle(.white.opacity(0.5))
             }
             Spacer()
+            editButton
             Button { dismiss() } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 15, weight: .bold))

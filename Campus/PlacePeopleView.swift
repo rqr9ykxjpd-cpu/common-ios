@@ -139,6 +139,7 @@ struct SocialPersonDetailView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
     @State private var conversationRoute: ConversationRoute?
+    @State private var selectedPost: SocialPost?
 
     private var visiblePlace: CampusPlace? { place }
     private var pendingRequest: MeetingRequest? {
@@ -159,9 +160,14 @@ struct SocialPersonDetailView: View {
                     VStack(alignment: .leading, spacing: 14) {
                         HStack(alignment: .firstTextBaseline) {
                             Text("\(profile.name), \(profile.age)").editorialTitle(38)
-                            if let badgeIcon = profile.badge.systemImage {
-                                Image(systemName: badgeIcon).foregroundStyle(CampusTheme.violet)
-                                    .accessibilityLabel(profile.badge.title ?? "")
+                            // Çıplak ikon ne anlama geldiğini söylemiyordu.
+                            if let badgeIcon = profile.badge.systemImage,
+                               let badgeTitle = profile.badge.title {
+                                Label(badgeTitle, systemImage: badgeIcon)
+                                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                                    .foregroundStyle(CampusTheme.ink)
+                                    .padding(.horizontal, 10).frame(height: 26)
+                                    .background(CampusTheme.acid, in: Capsule())
                             }
                         }
                         Text("\(profile.department) · \(profile.university) · \(profile.year)")
@@ -190,6 +196,8 @@ struct SocialPersonDetailView: View {
                                     .overlay(Capsule().stroke(CampusTheme.ink.opacity(0.18)))
                             }
                         }
+
+                        personPosts
 
                         Button { openConversation() } label: {
                             Label("Mesaj gönder", systemImage: "message.fill")
@@ -264,6 +272,73 @@ struct SocialPersonDetailView: View {
         .task { appState.recordProfileVisit(profile) }
         .fullScreenCover(item: $conversationRoute) { route in
             NavigationStack { ConversationView(conversationID: route.id) }
+        }
+        .sheet(item: $selectedPost) { secili in
+            let guncel = appState.posts.first(where: { $0.id == secili.id }) ?? secili
+            NavigationStack {
+                ScrollView {
+                    PostCard(
+                        post: guncel,
+                        toggleLike: { appState.toggleLike(postID: guncel.id) },
+                        toggleSaved: { appState.toggleSaved(postID: guncel.id) },
+                        openProfile: {},
+                        delete: {
+                            appState.deletePost(guncel.id)
+                            selectedPost = nil
+                        }
+                    )
+                    .padding(.vertical, CampusTheme.Space.md)
+                }
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Kapat") { selectedPost = nil }
+                    }
+                }
+            }
+        }
+    }
+
+    /// Kişinin paylaşımları. Profil ekranı yalnızca kartı gösteriyordu; kimin ne
+    /// paylaştığını görmeden o kişi hakkında fikir edinmek zor. Sunucuda tek bir
+    /// kişinin gönderilerini çeken bir yol yok, o yüzden yüklü akıştan süzülüyor —
+    /// yeni bir sorgu ve yeni bir izin kuralı gerektirmiyor.
+    @ViewBuilder private var personPosts: some View {
+        let gonderiler = appState.posts.filter { $0.author.id == profile.id }
+        if !gonderiler.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("PAYLAŞIMLARI")
+                    .font(.system(size: 11, weight: .bold, design: .rounded)).tracking(0.7)
+                    .foregroundStyle(CampusTheme.ink.opacity(0.45))
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 3), count: 3), spacing: 3) {
+                    ForEach(gonderiler) { post in
+                        Button {
+                            Haptics.impact(.light)
+                            selectedPost = post
+                        } label: {
+                            Color.clear
+                                .aspectRatio(1, contentMode: .fit)
+                                .overlay {
+                                    if post.imageURL != nil || post.imageAssetName != nil || post.localImageData != nil {
+                                        ProfileMedia(url: post.imageURL, data: post.localImageData, assetName: post.imageAssetName)
+                                    } else {
+                                        Text(post.caption)
+                                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                                            .foregroundStyle(CampusTheme.ink)
+                                            .lineLimit(5)
+                                            .padding(10)
+                                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                                            .background(CampusTheme.acid.opacity(0.35))
+                                    }
+                                }
+                                .clipped()
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(PressableStyle())
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: CampusTheme.Radius.control))
+            }
         }
     }
 
