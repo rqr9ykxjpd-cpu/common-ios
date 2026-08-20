@@ -67,6 +67,12 @@ final class AppState {
     var profiles: [StudentProfile] = []
     var discoveryFilters = DiscoveryFilters()
     var isLoadingDiscovery = false
+    /// Akış ve story'ler ilk kez yüklenirken. Boş liste ile "henüz yüklenmedi"
+    /// ayırt edilemiyordu: akış yüklenirken ekranda "Akış henüz boş" yazıyordu,
+    /// yani kullanıcıya yanlış bilgi veriliyordu.
+    var isLoadingFeed = false
+    var isLoadingStories = false
+    var isLoadingConversations = false
     var isReactingToProfile = false
     var discoveryError: String?
     var conversations: [Conversation] = []
@@ -547,6 +553,8 @@ final class AppState {
         // yarışıyordu: akış önce biterse bütün gönderiler konum etiketini kaybediyor ve
         // kullanıcı akışı elle yenileyene kadar geri gelmiyordu.
         if places.isEmpty { await loadPlaces() }
+        isLoadingFeed = true
+        defer { isLoadingFeed = false }
         do {
             posts = try await service.fetchFeed().map(socialPost(from:))
         } catch {
@@ -574,6 +582,8 @@ final class AppState {
         // Kendi süresi dolmuş story'lerini de temizliyoruz: aksi halde her paylaşım
         // depolamada kalıcı olarak yer kaplıyor. En-iyi-çaba, sonucu beklenmiyor.
         Task { await service.purgeMyExpiredStories() }
+        isLoadingStories = true
+        defer { isLoadingStories = false }
         do {
             stories = try await service.fetchStories()
         } catch {
@@ -1019,6 +1029,8 @@ final class AppState {
     }
 
     func loadConversations() async {
+        isLoadingConversations = true
+        defer { isLoadingConversations = false }
         do {
             conversations = try await service.fetchConversations()
         } catch {

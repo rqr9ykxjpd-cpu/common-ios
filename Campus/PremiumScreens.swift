@@ -551,7 +551,17 @@ struct PremiumMatchesView: View {
                     newConnections
                     meetSuggestions
                     AppSectionHeader(title: "Mesajlar")
-                    if appState.conversations.isEmpty {
+                    if appState.conversations.isEmpty, appState.isLoadingConversations {
+                        // Yüklenirken "henüz sohbetin yok" yazıyordu.
+                        VStack(spacing: 12) {
+                            ProgressView().tint(CampusTheme.violet)
+                            Text("Sohbetler yükleniyor…")
+                                .font(.system(size: 13, design: .rounded))
+                                .foregroundStyle(CampusTheme.muted)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 50)
+                    } else if appState.conversations.isEmpty {
                         emptyConversations
                     } else {
                         LazyVStack(spacing: 0) {

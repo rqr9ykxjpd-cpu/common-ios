@@ -78,7 +78,18 @@ struct SocialFeedView: View {
                             placeStrip
                             clubsSection
                             Divider().opacity(0.35).padding(.vertical, 14)
-                            if visiblePosts.isEmpty {
+                            if visiblePosts.isEmpty, appState.isLoadingFeed {
+                                // Yüklenirken "Akış henüz boş" yazıyordu; kullanıcı
+                                // gönderisinin silindiğini sanabiliyordu.
+                                VStack(spacing: 12) {
+                                    ProgressView().tint(CampusTheme.violet)
+                                    Text("Akış yükleniyor…")
+                                        .font(.system(size: 13, design: .rounded))
+                                        .foregroundStyle(CampusTheme.muted)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 60)
+                            } else if visiblePosts.isEmpty {
                                 feedEmptyState
                             } else {
                                 ForEach(visiblePosts) { post in
@@ -212,6 +223,21 @@ struct SocialFeedView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
                 AddStoryBubble { showStoryComposer = true }
+                // Story'ler gelene kadar şerit "kimse story atmamış" gibi
+                // duruyordu. Yer tutucu daireler, gelmekte olduğunu gösteriyor.
+                if appState.stories.isEmpty, appState.isLoadingStories {
+                    ForEach(0..<3, id: \.self) { _ in
+                        VStack(spacing: 6) {
+                            Circle()
+                                .fill(CampusTheme.ink.opacity(0.07))
+                                .frame(width: 62, height: 62)
+                                .overlay { ProgressView().tint(CampusTheme.muted).scaleEffect(0.7) }
+                            Capsule()
+                                .fill(CampusTheme.ink.opacity(0.07))
+                                .frame(width: 40, height: 9)
+                        }
+                    }
+                }
                 ForEach(appState.stories) { story in
                     Button {
                         appState.selectedStory = story
