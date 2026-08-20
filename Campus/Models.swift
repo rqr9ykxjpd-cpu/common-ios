@@ -1,3 +1,4 @@
+import SwiftUI
 /// Profilde görünen işaret.
 ///
 /// Daha önce mavi tik `is_verified` alanından geliyordu — ama o alan aynı zamanda
@@ -15,6 +16,23 @@ enum ProfileBadge: String, Codable, Hashable {
     init(from decoder: Decoder) throws {
         let raw = try decoder.singleValueContainer().decode(String.self)
         self = ProfileBadge(rawValue: raw) ?? .none
+    }
+
+    /// Rozet zemini. Kurucu, moderatörle aynı görünmemeli: ikisi de aynı yeşil
+    /// kapsülken "kurucu" olmanın ayırt edici bir yanı kalmıyordu.
+    var accent: Color {
+        switch self {
+        case .none: .clear
+        case .verified: CampusTheme.violet
+        case .moderator: CampusTheme.violet
+        case .founder: CampusTheme.acid
+        }
+    }
+
+    /// Zemine göre okunur yazı rengi. `acid` açık olduğu için üstüne sabit koyu,
+    /// `violet` koyu olduğu için üstüne beyaz.
+    var accentForeground: Color {
+        self == .founder ? CampusTheme.onAccent : .white
     }
 
     var systemImage: String? {
