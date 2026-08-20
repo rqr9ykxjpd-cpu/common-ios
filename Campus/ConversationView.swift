@@ -7,6 +7,7 @@ struct ConversationView: View {
     @State private var draft = ""
     @State private var showProfile = false
     @State private var replyingTo: Message?
+    @State private var editingMessage: Message?
     @State private var activeMessageActions: UUID?
     @State private var showUnmatchAlert = false
     @FocusState private var focused: Bool
@@ -30,6 +31,11 @@ struct ConversationView: View {
                                         activeMessageActions = nil
                                     },
                                     reply: { beginReply(to: message) },
+                                    edit: { beginEdit(message) },
+                                    delete: {
+                                        activeMessageActions = nil
+                                        appState.deleteMessage(message.id, in: conversationID)
+                                    },
                                     showActions: {
                                         withAnimation(.snappy(duration: 0.2)) {
                                             activeMessageActions = activeMessageActions == message.id ? nil : message.id
@@ -182,6 +188,35 @@ struct ConversationView: View {
 
     private var composer: some View {
         VStack(spacing: 0) {
+            // Düzenleme şeridi: yazma alanında hangi mesajı değiştirdiğin belli
+            // olmazsa, kullanıcı yeni mesaj yazdığını sanır.
+            if editingMessage != nil {
+                HStack(spacing: 10) {
+                    Rectangle()
+                        .fill(CampusTheme.acid)
+                        .frame(width: 3, height: 34)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Mesajı düzenliyorsun")
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .foregroundStyle(CampusTheme.ink)
+                        Text("Gönder'e basınca eski metnin yerine geçer")
+                            .font(.system(size: 12, design: .rounded))
+                            .foregroundStyle(CampusTheme.muted)
+                            .lineLimit(1)
+                    }
+                    Spacer()
+                    Button {
+                        editingMessage = nil
+                        draft = ""
+                    } label: {
+                        Image(systemName: "xmark").frame(width: 44, height: 44)
+                    }
+                    .accessibilityLabel("Düzenlemeyi iptal et")
+                }
+                .padding(.horizontal, 16)
+                .transition(.opacity)
+            }
+
             if let replyingTo {
                 HStack(spacing: 10) {
                     Rectangle()
@@ -235,6 +270,14 @@ struct ConversationView: View {
 
     private func send() {
         guard canSend else { return }
+        // Düzenleme modundaysak yeni mesaj göndermiyoruz, mevcut olanı değiştiriyoruz.
+        if let duzenlenen = editingMessage {
+            appState.editMessage(duzenlenen.id, in: conversationID, body: draft)
+            draft = ""
+            editingMessage = nil
+            Haptics.impact(.light)
+            return
+        }
         let body = draft
         let reply = replyingTo.map {
             MessageReply(
@@ -247,6 +290,17 @@ struct ConversationView: View {
         replyingTo = nil
         Haptics.impact(.light)
         Task { await appState.send(body, in: conversationID, replyTo: reply) }
+    }
+
+    /// Mesajın metni yazma alanına alınıyor; gönder düğmesi bu kez düzenliyor.
+    /// Ayrı bir düzenleme ekranı açmak, tek satırlık bir düzeltme için ağır.
+    private func beginEdit(_ message: Message) {
+        activeMessageActions = nil
+        replyingTo = nil
+        editingMessage = message
+        draft = message.body
+        focused = true
+        Haptics.impact(.light)
     }
 
     private func beginReply(to message: Message) {
@@ -268,6 +322,8 @@ private struct MessageBubble: View {
     let actionsVisible: Bool
     let react: (String) -> Void
     let reply: () -> Void
+    let edit: () -> Void
+    let delete: () -> Void
     let showActions: () -> Void
     private let reactions = ["❤️", "😂", "😮", "😢", "👍"]
     @State private var dragOffset: CGFloat = 0
@@ -308,6 +364,13 @@ private struct MessageBubble: View {
                     Text(message.body)
                         .font(.system(size: 15, design: .rounded))
                         .lineSpacing(3)
+                    if message.editedAt != nil {
+                        // Renk zaman damgasıyla aynı kuralı izliyor: kendi mesajın
+                        // koyu zeminde, karşınınki açık zeminde.
+                        Text("düzenlendi")
+                            .font(.system(size: 10, design: .rounded))
+                            .foregroundStyle(message.isMine ? CampusTheme.paper.opacity(0.52) : CampusTheme.muted)
+                    }
                     Text(message.sentAt.shortTimeTurkish)
                         .font(.system(size: 10, design: .rounded))
                         .foregroundStyle(message.isMine ? CampusTheme.paper.opacity(0.52) : CampusTheme.muted)
@@ -371,6 +434,27 @@ private struct MessageBubble: View {
             }
             .buttonStyle(PressableStyle())
             .accessibilityLabel("Yanıtla")
+
+            // Silme ve düzenleme yalnızca kendi mesajında; sunucu da aynı
+            // koşulu uyguluyor, arayüz onu yansıtıyor.
+            if message.isMine {
+                Button(action: edit) {
+                    Image(systemName: "pencil")
+                        .font(.system(size: 15, weight: .semibold))
+                        .frame(width: 38, height: 38)
+                }
+                .buttonStyle(PressableStyle())
+                .accessibilityLabel("Düzenle")
+
+                Button(action: delete) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(CampusTheme.coral)
+                        .frame(width: 38, height: 38)
+                }
+                .buttonStyle(PressableStyle())
+                .accessibilityLabel("Sil")
+            }
         }
         .padding(4)
         .foregroundStyle(CampusTheme.ink)

@@ -65,6 +65,16 @@ protocol ProductService: Sendable {
     func sendMessage(_ message: Message, matchID: UUID) async throws -> Message
     func markConversationRead(matchID: UUID) async throws
     func setMessageReaction(messageID: UUID, reaction: String?) async throws
+
+    /// Kendi mesajını siler. Sunucu yalnızca gönderenin kendi mesajına izin veriyor.
+    func deleteMessage(_ messageID: UUID) async throws
+    /// Kendi mesajının metnini değiştirir.
+    func editMessage(_ messageID: UUID, body: String) async throws
+
+    /// Story beğenisi. `liked` false ise beğeni kaldırılır.
+    func setStoryLiked(_ storyID: UUID, liked: Bool) async throws
+    /// Bu story'yi beğenmiş miyim.
+    func isStoryLiked(_ storyID: UUID) async throws -> Bool
     func fetchFeed() async throws -> [BackendPost]
     func createPost(caption: String, placeName: String?, imageData: Data?) async throws -> BackendPost
     func addComment(_ body: String, to postID: UUID) async throws -> BackendComment
@@ -166,6 +176,10 @@ struct UnconfiguredProductService: ProductService {
     func sendMessage(_ message: Message, matchID: UUID) async throws -> Message { try fail() }
     func markConversationRead(matchID: UUID) async throws { try fail() }
     func setMessageReaction(messageID: UUID, reaction: String?) async throws { try fail() }
+    func deleteMessage(_ messageID: UUID) async throws { try fail() }
+    func editMessage(_ messageID: UUID, body: String) async throws { try fail() }
+    func setStoryLiked(_ storyID: UUID, liked: Bool) async throws { try fail() }
+    func isStoryLiked(_ storyID: UUID) async throws -> Bool { try fail() }
     func fetchFeed() async throws -> [BackendPost] { try fail() }
     func createPost(caption: String, placeName: String?, imageData: Data?) async throws -> BackendPost { try fail() }
     func addComment(_ body: String, to postID: UUID) async throws -> BackendComment { try fail() }

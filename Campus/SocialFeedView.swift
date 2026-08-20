@@ -882,7 +882,10 @@ struct StoryViewer: View {
             }
         }
         .task(id: currentIndex) {
-            if let story { onViewed(story) }
+            if let story {
+                onViewed(story)
+                liked = await appState.isStoryLiked(story.id)
+            }
         }
         .task(id: "\(currentIndex)-\(replyFocused)-\(selectedStoryAuthor != nil)") { await playCurrentStory() }
         .sheet(item: $selectedStoryAuthor) { profile in
@@ -979,14 +982,20 @@ struct StoryViewer: View {
                     .font(.subheadline.bold()).foregroundStyle(CampusTheme.acid)
                     .frame(maxWidth: .infinity, alignment: .center).frame(height: 46)
             } else if conversation(with: story.author) == nil {
-                // Mesajlaşma eşleşmeye bağlı. Eskiden yazı alanı yine de
-                // görünüyor, yazılan yanıt hiçbir yere gitmiyor ve kullanıcıya
-                // "gönderildi" deniyordu. Ulaşamayacağı bir alan göstermek
-                // yerine sebebini söylüyoruz.
-                Label("Yanıt yazmak için Tanış'ta eşleşmelisiniz.", systemImage: "lock.fill")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.75))
-                    .frame(maxWidth: .infinity, alignment: .center).frame(height: 46)
+                // Eşleşme yoksa yazamıyorsun ama beğenebiliyorsun.
+                HStack(spacing: 12) {
+                    Button { toggleStoryLike() } label: {
+                        Image(systemName: liked ? "heart.fill" : "heart")
+                            .font(.title3).foregroundStyle(liked ? CampusTheme.coral : .white)
+                            .frame(width: 44, height: 44)
+                    }
+                    .accessibilityLabel(liked ? "Beğeniyi kaldır" : "Story'yi beğen")
+                    Text("Yanıt yazmak için Tanış'ta eşleşmelisiniz.")
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.75))
+                    Spacer()
+                }
+                .frame(height: 46)
             } else {
                 HStack(spacing: 10) {
                     TextField("\(story.author.name) kişisine yanıtla...", text: $reply)
@@ -1055,13 +1064,23 @@ struct StoryViewer: View {
     private func sendReply() {
         guard let story, let conversation = conversation(with: story.author) else { return }
         let metin = reply.trimmingCharacters(in: .whitespacesAndNewlines)
-        let govde = metin.isEmpty ? "❤️" : metin
-        if metin.isEmpty { liked = true }
+        // Boş alanla kalbe basmak artık sohbete "❤️" mesajı göndermiyor; gerçek
+        // bir story beğenisi bırakıyor ve sahibine bildirim gidiyor.
+        guard !metin.isEmpty else { toggleStoryLike(); return }
         reply = ""
         replyFocused = false
         withAnimation(.snappy) { replySent = true }
         Haptics.success()
-        Task { await appState.send(govde, in: conversation.id) }
+        Task { await appState.send(metin, in: conversation.id) }
+    }
+
+    /// Story beğenisi eşleşme gerektirmiyor: herkes beğenebilir, sahibi bildirim
+    /// alır. Yazılı yanıt ise sohbete düştüğü için eşleşme şartına bağlı.
+    private func toggleStoryLike() {
+        guard let story, !story.isMine else { return }
+        let yeni = !liked
+        withAnimation(.snappy) { liked = yeni }
+        appState.setStoryLiked(story.id, liked: yeni)
     }
 }
 

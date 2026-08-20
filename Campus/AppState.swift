@@ -1175,6 +1175,64 @@ final class AppState {
         }
     }
 
+    /// Kendi mesajını siler. Önce ekrandan kaldırılıyor; sunucu reddederse geri
+    /// geliyor ve sebebi söyleniyor.
+    func deleteMessage(_ messageID: UUID, in conversationID: UUID) {
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }),
+              let messageIndex = conversations[index].messages.firstIndex(where: { $0.id == messageID }),
+              conversations[index].messages[messageIndex].isMine else { return }
+        let kaldirilan = conversations[index].messages[messageIndex]
+        withAnimation(.snappy) { conversations[index].messages.remove(at: messageIndex) }
+        Haptics.impact(.light)
+        Task {
+            do { try await service.deleteMessage(messageID) }
+            catch {
+                if let geri = conversations.firstIndex(where: { $0.id == conversationID }) {
+                    withAnimation(.snappy) {
+                        conversations[geri].messages.insert(kaldirilan, at: min(messageIndex, conversations[geri].messages.count))
+                    }
+                }
+                showError(error, fallback: "Mesaj silinemedi.")
+            }
+        }
+    }
+
+    func editMessage(_ messageID: UUID, in conversationID: UUID, body: String) {
+        let temiz = body.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !temiz.isEmpty,
+              let index = conversations.firstIndex(where: { $0.id == conversationID }),
+              let messageIndex = conversations[index].messages.firstIndex(where: { $0.id == messageID }),
+              conversations[index].messages[messageIndex].isMine else { return }
+        let eski = conversations[index].messages[messageIndex]
+        withAnimation(.snappy) {
+            conversations[index].messages[messageIndex].body = temiz
+            conversations[index].messages[messageIndex].editedAt = .now
+        }
+        Task {
+            do { try await service.editMessage(messageID, body: temiz) }
+            catch {
+                if let geri = conversations.firstIndex(where: { $0.id == conversationID }),
+                   let geriIndex = conversations[geri].messages.firstIndex(where: { $0.id == messageID }) {
+                    conversations[geri].messages[geriIndex] = eski
+                }
+                showError(error, fallback: "Mesaj düzenlenemedi.")
+            }
+        }
+    }
+
+    /// Story beğenisi. Sahibine bildirim sunucudaki tetikleyiciden gidiyor.
+    func setStoryLiked(_ storyID: UUID, liked: Bool) {
+        Haptics.impact(.light)
+        Task {
+            do { try await service.setStoryLiked(storyID, liked: liked) }
+            catch { showError(error, fallback: liked ? "Beğeni gönderilemedi." : "Beğeni kaldırılamadı.") }
+        }
+    }
+
+    func isStoryLiked(_ storyID: UUID) async -> Bool {
+        (try? await service.isStoryLiked(storyID)) ?? false
+    }
+
     func react(to messageID: UUID, in conversationID: UUID, with reaction: String) {
         guard let conversationIndex = conversations.firstIndex(where: { $0.id == conversationID }),
               let messageIndex = conversations[conversationIndex].messages.firstIndex(where: { $0.id == messageID }) else { return }

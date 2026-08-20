@@ -251,6 +251,10 @@ struct SampleProductService: ProductService {
     func setMessageReaction(messageID: UUID, reaction: String?) async throws {
         await store.setReaction(messageID, reaction: reaction)
     }
+    func deleteMessage(_ messageID: UUID) async throws {}
+    func editMessage(_ messageID: UUID, body: String) async throws {}
+    func setStoryLiked(_ storyID: UUID, liked: Bool) async throws {}
+    func isStoryLiked(_ storyID: UUID) async throws -> Bool { false }
     func messageStream() -> AsyncStream<RealtimeMessage> { AsyncStream { $0.finish() } }
     func unmatch(_ matchID: UUID) async throws { await store.removeConversation(matchID) }
 

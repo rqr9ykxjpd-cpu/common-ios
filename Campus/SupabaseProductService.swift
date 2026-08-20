@@ -274,7 +274,7 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         for match in matches {
             let rows: [MessageRow] = try await client
                 .from("messages")
-                .select("id,match_id,sender_id,body,reply_to_id,reaction,created_at,read_at")
+                .select("id,match_id,sender_id,body,reply_to_id,reaction,created_at,read_at,edited_at")
                 .eq("match_id", value: match.id)
                 .order("created_at", ascending: true)
                 .execute()
@@ -304,7 +304,7 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         let row: MessageRow = try await client
             .from("messages")
             .insert(payload)
-            .select("id,match_id,sender_id,body,reply_to_id,reaction,created_at,read_at")
+            .select("id,match_id,sender_id,body,reply_to_id,reaction,created_at,read_at,edited_at")
             .single()
             .execute()
             .value
@@ -330,6 +330,50 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
             .neq("sender_id", value: userID)
             .is("read_at", value: nil)
             .execute()
+    }
+
+    func deleteMessage(_ messageID: UUID) async throws {
+        try await client.from("messages")
+            .delete(returning: .minimal)
+            .eq("id", value: messageID)
+            .execute()
+    }
+
+    func editMessage(_ messageID: UUID, body: String) async throws {
+        try await client.from("messages")
+            .update(MessageEdit(body: body, editedAt: Date()), returning: .minimal)
+            .eq("id", value: messageID)
+            .execute()
+    }
+
+    func setStoryLiked(_ storyID: UUID, liked: Bool) async throws {
+        guard let userID = currentUserID else { throw BackendServiceError.missingSession }
+        if liked {
+            // Beğeninin varlığı bilginin tamamı; güncellenecek sütun yok, dolayısıyla
+            // DO NOTHING yeterli (tabloda update yetkisi de yok).
+            try await client.from("story_likes")
+                .upsert(StoryLikeInsert(storyID: storyID, likerID: userID),
+                        returning: .minimal, ignoreDuplicates: true)
+                .execute()
+        } else {
+            try await client.from("story_likes")
+                .delete(returning: .minimal)
+                .eq("story_id", value: storyID)
+                .eq("liker_id", value: userID)
+                .execute()
+        }
+    }
+
+    func isStoryLiked(_ storyID: UUID) async throws -> Bool {
+        guard let userID = currentUserID else { return false }
+        let rows: [StoryLikeRow] = try await client.from("story_likes")
+            .select("story_id")
+            .eq("story_id", value: storyID)
+            .eq("liker_id", value: userID)
+            .limit(1)
+            .execute()
+            .value
+        return !rows.isEmpty
     }
 
     func setMessageReaction(messageID: UUID, reaction: String?) async throws {
@@ -1527,6 +1571,29 @@ private struct MatchRow: Decodable {
     }
 }
 
+private struct MessageEdit: Encodable {
+    let body: String
+    let editedAt: Date
+    enum CodingKeys: String, CodingKey {
+        case body
+        case editedAt = "edited_at"
+    }
+}
+
+private struct StoryLikeInsert: Encodable {
+    let storyID: UUID
+    let likerID: UUID
+    enum CodingKeys: String, CodingKey {
+        case storyID = "story_id"
+        case likerID = "liker_id"
+    }
+}
+
+private struct StoryLikeRow: Decodable {
+    let storyID: UUID
+    enum CodingKeys: String, CodingKey { case storyID = "story_id" }
+}
+
 private struct MessageRow: Decodable {
     let id: UUID
     let matchID: UUID
@@ -1536,12 +1603,14 @@ private struct MessageRow: Decodable {
     let reaction: String?
     let createdAt: Date
     let readAt: Date?
+    let editedAt: Date?
 
     enum CodingKeys: String, CodingKey {
         case id, body, reaction
         case matchID = "match_id"
         case senderID = "sender_id"
         case replyToID = "reply_to_id"
+        case editedAt = "edited_at"
         case createdAt = "created_at"
         case readAt = "read_at"
     }
@@ -1552,7 +1621,7 @@ private struct MessageRow: Decodable {
                 MessageReply(messageID: $0.id, authorName: $0.senderID == currentUserID ? "Sen" : peerName, body: $0.body)
             }
         }
-        return Message(id: id, body: body, isMine: senderID == currentUserID, sentAt: createdAt, reaction: reaction, replyTo: reply)
+        return Message(id: id, body: body, isMine: senderID == currentUserID, sentAt: createdAt, reaction: reaction, editedAt: editedAt, replyTo: reply)
     }
 }
 

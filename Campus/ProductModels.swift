@@ -8,18 +8,21 @@ struct MessageReply: Hashable, Codable {
 
 struct Message: Identifiable, Hashable, Codable {
     let id: UUID
-    let body: String
+    var body: String
     let isMine: Bool
     let sentAt: Date
     var reaction: String?
+    /// Doluysa mesaj sonradan düzenlenmiş; arayüz "düzenlendi" yazıyor.
+    var editedAt: Date?
     let replyTo: MessageReply?
 
-    init(id: UUID = UUID(), body: String, isMine: Bool, sentAt: Date, reaction: String? = nil, replyTo: MessageReply? = nil) {
+    init(id: UUID = UUID(), body: String, isMine: Bool, sentAt: Date, reaction: String? = nil, editedAt: Date? = nil, replyTo: MessageReply? = nil) {
         self.id = id
         self.body = body
         self.isMine = isMine
         self.sentAt = sentAt
         self.reaction = reaction
+        self.editedAt = editedAt
         self.replyTo = replyTo
     }
 }
