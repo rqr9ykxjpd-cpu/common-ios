@@ -792,6 +792,7 @@ private struct CommentsView: View {
 }
 
 struct StoryViewer: View {
+    @Environment(AppState.self) private var appState
     let stories: [CampusStory]
     let viewRecords: (UUID) -> [StoryViewRecord]
     let onViewed: (CampusStory) -> Void
@@ -943,9 +944,21 @@ struct StoryViewer: View {
     private func storyFooter(_ story: CampusStory) -> some View {
         VStack(alignment: .leading, spacing: 13) {
             Text(story.caption).font(.system(size: 24, weight: .semibold, design: .rounded))
-            if replySent {
+            if story.isMine {
+                // Kendi story'ne yanıt yazma alanı çıkıyordu.
+                EmptyView()
+            } else if replySent {
                 Label("Yanıt gönderildi", systemImage: "checkmark.circle.fill")
                     .font(.subheadline.bold()).foregroundStyle(CampusTheme.acid)
+                    .frame(maxWidth: .infinity, alignment: .center).frame(height: 46)
+            } else if conversation(with: story.author) == nil {
+                // Mesajlaşma eşleşmeye bağlı. Eskiden yazı alanı yine de
+                // görünüyor, yazılan yanıt hiçbir yere gitmiyor ve kullanıcıya
+                // "gönderildi" deniyordu. Ulaşamayacağı bir alan göstermek
+                // yerine sebebini söylüyoruz.
+                Label("Yanıt yazmak için Tanış'ta eşleşmelisiniz.", systemImage: "lock.fill")
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.75))
                     .frame(maxWidth: .infinity, alignment: .center).frame(height: 46)
             } else {
                 HStack(spacing: 10) {
@@ -959,7 +972,7 @@ struct StoryViewer: View {
                             .font(.title3).foregroundStyle(liked ? CampusTheme.coral : .white)
                             .frame(width: 44, height: 44)
                     }
-                    .accessibilityLabel(reply.isEmpty ? "Beğen" : "Yanıtı gönder")
+                    .accessibilityLabel(reply.isEmpty ? "Kalp gönder" : "Yanıtı gönder")
                 }
             }
         }
@@ -1002,15 +1015,26 @@ struct StoryViewer: View {
         if currentIndex < stories.count - 1 { currentIndex += 1 } else { close() }
     }
 
+    private func conversation(with author: StudentProfile) -> Conversation? {
+        appState.conversations.first(where: { $0.profile.id == author.id })
+    }
+
+    /// Yanıt, eşleştiğiniz sohbete gerçek bir mesaj olarak düşüyor.
+    ///
+    /// Eskiden bu fonksiyon hiçbir şey göndermiyordu: klavyeyi kapatıp
+    /// "gönderildi" işaretini açıyor ve titreşim veriyordu. Kalp de yalnızca
+    /// yerel bir değişkeni çeviriyordu. Kullanıcı yazdığını ulaştı sanıyor,
+    /// karşı tarafa hiçbir şey gitmiyordu.
     private func sendReply() {
-        if reply.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            liked.toggle()
-            Haptics.impact(.light)
-        } else {
-            replyFocused = false
-            withAnimation(.snappy) { replySent = true }
-            Haptics.success()
-        }
+        guard let story, let conversation = conversation(with: story.author) else { return }
+        let metin = reply.trimmingCharacters(in: .whitespacesAndNewlines)
+        let govde = metin.isEmpty ? "❤️" : metin
+        if metin.isEmpty { liked = true }
+        reply = ""
+        replyFocused = false
+        withAnimation(.snappy) { replySent = true }
+        Haptics.success()
+        Task { await appState.send(govde, in: conversation.id) }
     }
 }
 
