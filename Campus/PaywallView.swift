@@ -13,6 +13,9 @@ import SwiftUI
 struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
 
+    /// Sınıra takılarak açıldıysa başlık ona göre değişiyor.
+    var quota: QuotaKind?
+
     /// Geçici fiyatlar. Gerçekleri App Store Connect'te tanımlanan üründen
     /// okunacak; Apple fiyatı kullanıcının ülkesine göre biçimlendiriyor.
     var plusFiyat = "₺49,99"
@@ -69,12 +72,12 @@ struct PaywallView: View {
                 .tracking(2)
                 .foregroundStyle(CampusTheme.acid)
 
-            Text("Kampüs daha\nbüyük olsun.")
+            Text(quota?.title ?? "Kampüs daha\nbüyük olsun.")
                 .font(.system(size: 42, weight: .bold, design: .serif))
                 .foregroundStyle(.white)
                 .lineSpacing(2)
 
-            Text("Ücretsiz kullanmaya devam edebilirsin. Plus ve Pro yalnızca sınırları kaldırıyor.")
+            Text(quota?.detail ?? "Ücretsiz kullanmaya devam edebilirsin. Plus ve Pro yalnızca sınırları kaldırıyor.")
                 .font(.system(size: 15, design: .rounded))
                 .foregroundStyle(.white.opacity(0.6))
                 .lineSpacing(3)

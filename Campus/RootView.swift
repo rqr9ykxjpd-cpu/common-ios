@@ -31,6 +31,14 @@ struct RootView: View {
             }
         }
         .preferredColorScheme(resolvedColorScheme)
+        // Sınıra hangi ekranda takılırsan takıl, açılacak yer burası: tek bir
+        // sunum noktası, her ekrana ayrı ayrı bağlamaktan güvenli.
+        .sheet(isPresented: Binding(
+            get: { appState.paywallVisible },
+            set: { appState.paywallVisible = $0; if !$0 { appState.quotaHit = nil } }
+        )) {
+            PaywallView(quota: appState.quotaHit)
+        }
         .task { await appState.restoreBackendSession() }
         .onChange(of: scenePhase) { previous, phase in
             // Arka planda anlık kanal kopuyor; dönüşte kaçan mesajları getiriyoruz.

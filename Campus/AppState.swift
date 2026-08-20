@@ -5,6 +5,7 @@ import SwiftUI
 final class AppState {
     private enum SessionKey {
         static let isSignedIn = "session.isSignedIn"
+        static let ghostMode = "session.ghostMode"
         static let email = "session.email"
         static let accountEmail = "account.email"
         static let userID = "account.userID"
@@ -102,6 +103,17 @@ final class AppState {
     /// Kullanıcının abonelik kademesi. Ödeme bağlanana kadar herkes ücretsiz;
     /// StoreKit devreye girince buraya yazılacak ve sunucuya da bildirilecek.
     var tier: SubscriptionTier = .free
+
+    /// Hayalet mod (yalnızca Pro): açıkken profil ziyaretleri ve story
+    /// izlemeleri kaydedilmiyor. İki kayıt da istemciden gönderildiği için
+    /// göndermemek yeterli — sunucuda ayrıca bir şey yapmaya gerek yok.
+    /// Sınıra takılınca açılan ekran ve hangi sınıra takıldığı.
+    var paywallVisible = false
+    var quotaHit: QuotaKind?
+
+    var ghostMode: Bool {
+        didSet { defaults.set(ghostMode, forKey: SessionKey.ghostMode) }
+    }
     var isFinishingOnboarding = false
     /// Kayıt akışının son adımındaki hata. Toast kaybolduğu için kullanıcı düğmenin
     /// çalışmadığını sanıyordu; bu ekranda kalıcı olarak gösteriliyor.
@@ -123,6 +135,14 @@ final class AppState {
     /// artık gereksiz.
     func showError(_ error: Error, fallback: String) {
         guard !isCancellation(error) else { return }
+        // Sunucu bir sınırı reddettiğinde ham hata göstermek yerine ne olduğunu
+        // anlatan ekranı açıyoruz. Hata metnine değil koda bakıyoruz; metin
+        // değişebilir, kod değişmez.
+        if let sinir = quotaKind(error) {
+            quotaHit = sinir
+            paywallVisible = true
+            return
+        }
         if isClockSkew(error), recoverFromClockSkew() { return }
         toast = AppToastMessage(text: UserFacingError.message(error, fallback: fallback), kind: .error)
     }
@@ -171,6 +191,15 @@ final class AppState {
 
     private var lastClockSkewRecovery: Date?
 
+    /// Sunucudaki sınır tetikleyicilerinin fırlattığı kodlar.
+    private func quotaKind(_ error: Error) -> QuotaKind? {
+        let metin = String(describing: error)
+        if metin.contains("QUOTA_LIKE") { return .like }
+        if metin.contains("QUOTA_MEETING_REQUEST") { return .meetingRequest }
+        if metin.contains("QUOTA_MEETING_ACCEPT") { return .meetingAccept }
+        return nil
+    }
+
     private func isCancellation(_ error: Error) -> Bool {
         if error is CancellationError { return true }
         if let urlError = error as? URLError, urlError.code == .cancelled { return true }
@@ -195,6 +224,7 @@ final class AppState {
         self.service = service ?? ProductServiceFactory.make()
         self.defaults = defaults
         let hasSession = defaults.bool(forKey: SessionKey.isSignedIn)
+        ghostMode = defaults.bool(forKey: SessionKey.ghostMode)
         route = hasSession ? .app : .welcome
         email = defaults.string(forKey: SessionKey.email) ?? defaults.string(forKey: SessionKey.accountEmail) ?? ""
         currentUserID = defaults.string(forKey: SessionKey.userID).flatMap(UUID.init(uuidString:)) ?? UUID()
@@ -874,7 +904,10 @@ final class AppState {
         Task {
             // Sahibinin kendi açışları da sayılıyor: kullanıcı bunu bilerek istedi,
             // sayacın çalıştığını tek hesapla da görebilmek için.
-            try? await service.markStoryViewed(storyID)
+            // Hayalet moddayken hiç kaydetmiyoruz.
+            if !(ghostMode && tier.hasGhostMode) {
+                try? await service.markStoryViewed(storyID)
+            }
             // İzleyen listesini yalnızca story sahibi görebilir; başkasının story'sinde
             // bu sorgu boş döneceği için hiç yapmıyoruz.
             guard isMine else { return }
@@ -912,6 +945,7 @@ final class AppState {
     /// Birinin profili kasıtlı olarak açıldığında çağrılır. Keşif destesinde
     /// kart çevirmek ziyaret sayılmaz — orada niyet "bakınmak", "profiline gitmek" değil.
     func recordProfileVisit(_ profile: StudentProfile) {
+        guard !(ghostMode && tier.hasGhostMode) else { return }
         guard profile.id != currentUserID else { return }
         Task { try? await service.recordProfileVisit(profile.id) }
     }
@@ -1509,4 +1543,26 @@ struct PersonProfileData {
     var galleryURLs: [URL]
     var badge: ProfileBadge
     var posts: [SocialPost]
+}
+
+/// Hangi sınıra takılındı. Paywall'daki başlık buna göre değişiyor: "beğeni
+/// hakkın bitti" ile "buluşma isteği hakkın bitti" farklı anlar.
+enum QuotaKind {
+    case like, meetingRequest, meetingAccept
+
+    var title: String {
+        switch self {
+        case .like: "Beğeni hakkın\nbitti."
+        case .meetingRequest: "Buluşma isteği\nhakkın bitti."
+        case .meetingAccept: "Kabul hakkın\nbitti."
+        }
+    }
+
+    var detail: String {
+        switch self {
+        case .like: "Ücretsiz planda iki günde 5 kişiyi beğenebilirsin."
+        case .meetingRequest: "Ücretsiz planda haftada 3 buluşma isteği gönderebilirsin."
+        case .meetingAccept: "Ücretsiz planda haftada 2 buluşma kabul edebilirsin."
+        }
+    }
 }

@@ -6,6 +6,7 @@ struct SocialProfileView: View {
     @State private var showVisits = false
     @State private var showTerms = false
     @State private var showPrivacy = false
+    @State private var showPaywall = false
     @Environment(\.openURL) private var openURL
     @State private var showComposer = false
     @State private var showMeetingRequests = false
@@ -73,6 +74,7 @@ struct SocialProfileView: View {
             }
             .sheet(isPresented: $showSaved) { savedPostsSheet.task { await appState.loadSavedPosts() } }
             .sheet(isPresented: $showVisits) { visitorsSheet }
+            .sheet(isPresented: $showPaywall) { PaywallView() }
             .sheet(isPresented: $showTerms) {
                 NavigationStack {
                     LegalTextView(title: "Kullanım Koşulları", blocks: LegalTexts.kosullar)
@@ -263,9 +265,16 @@ struct SocialProfileView: View {
                         detail: "Sonra bakmak için işaretlediklerin") { showSaved = true }
 
                 listDivider
-                listRow(icon: "eye", title: "Ziyaretçiler",
+                // Profiline bakanlar Plus'a özel. Satır gizlenmiyor: kilit,
+                // özelliğin varlığını gösteriyor.
+                listRow(icon: appState.tier.canSeeProfileVisitors ? "eye" : "lock.fill",
+                        title: "Ziyaretçiler",
                         detail: "Profiline son 7 günde bakanlar",
-                        trailing: appState.profileVisits.isEmpty ? nil : "\(appState.profileVisits.count)") { showVisits = true }
+                        trailing: appState.tier.canSeeProfileVisitors
+                            ? (appState.profileVisits.isEmpty ? nil : "\(appState.profileVisits.count)")
+                            : "Plus") {
+                    if appState.tier.canSeeProfileVisitors { showVisits = true } else { showPaywall = true }
+                }
 
                 listDivider
                 listRow(icon: "cup.and.saucer", title: "Buluşma istekleri",
@@ -290,6 +299,24 @@ struct SocialProfileView: View {
             }
             .padding(.top, CampusTheme.Space.sm)
 
+
+            // Hayalet mod yalnızca Pro'da. Kilitliyken de görünüyor ki neyin
+            // sunulduğu belli olsun.
+            VStack(spacing: 0) {
+                listRow(icon: appState.tier.hasGhostMode ? "eye.slash" : "lock.fill",
+                        title: "Hayalet mod",
+                        detail: appState.tier.hasGhostMode
+                            ? (appState.ghostMode ? "Açık — kimseye iz bırakmıyorsun" : "Kapalı")
+                            : "Neye baktığın, kimin profiline girdiğin görünmesin",
+                        trailing: appState.tier.hasGhostMode ? (appState.ghostMode ? "Açık" : "Kapalı") : "Pro") {
+                    if appState.tier.hasGhostMode {
+                        appState.ghostMode.toggle()
+                        Haptics.impact(.light)
+                    } else {
+                        showPaywall = true
+                    }
+                }
+            }
 
             VStack(spacing: 0) {
                 listRow(icon: "rectangle.portrait.and.arrow.right", title: "Çıkış yap",

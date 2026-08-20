@@ -837,6 +837,8 @@ struct StoryViewer: View {
     @State private var replySent = false
     @State private var liked = false
     @State private var showViewers = false
+    @State private var isPaused = false
+    @State private var showPaywall = false
     @State private var showDeleteConfirmation = false
     @State private var selectedStoryAuthor: StudentProfile?
     @FocusState private var replyFocused: Bool
@@ -893,7 +895,19 @@ struct StoryViewer: View {
                 liked = await appState.isStoryLiked(story.id)
             }
         }
-        .task(id: "\(currentIndex)-\(replyFocused)-\(selectedStoryAuthor != nil)") { await playCurrentStory() }
+        // `isPaused` anahtara dahil: bırakınca görev yeniden başlıyor ve ilerleme
+        // kaldığı yerden devam ediyor.
+        .task(id: "\(currentIndex)-\(replyFocused)-\(selectedStoryAuthor != nil)-\(isPaused)") { await playCurrentStory() }
+        // Basılı tutunca duraklatma Plus'a özel. Ücretsizde basılı tutmak, bunun
+        // bir özellik olduğunu gösteren ekranı açıyor.
+        .onLongPressGesture(minimumDuration: 0.22, maximumDistance: 24) { } onPressingChanged: { basiliyor in
+            guard appState.tier.canPauseStory else {
+                if basiliyor { showPaywall = true }
+                return
+            }
+            withAnimation(.easeOut(duration: 0.15)) { isPaused = basiliyor }
+        }
+        .sheet(isPresented: $showPaywall) { PaywallView() }
         .sheet(item: $selectedStoryAuthor) { profile in
             NavigationStack {
                 SocialPersonDetailView(profile: profile, place: nil)
@@ -979,6 +993,14 @@ struct StoryViewer: View {
 
     private func storyFooter(_ story: CampusStory) -> some View {
         VStack(alignment: .leading, spacing: 13) {
+            if isPaused {
+                Label("Duraklatıldı", systemImage: "pause.fill")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.8))
+                    .padding(.horizontal, 10).frame(height: 26)
+                    .background(.black.opacity(0.35), in: Capsule())
+                    .transition(.opacity)
+            }
             Text(story.caption).font(.system(size: 24, weight: .semibold, design: .rounded))
             if story.isMine {
                 // Kendi story'ne yanıt yazma alanı çıkıyordu.
@@ -1022,7 +1044,7 @@ struct StoryViewer: View {
 
     @MainActor
     private func playCurrentStory() async {
-        guard story != nil, !replyFocused, selectedStoryAuthor == nil else { return }
+        guard story != nil, !replyFocused, selectedStoryAuthor == nil, !isPaused else { return }
 
         let tick = Duration.milliseconds(50)
         let increment: CGFloat = 1 / 120
@@ -1032,7 +1054,7 @@ struct StoryViewer: View {
             } catch {
                 return
             }
-            guard !Task.isCancelled, !replyFocused, selectedStoryAuthor == nil else { return }
+            guard !Task.isCancelled, !replyFocused, selectedStoryAuthor == nil, !isPaused else { return }
             progress = min(1, progress + increment)
         }
         guard !Task.isCancelled else { return }
