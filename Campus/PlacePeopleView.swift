@@ -50,7 +50,9 @@ struct PlacePeopleView: View {
                 .refreshable { await reload() }
             }
             .toolbar(.hidden, for: .navigationBar)
-            .task { await reload() }
+            // Görünürlüğü açıp kapatmak listeyi tazelemiyordu: "buradayım" dedikten
+            // sonra liste hâlâ eski halini gösteriyor, kullanıcı kendini göremiyordu.
+            .task(id: appState.currentVisiblePlace?.id) { await reload() }
         }
     }
 
@@ -78,7 +80,8 @@ struct PlacePeopleView: View {
             Text("Şu an burada görünür olan YÜ öğrencileri")
                 .font(.subheadline)
                 .foregroundStyle(CampusTheme.ink.opacity(0.5))
-            Label("\(people.count + (isHere ? 1 : 0)) kişi görünür", systemImage: "person.2.fill")
+            // Kendisi artık listenin içinde; elle eklemek iki kez sayardı.
+            Label("\(people.count) kişi görünür", systemImage: "person.2.fill")
                 .font(.caption.bold())
                 .foregroundStyle(CampusTheme.violet)
 
