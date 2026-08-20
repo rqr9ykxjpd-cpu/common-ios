@@ -4,6 +4,8 @@ struct SocialProfileView: View {
     @Environment(AppState.self) private var appState
     @State private var showSaved = false
     @State private var showVisits = false
+    @State private var showTerms = false
+    @State private var showPrivacy = false
     @State private var showComposer = false
     @State private var showMeetingRequests = false
     @State private var showSignOutAlert = false
@@ -70,6 +72,16 @@ struct SocialProfileView: View {
             }
             .sheet(isPresented: $showSaved) { savedPostsSheet.task { await appState.loadSavedPosts() } }
             .sheet(isPresented: $showVisits) { visitorsSheet }
+            .sheet(isPresented: $showTerms) {
+                NavigationStack {
+                    LegalTextView(title: "Kullanım Koşulları", blocks: LegalTexts.kosullar)
+                }
+            }
+            .sheet(isPresented: $showPrivacy) {
+                NavigationStack {
+                    LegalTextView(title: "Gizlilik Politikası", blocks: LegalTexts.gizlilik)
+                }
+            }
             .sheet(isPresented: $showComposer) { CreatePostView() }
             .sheet(isPresented: $showMeetingRequests) {
                 MeetingRequestsView()
@@ -276,6 +288,16 @@ struct SocialProfileView: View {
                 .pickerStyle(.segmented)
             }
             .padding(.top, CampusTheme.Space.sm)
+
+            // Koşullar yalnızca karşılama ekranında, üstelik yalnızca web adresi
+            // olarak vardı: giriş yaptıktan sonra bir daha ulaşılamıyordu.
+            VStack(spacing: 0) {
+                listRow(icon: "doc.text", title: "Kullanım Koşulları",
+                        detail: "Kuralların ve sorumlulukların") { showTerms = true }
+                listDivider
+                listRow(icon: "hand.raised", title: "Gizlilik Politikası",
+                        detail: "Hangi bilgileri topluyoruz, ne yapıyoruz") { showPrivacy = true }
+            }
 
             VStack(spacing: 0) {
                 listRow(icon: "rectangle.portrait.and.arrow.right", title: "Çıkış yap",

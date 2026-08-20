@@ -78,3 +78,61 @@ for ad, baslik in SAYFALAR:
     (KLASOR / f"{ad}.html").write_text(
         KALIP.format(baslik=baslik, govde=donustur(kaynak)), encoding="utf-8")
     print(f"  {ad}.html üretildi")
+
+# --- Uygulama içi metinler -------------------------------------------------
+# Aynı .md dosyalarından Swift üretiliyor. Metni koda elle kopyalamak, web
+# sayfasıyla uygulama içindeki metnin zamanla ayrışması demekti.
+
+def swift_kacir(t: str) -> str:
+    return t.replace("\\", "\\\\").replace('"', '\\"')
+
+
+def bloklar(md: str):
+    md = re.sub(r"<!--.*?-->", "", md, flags=re.S)
+    cikti = []
+    for blok in re.split(r"\n\s*\n", md.strip()):
+        blok = blok.strip()
+        if not blok:
+            continue
+        if blok.startswith("# "):
+            cikti.append(("baslik", blok[2:]))
+        elif blok.startswith("## "):
+            cikti.append(("altbaslik", blok[3:]))
+        elif blok.startswith("- "):
+            for satir in blok.split("\n"):
+                satir = satir.strip()
+                if satir.startswith("- "):
+                    cikti.append(("madde", satir[2:]))
+                elif cikti and cikti[-1][0] == "madde":
+                    cikti[-1] = ("madde", cikti[-1][1] + " " + satir)
+        else:
+            cikti.append(("paragraf", " ".join(blok.split("\n"))))
+    return cikti
+
+
+satirlar = [
+    "// Bu dosya `docs/olustur.py` tarafından üretiliyor. Elle düzenleme —",
+    "// kaynak metinler docs/gizlilik.md ve docs/kosullar.md.",
+    "",
+    "enum LegalBlock {",
+    "    case baslik(String)",
+    "    case altbaslik(String)",
+    "    case paragraf(String)",
+    "    case madde(String)",
+    "}",
+    "",
+    "enum LegalTexts {",
+]
+for ad, baslik in SAYFALAR:
+    kaynak = (KLASOR / f"{ad}.md").read_text(encoding="utf-8")
+    satirlar.append(f"    static let {ad}: [LegalBlock] = [")
+    for tur, metin in bloklar(kaynak):
+        metin = metin.replace("**", "")
+        satirlar.append(f'        .{tur}("{swift_kacir(metin)}"),')
+    satirlar.append("    ]")
+    satirlar.append("")
+satirlar.append("}")
+
+hedef = KLASOR.parent / "Campus" / "LegalTexts.swift"
+hedef.write_text("\n".join(satirlar) + "\n", encoding="utf-8")
+print(f"  {hedef.name} üretildi")

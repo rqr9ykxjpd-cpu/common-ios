@@ -183,6 +183,8 @@ struct WelcomeView: View {
     /// kabul edilmesini ve metinlerin uygulamadan okunabilmesini şart koşuyor. Ayrı
     /// bir onay kutusu yerine giriş eylemine bağlıyoruz; yerleşik ve kabul gören
     /// biçim bu.
+    @State private var legalDocument: LegalDocumentRoute?
+
     private var legalConsent: some View {
         // Tek bir cümle: parçalara bölünce satırlar ortalanınca tırtıklı duruyordu
         // ve bağlantılar düz metinden ayırt edilemiyordu. Markdown bağlantıları
@@ -194,6 +196,17 @@ struct WelcomeView: View {
             .tint(CampusTheme.violet)
             .padding(.horizontal, 8)
             .padding(.top, 16)
+            // Bağlantılar tarayıcı yerine uygulama içindeki metni açıyor: aynı
+            // metin, internet gerektirmeden ve barındırmaya bağlı kalmadan.
+            .environment(\.openURL, OpenURLAction { url in
+                legalDocument = url == Self.gizlilikURL ? .gizlilik : .kosullar
+                return .handled
+            })
+            .sheet(item: $legalDocument) { belge in
+                NavigationStack {
+                    LegalTextView(title: belge.title, blocks: belge.blocks)
+                }
+            }
     }
 
     private static let kosullarURL = URL(string: "https://rqr9ykxjpd-cpu.github.io/common-ios/kosullar.html")!
@@ -326,5 +339,26 @@ extension Color {
         let r, g, b: UInt64
         (r, g, b) = ((value >> 16) & 255, (value >> 8) & 255, value & 255)
         self.init(.sRGB, red: Double(r) / 255, green: Double(g) / 255, blue: Double(b) / 255, opacity: 1)
+    }
+}
+
+/// Karşılama ekranından açılan hukuki metin.
+enum LegalDocumentRoute: String, Identifiable {
+    case kosullar, gizlilik
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .kosullar: "Kullanım Koşulları"
+        case .gizlilik: "Gizlilik Politikası"
+        }
+    }
+
+    var blocks: [LegalBlock] {
+        switch self {
+        case .kosullar: LegalTexts.kosullar
+        case .gizlilik: LegalTexts.gizlilik
+        }
     }
 }
