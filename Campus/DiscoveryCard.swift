@@ -66,14 +66,7 @@ struct DiscoveryCard: View {
                             // Çıplak bir ikon ne anlama geldiğini söylemiyordu.
                             // Rozetler zaten çok az hesapta olduğu için yazılı
                             // etiket kartı kalabalıklaştırmıyor.
-                            if let badgeIcon = profile.badge.systemImage,
-                               let badgeTitle = profile.badge.title {
-                                Label(badgeTitle, systemImage: badgeIcon)
-                                    .font(.system(size: 10, weight: .bold, design: .rounded))
-                                    .foregroundStyle(CampusTheme.ink)
-                                    .padding(.horizontal, 11).frame(height: 30)
-                                    .background(CampusTheme.acid, in: Capsule())
-                            }
+                            ProfileBadgeLabel(badge: profile.badge)
                         }
                         Spacer()
                         HStack(alignment: .lastTextBaseline, spacing: 8) {

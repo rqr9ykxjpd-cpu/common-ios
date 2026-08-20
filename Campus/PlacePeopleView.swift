@@ -117,10 +117,7 @@ struct PlacePeopleView: View {
             VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 5) {
                     Text("\(profile.name), \(profile.age)").font(.headline)
-                    if let badgeIcon = profile.badge.systemImage {
-                        Image(systemName: badgeIcon).foregroundStyle(CampusTheme.violet)
-                            .accessibilityLabel(profile.badge.title ?? "")
-                    }
+                    ProfileBadgeLabel(badge: profile.badge, compact: true)
                 }
                 Text("\(profile.department) · \(profile.year)")
                     .font(.caption).foregroundStyle(CampusTheme.ink.opacity(0.5))
@@ -175,15 +172,7 @@ struct SocialPersonDetailView: View {
                             // Çıplak ikon ne anlama geldiğini söylemiyordu.
                             // Gönderi ve story sorguları rozeti getirmiyor; ayrıca
                             // çekilen değer varsa o kullanılıyor.
-                            let rozet = details?.badge ?? profile.badge
-                            if let badgeIcon = rozet.systemImage,
-                               let badgeTitle = rozet.title {
-                                Label(badgeTitle, systemImage: badgeIcon)
-                                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                                    .foregroundStyle(CampusTheme.ink)
-                                    .padding(.horizontal, 10).frame(height: 26)
-                                    .background(CampusTheme.acid, in: Capsule())
-                            }
+                            ProfileBadgeLabel(badge: details?.badge ?? profile.badge)
                         }
                         Text("\(profile.department) · \(profile.university) · \(profile.year)")
                             .font(.subheadline.bold()).foregroundStyle(CampusTheme.ink.opacity(0.5))

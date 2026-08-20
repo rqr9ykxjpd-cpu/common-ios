@@ -366,10 +366,7 @@ struct ProfileDetailSheet: View {
                 Text("\(profile.age)")
                     .font(.system(size: 22, weight: .medium, design: .rounded))
                     .foregroundStyle(CampusTheme.muted)
-                if let badgeIcon = profile.badge.systemImage {
-                    Image(systemName: badgeIcon).foregroundStyle(CampusTheme.violet)
-                        .accessibilityLabel(profile.badge.title ?? "")
-                }
+                ProfileBadgeLabel(badge: profile.badge, compact: true)
                 Spacer()
                 Text("%\(profile.compatibility) uyum")
                     .font(.system(size: 12, weight: .bold, design: .rounded))

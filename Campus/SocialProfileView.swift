@@ -114,13 +114,8 @@ struct SocialProfileView: View {
                         .lineLimit(1)
                     // Önceden herkeste "Doğrulanmış YÜ öğrencisi" yazıyordu; üniversite
                     // doğrulaması diye bir şey yok, yani herkes için yanlıştı.
-                    if let badgeTitle = appState.myBadge.title,
-                       let badgeIcon = appState.myBadge.systemImage {
-                        Label(badgeTitle, systemImage: badgeIcon)
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .foregroundStyle(CampusTheme.violet)
-                            .padding(.top, 1)
-                    }
+                    ProfileBadgeLabel(badge: appState.myBadge)
+                        .padding(.top, 2)
                 }
                 Spacer(minLength: 0)
             }

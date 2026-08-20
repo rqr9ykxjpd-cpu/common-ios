@@ -503,10 +503,7 @@ struct PostCard: View {
                                 Text(post.author.name).font(.system(size: 14, weight: .bold, design: .rounded))
                                 // Tik önceden koşulsuzdu: her gönderi yazarı doğrulanmış
                                 // görünüyordu ve işaret hiçbir şey ifade etmiyordu.
-                                if let badgeIcon = post.author.badge.systemImage {
-                                    Image(systemName: badgeIcon).font(.caption).foregroundStyle(CampusTheme.violet)
-                                        .accessibilityLabel(post.author.badge.title ?? "")
-                                }
+                                ProfileBadgeLabel(badge: post.author.badge, compact: true)
                             }
                             if let place = post.place {
                                 Text("\(place.name) · \(place.area)")
