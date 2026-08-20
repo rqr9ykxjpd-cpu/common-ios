@@ -69,12 +69,12 @@ struct PaywallView: View {
                 .tracking(2)
                 .foregroundStyle(CampusTheme.acid)
 
-            Text("Beş kişi\nyetmiyorsa.")
+            Text("Kampüs daha\nbüyük olsun.")
                 .font(.system(size: 42, weight: .bold, design: .serif))
                 .foregroundStyle(.white)
                 .lineSpacing(2)
 
-            Text("Tanış'ta iki günde bir yenilenen hakkın var. Plus ile ikiye katlanıyor, Pro'da hiç bitmiyor.")
+            Text("Ücretsiz kullanmaya devam edebilirsin. Plus ve Pro yalnızca sınırları kaldırıyor.")
                 .font(.system(size: 15, design: .rounded))
                 .foregroundStyle(.white.opacity(0.6))
                 .lineSpacing(3)
@@ -84,34 +84,54 @@ struct PaywallView: View {
     }
 
     /// Kart değil, tipografik bir karşılaştırma. İki satır, tek fark.
+    /// Üç kademeyi yan yana gösteren tablo. Kart yığını değil, gazete tablosu
+    /// gibi: ince ayraçlar, sakin tipografi. Satırlar `PlanFeature.all`'dan
+    /// geliyor — kuralı değiştirince tablo kendiliğinden güncelleniyor.
     private var karsilastirma: some View {
         VStack(spacing: 0) {
-            satir(.free)
-            Rectangle().fill(.white.opacity(0.12)).frame(height: 1)
-            satir(.plus)
-            Rectangle().fill(.white.opacity(0.12)).frame(height: 1)
-            satir(.pro)
-        }
-        .padding(.bottom, 30)
-    }
+            HStack(spacing: 0) {
+                Text("").frame(maxWidth: .infinity, alignment: .leading)
+                ForEach(SubscriptionTier.allCases, id: \.self) { kademe in
+                    Text(kademe == .free ? "ÜCRETSİZ" : kademe.title.uppercased())
+                        .font(.system(size: 9, weight: .black, design: .rounded))
+                        .tracking(0.6)
+                        .foregroundStyle(kademe == .free ? .white.opacity(0.4) : CampusTheme.acid)
+                        .frame(width: sutunGenisligi)
+                }
+            }
+            .padding(.bottom, 12)
 
-    private func satir(_ kademe: SubscriptionTier) -> some View {
-        let vurgulu = kademe != .free
-        return HStack(alignment: .firstTextBaseline) {
-            Text(kademe.title)
-                .font(.system(size: 16, weight: vurgulu ? .bold : .regular, design: .rounded))
-                .foregroundStyle(vurgulu ? .white : .white.opacity(0.5))
-            Spacer()
-            Text(kademe.quotaText)
-                .font(.system(size: 21, weight: .bold, design: .serif))
-                .foregroundStyle(vurgulu ? CampusTheme.acid : .white.opacity(0.5))
-            if kademe.likeQuota != nil {
-                Text("/ 2 gün")
-                    .font(.system(size: 12, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.32))
+            ForEach(Array(PlanFeature.all.enumerated()), id: \.element.id) { indeks, ozellik in
+                if indeks > 0 {
+                    Rectangle().fill(.white.opacity(0.09)).frame(height: 1)
+                }
+                HStack(spacing: 0) {
+                    Text(ozellik.label)
+                        .font(.system(size: 13, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.75))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    ForEach(SubscriptionTier.allCases, id: \.self) { kademe in
+                        hucre(ozellik.value(kademe), kademe: kademe)
+                    }
+                }
+                .padding(.vertical, 13)
             }
         }
-        .padding(.vertical, 16)
+        .padding(.bottom, 28)
+    }
+
+    private var sutunGenisligi: CGFloat { 62 }
+
+    private func hucre(_ metin: String, kademe: SubscriptionTier) -> some View {
+        let bos = metin == "—"
+        return Text(metin)
+            .font(.system(size: metin == "∞" ? 20 : 15,
+                          weight: .bold,
+                          design: metin == "✓" || metin == "—" ? .rounded : .serif))
+            .foregroundStyle(bos ? .white.opacity(0.22)
+                             : (kademe == .free ? .white.opacity(0.62) : CampusTheme.acid))
+            .frame(width: sutunGenisligi)
     }
 
     /// Plan seçimi. Büyük kartlar yerine iki satır: seçili olan yanıyor.
