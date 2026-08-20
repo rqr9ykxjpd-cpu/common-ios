@@ -279,13 +279,13 @@ struct PremiumDiscoverView: View {
                             .foregroundStyle(.white.opacity(0.6))
                     }
                 } else {
-                    Text("Yeni insanlar katıldıkça burada göreceksin.")
+                    Text("Yeni insanlar katıldıkça burada göreceksin.\nYenilersen daha önce geçtiklerin de tekrar çıkar.")
                         .font(.subheadline)
                         .foregroundStyle(.white.opacity(0.58))
                         .multilineTextAlignment(.center)
                     Button {
                         Haptics.impact(.light)
-                        Task { await appState.loadDiscovery(reset: true) }
+                        Task { await appState.reloadDiscoveryIncludingPasses() }
                     } label: {
                         Label("Yenile", systemImage: "arrow.clockwise")
                             .font(.system(size: 13, weight: .bold, design: .rounded))

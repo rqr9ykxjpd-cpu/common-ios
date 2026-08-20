@@ -89,6 +89,10 @@ protocol ProductService: Sendable {
     /// sorguları yazar için yalnızca temel alanları getiriyor; kişinin profiline
     /// girildiğinde kart bu yüzden bomboş görünüyordu.
     func fetchPersonDetails(_ profileID: UUID) async throws -> PersonDetails
+
+    /// "Geç" kararlarını siler; o kişiler keşifte tekrar görünür hale gelir.
+    /// Beğenilere dokunmaz, dolayısıyla eşleşmeler etkilenmez.
+    func resetPasses() async throws
     func fetchNotifications() async throws -> [BackendNotification]
     func markNotificationRead(_ notificationID: UUID) async throws
     func markAllNotificationsRead() async throws
@@ -179,6 +183,7 @@ struct UnconfiguredProductService: ProductService {
     func setPostSaved(_ postID: UUID, saved: Bool) async throws { try fail() }
     func fetchSavedPosts() async throws -> [BackendPost] { try fail() }
     func fetchPersonDetails(_ profileID: UUID) async throws -> PersonDetails { try fail() }
+    func resetPasses() async throws { try fail() }
     func fetchNotifications() async throws -> [BackendNotification] { try fail() }
     func markNotificationRead(_ notificationID: UUID) async throws { try fail() }
     func markAllNotificationsRead() async throws { try fail() }

@@ -468,6 +468,15 @@ final class AppState {
         }
     }
 
+    /// "Geç" dediklerini geri getirip desteyi baştan yükler. Kalıcı bir karar
+    /// olmamalı: kampüste birkaç bin kişi var, bir kere sola kaydırmak kimseyi
+    /// ömür boyu silmemeli.
+    func reloadDiscoveryIncludingPasses() async {
+        do { try await service.resetPasses() }
+        catch { showError(error, fallback: "Geçtiklerin geri getirilemedi.") }
+        await loadDiscovery(reset: true)
+    }
+
     func loadDiscovery(reset: Bool = false) async {
         guard !isLoadingDiscovery else { return }
         isLoadingDiscovery = true

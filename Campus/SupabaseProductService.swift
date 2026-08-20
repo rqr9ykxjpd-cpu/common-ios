@@ -776,6 +776,10 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         }
     }
 
+    func resetPasses() async throws {
+        try await client.rpc("reset_my_passes").execute()
+    }
+
     func fetchPersonDetails(_ profileID: UUID) async throws -> PersonDetails {
         // İzin kuralları bu iki tabloyu "profil görünüyorsa okunur" diye
         // tanımlıyor, dolayısıyla ek bir sunucu değişikliği gerekmiyor.

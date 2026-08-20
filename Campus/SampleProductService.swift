@@ -277,6 +277,8 @@ struct SampleProductService: ProductService {
     func deleteComment(_ commentID: UUID) async throws { await store.removeComment(commentID) }
     func setPostLiked(_ postID: UUID, liked: Bool) async throws { await store.setLiked(postID, liked: liked) }
     func setPostSaved(_ postID: UUID, saved: Bool) async throws { await store.setSaved(postID, saved: saved) }
+    func resetPasses() async throws {}
+
     func fetchPersonDetails(_ profileID: UUID) async throws -> PersonDetails {
         PersonDetails(interests: ["Kahve", "Fotoğraf", "Yürüyüş"], galleryURLs: [],
                       badge: .none, posts: [])
