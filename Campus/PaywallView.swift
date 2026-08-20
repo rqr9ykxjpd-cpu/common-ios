@@ -35,6 +35,7 @@ struct PaywallView: View {
                     kapat
                     baslik
                     karsilastirma
+                    ozelKullaniciNotu
                     planSecimi
                     elYazisiNot
                     yasalDipnot
@@ -87,54 +88,56 @@ struct PaywallView: View {
     }
 
     /// Kart değil, tipografik bir karşılaştırma. İki satır, tek fark.
-    /// Üç kademeyi yan yana gösteren tablo. Kart yığını değil, gazete tablosu
-    /// gibi: ince ayraçlar, sakin tipografi. Satırlar `PlanFeature.all`'dan
-    /// geliyor — kuralı değiştirince tablo kendiliğinden güncelleniyor.
+    /// Özellikler ızgara değil, satır satır okunuyor: üstte özelliğin adı,
+    /// altında üç kademenin değeri yan yana. Izgara elektronik tablo gibi
+    /// duruyordu; bu düzen bir dergi künyesi gibi okunuyor.
     private var karsilastirma: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 0) {
-                Text("").frame(maxWidth: .infinity, alignment: .leading)
-                ForEach(SubscriptionTier.allCases, id: \.self) { kademe in
-                    Text(kademe == .free ? "ÜCRETSİZ" : kademe.title.uppercased())
-                        .font(.system(size: 9, weight: .black, design: .rounded))
-                        .tracking(0.6)
-                        .foregroundStyle(kademe == .free ? .white.opacity(0.4) : CampusTheme.acid)
-                        .frame(width: sutunGenisligi)
-                }
-            }
-            .padding(.bottom, 12)
-
+        VStack(alignment: .leading, spacing: 0) {
             ForEach(Array(PlanFeature.all.enumerated()), id: \.element.id) { indeks, ozellik in
                 if indeks > 0 {
-                    Rectangle().fill(.white.opacity(0.09)).frame(height: 1)
+                    Rectangle().fill(.white.opacity(0.08)).frame(height: 1)
                 }
-                HStack(spacing: 0) {
-                    Text(ozellik.label)
-                        .font(.system(size: 13, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.75))
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    ForEach(SubscriptionTier.allCases, id: \.self) { kademe in
-                        hucre(ozellik.value(kademe), kademe: kademe)
+                VStack(alignment: .leading, spacing: 9) {
+                    Text(ozellik.label.replacingOccurrences(of: "\n", with: " · "))
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white)
+
+                    HStack(spacing: 18) {
+                        ForEach(SubscriptionTier.allCases, id: \.self) { kademe in
+                            kademeDegeri(kademe, deger: ozellik.value(kademe))
+                        }
+                        Spacer(minLength: 0)
                     }
                 }
-                .padding(.vertical, 13)
+                .padding(.vertical, 16)
             }
         }
-        .padding(.bottom, 28)
+        .padding(.bottom, 6)
     }
 
-    private var sutunGenisligi: CGFloat { 62 }
+    private func kademeDegeri(_ kademe: SubscriptionTier, deger: String) -> some View {
+        let kapali = deger == "—"
+        return HStack(spacing: 6) {
+            Text(kademe == .free ? "ÜCRETSİZ" : kademe.title.uppercased())
+                .font(.system(size: 9, weight: .black, design: .rounded))
+                .tracking(0.5)
+                .foregroundStyle(.white.opacity(0.35))
+            Text(deger)
+                .font(.system(size: deger == "∞" ? 17 : 14, weight: .bold, design: .rounded))
+                .foregroundStyle(kapali ? .white.opacity(0.25)
+                                 : (kademe == .free ? .white.opacity(0.7) : CampusTheme.acid))
+        }
+    }
 
-    private func hucre(_ metin: String, kademe: SubscriptionTier) -> some View {
-        let bos = metin == "—"
-        return Text(metin)
-            .font(.system(size: metin == "∞" ? 20 : 15,
-                          weight: .bold,
-                          design: metin == "✓" || metin == "—" ? .rounded : .serif))
-            .foregroundStyle(bos ? .white.opacity(0.22)
-                             : (kademe == .free ? .white.opacity(0.62) : CampusTheme.acid))
-            .frame(width: sutunGenisligi)
+    /// Kullanıcının istediği not: veriye erişimin bir karşılığı olduğunu
+    /// söylüyor. Turuncu, sayfadaki tek sıcak renk.
+    private var ozelKullaniciNotu: some View {
+        Text("bu verilere erişmek için özel kullanıcılarımızdan olmalısın")
+            .font(.custom("BradleyHandITCTT-Bold", size: 18))
+            .foregroundStyle(CampusTheme.coral)
+            .rotationEffect(.degrees(-1.2))
+            .padding(.top, 18)
+            .padding(.bottom, 26)
     }
 
     /// Plan seçimi. Büyük kartlar yerine iki satır: seçili olan yanıyor.
