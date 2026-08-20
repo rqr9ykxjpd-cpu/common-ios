@@ -1182,7 +1182,9 @@ final class AppState {
               let messageIndex = conversations[index].messages.firstIndex(where: { $0.id == messageID }),
               conversations[index].messages[messageIndex].isMine else { return }
         let kaldirilan = conversations[index].messages[messageIndex]
-        withAnimation(.snappy) { conversations[index].messages.remove(at: messageIndex) }
+        // `remove(at:)` çıkardığı öğeyi döndürüyor; sonucu kullanmadığımızı
+        // açıkça belirtmezsek derleyici uyarı veriyor.
+        withAnimation(.snappy) { _ = conversations[index].messages.remove(at: messageIndex) }
         Haptics.impact(.light)
         Task {
             do { try await service.deleteMessage(messageID) }
