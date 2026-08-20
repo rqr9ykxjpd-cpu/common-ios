@@ -45,13 +45,15 @@ struct CampusClub: Identifiable, Hashable {
 struct SocialComment: Identifiable, Hashable {
     let id: UUID
     let author: String
+    let authorAvatarURL: URL?
     let body: String
     let isMine: Bool
     let createdAt: Date
 
-    init(id: UUID = UUID(), author: String, body: String, isMine: Bool = false, createdAt: Date = .now) {
+    init(id: UUID = UUID(), author: String, authorAvatarURL: URL? = nil, body: String, isMine: Bool = false, createdAt: Date = .now) {
         self.id = id
         self.author = author
+        self.authorAvatarURL = authorAvatarURL
         self.body = body
         self.isMine = isMine
         self.createdAt = createdAt

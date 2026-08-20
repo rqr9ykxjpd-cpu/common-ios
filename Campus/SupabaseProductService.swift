@@ -6,6 +6,9 @@ struct BackendComment: Sendable {
     let postID: UUID
     let authorID: UUID
     let authorName: String
+    /// Yorum satırında fotoğraf yerine baş harf görünüyordu: sorgu yalnızca
+    /// adı çekiyordu.
+    let authorAvatarURL: URL?
     let body: String
     let createdAt: Date
 }
@@ -385,12 +388,18 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
     func fetchFeed() async throws -> [BackendPost] {
         let rows: [PostRow] = try await client
             .from("posts")
-            .select("id,author_id,caption,media_path,place_name,created_at,author:profiles!posts_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),comments(id,post_id,author_id,body,created_at,author:profiles!comments_author_id_fkey(name))")
+            .select("id,author_id,caption,media_path,place_name,created_at,author:profiles!posts_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),comments(id,post_id,author_id,body,created_at,author:profiles!comments_author_id_fkey(name,avatar_path))")
             .order("created_at", ascending: false)
             .limit(100)
             .execute()
             .value
-        let avatarURLs = await signedURLs(bucket: "profile-photos", paths: rows.compactMap { $0.author.avatarPath })
+        // Yorum yazarlarının fotoğrafları da aynı toplu imzalamaya giriyor;
+        // satır başına ayrı istek atmamak için.
+        let avatarURLs = await signedURLs(
+            bucket: "profile-photos",
+            paths: rows.compactMap { $0.author.avatarPath }
+                + rows.flatMap { $0.comments }.compactMap { $0.author.avatarPath }
+        )
         let userID = currentUserID
         let likeRows: [PostLikeRow] = rows.isEmpty ? [] : ((try? await client
             .from("post_likes")
@@ -419,7 +428,8 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
                 likeCount: postLikes.count,
                 liked: userID.map { id in postLikes.contains { $0.userID == id } } ?? false,
                 saved: savedIDs.contains(row.id),
-                badge: authorBadges[row.authorID] ?? .none
+                badge: authorBadges[row.authorID] ?? .none,
+                commentAvatarURLs: avatarURLs
             ))
         }
         return posts
@@ -444,12 +454,18 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
 
         let rows: [PostRow] = try await client
             .from("posts")
-            .select("id,author_id,caption,media_path,place_name,created_at,author:profiles!posts_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),comments(id,post_id,author_id,body,created_at,author:profiles!comments_author_id_fkey(name))")
+            .select("id,author_id,caption,media_path,place_name,created_at,author:profiles!posts_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),comments(id,post_id,author_id,body,created_at,author:profiles!comments_author_id_fkey(name,avatar_path))")
             .`in`("id", values: ids)
             .order("created_at", ascending: false)
             .execute()
             .value
-        let avatarURLs = await signedURLs(bucket: "profile-photos", paths: rows.compactMap { $0.author.avatarPath })
+        // Yorum yazarlarının fotoğrafları da aynı toplu imzalamaya giriyor;
+        // satır başına ayrı istek atmamak için.
+        let avatarURLs = await signedURLs(
+            bucket: "profile-photos",
+            paths: rows.compactMap { $0.author.avatarPath }
+                + rows.flatMap { $0.comments }.compactMap { $0.author.avatarPath }
+        )
         let likeRows: [PostLikeRow] = rows.isEmpty ? [] : ((try? await client
             .from("post_likes")
             .select("post_id,user_id")
@@ -518,7 +534,7 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         let row: PostRow = try await client
             .from("posts")
             .insert(payload)
-            .select("id,author_id,caption,media_path,place_name,created_at,author:profiles!posts_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),comments(id,post_id,author_id,body,created_at,author:profiles!comments_author_id_fkey(name))")
+            .select("id,author_id,caption,media_path,place_name,created_at,author:profiles!posts_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),comments(id,post_id,author_id,body,created_at,author:profiles!comments_author_id_fkey(name,avatar_path))")
             .single()
             .execute()
             .value
@@ -535,11 +551,15 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         let row: CommentRow = try await client
             .from("comments")
             .insert(payload)
-            .select("id,post_id,author_id,body,created_at,author:profiles!comments_author_id_fkey(name)")
+            .select("id,post_id,author_id,body,created_at,author:profiles!comments_author_id_fkey(name,avatar_path)")
             .single()
             .execute()
             .value
-        return row.backendComment
+        var avatarURL: URL?
+        if let path = row.author.avatarPath {
+            avatarURL = try? await client.storage.from("profile-photos").createSignedURL(path: path, expiresIn: 3_600)
+        }
+        return row.backendComment(avatarURL: avatarURL)
     }
 
     /// Önce depolamadaki dosya, sonra satır.
@@ -868,14 +888,20 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
     private func posts(byAuthor profileID: UUID) async -> [BackendPost] {
         let rows: [PostRow] = (try? await client
             .from("posts")
-            .select("id,author_id,caption,media_path,place_name,created_at,author:profiles!posts_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),comments(id,post_id,author_id,body,created_at,author:profiles!comments_author_id_fkey(name))")
+            .select("id,author_id,caption,media_path,place_name,created_at,author:profiles!posts_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),comments(id,post_id,author_id,body,created_at,author:profiles!comments_author_id_fkey(name,avatar_path))")
             .eq("author_id", value: profileID)
             .order("created_at", ascending: false)
             .limit(30)
             .execute()
             .value) ?? []
         guard !rows.isEmpty else { return [] }
-        let avatarURLs = await signedURLs(bucket: "profile-photos", paths: rows.compactMap { $0.author.avatarPath })
+        // Yorum yazarlarının fotoğrafları da aynı toplu imzalamaya giriyor;
+        // satır başına ayrı istek atmamak için.
+        let avatarURLs = await signedURLs(
+            bucket: "profile-photos",
+            paths: rows.compactMap { $0.author.avatarPath }
+                + rows.flatMap { $0.comments }.compactMap { $0.author.avatarPath }
+        )
         let likeRows: [PostLikeRow] = ((try? await client
             .from("post_likes")
             .select("post_id,user_id")
@@ -903,7 +929,8 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
                 likeCount: postLikes.count,
                 liked: userID.map { id in postLikes.contains { $0.userID == id } } ?? false,
                 saved: savedIDs.contains(row.id),
-                badge: authorBadge
+                badge: authorBadge,
+                commentAvatarURLs: avatarURLs
             ))
         }
         return sonuc
@@ -1857,6 +1884,11 @@ private struct SupabaseProfileRow: Decodable {
 
 private struct CommentAuthorRow: Decodable {
     let name: String
+    let avatarPath: String?
+    enum CodingKeys: String, CodingKey {
+        case name
+        case avatarPath = "avatar_path"
+    }
 }
 
 private struct CommentRow: Decodable {
@@ -1874,12 +1906,15 @@ private struct CommentRow: Decodable {
         case createdAt = "created_at"
     }
 
-    var backendComment: BackendComment {
+    /// Avatar adresi imzalı olarak dışarıdan veriliyor: imzalama toplu
+    /// yapıldığı için satır başına ayrı istek atılmıyor.
+    func backendComment(avatarURL: URL?) -> BackendComment {
         BackendComment(
             id: id,
             postID: postID,
             authorID: authorID,
             authorName: author.name,
+            authorAvatarURL: avatarURL,
             body: body,
             createdAt: createdAt
         )
@@ -1904,7 +1939,7 @@ private struct PostRow: Decodable {
         case createdAt = "created_at"
     }
 
-    func backendPost(imageData: Data?, authorAvatarURL: URL?, likeCount: Int, liked: Bool, saved: Bool, badge: ProfileBadge = .none) -> BackendPost {
+    func backendPost(imageData: Data?, authorAvatarURL: URL?, likeCount: Int, liked: Bool, saved: Bool, badge: ProfileBadge = .none, commentAvatarURLs: [String: URL] = [:]) -> BackendPost {
         BackendPost(
             id: id,
             authorID: authorID,
@@ -1921,7 +1956,8 @@ private struct PostRow: Decodable {
             placeName: placeName,
             imageData: imageData,
             createdAt: createdAt,
-            comments: comments.sorted { $0.createdAt < $1.createdAt }.map(\.backendComment),
+            comments: comments.sorted { $0.createdAt < $1.createdAt }
+                .map { $0.backendComment(avatarURL: $0.author.avatarPath.flatMap { commentAvatarURLs[$0] }) },
             likeCount: likeCount,
             liked: liked,
             saved: saved

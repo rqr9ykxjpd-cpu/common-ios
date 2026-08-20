@@ -271,6 +271,7 @@ struct SampleProductService: ProductService {
             postID: postID,
             authorID: SampleData.me.id,
             authorName: SampleData.me.name,
+            authorAvatarURL: nil,
             body: body,
             createdAt: .now
         )
@@ -567,7 +568,7 @@ enum SampleData {
             imageData: UIImageAsset.data(named: asset),
             createdAt: createdAt,
             comments: comments.map { name, body in
-                BackendComment(id: UUID(), postID: postID, authorID: UUID(), authorName: name, body: body, createdAt: createdAt)
+                BackendComment(id: UUID(), postID: postID, authorID: UUID(), authorName: name, authorAvatarURL: nil, body: body, createdAt: createdAt)
             },
             likeCount: likes,
             liked: liked,

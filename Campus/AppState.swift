@@ -1439,6 +1439,7 @@ final class AppState {
         SocialComment(
             id: comment.id,
             author: comment.authorName,
+            authorAvatarURL: comment.authorAvatarURL,
             body: comment.body,
             isMine: comment.authorID == currentUserID,
             createdAt: comment.createdAt

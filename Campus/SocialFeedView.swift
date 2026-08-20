@@ -751,14 +751,23 @@ private struct CommentsView: View {
 
     private func commentRow(_ comment: SocialComment) -> some View {
         HStack(alignment: .top, spacing: 12) {
-            Circle()
-                .fill(comment.isMine ? CampusTheme.acid : CampusTheme.violet.opacity(0.14))
-                .frame(width: 38, height: 38)
-                .overlay {
-                    Text(String(comment.author.prefix(1)).uppercased())
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                        .foregroundStyle(comment.isMine ? CampusTheme.onAccent : CampusTheme.ink)
+            // Fotoğraf varsa o, yoksa baş harf. Eskiden hep baş harf çiziliyordu
+            // çünkü sorgu yalnızca adı getiriyordu.
+            Group {
+                if comment.authorAvatarURL != nil {
+                    ProfileMedia(url: comment.authorAvatarURL, data: nil)
+                } else {
+                    Circle()
+                        .fill(comment.isMine ? CampusTheme.acid : CampusTheme.violet.opacity(0.14))
+                        .overlay {
+                            Text(String(comment.author.prefix(1)).uppercased())
+                                .font(.system(size: 14, weight: .bold, design: .rounded))
+                                .foregroundStyle(comment.isMine ? CampusTheme.onAccent : CampusTheme.ink)
+                        }
                 }
+            }
+            .frame(width: 38, height: 38)
+            .clipShape(Circle())
             VStack(alignment: .leading, spacing: 5) {
                 HStack(alignment: .firstTextBaseline) {
                     Text(comment.author)
