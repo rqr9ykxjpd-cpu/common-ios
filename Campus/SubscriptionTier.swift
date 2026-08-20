@@ -87,7 +87,7 @@ struct PlanFeature: Identifiable, Sendable {
         PlanFeature(id: 4, label: "Profiline bakanlar") { $0.canSeeProfileVisitors ? "✓" : "—" },
         PlanFeature(id: 5, label: "Story'yi duraklatma") { $0.canPauseStory ? "✓" : "—" },
         PlanFeature(id: 6, label: "Mesaj silme ve\ndüzenleme") { $0.canEditMessages ? "✓" : "—" },
-        PlanFeature(id: 7, label: "Kim kaç kez izledi") { $0.canSeeStoryViewCounts ? "✓" : "—" },
+        PlanFeature(id: 7, label: "Story'mi kim kaç kez izledi") { $0.canSeeStoryViewCounts ? "✓" : "—" },
         PlanFeature(id: 8, label: "Hayalet mod") { $0.hasGhostMode ? "✓" : "—" }
     ]
 }

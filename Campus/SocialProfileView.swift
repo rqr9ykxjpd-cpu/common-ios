@@ -7,6 +7,7 @@ struct SocialProfileView: View {
     @State private var showTerms = false
     @State private var showPrivacy = false
     @State private var showPaywall = false
+    @State private var showPhoto = false
     @Environment(\.openURL) private var openURL
     @State private var showComposer = false
     @State private var showMeetingRequests = false
@@ -75,6 +76,9 @@ struct SocialProfileView: View {
             .sheet(isPresented: $showSaved) { savedPostsSheet.task { await appState.loadSavedPosts() } }
             .sheet(isPresented: $showVisits) { visitorsSheet }
             .sheet(isPresented: $showPaywall) { PaywallView() }
+            .fullScreenCover(isPresented: $showPhoto) {
+                PhotoZoomView(url: appState.avatarURL, data: appState.avatarData)
+            }
             .sheet(isPresented: $showTerms) {
                 NavigationStack {
                     LegalTextView(title: "Kullanım Koşulları", blocks: LegalTexts.kosullar)
@@ -114,10 +118,17 @@ struct SocialProfileView: View {
     private var identityHeader: some View {
         VStack(alignment: .leading, spacing: CampusTheme.Space.lg) {
             HStack(alignment: .top, spacing: CampusTheme.Space.lg) {
-                ProfileMedia(url: appState.avatarURL, data: appState.avatarData)
-                    .frame(width: 88, height: 88)
-                    .clipShape(Circle())
-                    .overlay(Circle().stroke(CampusTheme.hairline))
+                // Fotoğrafa dokununca tam ekran açılıyor: 88 puntoluk bir daireden
+                // fotoğrafın gerçekte nasıl göründüğü anlaşılmıyordu.
+                Button { showPhoto = true } label: {
+                    ProfileMedia(url: appState.avatarURL, data: appState.avatarData)
+                        .frame(width: 88, height: 88)
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(CampusTheme.hairline))
+                }
+                .buttonStyle(PressableStyle())
+                .disabled(appState.avatarURL == nil && appState.avatarData == nil)
+                .accessibilityLabel("Profil fotoğrafını büyüt")
 
                 VStack(alignment: .leading, spacing: 5) {
                     Text(displayName)
@@ -310,8 +321,10 @@ struct SocialProfileView: View {
                 listRow(icon: appState.tier.hasGhostMode ? "eye.slash" : "lock.fill",
                         title: "Hayalet mod",
                         detail: appState.tier.hasGhostMode
-                            ? (appState.ghostMode ? "Açık — kimseye iz bırakmıyorsun" : "Kapalı")
-                            : "Neye baktığın, kimin profiline girdiğin görünmesin",
+                            ? (appState.ghostMode
+                                ? "Açık — hangi story'yi kaç kez izlediğin bile görünmüyor"
+                                : "Kapalı")
+                            : "Kimin profiline girdiğin, hangi story'yi kaç kez izlediğin gizlensin",
                         trailing: appState.tier.hasGhostMode ? (appState.ghostMode ? "Açık" : "Kapalı") : "Pro") {
                     if appState.tier.hasGhostMode {
                         appState.ghostMode.toggle()

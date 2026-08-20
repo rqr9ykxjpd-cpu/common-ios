@@ -66,7 +66,7 @@ struct PaywallView: View {
     }
 
     private var baslik: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             Text("COMMON")
                 .font(.system(size: 11, weight: .black, design: .rounded))
                 .tracking(2)
@@ -80,7 +80,7 @@ struct PaywallView: View {
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
         }
-        .padding(.bottom, 14)
+        .padding(.bottom, 10)
     }
 
     /// Üç kademeyi yan yana gösteren tablo. Kart yığını değil, gazete tablosu
@@ -116,7 +116,7 @@ struct PaywallView: View {
                         hucre(ozellik.value(kademe), kademe: kademe)
                     }
                 }
-                .padding(.vertical, 6)
+                .padding(.vertical, 5)
             }
         }
         .padding(.bottom, 4)
@@ -153,7 +153,7 @@ struct PaywallView: View {
             planSatiri(.plus, fiyat: plusFiyat, not: nil)
             planSatiri(.pro, fiyat: proFiyat, not: "sınırsız")
         }
-        .padding(.bottom, 14)
+        .padding(.bottom, 10)
     }
 
     private func planSatiri(_ kademe: SubscriptionTier, fiyat: String, not: String?) -> some View {
@@ -187,7 +187,7 @@ struct PaywallView: View {
                 }
             }
             .padding(.horizontal, 16)
-            .frame(height: 50)
+            .frame(height: 48)
             .background(aktif ? .white.opacity(0.07) : .clear, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)

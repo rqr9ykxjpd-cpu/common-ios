@@ -1200,7 +1200,7 @@ private struct StoryViewersSheet: View {
                                                 .background(CampusTheme.violet.opacity(0.1), in: Capsule())
                                         } else {
                                             Button { showProNote = true } label: {
-                                                Image(systemName: "chevron.up")
+                                                Image(systemName: "lock.fill")
                                                     .font(.system(size: 12, weight: .bold))
                                                     .foregroundStyle(CampusTheme.violet)
                                                     .frame(width: 30, height: 30)
