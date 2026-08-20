@@ -340,7 +340,7 @@ struct PrimaryEditorialButton: View {
                 Text(title).font(.system(size: 11, weight: .black, design: .rounded)).tracking(1.2)
                 Spacer(); Image(systemName: "arrow.right")
             }
-            .foregroundStyle(inverted ? CampusTheme.ink : CampusTheme.paper)
+            .foregroundStyle(inverted ? CampusTheme.onAccent : CampusTheme.paper)
             .padding(.horizontal, 20).frame(height: 58)
             .background(inverted ? CampusTheme.acid : CampusTheme.ink)
             .opacity(enabled ? 1 : 0.25)

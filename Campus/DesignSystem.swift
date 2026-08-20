@@ -27,6 +27,11 @@ enum CampusTheme {
 
     // Marka renkleri her iki modda da aynı kalır.
     static let acid = Color(hex: "D8FF52")
+
+    /// `acid` zemin üstündeki yazı ve simgeler. Sabit koyu — `ink` kullanılamaz,
+    /// çünkü o koyu modda beyaza dönüyor ve fıstık yeşili zeminde okunmaz hale
+    /// geliyordu (paylaş düğmesi, rozetler, logo işareti, buluşma düğmesi...).
+    static let onAccent = Color(hex: "121210")
     static let coral = Color(hex: "FF745E")
     static let violet = Color(hex: "8066FF")
 
@@ -76,7 +81,7 @@ struct Wordmark: View {
                     .frame(width: compact ? 22 : 28, height: compact ? 22 : 28)
                 Circle()
                     .trim(from: 0.12, to: 0.84)
-                    .stroke(CampusTheme.ink, style: StrokeStyle(lineWidth: compact ? 2 : 2.5, lineCap: .round))
+                    .stroke(CampusTheme.onAccent, style: StrokeStyle(lineWidth: compact ? 2 : 2.5, lineCap: .round))
                     .frame(width: compact ? 11 : 15, height: compact ? 11 : 15)
                     .rotationEffect(.degrees(-35))
             }
@@ -190,7 +195,8 @@ struct AppButton: View {
     private var foreground: Color {
         switch role {
         case .primary: CampusTheme.paper
-        case .secondary, .accent: CampusTheme.ink
+        case .secondary: CampusTheme.ink
+        case .accent: CampusTheme.onAccent
         }
     }
 

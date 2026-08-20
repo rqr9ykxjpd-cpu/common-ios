@@ -14,7 +14,7 @@ struct ProfileBadgeLabel: View {
         if let icon = badge.systemImage, let title = badge.title {
             Label(title, systemImage: icon)
                 .font(.system(size: compact ? 10 : 11, weight: .bold, design: .rounded))
-                .foregroundStyle(CampusTheme.ink)
+                .foregroundStyle(CampusTheme.onAccent)
                 .padding(.horizontal, compact ? 8 : 10)
                 .frame(height: compact ? 22 : 26)
                 .background(CampusTheme.acid, in: Capsule())

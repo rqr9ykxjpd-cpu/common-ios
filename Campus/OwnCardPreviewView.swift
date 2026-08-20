@@ -70,7 +70,7 @@ struct OwnCardPreviewView: View {
         } label: {
             Label("Düzenle", systemImage: "pencil")
                 .font(.system(size: 13, weight: .bold, design: .rounded))
-                .foregroundStyle(CampusTheme.ink)
+                .foregroundStyle(CampusTheme.onAccent)
                 .padding(.horizontal, 14).frame(height: 44)
                 .background(CampusTheme.acid, in: Capsule())
         }

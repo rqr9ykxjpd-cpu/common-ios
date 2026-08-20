@@ -444,7 +444,7 @@ private struct AddStoryBubble: View {
                         .overlay(Image(systemName: "person.fill").foregroundStyle(CampusTheme.ink.opacity(0.28)))
                         .clipShape(Circle())
                     Image(systemName: "plus")
-                        .font(.caption2.bold()).foregroundStyle(CampusTheme.ink)
+                        .font(.caption2.bold()).foregroundStyle(CampusTheme.onAccent)
                         .frame(width: 19, height: 19).background(CampusTheme.acid, in: Circle())
                         .offset(x: -1, y: -1)
                 }
@@ -722,6 +722,7 @@ private struct CommentsView: View {
                 .overlay {
                     Text(String(comment.author.prefix(1)).uppercased())
                         .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundStyle(comment.isMine ? CampusTheme.onAccent : CampusTheme.ink)
                 }
             VStack(alignment: .leading, spacing: 5) {
                 HStack(alignment: .firstTextBaseline) {

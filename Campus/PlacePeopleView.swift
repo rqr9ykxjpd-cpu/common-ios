@@ -95,7 +95,7 @@ struct PlacePeopleView: View {
                     }
                     Spacer()
                 }
-                .foregroundStyle(isHere ? .white : CampusTheme.ink)
+                .foregroundStyle(isHere ? .white : CampusTheme.onAccent)
                 .padding(.horizontal, 15).frame(height: 58)
                 .background(isHere ? CampusTheme.violet : CampusTheme.acid, in: RoundedRectangle(cornerRadius: 16))
             }
@@ -150,7 +150,7 @@ struct PlacePeopleView: View {
                 } label: {
                     Image(systemName: bekleyen == nil ? "cup.and.saucer.fill" : "checkmark")
                         .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(CampusTheme.ink)
+                        .foregroundStyle(bekleyen == nil ? CampusTheme.onAccent : CampusTheme.ink.opacity(0.55))
                         .frame(width: 46, height: 46)
                         .background(bekleyen == nil ? CampusTheme.acid : CampusTheme.ink.opacity(0.08), in: Circle())
                 }
@@ -279,7 +279,7 @@ struct SocialPersonDetailView: View {
                                 Button { sendRequest() } label: {
                                     Label(pendingRequest == nil ? "Burada buluşalım mı?" : "İstek gönderildi", systemImage: pendingRequest == nil ? "cup.and.saucer.fill" : "checkmark")
                                         .font(.subheadline.bold())
-                                        .foregroundStyle(pendingRequest == nil ? CampusTheme.ink : CampusTheme.ink.opacity(0.55))
+                                        .foregroundStyle(pendingRequest == nil ? CampusTheme.onAccent : CampusTheme.ink.opacity(0.55))
                                         .frame(maxWidth: .infinity).frame(height: 50)
                                         .background(pendingRequest == nil ? CampusTheme.acid : CampusTheme.ink.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
                                 }

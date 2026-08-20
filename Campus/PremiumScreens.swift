@@ -118,7 +118,7 @@ struct PremiumDiscoverView: View {
                     if appState.discoveryFilters.activeCount > 0 {
                         Text("\(appState.discoveryFilters.activeCount)")
                             .font(.system(size: 10, weight: .bold, design: .rounded))
-                            .foregroundStyle(CampusTheme.ink)
+                            .foregroundStyle(CampusTheme.onAccent)
                             .frame(width: 17, height: 17)
                             .background(CampusTheme.acid, in: Circle())
                     }
@@ -138,7 +138,7 @@ struct PremiumDiscoverView: View {
                         .font(.system(size: 11, weight: .bold, design: .rounded))
                         .lineLimit(1)
                 }
-                .foregroundStyle(CampusTheme.ink)
+                .foregroundStyle(CampusTheme.onAccent)
                 .padding(.horizontal, 14)
                 .frame(height: 44)
                 .background(CampusTheme.acid, in: Capsule())
@@ -269,7 +269,7 @@ struct PremiumDiscoverView: View {
                         } label: {
                             Text("FİLTRELERİ TEMİZLE")
                                 .font(.system(size: 11, weight: .black, design: .rounded)).tracking(1)
-                                .foregroundStyle(CampusTheme.ink)
+                                .foregroundStyle(CampusTheme.onAccent)
                                 .padding(.horizontal, 22).frame(height: 46)
                                 .background(CampusTheme.acid, in: Capsule())
                         }

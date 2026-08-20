@@ -319,7 +319,7 @@ private struct WelcomeSocialCanvas: View {
             VStack {
                 Spacer()
                 HStack(spacing: 12) {
-                    Circle().fill(CampusTheme.acid).frame(width: 46, height: 46).overlay(Image(systemName: "message.fill").foregroundStyle(CampusTheme.ink))
+                    Circle().fill(CampusTheme.acid).frame(width: 46, height: 46).overlay(Image(systemName: "message.fill").foregroundStyle(CampusTheme.onAccent))
                     VStack(alignment: .leading, spacing: 3) { Text("Yeni bir sohbet başladı").font(.caption.bold()); Text("“Kahve için hâlâ geç değil.”").font(.caption).opacity(0.55) }
                     Spacer()
                 }

@@ -155,16 +155,23 @@ struct CreatePostView: View {
     /// üstündeki kaynak düğmeleriyle aynı görünüyordu; hangisinin asıl alan olduğu
     /// anlaşılmıyordu. Yazı doğrudan sayfada.
     private var captionField: some View {
-        TextField(
-            isStory ? "Story'e kısa bir not ekle…" : "Bu an hakkında bir şey söyle…",
-            text: $caption,
-            axis: .vertical
-        )
-        .font(.system(size: 17, design: .rounded))
-        .lineSpacing(3)
-        .lineLimit(3...8)
-        .textFieldStyle(.plain)
-        .padding(.horizontal, 2)
+        // İpucu metnini sistemin varsayılanına bırakmıyoruz: story modunda zemin
+        // siyah ve varsayılan gri neredeyse okunmuyordu.
+        TextField("", text: $caption, axis: .vertical)
+            .font(.system(size: 17, design: .rounded))
+            .lineSpacing(3)
+            .lineLimit(3...8)
+            .textFieldStyle(.plain)
+            .padding(.horizontal, 2)
+            .overlay(alignment: .topLeading) {
+                if caption.isEmpty {
+                    Text(isStory ? "Story'e kısa bir not ekle…" : "Bu an hakkında bir şey söyle…")
+                        .font(.system(size: 17, design: .rounded))
+                        .foregroundStyle(isStory ? .white.opacity(0.55) : CampusTheme.muted)
+                        .padding(.horizontal, 2)
+                        .allowsHitTesting(false)
+                }
+            }
     }
 
     /// Küçük bir çip. Yer isteğe bağlı bir ayrıntı; tam genişlik bir kutuyu hak etmiyor.

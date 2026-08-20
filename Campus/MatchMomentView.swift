@@ -33,7 +33,7 @@ struct MatchMomentView: View {
                         .offset(x: -58)
                         .shadow(color: .black.opacity(0.35), radius: 25, y: 18)
                     Circle().fill(CampusTheme.acid).frame(width: 68, height: 68)
-                        .overlay(Image(systemName: "link").font(.title2.bold()).foregroundStyle(CampusTheme.ink))
+                        .overlay(Image(systemName: "link").font(.title2.bold()).foregroundStyle(CampusTheme.onAccent))
                         .scaleEffect(appeared ? 1 : 0.2)
                 }
                 .frame(height: 310)
