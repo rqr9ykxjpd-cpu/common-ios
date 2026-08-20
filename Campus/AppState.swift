@@ -378,7 +378,16 @@ final class AppState {
             Task { await loadConversations() }
             return
         }
-        guard !conversations[index].messages.contains(where: { $0.id == payload.id }) else { return }
+        // Aynı mesaj güncellenmiş olabilir (tepki eklendi/kaldırıldı). Eskiden
+        // yinelenen sayılıp atlanıyordu, o yüzden karşı taraf tepkiyi göremiyordu.
+        if let mevcut = conversations[index].messages.firstIndex(where: { $0.id == payload.id }) {
+            if conversations[index].messages[mevcut].reaction != payload.reaction {
+                withAnimation(.snappy) {
+                    conversations[index].messages[mevcut].reaction = payload.reaction
+                }
+            }
+            return
+        }
         let peerName = conversations[index].profile.name
         let replyTo = payload.replyToID.flatMap { replyID in
             conversations[index].messages.first(where: { $0.id == replyID }).map {
@@ -387,7 +396,7 @@ final class AppState {
         }
         let isMine = payload.senderID == currentUserID
         let message = Message(id: payload.id, body: payload.body, isMine: isMine, sentAt: payload.createdAt, reaction: payload.reaction, replyTo: replyTo)
-        conversations[index].messages.append(message)
+        withAnimation(.snappy) { conversations[index].messages.append(message) }
         conversations[index].updatedAt = message.sentAt
         if !isMine {
             conversations[index].unreadCount += 1
@@ -1149,7 +1158,7 @@ final class AppState {
         guard !cleanBody.isEmpty,
               let index = conversations.firstIndex(where: { $0.id == conversationID }) else { return }
         let message = Message(body: cleanBody, isMine: true, sentAt: .now, replyTo: replyTo)
-        conversations[index].messages.append(message)
+        withAnimation(.snappy) { conversations[index].messages.append(message) }
         conversations[index].updatedAt = .now
         do {
             let saved = try await service.sendMessage(message, matchID: conversationID)
@@ -1158,7 +1167,9 @@ final class AppState {
             conversations[refreshedIndex].messages[messageIndex] = saved
         } catch {
             if let refreshedIndex = conversations.firstIndex(where: { $0.id == conversationID }) {
-                conversations[refreshedIndex].messages.removeAll { $0.id == message.id }
+                withAnimation(.snappy) {
+                    conversations[refreshedIndex].messages.removeAll { $0.id == message.id }
+                }
             }
             showError(error, fallback: "Mesaj gönderilemedi.")
         }

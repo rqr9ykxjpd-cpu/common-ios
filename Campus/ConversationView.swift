@@ -37,6 +37,13 @@ struct ConversationView: View {
                                     }
                                 )
                                 .id(message.id)
+                                // Mesajlar belirip kaybolurken kayıyor: eskiden aniden
+                                // beliriyor ve gönderilemeyip geri alınan mesaj hiç iz
+                                // bırakmadan yok oluyordu.
+                                .transition(.asymmetric(
+                                    insertion: .move(edge: .bottom).combined(with: .opacity),
+                                    removal: .scale(scale: 0.85).combined(with: .opacity)
+                                ))
                             }
                         }
                         .padding(.horizontal, 16)
@@ -319,7 +326,13 @@ private struct MessageBubble: View {
                     showActions()
                 }
                 .simultaneousGesture(replyGesture)
+                // Çift dokunuşla kalp: tepki vermenin tek yolu menüyü açmaktı.
+                .onTapGesture(count: 2) {
+                    Haptics.impact(.light)
+                    react("❤️")
+                }
                 .accessibilityAction(named: "Yanıtla", reply)
+                .accessibilityAction(named: "Kalp gönder") { react("❤️") }
 
                 if let reaction = message.reaction {
                     Button { react(reaction) } label: {

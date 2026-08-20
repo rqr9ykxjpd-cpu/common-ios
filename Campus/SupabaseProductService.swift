@@ -702,20 +702,34 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
                 while !Task.isCancelled {
                     let channel = client.channel("messages-\(userID.uuidString.lowercased())")
                     let insertions = channel.postgresChange(InsertAction.self, schema: "public", table: "messages")
+                    // Güncellemeler de dinleniyor: mesaj tepkisi (kalp, emoji) satırı
+                    // güncelliyor, eklemiyor. Yalnızca eklemeler dinlendiği için karşı
+                    // taraf tepkiyi ancak uygulamayı yeniden yükleyince görüyordu.
+                    let updates = channel.postgresChange(UpdateAction.self, schema: "public", table: "messages")
                     do {
                         try await channel.subscribeWithError()
                         bekleme = ilkBekleme
-                        for await insertion in insertions {
-                            guard let row = try? insertion.decodeRecord(as: MessageRow.self, decoder: Self.decoder) else { continue }
-                            continuation.yield(RealtimeMessage(
-                                matchID: row.matchID,
-                                id: row.id,
-                                senderID: row.senderID,
-                                body: row.body,
-                                replyToID: row.replyToID,
-                                reaction: row.reaction,
-                                createdAt: row.createdAt
-                            ))
+                        await withTaskGroup(of: Void.self) { grup in
+                            grup.addTask {
+                                for await insertion in insertions {
+                                    guard let row = try? insertion.decodeRecord(as: MessageRow.self, decoder: Self.decoder) else { continue }
+                                    continuation.yield(RealtimeMessage(
+                                        matchID: row.matchID, id: row.id, senderID: row.senderID,
+                                        body: row.body, replyToID: row.replyToID,
+                                        reaction: row.reaction, createdAt: row.createdAt
+                                    ))
+                                }
+                            }
+                            grup.addTask {
+                                for await update in updates {
+                                    guard let row = try? update.decodeRecord(as: MessageRow.self, decoder: Self.decoder) else { continue }
+                                    continuation.yield(RealtimeMessage(
+                                        matchID: row.matchID, id: row.id, senderID: row.senderID,
+                                        body: row.body, replyToID: row.replyToID,
+                                        reaction: row.reaction, createdAt: row.createdAt
+                                    ))
+                                }
+                            }
                         }
                     } catch {
                         // Bağlanılamadı; aşağıdaki beklemeden sonra tekrar denenecek.
