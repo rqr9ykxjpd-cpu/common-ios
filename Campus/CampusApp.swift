@@ -29,6 +29,10 @@ struct CampusApp: App {
             if arguments.contains("-compose") { state.opensComposer = true }
             if arguments.contains("-club") { state.opensFirstClub = true }
             if arguments.contains("-paywall") { state.opensPaywall = true }
+            // `-tier plus` / `-tier pro`: kademeye bağlı ekranları görmek için.
+            if let i = arguments.firstIndex(of: "-tier"), i + 1 < arguments.count {
+                state.tier = ["plus": .plus, "pro": .pro][arguments[i + 1]] ?? .free
+            }
             if onboarding {
                 let adlar: [String: AppState.OnboardingStep] = [
                     "identity": .identity, "preferences": .preferences,

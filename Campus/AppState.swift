@@ -98,6 +98,10 @@ final class AppState {
     var joinedClubIDs: Set<UUID> = []
     /// Kendi rozetim. Sunucudan gelir; istemci kendine rozet veremez.
     private(set) var myBadge: ProfileBadge = .none
+
+    /// Kullanıcının abonelik kademesi. Ödeme bağlanana kadar herkes ücretsiz;
+    /// StoreKit devreye girince buraya yazılacak ve sunucuya da bildirilecek.
+    var tier: SubscriptionTier = .free
     var isFinishingOnboarding = false
     /// Kayıt akışının son adımındaki hata. Toast kaybolduğu için kullanıcı düğmenin
     /// çalışmadığını sanıyordu; bu ekranda kalıcı olarak gösteriliyor.

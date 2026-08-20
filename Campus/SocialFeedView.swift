@@ -1088,6 +1088,8 @@ struct StoryViewer: View {
 }
 
 private struct StoryViewersSheet: View {
+    @Environment(AppState.self) private var appState
+    @State private var showProNote = false
     let story: CampusStory
     let records: [StoryViewRecord]
     @Environment(\.dismiss) private var dismiss
@@ -1100,7 +1102,14 @@ private struct StoryViewersSheet: View {
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(spacing: CampusTheme.Space.lg) {
                         summary(value: "\(records.count)", label: "Kişi")
-                        summary(value: "\(totalViews)", label: "Toplam izleme")
+                        if appState.tier.canSeeStoryViewCounts {
+                            summary(value: "\(totalViews)", label: "Toplam izleme")
+                        } else {
+                            Button { showProNote = true } label: {
+                                summary(value: "↑", label: "Toplam izleme")
+                            }
+                            .buttonStyle(PressableStyle())
+                        }
                     }
                     .padding(.bottom, CampusTheme.Space.lg)
 
@@ -1126,12 +1135,27 @@ private struct StoryViewersSheet: View {
                                                 .foregroundStyle(CampusTheme.muted)
                                         }
                                         Spacer()
-                                        Text("\(record.viewCount) kez")
-                                            .font(.system(size: 12, weight: .bold, design: .rounded))
-                                            .foregroundStyle(CampusTheme.violet)
-                                            .padding(.horizontal, 10)
-                                            .frame(height: 30)
-                                            .background(CampusTheme.violet.opacity(0.1), in: Capsule())
+                                        // Kaç kez izlendiği Pro'ya özel. Kendi
+                                        // izlemelerini herkes görebiliyor.
+                                        if appState.tier.canSeeStoryViewCounts
+                                            || record.viewer.id == appState.currentUserID {
+                                            Text("\(record.viewCount) kez")
+                                                .font(.system(size: 12, weight: .bold, design: .rounded))
+                                                .foregroundStyle(CampusTheme.violet)
+                                                .padding(.horizontal, 10)
+                                                .frame(height: 30)
+                                                .background(CampusTheme.violet.opacity(0.1), in: Capsule())
+                                        } else {
+                                            Button { showProNote = true } label: {
+                                                Image(systemName: "chevron.up")
+                                                    .font(.system(size: 12, weight: .bold))
+                                                    .foregroundStyle(CampusTheme.violet)
+                                                    .frame(width: 30, height: 30)
+                                                    .background(CampusTheme.violet.opacity(0.1), in: Circle())
+                                            }
+                                            .buttonStyle(PressableStyle())
+                                            .accessibilityLabel("Kaç kez izlendiğini görmek için Pro gerekiyor")
+                                        }
                                         Image(systemName: "chevron.right")
                                             .font(.caption.bold())
                                             .foregroundStyle(CampusTheme.muted)
@@ -1157,6 +1181,9 @@ private struct StoryViewersSheet: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Bitti") { dismiss() }
                 }
+            }
+            .sheet(isPresented: $showProNote) {
+                ProUpsellSheet().presentationDetents([.height(320)])
             }
         }
     }

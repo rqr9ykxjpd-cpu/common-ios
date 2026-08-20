@@ -8,6 +8,7 @@ struct ConversationView: View {
     @State private var showProfile = false
     @State private var replyingTo: Message?
     @State private var editingMessage: Message?
+    @State private var showPaywall = false
     @State private var activeMessageActions: UUID?
     @State private var showUnmatchAlert = false
     @FocusState private var focused: Bool
@@ -35,6 +36,11 @@ struct ConversationView: View {
                                     delete: {
                                         activeMessageActions = nil
                                         appState.deleteMessage(message.id, in: conversationID)
+                                    },
+                                    canEdit: appState.tier.canEditMessages,
+                                    showPaywall: {
+                                        activeMessageActions = nil
+                                        showPaywall = true
                                     },
                                     showActions: {
                                         withAnimation(.snappy(duration: 0.2)) {
@@ -93,6 +99,7 @@ struct ConversationView: View {
         } message: {
             Text("Sohbet ikinizden de kaldırılır. Karşı taraf engellenmez; ileride tekrar eşleşebilirsiniz.")
         }
+        .sheet(isPresented: $showPaywall) { PaywallView() }
         .sheet(isPresented: $showProfile) {
             if let profile = conversation?.profile {
                 NavigationStack {
@@ -324,6 +331,11 @@ private struct MessageBubble: View {
     let reply: () -> Void
     let edit: () -> Void
     let delete: () -> Void
+    /// Silme ve düzenleme Plus'a özel. Kilitliyken düğmeler gizlenmiyor, tek bir
+    /// kilit düğmesine dönüşüyor: özelliğin var olduğunu görmeden kimse
+    /// yükseltmeyi düşünmez.
+    let canEdit: Bool
+    let showPaywall: () -> Void
     let showActions: () -> Void
     private let reactions = ["❤️", "😂", "😮", "😢", "👍"]
     @State private var dragOffset: CGFloat = 0
@@ -437,7 +449,18 @@ private struct MessageBubble: View {
 
             // Silme ve düzenleme yalnızca kendi mesajında; sunucu da aynı
             // koşulu uyguluyor, arayüz onu yansıtıyor.
-            if message.isMine {
+            if message.isMine, !canEdit {
+                Button(action: showPaywall) {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(CampusTheme.muted)
+                        .frame(width: 38, height: 38)
+                }
+                .buttonStyle(PressableStyle())
+                .accessibilityLabel("Düzenleme ve silme Plus'a özel")
+            }
+
+            if message.isMine, canEdit {
                 Button(action: edit) {
                     Image(systemName: "pencil")
                         .font(.system(size: 15, weight: .semibold))
