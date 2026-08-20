@@ -42,6 +42,8 @@ kiralamıyor veya devretmiyoruz.
 - **Mesajların:** yalnızca yazıştığın kişi görebilir.
 - **Seçtiğin kampüs noktası:** yalnızca sen görünür olmayı seçtiğin sürece ve
   yalnızca uygulamadaki diğer öğrenciler görebilir.
+- **Bir story'yi izlemen:** o story'nin sahibi seni izleyenler listesinde görür
+  ve kaç kez izlediğin de ona görünür. Story kaybolduğunda bu bilgi de silinir.
 - **E-posta adresin ve doğum tarihin:** diğer kullanıcılara gösterilmez.
 - **Engellediğin kişiler:** engellediğin kişi bunu göremez.
 

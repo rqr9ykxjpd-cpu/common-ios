@@ -26,6 +26,7 @@ enum LegalTexts {
         .madde("Profilin, gönderilerin ve story'lerin: uygulamayı kullanan diğer öğrenciler görebilir."),
         .madde("Mesajların: yalnızca yazıştığın kişi görebilir."),
         .madde("Seçtiğin kampüs noktası: yalnızca sen görünür olmayı seçtiğin sürece ve yalnızca uygulamadaki diğer öğrenciler görebilir."),
+        .madde("Bir story'yi izlemen: o story'nin sahibi seni izleyenler listesinde görür ve kaç kez izlediğin de ona görünür. Story kaybolduğunda bu bilgi de silinir."),
         .madde("E-posta adresin ve doğum tarihin: diğer kullanıcılara gösterilmez."),
         .madde("Engellediğin kişiler: engellediğin kişi bunu göremez."),
         .altbaslik("Bilgilerin nerede tutuluyor"),

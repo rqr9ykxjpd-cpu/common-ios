@@ -44,6 +44,8 @@ anyone for advertising.
 - **Your messages:** only the person you are writing to.
 - **The campus place you pick:** only while you choose to be visible, and only
   to other students in the app.
+- **Watching someone's story:** the owner of that story sees you in their list of
+  viewers, including how many times you watched it. This is deleted with the story.
 - **Your email address and date of birth:** never shown to other users.
 - **People you block:** cannot see that you blocked them.
 
