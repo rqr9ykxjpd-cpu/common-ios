@@ -742,8 +742,14 @@ final class AppState {
 
     /// Gönderi ve story sorguları yazar için yalnızca temel alanları getiriyor.
     /// Kişinin profiline girildiğinde ilgi alanları ve galerisi bu yüzden boştu.
-    func personDetails(for profileID: UUID) async -> PersonDetails? {
-        try? await service.fetchPersonDetails(profileID)
+    func personDetails(for profileID: UUID) async -> PersonProfileData? {
+        guard let uzak = try? await service.fetchPersonDetails(profileID) else { return nil }
+        return PersonProfileData(
+            interests: uzak.interests,
+            galleryURLs: uzak.galleryURLs,
+            badge: uzak.badge,
+            posts: uzak.posts.map(socialPost(from:))
+        )
     }
 
     var currentUserPosts: [SocialPost] {
@@ -1374,4 +1380,12 @@ struct ProfileDraft: Equatable, Codable {
 
 private extension String {
     var trimmed: String { trimmingCharacters(in: .whitespacesAndNewlines) }
+}
+
+/// Kişi profilinde gösterilenler, arayüzün beklediği biçimde.
+struct PersonProfileData {
+    var interests: [String]
+    var galleryURLs: [URL]
+    var badge: ProfileBadge
+    var posts: [SocialPost]
 }

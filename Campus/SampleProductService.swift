@@ -278,7 +278,8 @@ struct SampleProductService: ProductService {
     func setPostLiked(_ postID: UUID, liked: Bool) async throws { await store.setLiked(postID, liked: liked) }
     func setPostSaved(_ postID: UUID, saved: Bool) async throws { await store.setSaved(postID, saved: saved) }
     func fetchPersonDetails(_ profileID: UUID) async throws -> PersonDetails {
-        PersonDetails(interests: ["Kahve", "Fotoğraf", "Yürüyüş"], galleryURLs: [])
+        PersonDetails(interests: ["Kahve", "Fotoğraf", "Yürüyüş"], galleryURLs: [],
+                      badge: .none, posts: [])
     }
 
     func fetchSavedPosts() async throws -> [BackendPost] { await store.allPosts().filter(\.saved) }

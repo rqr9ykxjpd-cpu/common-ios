@@ -795,8 +795,56 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         let urls = await signedURLs(bucket: "profile-photos", paths: photoRows.map(\.storagePath))
         return PersonDetails(
             interests: interestRows.map(\.interest).sorted(),
-            galleryURLs: photoRows.compactMap { urls[$0.storagePath] }
+            galleryURLs: photoRows.compactMap { urls[$0.storagePath] },
+            badge: await badges(for: [profileID])[profileID] ?? .none,
+            posts: await posts(byAuthor: profileID)
         )
+    }
+
+    /// Bir kişinin gönderileri. Akıştaki sorgunun aynısı, tek bir yazarla
+    /// sınırlanmış hali.
+    private func posts(byAuthor profileID: UUID) async -> [BackendPost] {
+        let rows: [PostRow] = (try? await client
+            .from("posts")
+            .select("id,author_id,caption,media_path,place_name,created_at,author:profiles!posts_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),comments(id,post_id,author_id,body,created_at,author:profiles!comments_author_id_fkey(name))")
+            .eq("author_id", value: profileID)
+            .order("created_at", ascending: false)
+            .limit(30)
+            .execute()
+            .value) ?? []
+        guard !rows.isEmpty else { return [] }
+        let avatarURLs = await signedURLs(bucket: "profile-photos", paths: rows.compactMap { $0.author.avatarPath })
+        let likeRows: [PostLikeRow] = ((try? await client
+            .from("post_likes")
+            .select("post_id,user_id")
+            .`in`("post_id", values: rows.map(\.id))
+            .execute()
+            .value) ?? [])
+        let savedIDs: Set<UUID> = Set(((try? await client
+            .from("saved_posts")
+            .select("post_id")
+            .`in`("post_id", values: rows.map(\.id))
+            .execute()
+            .value) as [SavedPostRow]? ?? []).map(\.postID))
+        let authorBadge = await badges(for: [profileID])[profileID] ?? .none
+        let userID = currentUserID
+        var sonuc: [BackendPost] = []
+        for row in rows {
+            var imageData: Data?
+            if let mediaPath = row.mediaPath {
+                imageData = try? await client.storage.from("post-media").download(path: mediaPath)
+            }
+            let postLikes = likeRows.filter { $0.postID == row.id }
+            sonuc.append(row.backendPost(
+                imageData: imageData,
+                authorAvatarURL: row.author.avatarPath.flatMap { avatarURLs[$0] },
+                likeCount: postLikes.count,
+                liked: userID.map { id in postLikes.contains { $0.userID == id } } ?? false,
+                saved: savedIDs.contains(row.id),
+                badge: authorBadge
+            ))
+        }
+        return sonuc
     }
 
     func setPostSaved(_ postID: UUID, saved: Bool) async throws {

@@ -140,7 +140,15 @@ struct SocialPersonDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var conversationRoute: ConversationRoute?
     @State private var selectedPost: SocialPost?
-    @State private var details: PersonDetails?
+    @State private var details: PersonProfileData?
+    @State private var reacted = false
+
+    private var isMe: Bool { profile.id == appState.currentUserID }
+    private var isMatched: Bool { conversation(with: profile) != nil }
+
+    private func conversation(with person: StudentProfile) -> Conversation? {
+        appState.conversations.first(where: { $0.profile.id == person.id })
+    }
 
     private var visiblePlace: CampusPlace? { place }
     private var pendingRequest: MeetingRequest? {
@@ -162,8 +170,11 @@ struct SocialPersonDetailView: View {
                         HStack(alignment: .firstTextBaseline) {
                             Text("\(profile.name), \(profile.age)").editorialTitle(38)
                             // Çıplak ikon ne anlama geldiğini söylemiyordu.
-                            if let badgeIcon = profile.badge.systemImage,
-                               let badgeTitle = profile.badge.title {
+                            // Gönderi ve story sorguları rozeti getirmiyor; ayrıca
+                            // çekilen değer varsa o kullanılıyor.
+                            let rozet = details?.badge ?? profile.badge
+                            if let badgeIcon = rozet.systemImage,
+                               let badgeTitle = rozet.title {
                                 Label(badgeTitle, systemImage: badgeIcon)
                                     .font(.system(size: 11, weight: .bold, design: .rounded))
                                     .foregroundStyle(CampusTheme.ink)
@@ -196,6 +207,34 @@ struct SocialPersonDetailView: View {
 
                         personPosts
 
+                        // Kendi profilinde eylem düğmesi çıkıyordu: kendine mesaj
+                        // gönderme ve kendinle buluşma isteği.
+                        if isMe {
+                            EmptyView()
+                        } else if !isMatched {
+                            // Eşleşmemişken tek düğme "Mesaj gönder"di, ama mesajlaşma
+                            // eşleşmeye bağlı olduğu için hiçbir yere çıkmıyordu:
+                            // birini beğenip tanışmanın profilden bir yolu yoktu.
+                            Button {
+                                Haptics.impact(.light)
+                                reacted = true
+                                Task { await appState.react(to: profile, liked: true) }
+                            } label: {
+                                Label(reacted ? "Beğenin iletildi" : "Tanış",
+                                      systemImage: reacted ? "checkmark" : "heart.fill")
+                                    .font(.subheadline.bold()).foregroundStyle(CampusTheme.ink)
+                                    .frame(maxWidth: .infinity).frame(height: 50)
+                                    .background(reacted ? CampusTheme.ink.opacity(0.08) : CampusTheme.acid,
+                                                in: RoundedRectangle(cornerRadius: 14))
+                            }
+                            .buttonStyle(PressableStyle())
+                            .disabled(reacted)
+
+                            Text("Karşı taraf da seni beğenirse eşleşir ve yazışabilirsiniz.")
+                                .font(.system(size: 11, design: .rounded))
+                                .foregroundStyle(CampusTheme.ink.opacity(0.45))
+                                .frame(maxWidth: .infinity, alignment: .center)
+                        } else {
                         Button { openConversation() } label: {
                             Label("Mesaj gönder", systemImage: "message.fill")
                                 .font(.subheadline.bold()).foregroundStyle(CampusTheme.paper)
@@ -204,7 +243,9 @@ struct SocialPersonDetailView: View {
                         }
                         .buttonStyle(PressableStyle())
 
-                        if visiblePlace != nil {
+                        }
+
+                        if visiblePlace != nil, !isMe {
                             // Metin eskiden "Buluşma isteği gönder"di ve kulağa çıkma
                             // teklifi gibi geliyordu. Özellik aslında bunu yapmıyor:
                             // ikisi de o an aynı yerde, bu yalnızca "buradayım, gelsene"
@@ -304,7 +345,7 @@ struct SocialPersonDetailView: View {
     @ViewBuilder private var interestList: some View {
         let hepsi = details?.interests ?? profile.interests
         if !hepsi.isEmpty {
-            let benimkiler = appState.draft.interests
+            let benimkiler = isMe ? [] : appState.draft.interests
             let ortak = hepsi.filter { benimkiler.contains($0) }
             VStack(alignment: .leading, spacing: 8) {
                 if !ortak.isEmpty {
@@ -353,7 +394,7 @@ struct SocialPersonDetailView: View {
     /// kişinin gönderilerini çeken bir yol yok, o yüzden yüklü akıştan süzülüyor —
     /// yeni bir sorgu ve yeni bir izin kuralı gerektirmiyor.
     @ViewBuilder private var personPosts: some View {
-        let gonderiler = appState.posts.filter { $0.author.id == profile.id }
+        let gonderiler = details?.posts ?? []
         if !gonderiler.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
                 Text("PAYLAŞIMLARI")

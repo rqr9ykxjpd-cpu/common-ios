@@ -213,7 +213,14 @@ enum ProductServiceFactory {
 }
 
 /// Kişi profilinde gösterilen ek veriler.
+///
+/// Hepsi ayrıca çekiliyor çünkü gönderi ve story sorguları yazar için yalnızca
+/// temel alanları getiriyor: ilgi alanları boş, galeri yok, rozet yok. Gönderiler
+/// de bellekteki akıştan süzülmüyor — akış o an yüklü olmayabilir ve akışta
+/// olmayan eski gönderiler zaten hiç görünmezdi.
 struct PersonDetails: Sendable {
     var interests: [String]
     var galleryURLs: [URL]
+    var badge: ProfileBadge
+    var posts: [BackendPost]
 }
