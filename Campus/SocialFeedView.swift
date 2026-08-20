@@ -838,6 +838,7 @@ struct StoryViewer: View {
     @State private var liked = false
     @State private var showViewers = false
     @State private var isPaused = false
+    @State private var pauseHintVisible = false
     @State private var showPaywall = false
     @State private var showDeleteConfirmation = false
     @State private var selectedStoryAuthor: StudentProfile?
@@ -902,12 +903,24 @@ struct StoryViewer: View {
         // bir özellik olduğunu gösteren ekranı açıyor.
         .onLongPressGesture(minimumDuration: 0.22, maximumDistance: 24) { } onPressingChanged: { basiliyor in
             guard appState.tier.canPauseStory else {
-                if basiliyor { showPaywall = true }
+                // Hareketin ortasında modal açmak kullanıcıyı hapsediyordu:
+                // story akıp giderken önüne tam ekran bir sayfa çıkıyor,
+                // kapatması zorlaşıyordu. Bunun yerine story akmaya devam
+                // ediyor ve engellemeyen bir ipucu beliriyor.
+                if basiliyor {
+                    withAnimation(.easeOut(duration: 0.15)) { pauseHintVisible = true }
+                    Haptics.impact(.light)
+                }
                 return
             }
             withAnimation(.easeOut(duration: 0.15)) { isPaused = basiliyor }
         }
         .sheet(isPresented: $showPaywall) { PaywallView() }
+        .task(id: pauseHintVisible) {
+            guard pauseHintVisible else { return }
+            try? await Task.sleep(for: .seconds(2.5))
+            withAnimation(.easeOut(duration: 0.2)) { pauseHintVisible = false }
+        }
         .sheet(item: $selectedStoryAuthor) { profile in
             NavigationStack {
                 SocialPersonDetailView(profile: profile, place: nil)
@@ -1000,6 +1013,21 @@ struct StoryViewer: View {
                     .padding(.horizontal, 10).frame(height: 26)
                     .background(.black.opacity(0.35), in: Capsule())
                     .transition(.opacity)
+            }
+
+            // Ücretsiz kullanıcı basılı tuttuğunda: story durmuyor, akış
+            // kesilmiyor; yalnızca özelliğin var olduğunu söyleyen bir ipucu.
+            // Dokunursa Plus ekranı açılıyor — ama zorlamıyor.
+            if pauseHintVisible {
+                Button { showPaywall = true } label: {
+                    Label("Duraklatma Plus'ta", systemImage: "lock.fill")
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundStyle(CampusTheme.onAccent)
+                        .padding(.horizontal, 11).frame(height: 28)
+                        .background(CampusTheme.acid, in: Capsule())
+                }
+                .buttonStyle(PressableStyle())
+                .transition(.opacity)
             }
             Text(story.caption).font(.system(size: 24, weight: .semibold, design: .rounded))
             if story.isMine {

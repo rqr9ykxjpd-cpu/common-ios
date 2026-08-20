@@ -31,8 +31,8 @@ struct SocialProfileView: View {
                     identityHeader      // kim olduğun
                     completion          // yalnızca eksikse
                     about               // kendi anlatın
+                    posts               // ürettiklerin — ayarların üstünde
                     settingsList        // her şeyin yapıldığı tek liste
-                    posts               // ürettiklerin
                 }
                 .padding(.horizontal, CampusTheme.Space.lg)
                 .padding(.top, CampusTheme.Space.sm)
@@ -547,9 +547,13 @@ struct SocialProfileView: View {
                         Image(systemName: "photo.on.rectangle.angled")
                             .font(.system(size: 24, weight: .regular))
                             .foregroundStyle(CampusTheme.violet)
-                        Text("Henüz gönderin yok")
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
-                        Text("İlk kampüs anını paylaştığında burada görünecek.")
+                        // El yazısı, sayfanın geri kalanının aksine bir davet gibi
+                        // dursun: boş durum bir hata değil, bir başlangıç.
+                        Text("hadi ilk gönderini paylaş")
+                            .font(.custom("BradleyHandITCTT-Bold", size: 21))
+                            .foregroundStyle(CampusTheme.coral)
+                            .rotationEffect(.degrees(-1.5))
+                        Text("İlk kampüs anın burada görünecek.")
                             .font(.system(size: 13, design: .rounded))
                             .foregroundStyle(CampusTheme.muted)
                             .multilineTextAlignment(.center)
