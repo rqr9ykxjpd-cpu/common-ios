@@ -6,6 +6,7 @@ struct PlacePeopleView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var people: [StudentProfile] = []
     @State private var isLoading = true
+    @State private var selectedPerson: StudentProfile?
 
     var body: some View {
         NavigationStack {
@@ -36,12 +37,7 @@ struct PlacePeopleView: View {
                             .padding(.vertical, 40)
                         } else {
                             ForEach(people) { profile in
-                                NavigationLink {
-                                    SocialPersonDetailView(profile: profile, place: place)
-                                } label: {
-                                    personRow(profile)
-                                }
-                                .buttonStyle(PressableStyle())
+                                personRow(profile)
                             }
                         }
                     }
@@ -50,6 +46,9 @@ struct PlacePeopleView: View {
                 .refreshable { await reload() }
             }
             .toolbar(.hidden, for: .navigationBar)
+            .navigationDestination(item: $selectedPerson) { profile in
+                SocialPersonDetailView(profile: profile, place: place)
+            }
             // Görünürlüğü açıp kapatmak listeyi tazelemiyordu: "buradayım" dedikten
             // sonra liste hâlâ eski halini gösteriyor, kullanıcı kendini göremiyordu.
             .task(id: appState.currentVisiblePlace?.id) { await reload() }
@@ -109,23 +108,56 @@ struct PlacePeopleView: View {
 
     private var isHere: Bool { appState.currentVisiblePlace?.id == place.id }
 
+    /// Satır iki ayrı dokunma alanına bölündü: soldaki profili açıyor, sağdaki
+    /// doğrudan buluşma isteği gönderiyor. Eskiden bütün satır tek bir bağlantıydı
+    /// ve buluşma isteği ancak profile girip aşağı inince görünüyordu — aynı
+    /// kafedeki birine seslenmek için üç dokunuş gerekiyordu.
     private func personRow(_ profile: StudentProfile) -> some View {
-        HStack(spacing: 13) {
-            ProfileMedia(url: profile.imageURL, data: nil, assetName: profile.imageAssetName)
-                .frame(width: 64, height: 64)
-                .clipShape(Circle())
-            VStack(alignment: .leading, spacing: 5) {
-                HStack(spacing: 5) {
-                    Text("\(profile.name), \(profile.age)").font(.headline)
-                    ProfileBadgeLabel(badge: profile.badge, compact: true)
+        let benMiyim = profile.id == appState.currentUserID
+        let bekleyen = appState.meetingRequest(for: profile, at: place)
+        return HStack(spacing: 10) {
+            Button {
+                selectedPerson = profile
+            } label: {
+                HStack(spacing: 13) {
+                    ProfileMedia(url: profile.imageURL, data: nil, assetName: profile.imageAssetName)
+                        .frame(width: 64, height: 64)
+                        .clipShape(Circle())
+                    VStack(alignment: .leading, spacing: 5) {
+                        HStack(spacing: 5) {
+                            Text("\(profile.name), \(profile.age)").font(.headline)
+                            ProfileBadgeLabel(badge: profile.badge, compact: true)
+                        }
+                        Text("\(profile.department) · \(profile.year)")
+                            .font(.caption).foregroundStyle(CampusTheme.ink.opacity(0.5))
+                        Label(place.name, systemImage: "location.fill")
+                            .font(.caption.bold()).foregroundStyle(CampusTheme.violet)
+                    }
+                    Spacer(minLength: 0)
                 }
-                Text("\(profile.department) · \(profile.year)")
-                    .font(.caption).foregroundStyle(CampusTheme.ink.opacity(0.5))
-                Label(place.name, systemImage: "location.fill")
-                    .font(.caption.bold()).foregroundStyle(CampusTheme.violet)
+                .contentShape(Rectangle())
             }
-            Spacer()
-            Image(systemName: "chevron.right").font(.caption.bold()).foregroundStyle(CampusTheme.ink.opacity(0.3))
+            .buttonStyle(PressableStyle())
+
+            if benMiyim {
+                Text("SEN")
+                    .font(.system(size: 10, weight: .black, design: .rounded)).tracking(0.6)
+                    .foregroundStyle(CampusTheme.ink.opacity(0.45))
+            } else {
+                Button {
+                    Haptics.impact(.light)
+                    appState.sendMeetingRequest(to: profile, at: place)
+                } label: {
+                    Image(systemName: bekleyen == nil ? "cup.and.saucer.fill" : "checkmark")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(CampusTheme.ink)
+                        .frame(width: 46, height: 46)
+                        .background(bekleyen == nil ? CampusTheme.acid : CampusTheme.ink.opacity(0.08), in: Circle())
+                }
+                .buttonStyle(PressableStyle())
+                .disabled(bekleyen != nil)
+                .accessibilityLabel(bekleyen == nil ? "\(profile.name) kişisine burada buluşalım mı gönder" : "İstek gönderildi")
+            }
         }
         .foregroundStyle(CampusTheme.ink)
         .padding(13)
