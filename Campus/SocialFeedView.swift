@@ -559,9 +559,12 @@ struct PostCard: View {
                 Color.clear
                     .aspectRatio(1 / displayAspect, contentMode: .fit)
                     .overlay {
-                        ProfileMedia(url: post.imageURL, data: post.localImageData,
-                                     assetName: post.imageAssetName,
-                                     onNaturalSize: { remoteImageSize = $0 })
+                        if post.localImageData != nil || post.imageAssetName != nil {
+                            ProfileMedia(url: nil, data: post.localImageData,
+                                         assetName: post.imageAssetName)
+                        } else if let url = post.imageURL {
+                            MeasuredRemoteImage(url: url, naturalSize: $remoteImageSize)
+                        }
                     }
                     .clipped()
                     .contentShape(Rectangle())
@@ -1098,12 +1101,18 @@ private struct StoryViewersSheet: View {
 }
 
 /// Görseli kendimiz indiriyoruz ki gerçek boyutunu öğrenebilelim; `AsyncImage`
-/// bunu vermiyor. `URLSession.shared` kendi önbelleğini kullandığı için aynı
-/// görsel ikinci kez gösterildiğinde ağa çıkılmıyor.
-private struct MeasuredRemoteImage<Fallback: View>: View {
+/// yalnızca bir `Image` veriyor, boyutunu okumanın yolu yok. Boyut olmadan
+/// sunucudan gelen her gönderi kareye kırpılıyordu.
+///
+/// `URLSession.shared` kendi önbelleğini kullandığı için aynı görsel ikinci kez
+/// gösterildiğinde ağa çıkılmıyor.
+///
+/// Boyut bir kapanışla değil `Binding` ile geri veriliyor: kapanış alanı taşıyan
+/// bir görünümün yapıcısı ana iş parçacığına bağlanıyor ve izole olmayan
+/// bağlamlardan çağrıldığında eşzamanlılık uyarısı üretiyor.
+private struct MeasuredRemoteImage: View {
     let url: URL
-    let onNaturalSize: (CGSize) -> Void
-    @ViewBuilder let fallback: () -> Fallback
+    @Binding var naturalSize: CGSize?
     @State private var image: UIImage?
 
     var body: some View {
@@ -1111,7 +1120,7 @@ private struct MeasuredRemoteImage<Fallback: View>: View {
             if let image {
                 Image(uiImage: image).resizable().scaledToFill()
             } else {
-                fallback()
+                CampusTheme.ink.opacity(0.06)
             }
         }
         .task(id: url) {
@@ -1119,7 +1128,7 @@ private struct MeasuredRemoteImage<Fallback: View>: View {
                   let indirilen = UIImage(data: data)
             else { return }
             image = indirilen
-            onNaturalSize(indirilen.size)
+            naturalSize = indirilen.size
         }
     }
 }
@@ -1128,11 +1137,6 @@ struct ProfileMedia: View {
     let url: URL?
     let data: Data?
     var assetName: String? = nil
-    /// Verilirse görselin gerçek boyutu, indikten sonra bir kez bildirilir.
-    /// Gönderi kartı doğru oranı ancak böyle öğrenebiliyor: `AsyncImage` yalnızca
-    /// bir `Image` veriyor, boyutunu okumanın yolu yok. Yalnızca boyutu isteyen
-    /// çağıranlar bu yolu kullanır; avatarlar `AsyncImage` üzerinde kalır.
-    var onNaturalSize: ((CGSize) -> Void)? = nil
 
     var body: some View {
         Group {
@@ -1141,15 +1145,11 @@ struct ProfileMedia: View {
             } else if let assetName {
                 Image(assetName).resizable().scaledToFill()
             } else if let url {
-                if let onNaturalSize {
-                    MeasuredRemoteImage(url: url, onNaturalSize: onNaturalSize, fallback: { fallback })
-                } else {
-                    AsyncImage(url: url) { phase in
-                        if let image = phase.image {
-                            image.resizable().scaledToFill()
-                        } else {
-                            fallback
-                        }
+                AsyncImage(url: url) { phase in
+                    if let image = phase.image {
+                        image.resizable().scaledToFill()
+                    } else {
+                        fallback
                     }
                 }
             } else {
