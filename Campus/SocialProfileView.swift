@@ -177,7 +177,11 @@ struct SocialProfileView: View {
 
             HStack(spacing: CampusTheme.Space.sm) {
                 statPill(value: appState.currentUserPosts.count, label: "gönderi")
-                Button { showVisits = true } label: {
+                // Üstteki rozet de aynı kilide tabi olmalı: ayarlardaki satırı
+                // kilitleyip burayı açık bırakmak, kısıtı anlamsız kılıyordu.
+                Button {
+                    if appState.tier.canSeeProfileVisitors { showVisits = true } else { showPaywall = true }
+                } label: {
                     statPill(value: appState.profileVisits.count, label: "ziyaretçi")
                 }
                 .buttonStyle(PressableStyle())

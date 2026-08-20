@@ -330,9 +330,18 @@ struct ProfileDetailSheet: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
     @State private var selectedPhoto = 0
+    @State private var details: PersonProfileData?
 
-    private var profilePosts: [SocialPost] {
-        appState.posts.filter { $0.author.name == profile.name }
+    /// Gönderiler isme göre süzülüyordu: aynı adlı iki kişi karışırdı ve akışa
+    /// girmemiş gönderiler hiç görünmezdi. Artık kişinin gönderileri sunucudan,
+    /// kimliğine göre geliyor — kişi profilinin diğer girişleriyle aynı yol.
+    private var profilePosts: [SocialPost] { details?.posts ?? [] }
+
+    private var galeri: [URL] {
+        let uzak = details?.galleryURLs ?? []
+        if !uzak.isEmpty { return uzak }
+        if !profile.galleryImageURLs.isEmpty { return profile.galleryImageURLs }
+        return [profile.imageURL].compactMap { $0 }
     }
 
     var body: some View {
@@ -347,26 +356,25 @@ struct ProfileDetailSheet: View {
             }
             .padding(.bottom, CampusTheme.Space.xl)
         }
+        .task { details = await appState.personDetails(for: profile.id) }
         .background(CampusTheme.paper.ignoresSafeArea())
         .foregroundStyle(CampusTheme.ink)
         .safeAreaInset(edge: .bottom, spacing: 0) { decisionBar }
     }
 
-    private var galleryPageCount: Int {
-        max(profile.galleryImageURLs.count, 1)
-    }
+    private var galleryPageCount: Int { max(galeri.count, 1) }
 
     private var gallery: some View {
         ZStack(alignment: .topTrailing) {
             TabView(selection: $selectedPhoto) {
-                if profile.galleryImageURLs.isEmpty {
+                if galeri.isEmpty {
                     ProfileMedia(url: profile.imageURL, data: nil, assetName: nil)
                         .frame(maxWidth: .infinity)
                         .frame(height: 460)
                         .clipped()
                         .tag(0)
                 } else {
-                    ForEach(Array(profile.galleryImageURLs.enumerated()), id: \.offset) { index, url in
+                    ForEach(Array(galeri.enumerated()), id: \.offset) { index, url in
                         ProfileMedia(url: url, data: nil, assetName: nil)
                             .frame(maxWidth: .infinity)
                             .frame(height: 460)
