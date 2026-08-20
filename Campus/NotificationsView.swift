@@ -135,7 +135,13 @@ struct NotificationsView: View {
             return
         }
         if notification.kind == .message || notification.kind == .match {
-            conversationRoute = NotificationConversationRoute(id: appState.conversationID(for: actor))
+            // Sohbet henüz yüklenmemişse kişiyi açıyoruz; uydurma bir sohbete
+            // yazılan mesaj sunucuda reddedilip ekrandan siliniyordu.
+            if let id = appState.conversationID(for: actor) {
+                conversationRoute = NotificationConversationRoute(id: id)
+            } else {
+                selectedProfile = actor
+            }
         } else {
             selectedProfile = actor
         }

@@ -457,7 +457,11 @@ struct SocialPersonDetailView: View {
     }
 
     private func openConversation() {
-        conversationRoute = ConversationRoute(id: appState.conversationID(for: profile))
+        guard let id = appState.conversationID(for: profile) else {
+            appState.show("Yazışmak için Tanış'ta eşleşmeniz gerekiyor.")
+            return
+        }
+        conversationRoute = ConversationRoute(id: id)
     }
 
     private func sendRequest() {

@@ -1014,12 +1014,22 @@ final class AppState {
         }
     }
 
-    func conversationID(for profile: StudentProfile, matchID: UUID? = nil) -> UUID {
+    /// Var olan sohbetin kimliği; yoksa yalnızca gerçek bir eşleşme kimliğiyle
+    /// yeni sohbet açılır.
+    ///
+    /// Eskiden eşleşme yokken rastgele bir kimlikle yerel sohbet uyduruluyordu.
+    /// Mesajlaşma eşleşmeye bağlı olduğu için sunucu o sohbete yazılan mesajı
+    /// reddediyor, istemci de gönderilemeyen mesajı geri alıyordu: kullanıcı
+    /// yazdığı mesajın anında kaybolduğunu görüyordu. En sık yolu kabul edilmiş
+    /// bir buluşma isteğinden "Mesaj gönder"e basmaktı — buluşma kabulü eşleşme
+    /// anlamına gelmiyor.
+    func conversationID(for profile: StudentProfile, matchID: UUID? = nil) -> UUID? {
         if let existing = conversations.first(where: { $0.profile.id == profile.id }) {
             return existing.id
         }
+        guard let matchID else { return nil }
         let conversation = Conversation(
-            id: matchID ?? UUID(),
+            id: matchID,
             profile: profile,
             messages: [],
             updatedAt: .now,

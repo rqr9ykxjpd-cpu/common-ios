@@ -78,7 +78,11 @@ struct PremiumDiscoverView: View {
             MatchMomentView(profile: profile) {
                 appState.currentMatch = nil
             } message: { starter in
-                let conversationID = appState.conversationID(for: profile)
+                // Eşleşme anında sohbet zaten gerçek eşleşme kimliğiyle açılıyor.
+                guard let conversationID = appState.conversationID(for: profile) else {
+                    appState.currentMatch = nil
+                    return
+                }
                 if let starter { Task { await appState.send(starter, in: conversationID) } }
                 appState.currentMatch = nil
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {

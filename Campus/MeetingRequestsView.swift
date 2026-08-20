@@ -120,7 +120,13 @@ struct MeetingRequestsView: View {
                 }
             } else if request.status == .accepted {
                 AppButton(title: "Mesaj gönder", systemName: "message.fill", role: .primary) {
-                    conversationRoute = MeetingConversationRoute(id: appState.conversationID(for: request.profile))
+                    // Buluşmanın kabul edilmesi eşleşme anlamına gelmiyor;
+                    // mesajlaşma eşleşmeye bağlı.
+                    if let id = appState.conversationID(for: request.profile) {
+                        conversationRoute = MeetingConversationRoute(id: id)
+                    } else {
+                        appState.show("Yazışmak için Tanış'ta eşleşmeniz gerekiyor.")
+                    }
                 }
             } else if request.direction == .outgoing && request.status == .pending {
                 Text("Karşı taraf yanıtladığında durum burada güncellenecek.")

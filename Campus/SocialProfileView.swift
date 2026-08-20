@@ -371,25 +371,39 @@ struct SocialProfileView: View {
                     .padding(.top, CampusTheme.Space.xxl)
                 } else {
                     LazyVStack(spacing: CampusTheme.Space.sm) {
+                        // Satırlar düz metindi: profiline kimin baktığını görüyor ama
+                        // o kişiye ulaşamıyordun.
                         ForEach(appState.profileVisits) { visit in
-                            HStack(spacing: CampusTheme.Space.md) {
-                                ProfileMedia(url: visit.profile.imageURL, data: nil, assetName: nil)
-                                    .frame(width: 48, height: 48)
-                                    .clipShape(Circle())
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(visit.profile.name)
-                                        .font(.system(size: 15, weight: .bold, design: .rounded))
-                                    Text(visit.profile.department)
-                                        .font(.system(size: 12, design: .rounded))
+                            NavigationLink {
+                                SocialPersonDetailView(profile: visit.profile, place: nil)
+                            } label: {
+                                HStack(spacing: CampusTheme.Space.md) {
+                                    ProfileMedia(url: visit.profile.imageURL, data: nil, assetName: nil)
+                                        .frame(width: 48, height: 48)
+                                        .clipShape(Circle())
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        HStack(spacing: 5) {
+                                            Text(visit.profile.name)
+                                                .font(.system(size: 15, weight: .bold, design: .rounded))
+                                            ProfileBadgeLabel(badge: visit.profile.badge, compact: true)
+                                        }
+                                        Text(visit.profile.department)
+                                            .font(.system(size: 12, design: .rounded))
+                                            .foregroundStyle(CampusTheme.muted)
+                                    }
+                                    Spacer(minLength: 0)
+                                    Text(visit.visitedAt.relativeTurkish)
+                                        .font(.system(size: 11, design: .rounded))
                                         .foregroundStyle(CampusTheme.muted)
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption.bold())
+                                        .foregroundStyle(CampusTheme.ink.opacity(0.3))
                                 }
-                                Spacer(minLength: 0)
-                                Text(visit.visitedAt.relativeTurkish)
-                                    .font(.system(size: 11, design: .rounded))
-                                    .foregroundStyle(CampusTheme.muted)
+                                .foregroundStyle(CampusTheme.ink)
+                                .padding(CampusTheme.Space.md)
+                                .background(CampusTheme.surface, in: RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous))
                             }
-                            .padding(CampusTheme.Space.md)
-                            .background(CampusTheme.surface, in: RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous))
+                            .buttonStyle(PressableStyle())
                         }
                     }
                     .padding(CampusTheme.Space.lg)
