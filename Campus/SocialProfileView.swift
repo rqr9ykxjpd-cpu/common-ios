@@ -253,6 +253,9 @@ struct SocialProfileView: View {
     private var settingsList: some View {
         @Bindable var state = appState
         return VStack(alignment: .leading, spacing: CampusTheme.Space.md) {
+            // Bölüm başlıkları eklendi: sayfa başlıksız bir liste yığınıydı ve
+            // aşağıda bir şey olduğu anlaşılmıyordu, kullanıcı hiç kaydırmıyordu.
+            AppSectionHeader(title: "Hesabın")
             VStack(spacing: 0) {
                 listRow(
                     icon: "rectangle.portrait.on.rectangle.portrait.angled",
@@ -300,6 +303,7 @@ struct SocialProfileView: View {
             .padding(.top, CampusTheme.Space.sm)
 
 
+            AppSectionHeader(title: "Gizliliğin")
             // Hayalet mod yalnızca Pro'da. Kilitliyken de görünüyor ki neyin
             // sunulduğu belli olsun.
             VStack(spacing: 0) {
@@ -332,6 +336,7 @@ struct SocialProfileView: View {
             .overlay(RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous).stroke(CampusTheme.hairline))
             .padding(.top, CampusTheme.Space.sm)
 
+            AppSectionHeader(title: "Hakkında")
             // En altta: hukuki metinler ikincil, sık kullanılan işlemleri aşağı
             // itmemeli. Koşullar eskiden yalnızca karşılama ekranındaydı, yani
             // giriş yaptıktan sonra bir daha ulaşılamıyordu.

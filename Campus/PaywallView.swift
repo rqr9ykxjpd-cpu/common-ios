@@ -18,8 +18,8 @@ struct PaywallView: View {
 
     /// Geçici fiyatlar. Gerçekleri App Store Connect'te tanımlanan üründen
     /// okunacak; Apple fiyatı kullanıcının ülkesine göre biçimlendiriyor.
-    var plusFiyat = "₺49,99"
-    var proFiyat = "₺89,99"
+    var plusFiyat = "₺59,99"
+    var proFiyat = "₺299,99"
 
     /// Hakkı biten ücretsiz kullanıcıya iki seçenek birden sunuluyor; birini
     /// gizlemek "acaba diğeri daha mı iyiydi" sorusunu askıda bırakırdı.
