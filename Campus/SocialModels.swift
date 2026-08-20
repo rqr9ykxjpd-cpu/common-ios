@@ -164,7 +164,13 @@ struct ProfileVisit: Identifiable, Hashable {
 /// gibi rastgele düşen isimler geliyordu. Kampüste en çok buluşulan yerler başta.
 enum CampusPlaceOrder {
     /// Başa alınacaklar, bu sırayla.
-    static let pinned = ["Şamdan Kafe", "İİBF", "Mühendislik Fakültesi"]
+    ///
+    /// Öncelik kampüsteki buluşma noktaları: insanlar fakülte binasında değil
+    /// kafede oturuyor. Fakülteler listede kalıyor, sadece arkaya düşüyor.
+    static let pinned = [
+        "Aytaç Cafe", "Şamdan Kafe", "Hazırlık Kantini", "Otağ",
+        "Yemekhane", "Merkez Kütüphane"
+    ]
 
     static func sorted(_ places: [CampusPlace]) -> [CampusPlace] {
         places.sorted { first, second in
