@@ -32,7 +32,12 @@ struct DiscoveryCard: View {
                 // çocuklarından çıkarmaya bırakmak, katmanlar farklı yükseklikler isteyince
                 // fotoğrafla bilgi paneli arasında boşluk bırakıyor ya da katmanı kırpıyordu.
                 ZStack(alignment: .topLeading) {
-                    ProfileMedia(url: currentPhoto, data: nil, assetName: nil)
+                    // `assetName` sabit nil'di: pakete gömülü görseller (örnek veri
+                    // ve ekran görüntüleri) hiç kullanılmıyor, kart boş degradeye
+                    // düşüyordu. Gerçek kullanıcılarda etkisi yok, onların fotoğrafı
+                    // adresle geliyor.
+                    ProfileMedia(url: currentPhoto, data: nil,
+                                 assetName: currentPhoto == nil ? profile.imageAssetName : nil)
                         .frame(width: width, height: photoHeight)
                         .clipped()
                         .id(photoIndex)
