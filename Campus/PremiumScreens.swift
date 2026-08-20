@@ -3,6 +3,9 @@ import SwiftUI
 struct PremiumDiscoverView: View {
     @Environment(AppState.self) private var appState
     @State private var drag: CGSize = .zero
+    /// Karar eşiği geçildiğinde bir kez titreşim vermek için. Kullanıcı kartı
+    /// bırakmadan önce "yeterince kaydırdım mı" diye kestirmek zorundaydı.
+    @State private var pastThreshold = false
     @State private var detailVisible = false
     @State private var showChats = false
     @State private var showFilters = false
@@ -18,12 +21,22 @@ struct PremiumDiscoverView: View {
                 if let profile = appState.profiles.first {
                     ZStack {
                         DiscoveryCard(profile: profile, highlightedInterests: appState.draft.interests)
+                            // Kararın rengi kartın tamamına yayılıyor: damga küçük ve
+                            // köşede kalıyordu, kaydırırken göz kartın ortasında oluyor.
+                            .overlay {
+                                RoundedRectangle(cornerRadius: CampusTheme.Radius.hero, style: .continuous)
+                                    .fill(drag.width > 0 ? CampusTheme.acid : CampusTheme.coral)
+                                    .opacity(0.3 * swipeProgress)
+                                    .allowsHitTesting(false)
+                            }
                             .overlay(alignment: .top) {
                                 HStack {
                                     decisionStamp("TANIŞ", color: CampusTheme.acid, rotation: -12)
                                         .opacity(drag.width > 0 ? swipeProgress : 0)
                                     Spacer()
-                                    decisionStamp("GEÇ", color: .white, rotation: 12)
+                                    // Eskiden beyazdı: iki karar da aynı renkteydi ve
+                                    // hangisinin ne olduğu yalnızca yazıdan anlaşılıyordu.
+                                    decisionStamp("GEÇ", color: CampusTheme.coral, rotation: 12)
                                         .opacity(drag.width < 0 ? swipeProgress : 0)
                                 }
                                 .padding(20)
@@ -36,6 +49,8 @@ struct PremiumDiscoverView: View {
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 10)
+
+                    swipeHint
                     controls
                 } else {
                     emptyState
@@ -152,6 +167,26 @@ struct PremiumDiscoverView: View {
             .rotationEffect(.degrees(rotation))
     }
 
+    /// Kaydırmanın ne yaptığı hiçbir yerde yazmıyordu. Kaydırırken o yönün metni
+    /// öne çıkıyor, böylece bilgi ilk denemede de kararın ortasında da veriliyor.
+    private var swipeHint: some View {
+        HStack(spacing: 8) {
+            Label("Sola kaydır: geç", systemImage: "arrow.left")
+                .foregroundStyle(drag.width < 0
+                                 ? CampusTheme.coral
+                                 : .white.opacity(0.4))
+            Text("·").foregroundStyle(.white.opacity(0.25))
+            Label("Sağa kaydır: tanış", systemImage: "arrow.right")
+                .foregroundStyle(drag.width > 0
+                                 ? CampusTheme.acid
+                                 : .white.opacity(0.4))
+        }
+        .font(.system(size: 11, weight: .semibold, design: .rounded))
+        .animation(.easeOut(duration: 0.15), value: drag.width > 0)
+        .animation(.easeOut(duration: 0.15), value: drag.width < 0)
+        .padding(.top, 12)
+    }
+
     private var controls: some View {
         HStack(spacing: 10) {
             // "Geri al" kaldırıldı: kararlar sunucuya yazılıyor ve geri alınamıyordu,
@@ -262,7 +297,14 @@ struct PremiumDiscoverView: View {
 
     private var swipeGesture: some Gesture {
         DragGesture()
-            .onChanged { drag = $0.translation }
+            .onChanged { value in
+                drag = value.translation
+                let asildi = abs(value.translation.width) > 100
+                if asildi != pastThreshold {
+                    pastThreshold = asildi
+                    if asildi { Haptics.impact(.light) }
+                }
+            }
             .onEnded { value in
                 abs(value.translation.width) > 100 ? dismiss(value.translation.width > 0 ? 1 : -1) : withAnimation(.spring(response: 0.4, dampingFraction: 0.76)) { drag = .zero }
             }
