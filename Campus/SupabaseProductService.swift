@@ -776,6 +776,29 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         }
     }
 
+    func fetchPersonDetails(_ profileID: UUID) async throws -> PersonDetails {
+        // İzin kuralları bu iki tabloyu "profil görünüyorsa okunur" diye
+        // tanımlıyor, dolayısıyla ek bir sunucu değişikliği gerekmiyor.
+        let interestRows: [ProfileInterestRow] = (try? await client
+            .from("profile_interests")
+            .select("interest")
+            .eq("profile_id", value: profileID)
+            .execute()
+            .value) ?? []
+        let photoRows: [ProfilePhotoRow] = (try? await client
+            .from("profile_photos")
+            .select("storage_path,position")
+            .eq("profile_id", value: profileID)
+            .order("position", ascending: true)
+            .execute()
+            .value) ?? []
+        let urls = await signedURLs(bucket: "profile-photos", paths: photoRows.map(\.storagePath))
+        return PersonDetails(
+            interests: interestRows.map(\.interest).sorted(),
+            galleryURLs: photoRows.compactMap { urls[$0.storagePath] }
+        )
+    }
+
     func setPostSaved(_ postID: UUID, saved: Bool) async throws {
         guard let userID = currentUserID else { throw BackendServiceError.missingSession }
         if saved {
@@ -1364,6 +1387,10 @@ private struct MyProfileRow: Decodable {
 private struct ProfileMediaRow: Decodable {
     let avatarPath: String?
     enum CodingKeys: String, CodingKey { case avatarPath = "avatar_path" }
+}
+
+private struct ProfileInterestRow: Decodable {
+    let interest: String
 }
 
 private struct ProfilePhotoRow: Decodable {

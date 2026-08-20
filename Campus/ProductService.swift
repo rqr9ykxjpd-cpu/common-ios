@@ -85,6 +85,10 @@ protocol ProductService: Sendable {
     /// Kaydedilen gönderiler. Akıştan süzmek yetmiyor: akış yalnızca son 100 gönderiyi
     /// getirdiği için eski bir gönderiyi kaydeden kişi onu yer imlerinde bulamıyordu.
     func fetchSavedPosts() async throws -> [BackendPost]
+    /// Bir kişinin ilgi alanları ve galeri fotoğrafları. Gönderi ve story
+    /// sorguları yazar için yalnızca temel alanları getiriyor; kişinin profiline
+    /// girildiğinde kart bu yüzden bomboş görünüyordu.
+    func fetchPersonDetails(_ profileID: UUID) async throws -> PersonDetails
     func fetchNotifications() async throws -> [BackendNotification]
     func markNotificationRead(_ notificationID: UUID) async throws
     func markAllNotificationsRead() async throws
@@ -174,6 +178,7 @@ struct UnconfiguredProductService: ProductService {
     func setPostLiked(_ postID: UUID, liked: Bool) async throws { try fail() }
     func setPostSaved(_ postID: UUID, saved: Bool) async throws { try fail() }
     func fetchSavedPosts() async throws -> [BackendPost] { try fail() }
+    func fetchPersonDetails(_ profileID: UUID) async throws -> PersonDetails { try fail() }
     func fetchNotifications() async throws -> [BackendNotification] { try fail() }
     func markNotificationRead(_ notificationID: UUID) async throws { try fail() }
     func markAllNotificationsRead() async throws { try fail() }
@@ -205,4 +210,10 @@ enum ProductServiceFactory {
         }
         return SupabaseProductService(configuration: configuration)
     }
+}
+
+/// Kişi profilinde gösterilen ek veriler.
+struct PersonDetails: Sendable {
+    var interests: [String]
+    var galleryURLs: [URL]
 }

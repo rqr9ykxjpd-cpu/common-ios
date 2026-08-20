@@ -740,6 +740,12 @@ final class AppState {
         }
     }
 
+    /// Gönderi ve story sorguları yazar için yalnızca temel alanları getiriyor.
+    /// Kişinin profiline girildiğinde ilgi alanları ve galerisi bu yüzden boştu.
+    func personDetails(for profileID: UUID) async -> PersonDetails? {
+        try? await service.fetchPersonDetails(profileID)
+    }
+
     var currentUserPosts: [SocialPost] {
         posts.filter(\.isMine)
     }

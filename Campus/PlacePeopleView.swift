@@ -140,6 +140,7 @@ struct SocialPersonDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var conversationRoute: ConversationRoute?
     @State private var selectedPost: SocialPost?
+    @State private var details: PersonDetails?
 
     private var visiblePlace: CampusPlace? { place }
     private var pendingRequest: MeetingRequest? {
@@ -189,13 +190,9 @@ struct SocialPersonDetailView: View {
 
                         Text(profile.bio).font(.system(size: 16, design: .serif)).lineSpacing(4)
 
-                        HStack(spacing: 8) {
-                            ForEach(profile.interests.prefix(3), id: \.self) { interest in
-                                Text(interest.uppercased()).font(.system(size: 11, weight: .semibold, design: .rounded))
-                                    .padding(.horizontal, 10).frame(height: 28)
-                                    .overlay(Capsule().stroke(CampusTheme.ink.opacity(0.18)))
-                            }
-                        }
+                        interestList
+
+                        gallery
 
                         personPosts
 
@@ -269,7 +266,10 @@ struct SocialPersonDetailView: View {
         .toolbar(.hidden, for: .navigationBar)
         // Ziyaret yalnızca birinin profili kasıtlı olarak açıldığında kaydedilir;
         // keşif destesinde kart çevirmek ziyaret sayılmaz.
-        .task { appState.recordProfileVisit(profile) }
+        .task {
+            appState.recordProfileVisit(profile)
+            details = await appState.personDetails(for: profile.id)
+        }
         .fullScreenCover(item: $conversationRoute) { route in
             NavigationStack { ConversationView(conversationID: route.id) }
         }
@@ -293,6 +293,55 @@ struct SocialPersonDetailView: View {
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button("Kapat") { selectedPost = nil }
+                    }
+                }
+            }
+        }
+    }
+
+    /// İlgi alanları eskiden üçle sınırlıydı ve hangilerinin ortak olduğu
+    /// görünmüyordu. Ortak olanlar öne çıkarılıyor: tanışma sebebi zaten orada.
+    @ViewBuilder private var interestList: some View {
+        let hepsi = details?.interests ?? profile.interests
+        if !hepsi.isEmpty {
+            let benimkiler = appState.draft.interests
+            let ortak = hepsi.filter { benimkiler.contains($0) }
+            VStack(alignment: .leading, spacing: 8) {
+                if !ortak.isEmpty {
+                    Text("\(ortak.count) ORTAK İLGİ ALANI")
+                        .font(.system(size: 11, weight: .bold, design: .rounded)).tracking(0.7)
+                        .foregroundStyle(CampusTheme.violet)
+                }
+                ProfileFlowLayout(spacing: 7) {
+                    ForEach(hepsi, id: \.self) { interest in
+                        let paylasilan = benimkiler.contains(interest)
+                        Text(interest)
+                            .font(.system(size: 12, weight: paylasilan ? .bold : .medium, design: .rounded))
+                            .foregroundStyle(CampusTheme.ink)
+                            .padding(.horizontal, 11).frame(height: 30)
+                            .background(paylasilan ? CampusTheme.acid.opacity(0.5) : CampusTheme.ink.opacity(0.055), in: Capsule())
+                    }
+                }
+            }
+        }
+    }
+
+    /// Galeri fotoğrafları. Kart tek bir fotoğraf gösteriyordu; kişi hakkında
+    /// fikir edinmek için en çok işe yarayan şey diğer fotoğraflarıydı.
+    @ViewBuilder private var gallery: some View {
+        let fotograflar = details?.galleryURLs ?? profile.galleryImageURLs
+        if !fotograflar.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("FOTOĞRAFLARI")
+                    .font(.system(size: 11, weight: .bold, design: .rounded)).tracking(0.7)
+                    .foregroundStyle(CampusTheme.ink.opacity(0.45))
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(fotograflar, id: \.self) { url in
+                            ProfileMedia(url: url, data: nil)
+                                .frame(width: 132, height: 176)
+                                .clipShape(RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous))
+                        }
                     }
                 }
             }
