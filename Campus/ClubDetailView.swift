@@ -43,14 +43,26 @@ struct ClubDetailView: View {
 
                     VStack(alignment: .leading, spacing: 12) {
                         Eyebrow(text: "yaklaşan etkinlik", color: CampusTheme.ink.opacity(0.4))
+                        // Sunucuda `next_event` varsayılanı boş metin. Etkinlik
+                        // girilmemiş kulüplerde kart bomboş görünüyordu.
+                        let etkinlik = club.nextEvent.trimmingCharacters(in: .whitespacesAndNewlines)
                         HStack(spacing: 13) {
-                            Image(systemName: "calendar.badge.clock")
-                                .font(.title2).foregroundStyle(Color(hex: club.accentHex))
+                            Image(systemName: etkinlik.isEmpty ? "calendar" : "calendar.badge.clock")
+                                .font(.title2)
+                                .foregroundStyle(etkinlik.isEmpty
+                                                 ? CampusTheme.ink.opacity(0.25)
+                                                 : Color(hex: club.accentHex))
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(club.nextEvent).font(.headline)
-                                if let place = club.meetingPlace {
-                                    Label(place.name, systemImage: "mappin.and.ellipse")
-                                        .font(.caption).foregroundStyle(CampusTheme.ink.opacity(0.5))
+                                if etkinlik.isEmpty {
+                                    Text("Henüz etkinlik bildirilmedi")
+                                        .font(.subheadline)
+                                        .foregroundStyle(CampusTheme.ink.opacity(0.45))
+                                } else {
+                                    Text(etkinlik).font(.headline)
+                                    if let place = club.meetingPlace {
+                                        Label(place.name, systemImage: "mappin.and.ellipse")
+                                            .font(.caption).foregroundStyle(CampusTheme.ink.opacity(0.5))
+                                    }
                                 }
                             }
                         }
