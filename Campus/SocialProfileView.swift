@@ -289,15 +289,6 @@ struct SocialProfileView: View {
             }
             .padding(.top, CampusTheme.Space.sm)
 
-            // Koşullar yalnızca karşılama ekranında, üstelik yalnızca web adresi
-            // olarak vardı: giriş yaptıktan sonra bir daha ulaşılamıyordu.
-            VStack(spacing: 0) {
-                listRow(icon: "doc.text", title: "Kullanım Koşulları",
-                        detail: "Kuralların ve sorumlulukların") { showTerms = true }
-                listDivider
-                listRow(icon: "hand.raised", title: "Gizlilik Politikası",
-                        detail: "Hangi bilgileri topluyoruz, ne yapıyoruz") { showPrivacy = true }
-            }
 
             VStack(spacing: 0) {
                 listRow(icon: "rectangle.portrait.and.arrow.right", title: "Çıkış yap",
@@ -312,6 +303,19 @@ struct SocialProfileView: View {
             .background(CampusTheme.surface, in: RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous).stroke(CampusTheme.hairline))
             .padding(.top, CampusTheme.Space.sm)
+
+            // En altta: hukuki metinler ikincil, sık kullanılan işlemleri aşağı
+            // itmemeli. Koşullar eskiden yalnızca karşılama ekranındaydı, yani
+            // giriş yaptıktan sonra bir daha ulaşılamıyordu.
+            VStack(spacing: 0) {
+                listRow(icon: "doc.text", title: "Kullanım Koşulları",
+                        detail: "Kuralların ve sorumlulukların") { showTerms = true }
+                listDivider
+                listRow(icon: "hand.raised", title: "Gizlilik Politikası",
+                        detail: "Hangi bilgileri topluyoruz, ne yapıyoruz") { showPrivacy = true }
+            }
+            .background(CampusTheme.surface, in: RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous).stroke(CampusTheme.hairline))
 
             if appState.isAccountActionInProgress {
                 HStack(spacing: 8) {
