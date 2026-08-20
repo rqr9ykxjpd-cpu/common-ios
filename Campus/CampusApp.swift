@@ -28,6 +28,7 @@ struct CampusApp: App {
             }
             if arguments.contains("-compose") { state.opensComposer = true }
             if arguments.contains("-club") { state.opensFirstClub = true }
+            if arguments.contains("-paywall") { state.opensPaywall = true }
             if onboarding {
                 let adlar: [String: AppState.OnboardingStep] = [
                     "identity": .identity, "preferences": .preferences,

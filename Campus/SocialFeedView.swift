@@ -153,6 +153,9 @@ struct SocialFeedView: View {
             .task(id: appState.clubs.count) {
                 if appState.opensFirstClub, selectedClub == nil { selectedClub = appState.clubs.first }
             }
+            .sheet(isPresented: Binding(get: { appState.opensPaywall }, set: { appState.opensPaywall = $0 })) {
+                PaywallView()
+            }
 #endif
             .fullScreenCover(item: Binding(get: { appState.selectedStory }, set: { appState.selectedStory = $0 })) { story in
                 StoryViewer(

@@ -272,6 +272,8 @@ final class AppState {
     /// Yalnızca geliştirme derlemesinde: ilk kulübün sayfasını açar. Ekran
     /// görüntüsü almak için — o sayfaya normalde yalnızca dokunarak gidiliyor.
     var opensFirstClub = false
+    /// Yalnızca geliştirme derlemesinde: Plus ekranını açar (tasarım kontrolü).
+    var opensPaywall = false
     /// `-onboarding <adım>` ile açıldığında oturum geri yüklemesi rotayı ezmesin diye.
     /// Yalnızca geliştirme derlemesinde var.
     var skipsSessionRestore = false
