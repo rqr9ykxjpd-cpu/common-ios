@@ -263,6 +263,9 @@ final class AppState {
     var initialTab = 0
     /// `-compose` ile paylaşım ekranı açılışta gösterilir.
     var opensComposer = false
+    /// Yalnızca geliştirme derlemesinde: ilk kulübün sayfasını açar. Ekran
+    /// görüntüsü almak için — o sayfaya normalde yalnızca dokunarak gidiliyor.
+    var opensFirstClub = false
     /// `-onboarding <adım>` ile açıldığında oturum geri yüklemesi rotayı ezmesin diye.
     /// Yalnızca geliştirme derlemesinde var.
     var skipsSessionRestore = false

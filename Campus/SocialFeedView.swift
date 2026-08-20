@@ -139,6 +139,9 @@ struct SocialFeedView: View {
             .task { await appState.loadFeed(); await appState.loadStories() }
 #if DEBUG
             .onAppear { if appState.opensComposer { showPostComposer = true } }
+            .task(id: appState.clubs.count) {
+                if appState.opensFirstClub, selectedClub == nil { selectedClub = appState.clubs.first }
+            }
 #endif
             .fullScreenCover(item: Binding(get: { appState.selectedStory }, set: { appState.selectedStory = $0 })) { story in
                 StoryViewer(
