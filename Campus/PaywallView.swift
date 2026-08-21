@@ -25,6 +25,10 @@ struct PaywallView: View {
     /// gizlemek "acaba diğeri daha mı iyiydi" sorusunu askıda bırakırdı.
     @State private var secili: SubscriptionTier = .plus
 
+    /// Dipnottaki koşullar/gizlilik bağlantıları için. Apple abonelik
+    /// ekranında bu iki metnin okunabilir olmasını şart koşuyor.
+    @State private var legalDocument: LegalDocumentRoute?
+
     var body: some View {
         ZStack {
             CampusTheme.canvasDark.ignoresSafeArea()
@@ -47,6 +51,11 @@ struct PaywallView: View {
             .safeAreaInset(edge: .bottom) { eylem }
         }
         .preferredColorScheme(.dark)
+        .sheet(item: $legalDocument) { belge in
+            NavigationStack {
+                LegalTextView(title: belge.title, blocks: belge.blocks)
+            }
+        }
     }
 
     private var kapat: some View {
@@ -224,9 +233,9 @@ struct PaywallView: View {
             HStack(spacing: 12) {
                 Button("Satın alımları geri yükle") {}
                 Text("·").foregroundStyle(.white.opacity(0.25))
-                Button("Koşullar") {}
+                Button("Koşullar") { legalDocument = .kosullar }
                 Text("·").foregroundStyle(.white.opacity(0.25))
-                Button("Gizlilik") {}
+                Button("Gizlilik") { legalDocument = .gizlilik }
             }
             .font(.system(size: 11, weight: .semibold, design: .rounded))
             .foregroundStyle(.white.opacity(0.55))

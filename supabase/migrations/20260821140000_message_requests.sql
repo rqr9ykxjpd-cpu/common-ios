@@ -58,16 +58,59 @@ with check (
   )
 );
 
--- Durumu yalnızca alıcı değiştirebilir.
+-- Durumu yalnızca alıcı değiştirebilir, o da yalnızca reddetmek için.
+-- 'accepted' bilerek dışarıda: kabul, eşleşmeyi kurup ilk mesajı sohbete yazan
+-- `accept_message_request` fonksiyonunun işi. Doğrudan yazılabilseydi istek
+-- "kabul edildi" görünürken ortada ne eşleşme ne de mesaj olurdu; gönderen
+-- kabul edildiğini görüp açacak bir sohbet bulamazdı. Fonksiyon security
+-- definer olduğu için bu kısıt onu engellemiyor.
 drop policy if exists "recipients answer message requests" on public.message_requests;
 create policy "recipients answer message requests" on public.message_requests
 for update to authenticated
 using (recipient_id = auth.uid())
-with check (recipient_id = auth.uid());
+with check (recipient_id = auth.uid() and status <> 'accepted');
 
 revoke all on public.message_requests from anon;
 grant select, insert on public.message_requests to authenticated;
 grant update (status, updated_at) on public.message_requests to authenticated;
+
+-- Reddedilen bir daha yazamaz ve kimse gün boyu istek yağdıramaz.
+--
+-- Bekleyen ikinci isteği yukarıdaki tekil indeks engelliyor ama tek başına
+-- yetmiyordu: reddedilen kişi tekrar tekrar gönderebiliyor, ısrarcı biri de
+-- yüzlerce farklı kişiye yazabiliyordu. Eşleşme şartını gevşetmemizin sebebi
+-- utangaç kullanıcıydı; ısrarcı kullanıcıya kapı açmak değil.
+--
+-- Bu sınır kademeye bağlı DEĞİL: Pro olmak ısrar etme hakkı satın almak
+-- olmamalı. Günlük 10, normal kullanımın çok üstünde bir tavan.
+create or replace function public.guard_message_request()
+returns trigger language plpgsql security definer set search_path = '' as $$
+declare
+  gunluk integer;
+begin
+  if exists (
+    select 1 from public.message_requests
+    where sender_id = new.sender_id
+      and recipient_id = new.recipient_id
+      and status = 'declined'
+  ) then
+    raise exception 'MESSAGE_REQUEST_DECLINED' using errcode = 'check_violation';
+  end if;
+
+  select count(*) into gunluk
+  from public.message_requests
+  where sender_id = new.sender_id and created_at > now() - interval '24 hours';
+
+  if gunluk >= 10 then
+    raise exception 'MESSAGE_REQUEST_RATE' using errcode = 'check_violation';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists message_requests_guard on public.message_requests;
+create trigger message_requests_guard before insert on public.message_requests
+for each row execute function public.guard_message_request();
 
 drop trigger if exists message_requests_set_updated_at on public.message_requests;
 create trigger message_requests_set_updated_at before update on public.message_requests
