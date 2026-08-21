@@ -26,12 +26,25 @@ enum BondTheme {
     /// Medya / tam ekran görseller (story, tanış kartı). Siyah kalır; içerik rengi taşır.
     static let canvasDark = Color(hex: "000000")
 
-    /// Yüksek öncelikli birincil eylem. İsim tarihsel (`acid`); değer Apple mavisi.
-    static let acid = adaptive(light: "0071E3", dark: "0A84FF")
-    /// `acid` zemin üstündeki yazı — her iki modda beyaz.
-    static let onAccent = Color(hex: "FFFFFF")
-    /// Metin bağlantısı. İsim tarihsel (`violet`).
-    static let violet = adaptive(light: "0066CC", dark: "2997FF")
+    /// Yüksek öncelikli birincil eylem. İsim tarihsel (`acid`).
+    ///
+    /// Değer Apple mavisiydi ve beyaz zeminle birlikte Facebook/Messenger'ın
+    /// birebir formülünü üretiyordu. Artık renk değil kontrast: açık modda
+    /// siyah dolu kapsül, koyu modda beyaz. Renk yalnızca anlam taşıdığı yerde
+    /// kalıyor — `coral` yıkıcı, `ember` kurucu.
+    static let acid = adaptive(light: "1D1D1F", dark: "F5F5F7")
+    /// `acid` zemin üstündeki yazı. `acid` moda göre ters çevrildiği için bu da
+    /// çevrilmek zorunda; sabit beyaz kalsaydı koyu modda beyaz üstünde beyaz olurdu.
+    static let onAccent = adaptive(light: "FFFFFF", dark: "1D1D1F")
+    /// İkincil vurgu: story halkası, rozet dolgusu, yer iğnesi. İsim tarihsel
+    /// (`violet`); bağlantı rengi değil, dekoratif kullanılıyor.
+    static let violet = adaptive(light: "1D1D1F", dark: "F5F5F7")
+
+    /// Her zaman koyu kalan yüzeylerde (Tanış kartı, story, eşleşme anı) vurgu.
+    ///
+    /// O ekranlar sistem renk şemasını zorlamıyor ama zeminleri siyah. `acid`
+    /// oralarda açık mod değerine düşüp siyah üstünde siyah kalıyordu.
+    static let onCanvasDark = Color(hex: "F5F5F7")
     /// Hata / yıkıcı eylem. Apple sistem kırmızısı; dekoratif accent değil.
     static let coral = adaptive(light: "FF3B30", dark: "FF453A")
     /// Kurucu rozeti. Paletin dışındaki tek semantik işaret — bir yerde bu

@@ -25,13 +25,13 @@ struct PremiumDiscoverView: View {
                             // köşede kalıyordu, kaydırırken göz kartın ortasında oluyor.
                             .overlay {
                                 RoundedRectangle(cornerRadius: BondTheme.Radius.hero, style: .continuous)
-                                    .fill(drag.width > 0 ? BondTheme.acid : BondTheme.coral)
+                                    .fill(drag.width > 0 ? BondTheme.onCanvasDark : BondTheme.coral)
                                     .opacity(0.3 * swipeProgress)
                                     .allowsHitTesting(false)
                             }
                             .overlay(alignment: .top) {
                                 HStack {
-                                    decisionStamp(L10n.Discovery.meetStamp, color: BondTheme.acid, rotation: -12)
+                                    decisionStamp(L10n.Discovery.meetStamp, color: BondTheme.onCanvasDark, rotation: -12)
                                         .opacity(drag.width > 0 ? swipeProgress : 0)
                                     Spacer()
                                     // Eskiden beyazdı: iki karar da aynı renkteydi ve
@@ -125,9 +125,9 @@ struct PremiumDiscoverView: View {
                     if appState.discoveryFilters.activeCount > 0 {
                         Text("\(appState.discoveryFilters.activeCount)")
                             .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(BondTheme.onAccent)
+                            .foregroundStyle(BondTheme.canvasDark)
                             .frame(width: 17, height: 17)
-                            .background(BondTheme.acid, in: Circle())
+                            .background(BondTheme.onCanvasDark, in: Circle())
                     }
                 }
                 .accessibilityLabel(appState.discoveryFilters.activeCount > 0
@@ -145,10 +145,10 @@ struct PremiumDiscoverView: View {
                         .font(.system(size: 11, weight: .bold))
                         .lineLimit(1)
                 }
-                .foregroundStyle(BondTheme.onAccent)
+                .foregroundStyle(BondTheme.canvasDark)
                 .padding(.horizontal, 14)
                 .frame(height: 44)
-                .background(BondTheme.acid, in: Capsule())
+                .background(BondTheme.onCanvasDark, in: Capsule())
                 .contentShape(Capsule())
             }
             .buttonStyle(PressableStyle())
@@ -189,7 +189,7 @@ struct PremiumDiscoverView: View {
             Text("·").foregroundStyle(.white.opacity(0.25))
             Label(L10n.Discovery.swipeMeet, systemImage: "arrow.right")
                 .foregroundStyle(drag.width > 0
-                                 ? BondTheme.acid
+                                 ? BondTheme.onCanvasDark
                                  : .white.opacity(0.4))
         }
         .font(.system(size: 11, weight: .semibold))
@@ -203,7 +203,7 @@ struct PremiumDiscoverView: View {
             // "Geri al" kaldırıldı: kararlar sunucuya yazılıyor ve geri alınamıyordu,
             // buton backend modunda her zaman pasifti.
             actionButton(icon: "xmark", label: L10n.Discovery.pass, fill: .white.opacity(0.08), color: .white) { dismiss(-1) }
-            actionButton(icon: "heart.fill", label: L10n.Discovery.meet, fill: BondTheme.acid, color: BondTheme.ink) { dismiss(1) }
+            actionButton(icon: "heart.fill", label: L10n.Discovery.meet, fill: BondTheme.onCanvasDark, color: BondTheme.ink) { dismiss(1) }
 
             iconButton(systemName: "person.text.rectangle", tint: .white) { detailVisible = true }
                 .accessibilityLabel(L10n.Discovery.seeFullProfile)
@@ -243,7 +243,7 @@ struct PremiumDiscoverView: View {
     private var emptyState: some View {
         VStack(spacing: 18) {
             if appState.isLoadingDiscovery {
-                ProgressView().tint(BondTheme.acid)
+                ProgressView().tint(BondTheme.onCanvasDark)
                 Text(L10n.Discovery.preparing).foregroundStyle(.white)
             } else if let error = appState.discoveryError {
                 Image(systemName: "wifi.exclamationmark")
@@ -251,12 +251,12 @@ struct PremiumDiscoverView: View {
                     .foregroundStyle(BondTheme.coral)
                 Text(error).foregroundStyle(.white.opacity(0.7)).multilineTextAlignment(.center)
                 Button(L10n.Common.retry) { Task { await appState.loadDiscovery(reset: true) } }
-                    .foregroundStyle(BondTheme.acid)
+                    .foregroundStyle(BondTheme.onCanvasDark)
             } else {
                 let activeFilters = appState.discoveryFilters.activeCount
                 Image(systemName: activeFilters > 0 ? "line.3.horizontal.decrease.circle" : "person.2.slash")
                     .font(.system(size: 34, weight: .light))
-                    .foregroundStyle(BondTheme.acid)
+                    .foregroundStyle(BondTheme.onCanvasDark)
                 Text(activeFilters > 0 ? L10n.Discovery.noFilterMatches : L10n.Discovery.deckEmpty)
                     .editorialTitle(38)
                     .foregroundStyle(.white)
@@ -276,9 +276,9 @@ struct PremiumDiscoverView: View {
                         } label: {
                             Text(L10n.Discovery.clearFilters)
                                 .font(.system(size: 11, weight: .black)).tracking(1)
-                                .foregroundStyle(BondTheme.onAccent)
+                                .foregroundStyle(BondTheme.canvasDark)
                                 .padding(.horizontal, 22).frame(height: 46)
-                                .background(BondTheme.acid, in: Capsule())
+                                .background(BondTheme.onCanvasDark, in: Capsule())
                         }
                         .buttonStyle(PressableStyle())
                         Button(L10n.Discovery.editFilters) { showFilters = true }
@@ -296,7 +296,7 @@ struct PremiumDiscoverView: View {
                     } label: {
                         Label(L10n.Common.refresh, systemImage: "arrow.clockwise")
                             .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(BondTheme.acid)
+                            .foregroundStyle(BondTheme.onCanvasDark)
                     }
                     .buttonStyle(PressableStyle())
                 }

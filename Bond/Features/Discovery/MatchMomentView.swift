@@ -15,7 +15,7 @@ struct MatchMomentView: View {
 
             VStack(spacing: 0) {
                 HStack {
-                    Eyebrow(text: L10n.Discovery.matchEyebrowBrand, color: BondTheme.acid)
+                    Eyebrow(text: L10n.Discovery.matchEyebrowBrand, color: BondTheme.onCanvasDark)
                     Spacer()
                     Button(action: close) {
                         Image(systemName: "xmark").frame(width: 44, height: 44)
@@ -32,13 +32,13 @@ struct MatchMomentView: View {
                         .rotationEffect(.degrees(-8))
                         .offset(x: -58)
                         .shadow(color: .black.opacity(0.35), radius: 25, y: 18)
-                    Circle().fill(BondTheme.acid).frame(width: 68, height: 68)
-                        .overlay(Image(systemName: "link").font(.title2.bold()).foregroundStyle(BondTheme.onAccent))
+                    Circle().fill(BondTheme.onCanvasDark).frame(width: 68, height: 68)
+                        .overlay(Image(systemName: "link").font(.title2.bold()).foregroundStyle(BondTheme.canvasDark))
                         .scaleEffect(appeared ? 1 : 0.2)
                 }
                 .frame(height: 310)
 
-                Eyebrow(text: L10n.Discovery.matchEyebrow, color: BondTheme.acid)
+                Eyebrow(text: L10n.Discovery.matchEyebrow, color: BondTheme.onCanvasDark)
                 Text(L10n.Discovery.matchTitle(profile.name))
                     .editorialTitle(42).multilineTextAlignment(.center).foregroundStyle(.white).lineSpacing(-2).padding(.top, 14)
                 Text(L10n.Discovery.matchSubtitle)

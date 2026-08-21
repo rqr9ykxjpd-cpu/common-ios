@@ -201,9 +201,9 @@ struct StoryViewer: View {
                 Button { showPaywall = true } label: {
                     Label(L10n.Story.pausePro, systemImage: "lock.fill")
                         .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(BondTheme.onAccent)
+                        .foregroundStyle(BondTheme.canvasDark)
                         .padding(.horizontal, 11).frame(height: 28)
-                        .background(BondTheme.acid, in: Capsule())
+                        .background(BondTheme.onCanvasDark, in: Capsule())
                 }
                 .buttonStyle(PressableStyle())
                 .transition(.opacity)
@@ -215,7 +215,7 @@ struct StoryViewer: View {
             } else if replySent {
                 Label(conversation(with: story.author) == nil ? "İsteğin gönderildi" : "Yanıt gönderildi",
                       systemImage: "checkmark.circle.fill")
-                    .font(.subheadline.bold()).foregroundStyle(BondTheme.acid)
+                    .font(.subheadline.bold()).foregroundStyle(BondTheme.onCanvasDark)
                     .frame(maxWidth: .infinity, alignment: .center).frame(height: 46)
             } else if conversation(with: story.author) == nil {
                 // Eşleşme yoksa da yazabiliyorsun ama mesaj doğrudan düşmüyor:
