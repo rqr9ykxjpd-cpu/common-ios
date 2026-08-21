@@ -179,6 +179,29 @@ actor SampleStore {
 
     func allMeetingRequests() -> [MeetingRequest] { meetingRequests }
 
+    // MARK: Moderasyon
+
+    private var reports: [ModerationReport] = SampleData.reports
+    private var suspended: Set<UUID> = []
+
+    func allReports() -> [ModerationReport] {
+        reports.map { rapor in
+            var kopya = rapor
+            kopya.reportedActive = !suspended.contains(rapor.reported.id)
+            return kopya
+        }
+    }
+
+    func resolveReport(_ id: UUID, resolution: String) {
+        guard let index = reports.firstIndex(where: { $0.id == id }) else { return }
+        reports[index].handledAt = .now
+        reports[index].resolution = resolution
+    }
+
+    func setAccountActive(_ profileID: UUID, active: Bool) {
+        if active { suspended.remove(profileID) } else { suspended.insert(profileID) }
+    }
+
     /// Kimlikten kişi. "Ben" de dahil: kendi profilime baktığımda da doğru
     /// rozet ve ilgi alanları gelsin.
     func profile(id: UUID) -> StudentProfile? {
@@ -344,6 +367,14 @@ struct SampleProductService: ProductService {
     func blockUser(_ profileID: UUID) async throws {}
     func unblockUser(_ profileID: UUID) async throws {}
     func reportUser(_ profileID: UUID, reason: ReportReason, details: String?) async throws {}
+    func fetchReports() async throws -> [ModerationReport] { await store.allReports() }
+    func resolveReport(_ reportID: UUID, resolution: String) async throws {
+        await store.resolveReport(reportID, resolution: resolution)
+    }
+    func moderatorDeletePost(_ postID: UUID) async throws { await store.removePost(postID) }
+    func setAccountActive(_ profileID: UUID, active: Bool) async throws {
+        await store.setAccountActive(profileID, active: active)
+    }
 
     // Bildirim
     func fetchNotifications() async throws -> [BackendNotification] { await store.allNotifications() }
@@ -714,6 +745,17 @@ enum SampleData {
             MeetingRequest(profile: profiles[4], place: places[0], direction: .incoming, status: .pending, createdAt: date(1.2)),
             MeetingRequest(profile: profiles[1], place: places[1], direction: .outgoing, status: .accepted, createdAt: date(2.5)),
             MeetingRequest(profile: profiles[3], place: places[4], direction: .incoming, status: .declined, createdAt: date(4))
+        ]
+    }
+
+    static var reports: [ModerationReport] {
+        [
+            ModerationReport(id: UUID(), reporter: profiles[0], reported: profiles[3],
+                             reason: .harassment, details: "Sohbette ısrarcı davrandı, engelledim ama başka hesaptan yazdı.",
+                             createdAt: hours(4), handledAt: nil, resolution: nil, reportedActive: true),
+            ModerationReport(id: UUID(), reporter: profiles[4], reported: profiles[1],
+                             reason: .spam, details: nil,
+                             createdAt: date(1.3), handledAt: nil, resolution: nil, reportedActive: true)
         ]
     }
 

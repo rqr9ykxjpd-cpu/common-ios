@@ -7,6 +7,7 @@ struct SocialProfileView: View {
     @State private var showTerms = false
     @State private var showPrivacy = false
     @State private var showPaywall = false
+    @State private var showModeration = false
     @State private var showPhoto = false
     @State private var enUstte = true
     @Environment(\.openURL) private var openURL
@@ -107,6 +108,15 @@ struct SocialProfileView: View {
             .sheet(isPresented: $showSaved) { savedPostsSheet.task { await appState.loadSavedPosts() } }
             .sheet(isPresented: $showVisits) { visitorsSheet }
             .sheet(isPresented: $showPaywall) { PaywallView() }
+            .fullScreenCover(isPresented: $showModeration) { ModerationView() }
+#if DEBUG
+            .onAppear { if appState.opensModeration { showModeration = true } }
+#endif
+            // Rozetli hesapta bekleyen şikayet sayısı satırda görünüyor.
+            // Rozet oturum geri yüklendikten sonra geldiği için açılışa değil
+            // rozetin kendisine bağlı: ekran açıldığında `isModerator` henüz
+            // false oluyor ve sorgu hiç yapılmıyordu.
+            .task(id: appState.myBadge) { await appState.loadReports() }
             .fullScreenCover(isPresented: $showPhoto) {
                 PhotoZoomView(url: appState.avatarURL, data: appState.avatarData)
             }
@@ -318,6 +328,19 @@ struct SocialProfileView: View {
                     title: "Kartın nasıl görünüyor?",
                     detail: "Tanış'ta karşı tarafın gördüğü hali — buradan düzenleyebilirsin"
                 ) { showCardPreview = true }
+
+                // Moderasyon yalnızca rozetli hesaplarda görünüyor. Şikayet
+                // kutusu olmadan şikayetler hiçbir yere ulaşmıyordu.
+                if appState.isModerator {
+                    listDivider
+                    listRow(icon: appState.pendingReports.isEmpty ? "shield" : "shield.fill",
+                            title: "Şikayetler",
+                            detail: appState.pendingReports.isEmpty
+                                ? "Gelen şikayetleri buradan yönetiyorsun"
+                                : "\(appState.pendingReports.count) şikayet bekliyor") {
+                        showModeration = true
+                    }
+                }
 
                 listDivider
                 listRow(icon: "bookmark", title: "Kaydedilenler",

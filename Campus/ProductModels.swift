@@ -87,6 +87,22 @@ struct MessageRequest: Identifiable, Hashable {
     let createdAt: Date
 }
 
+/// Moderatörün gördüğü şikayet.
+struct ModerationReport: Identifiable, Hashable {
+    enum Resolution: String { case dismissed, contentRemoved = "content_removed", accountSuspended = "account_suspended" }
+
+    let id: UUID
+    let reporter: StudentProfile?
+    let reported: StudentProfile
+    let reason: ReportReason
+    let details: String?
+    let createdAt: Date
+    var handledAt: Date?
+    var resolution: String?
+    /// Şikayet edilen hesap şu an etkin mi.
+    var reportedActive: Bool
+}
+
 enum AppNotificationKind: Hashable {
     case like, comment, match, message, club, meetingRequest
 

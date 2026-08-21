@@ -85,6 +85,18 @@ final class AppState {
     /// Eşleşmeden gelen/giden yanıt istekleri.
     var messageRequests: [MessageRequest] = []
 
+    /// Şikayet listesi. Yalnızca moderatör okuyabiliyor.
+    var reports: [ModerationReport] = []
+    var isLoadingReports = false
+
+    /// Moderasyon ekranı yalnızca rozetli hesaplara açık. Rozeti sunucu
+    /// veriyor (bkz. `set_badge`), istemci kendine veremiyor; buradaki kontrol
+    /// yalnızca arayüzü gizlemek için — asıl kapı sunucudaki izin kuralları.
+    var isModerator: Bool { myBadge == .founder || myBadge == .moderator }
+
+    /// Cevap bekleyen şikayetler.
+    var pendingReports: [ModerationReport] { reports.filter { $0.handledAt == nil } }
+
     /// Cevap bekleyen gelen istekler. Rozet ve liste bunu kullanıyor.
     var pendingMessageRequests: [MessageRequest] {
         messageRequests.filter { $0.direction == .incoming && $0.status == .pending }
@@ -414,6 +426,7 @@ final class AppState {
     var opensPlacesWall = false
     var opensChats = false
     var opensMessageRequests = false
+    var opensModeration = false
     /// `-story`: eşleşilmemiş birinin story'sini açar — istek gönderme alanı
     /// yalnızca orada görünüyor. `-story <ad>` ile belirli biri seçilebilir.
     var opensStoryOf: String?
@@ -1099,6 +1112,52 @@ final class AppState {
             meetingRequests = try await service.fetchMeetingRequests()
         } catch {
             showError(error, fallback: "Buluşma istekleri yüklenemedi.")
+        }
+    }
+
+    func loadReports() async {
+        guard isModerator else { return }
+        isLoadingReports = true
+        defer { isLoadingReports = false }
+        do {
+            reports = try await service.fetchReports()
+        } catch {
+            showError(error, fallback: "Şikayetler yüklenemedi.")
+        }
+    }
+
+    /// Şikayeti kapatır; istenirse önce içeriği kaldırır ya da hesabı askıya alır.
+    func resolveReport(_ report: ModerationReport, resolution: ModerationReport.Resolution) async {
+        do {
+            if resolution == .accountSuspended {
+                try await service.setAccountActive(report.reported.id, active: false)
+            }
+            try await service.resolveReport(report.id, resolution: resolution.rawValue)
+            await loadReports()
+            Haptics.success()
+        } catch {
+            showError(error, fallback: "Şikayet kapatılamadı.")
+        }
+    }
+
+    /// Askıya alınmış hesabı geri açar.
+    func reactivateAccount(_ profileID: UUID) async {
+        do {
+            try await service.setAccountActive(profileID, active: true)
+            await loadReports()
+        } catch {
+            showError(error, fallback: "Hesap geri açılamadı.")
+        }
+    }
+
+    /// Moderatör olarak gönderi kaldırır.
+    func moderatorRemovePost(_ postID: UUID) async {
+        do {
+            try await service.moderatorDeletePost(postID)
+            posts.removeAll { $0.id == postID }
+            show("Gönderi kaldırıldı")
+        } catch {
+            showError(error, fallback: "Gönderi kaldırılamadı.")
         }
     }
 

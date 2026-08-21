@@ -31,6 +31,7 @@ struct CampusApp: App {
             if arguments.contains("-places") { state.opensPlacesWall = true }
             if arguments.contains("-chats") { state.opensChats = true }
             if arguments.contains("-requests") { state.opensMessageRequests = true }
+            if arguments.contains("-moderation") { state.opensModeration = true }
             if let i = arguments.firstIndex(of: "-story") {
                 state.opensAnyStory = true
                 if i + 1 < arguments.count, !arguments[i + 1].hasPrefix("-") {

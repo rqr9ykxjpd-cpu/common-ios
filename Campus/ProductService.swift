@@ -103,6 +103,14 @@ protocol ProductService: Sendable {
     func blockUser(_ profileID: UUID) async throws
     func unblockUser(_ profileID: UUID) async throws
     func reportUser(_ profileID: UUID, reason: ReportReason, details: String?) async throws
+    /// Şikayet listesi. Yalnızca moderatör okuyabiliyor; başkası çağırırsa boş döner.
+    func fetchReports() async throws -> [ModerationReport]
+    /// Şikayeti kapatır.
+    func resolveReport(_ reportID: UUID, resolution: String) async throws
+    /// Moderatör olarak içerik kaldırır.
+    func moderatorDeletePost(_ postID: UUID) async throws
+    /// Hesabı askıya alır ya da geri açar.
+    func setAccountActive(_ profileID: UUID, active: Bool) async throws
     func messageStream() -> AsyncStream<RealtimeMessage>
     func setPostLiked(_ postID: UUID, liked: Bool) async throws
     func setPostSaved(_ postID: UUID, saved: Bool) async throws
@@ -216,6 +224,10 @@ struct UnconfiguredProductService: ProductService {
     func blockUser(_ profileID: UUID) async throws { try fail() }
     func unblockUser(_ profileID: UUID) async throws { try fail() }
     func reportUser(_ profileID: UUID, reason: ReportReason, details: String?) async throws { try fail() }
+    func fetchReports() async throws -> [ModerationReport] { try fail() }
+    func resolveReport(_ reportID: UUID, resolution: String) async throws { try fail() }
+    func moderatorDeletePost(_ postID: UUID) async throws { try fail() }
+    func setAccountActive(_ profileID: UUID, active: Bool) async throws { try fail() }
     func messageStream() -> AsyncStream<RealtimeMessage> { AsyncStream { $0.finish() } }
     func setPostLiked(_ postID: UUID, liked: Bool) async throws { try fail() }
     func setPostSaved(_ postID: UUID, saved: Bool) async throws { try fail() }
