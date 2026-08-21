@@ -283,7 +283,7 @@ final class AppState {
         }
         applyRemoteProfile(profile)
         persistSession()
-        await loadMyProfilePhotos()
+        let fotograflarOkundu = await loadMyProfilePhotos()
         await loadNotifications()
         await loadPlaces(silently: true)
         await loadStories()
@@ -292,6 +292,10 @@ final class AppState {
         await loadProfileVisits(silently: true)
         try? await service.touchLastActive()
         startMessageListener()
+        if requiresAvatarStep(photosLoaded: fotograflarOkundu) {
+            withAnimation(.smooth(duration: 0.55)) { route = .onboarding(.photo) }
+            return true
+        }
         withAnimation(.smooth(duration: 0.55)) { route = .app }
         let name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
         show(name.isEmpty ? "Hoş geldin!" : "Hoş geldin, \(name)!")
@@ -346,7 +350,7 @@ final class AppState {
             }
             applyRemoteProfile(profile)
             if !email.isEmpty { persistSession() }
-            await loadMyProfilePhotos()
+            let fotograflarOkundu = await loadMyProfilePhotos()
             await loadNotifications()
             await loadPlaces(silently: true)
             await loadStories()
@@ -357,7 +361,9 @@ final class AppState {
             startMessageListener()
             // Geçerli oturum ve tamamlanmış profil varken karşılama ekranında bırakmak
             // kullanıcıyı hiçbir yere gidemez halde bırakıyordu.
-            if route != .app {
+            if requiresAvatarStep(photosLoaded: fotograflarOkundu) {
+                withAnimation(.smooth(duration: 0.45)) { route = .onboarding(.photo) }
+            } else if route != .app {
                 withAnimation(.smooth(duration: 0.45)) { route = .app }
             }
         } catch {
@@ -383,14 +389,26 @@ final class AppState {
         persistAccount()
     }
 
-    private func loadMyProfilePhotos() async {
+    /// Başarılıysa `true`. Çağıran taraf "fotoğrafı yok" ile "fotoğrafını okuyamadım"
+    /// arasını ayırabilsin diye: ikisini karıştırmak, ağ koptuğunda fotoğrafı olan
+    /// kullanıcıyı fotoğraf adımına hapsediyor.
+    @discardableResult
+    private func loadMyProfilePhotos() async -> Bool {
         do {
             let result = try await service.fetchMyProfilePhotos()
             avatarURL = result.avatarURL
             galleryURLs = result.galleryURLs
+            return true
         } catch {
             showError(error, fallback: "Profil fotoğrafların yüklenemedi.")
+            return false
         }
+    }
+
+    /// Fotoğraf zorunlu. Eski sürümlerde "şimdilik atla" ile geçilmiş ya da bir şekilde
+    /// fotoğrafsız kalmış hesaplar uygulamaya değil, fotoğraf adımına düşer.
+    private func requiresAvatarStep(photosLoaded: Bool) -> Bool {
+        photosLoaded && avatarURL == nil && avatarData == nil
     }
 
     /// Sohbet ekranı açık olmasa da eşleşmelerdeki yeni mesajları anlık yakalar —
@@ -481,17 +499,24 @@ final class AppState {
             return
         }
 
-        // Fotoğraf yüklemesi ayrı ele alınıyor. Aynı `do` bloğundayken profil sunucuya
-        // kaydedilmiş olmasına rağmen "Profilin kaydedilemedi" deniyor ve kullanıcı kayıt
-        // ekranında kalıyordu — yani tek bir fotoğraf yüzünden uygulamaya hiç giremiyordu.
-        // Profil hazırsa içeri alıyoruz; fotoğrafı Profil > Düzenle'den sonradan ekler.
-        var photoFailed = false
-        if let avatarData {
-            do {
-                avatarURL = try await service.updateAvatar(avatarData)
-            } catch {
-                photoFailed = true
-            }
+        // Fotoğraf zorunlu olduğu için yükleme hatası artık "sonra hallederiz" değil:
+        // fotoğrafsız içeri alırsak zorunluluk kâğıt üstünde kalır. Kullanıcı bu ekranda
+        // kalıp tekrar deniyor — profil sunucuya yazılmış olsa da yeniden kaydetmek
+        // aynı satırı güncellediği için zararsız.
+        guard let avatarData else {
+            let message = "Devam etmek için bir profil fotoğrafı seçmelisin."
+            onboardingFailure = message
+            showError(message)
+            withAnimation(.smooth(duration: 0.45)) { route = .onboarding(.photo) }
+            return
+        }
+        do {
+            avatarURL = try await service.updateAvatar(avatarData)
+        } catch {
+            let message = UserFacingError.message(error, fallback: "Fotoğrafın yüklenemedi. Tekrar dene.")
+            onboardingFailure = message
+            showError(message)
+            return
         }
 
         persistSession()
@@ -509,12 +534,8 @@ final class AppState {
 
         onboardingFailure = nil
         withAnimation(.smooth(duration: 0.55)) { route = .app }
-        if photoFailed {
-            showError("Profilin kaydedildi, fotoğrafın yüklenemedi. Profil'den tekrar deneyebilirsin.")
-        } else {
-            let name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
-            show(name.isEmpty ? "Hoş geldin!" : "Hoş geldin, \(name)!")
-        }
+        let name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        show(name.isEmpty ? "Hoş geldin!" : "Hoş geldin, \(name)!")
     }
 
     func goBack(from step: OnboardingStep) {
@@ -871,7 +892,7 @@ final class AppState {
         }
 
         draft = updatedDraft
-        avatarData = avatar
+        if avatar != nil { avatarData = avatar }
         profileGalleryData = gallery
         discoveryFilters = updatedDraft.discoveryFilters
 
@@ -881,7 +902,14 @@ final class AppState {
         // sunucudan farklı kalıyor ve ekran kapanmadığı için kullanıcı baştan deniyordu.
         var photoFailed = false
         do {
-            avatarURL = try await service.updateAvatar(avatar)
+            // `nil` artık "değiştirme" demek, "sil" değil. Düzenleme ekranı mevcut
+            // fotoğrafı sunucudan indirerek dolduruyor; indirme başarısız olduğunda
+            // (ağ koptuğunda ya da imzalı adres süresi dolduğunda) elinde nil kalıyor
+            // ve sırf bio değiştirmek için kaydeden kişinin profil fotoğrafı sessizce
+            // siliniyordu. Silme seçeneği hiçbir yerde sunulmuyor: fotoğraf zorunlu.
+            if let avatar {
+                avatarURL = try await service.updateAvatar(avatar)
+            }
             galleryURLs = try await service.updateGallery(gallery)
         } catch {
             photoFailed = true

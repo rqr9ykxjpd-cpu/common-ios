@@ -415,7 +415,7 @@ private struct PhotoStep: View {
                 .accessibilityLabel(currentAvatar == nil ? "Profil fotoğrafı seç" : "Profil fotoğrafını değiştir")
 
                 if currentAvatar == nil {
-                    Text("Fotoğrafı olmayan profiller keşifte çok az görüntüleniyor.")
+                    Text("Devam etmek için bir profil fotoğrafı gerekli.")
                         .font(.system(size: 12, weight: .medium, design: .rounded))
                         .foregroundStyle(CampusTheme.ink.opacity(0.45))
                         .multilineTextAlignment(.center)
@@ -423,12 +423,10 @@ private struct PhotoStep: View {
             }
             .frame(maxWidth: .infinity),
             footer: VStack(spacing: 10) {
+                // Fotoğraf zorunlu. Atlanabildiği sürece keşifte yüzü olmayan kartlar
+                // birikiyordu; karşısındakini göremeyen kimse tanışmak istemiyor ve
+                // fotoğrafsız hesap kötüye kullanım için de en kolay kapı.
                 PrimaryEditorialButton(title: "DEVAM ET", enabled: currentAvatar != nil && !loading, action: submit)
-                // Zorunlu tutmuyoruz: fotoğrafı olmayan biri kayıt akışında tıkanıp
-                // uygulamayı hiç kullanamamaktansa sonradan ekleyebilsin.
-                Button("Şimdilik atla") { submit() }
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    .foregroundStyle(CampusTheme.ink.opacity(0.45))
             }
         )
         .onChange(of: item) { _, newItem in

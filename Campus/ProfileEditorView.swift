@@ -194,10 +194,9 @@ struct ProfileEditorView: View {
                     Text("Yüzünün net göründüğü güncel bir fotoğraf kullan.")
                         .font(.system(size: 13, design: .rounded))
                         .foregroundStyle(CampusTheme.muted)
-                    if avatarData != nil {
-                        Button("Fotoğrafı kaldır", role: .destructive) { avatarData = nil }
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                    }
+                    // "Fotoğrafı kaldır" kaldırıldı: profil fotoğrafı kayıtta zorunlu
+                    // tutuluyor, buradan silinebildiği sürece zorunluluk kâğıt üstünde
+                    // kalıyordu. Değiştirmek için fotoğrafa dokunmak yeterli.
                 }
                 .padding(.top, 8)
             }
