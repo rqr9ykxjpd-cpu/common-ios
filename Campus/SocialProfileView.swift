@@ -76,6 +76,9 @@ struct SocialProfileView: View {
                 NavigationStack { ProfileEditorView() }
             }
             .sheet(isPresented: $showCardPreview) { OwnCardPreviewView() }
+#if DEBUG
+            .onAppear { if appState.opensCardPreview { showCardPreview = true } }
+#endif
             .sheet(item: $selectedPost) { secili in
                 // Kartın beğeni/kaydetme sonrası güncel kalması için gönderiyi anlık
                 // listeden okuyoruz; `item` yalnızca hangisi olduğunu taşıyor.

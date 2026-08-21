@@ -309,6 +309,8 @@ final class AppState {
     /// Yalnızca geliştirme derlemesinde: Plus ekranını açar (tasarım kontrolü).
     var opensPaywall = false
     var opensProNote = false
+    /// Yalnızca geliştirme derlemesinde: kendi kart önizlemesini açar.
+    var opensCardPreview = false
     /// `-onboarding <adım>` ile açıldığında oturum geri yüklemesi rotayı ezmesin diye.
     /// Yalnızca geliştirme derlemesinde var.
     var skipsSessionRestore = false

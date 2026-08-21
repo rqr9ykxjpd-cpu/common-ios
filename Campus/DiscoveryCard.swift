@@ -12,6 +12,8 @@ struct DiscoveryCard: View {
     var highlightedInterests: Set<String> = []
     @State private var photoIndex = 0
 
+    private var kurucu: Bool { profile.badge == .founder }
+
     /// Gösterilecek fotoğraflar. Galeri boşsa ana profil fotoğrafına düşer.
     private var photos: [URL] {
         profile.galleryImageURLs.isEmpty ? [profile.imageURL].compactMap { $0 } : profile.galleryImageURLs
@@ -79,6 +81,16 @@ struct DiscoveryCard: View {
                             Text("\(profile.age)").font(.title3.weight(.medium))
                             Spacer()
                         }
+                        if let rozetAlt = profile.badge.subtitle {
+                            // Sarmalayan yığın ortalı; bu satır adla aynı hizada
+                            // başlasın diye açıkça sola yaslanıyor.
+                            HStack {
+                                Text(rozetAlt)
+                                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(CampusTheme.acid)
+                                Spacer(minLength: 0)
+                            }
+                        }
                         HStack(spacing: 8) {
                             // Sunucu, bir aydan uzun süredir girmemiş kişilerde etiketi boş
                             // döndürüyor; boş bir nokta ve boşluk göstermek yerine gizliyoruz.
@@ -124,7 +136,14 @@ struct DiscoveryCard: View {
                     .background(CampusTheme.paper)
             }
             .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(.white.opacity(0.16), lineWidth: 1))
+            // Kurucu kartı bir tık ayrışıyor: fıstık yeşili ince bir çerçeve ve
+            // hafif bir hâle. Renk zaten rozetin rengi, yeni bir dil eklemiyor.
+            .overlay(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .stroke(kurucu ? CampusTheme.acid.opacity(0.75) : .white.opacity(0.16),
+                            lineWidth: kurucu ? 2 : 1)
+            )
+            .shadow(color: kurucu ? CampusTheme.acid.opacity(0.28) : .clear, radius: 18)
             .shadow(color: .black.opacity(0.3), radius: 24, y: 12)
         }
         // SwiftUI kart görünümünü sonraki profil için yeniden kullanıyor; sıfırlamazsak

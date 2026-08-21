@@ -30,6 +30,7 @@ struct CampusApp: App {
             if arguments.contains("-club") { state.opensFirstClub = true }
             if arguments.contains("-paywall") { state.opensPaywall = true }
             if arguments.contains("-pronote") { state.opensProNote = true }
+            if arguments.contains("-cardpreview") { state.opensCardPreview = true }
             // `-tier plus` / `-tier pro`: kademeye bağlı ekranları görmek için.
             if let i = arguments.firstIndex(of: "-tier"), i + 1 < arguments.count {
                 state.tier = ["plus": .plus, "pro": .pro][arguments[i + 1]] ?? .free

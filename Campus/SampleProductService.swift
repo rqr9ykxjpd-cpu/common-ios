@@ -424,6 +424,9 @@ enum SampleData {
         draft.interests = Set(me.interests)
         draft.gender = .male
         draft.relationshipIntent = .both
+        // Örnek verideki "ben" kurucu hesabı temsil ediyor; rozet aktarılmayınca
+        // kurucuya özel kart görünümü geliştirirken hiç görünmüyordu.
+        draft.badge = me.badge
         return draft
     }
 
