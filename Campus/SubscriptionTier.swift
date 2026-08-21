@@ -62,8 +62,8 @@ enum SubscriptionTier: Int, Comparable, Codable, CaseIterable {
     /// Profiline kimlerin baktığını görebilme.
     var canSeeProfileVisitors: Bool { self >= .plus }
 
-    /// Story izlerken duraklatabilme.
-    var canPauseStory: Bool { self >= .plus }
+    /// Story izlerken duraklatabilme. Yalnızca Pro.
+    var canPauseStory: Bool { self >= .pro }
 
     /// Story'yi kimin kaç kez izlediğini görebilme.
     var canSeeStoryViewCounts: Bool { self >= .pro }

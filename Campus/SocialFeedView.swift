@@ -1040,7 +1040,7 @@ struct StoryViewer: View {
             // Dokunursa Plus ekranı açılıyor — ama zorlamıyor.
             if pauseHintVisible {
                 Button { showPaywall = true } label: {
-                    Label("Duraklatma Plus'ta", systemImage: "lock.fill")
+                    Label("Duraklatma Pro'da", systemImage: "lock.fill")
                         .font(.system(size: 11, weight: .bold, design: .rounded))
                         .foregroundStyle(CampusTheme.onAccent)
                         .padding(.horizontal, 11).frame(height: 28)
