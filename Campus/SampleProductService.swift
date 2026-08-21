@@ -398,12 +398,13 @@ enum SampleData {
     static func hours(_ hoursAgo: Double) -> Date { .now.addingTimeInterval(-hoursAgo * 3_600) }
 
     static let places: [CampusPlace] = [
-        CampusPlace(id: id(25), name: "Şamdan Kafe", area: "Kampüs dışı"),
-        CampusPlace(id: id(26), name: "Aytaç Cafe", area: "Kampüs dışı"),
+        CampusPlace(id: id(25), name: "Şamdan Kafe", area: "Merkez Kampüs"),
+        CampusPlace(id: id(26), name: "Aytaç Cafe", area: "Merkez Kampüs"),
+        CampusPlace(id: id(21), name: "Hazırlık Kantini", area: "Merkez Kampüs"),
+        CampusPlace(id: id(27), name: "Otağ", area: "Merkez Kampüs"),
+        CampusPlace(id: id(28), name: "Yemekhane", area: "Merkez Kampüs"),
         CampusPlace(id: id(20), name: "Merkez Kütüphane", area: "Merkez Kampüs"),
-        CampusPlace(id: id(21), name: "Hazırlık Kantini", area: "Yabancı Diller"),
-        CampusPlace(id: id(22), name: "Mühendislik Bahçesi", area: "Mühendislik Fakültesi"),
-        CampusPlace(id: id(23), name: "Sahil Yürüyüş Yolu", area: "Kampüs dışı"),
+        CampusPlace(id: id(22), name: "Mühendislik Fakültesi", area: "Merkez Kampüs"),
         CampusPlace(id: id(24), name: "Spor Salonu", area: "Merkez Kampüs")
     ]
 
@@ -544,12 +545,12 @@ enum SampleData {
                     ("Arda", "Dayan, iki gün kaldı")
                  ]),
             post(author: me, caption: "Sahil yürüyüşü her şeye iyi geliyor.",
-                 place: "Sahil Yürüyüş Yolu", asset: "post-campus", createdAt: hours(20), likes: 47, liked: false, mine: true, comments: [
+                 place: "Şamdan Kafe", asset: "post-campus", createdAt: hours(20), likes: 47, liked: false, mine: true, comments: [
                     ("Ece", "Kare çok iyi olmuş"),
                     ("Selin", "Yarın da gidelim mi?")
                  ]),
             post(author: profiles[2], caption: "Maket teslimine 6 saat kala bahçede mola.",
-                 place: "Mühendislik Bahçesi", asset: "post-quiet", createdAt: date(1.4), likes: 15, liked: false, comments: []),
+                 place: "Otağ", asset: "post-quiet", createdAt: date(1.4), likes: 15, liked: false, comments: []),
             post(author: profiles[1], caption: "Kitap kulübü bu akşam toplanıyor, gelen gelsin.",
                  place: nil, asset: "post-club", createdAt: date(2.1), likes: 29, liked: true, comments: [
                     ("Duru", "Saat kaçta?")
