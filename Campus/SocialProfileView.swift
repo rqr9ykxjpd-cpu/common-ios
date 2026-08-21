@@ -20,7 +20,7 @@ struct SocialProfileView: View {
     /// paylaşımını açıp yorumlarını okumanın ya da silmenin yolu yoktu.
     @State private var selectedPost: SocialPost?
 
-    private var displayName: String { appState.draft.name.isEmpty ? "Cem" : appState.draft.name }
+    private var displayName: String { appState.draft.name.isEmpty ? "Sen" : appState.draft.name }
     private var department: String { appState.draft.department.isEmpty ? "Bölümünü ekle" : appState.draft.department }
 
     var body: some View {
@@ -54,11 +54,10 @@ struct SocialProfileView: View {
                     } label: {
                         Label("Ayarlar ve daha fazlası", systemImage: "chevron.down")
                             .font(.system(size: 12, weight: .bold, design: .rounded))
-                            .foregroundStyle(CampusTheme.ink)
+                            .foregroundStyle(CampusTheme.paper)
                             .padding(.horizontal, 14).frame(height: 38)
-                            .background(CampusTheme.surface, in: Capsule())
-                            .overlay(Capsule().stroke(CampusTheme.hairline))
-                            .shadow(color: .black.opacity(0.10), radius: 10, y: 4)
+                            .background(CampusTheme.ink, in: Capsule())
+                            .shadow(color: .black.opacity(0.22), radius: 12, y: 5)
                     }
                     .buttonStyle(PressableStyle())
                     // Sekme çubuğu kaydırma alanının üstüne çiziliyor; ipucu
@@ -175,9 +174,13 @@ struct SocialProfileView: View {
                     ProfileBadgeLabel(badge: appState.myBadge)
                         .padding(.top, 2)
                     if let altSatir = appState.myBadge.subtitle {
+                        // Aynı satır kişi kartında serif italik ve rozetin
+                        // renginde duruyor; burada gri yuvarlak kalınca aynı
+                        // hesap iki ekranda iki farklı kimlik gibi görünüyordu.
                         Text(altSatir)
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .foregroundStyle(CampusTheme.ink.opacity(0.5))
+                            .font(.system(size: 13, design: .serif))
+                            .italic()
+                            .foregroundStyle(appState.myBadge.accent)
                             .padding(.top, 1)
                     }
                 }

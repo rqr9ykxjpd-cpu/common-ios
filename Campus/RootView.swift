@@ -122,6 +122,7 @@ struct WelcomeView: View {
                     Text("Kampüste olup\nbitenlere **dahil ol.**")
                         .editorialTitle(min(48, proxy.size.width * 0.117))
                         .foregroundStyle(CampusTheme.ink).lineSpacing(-4)
+                        .fixedSize(horizontal: false, vertical: true)
 
                     Text("Anlarını paylaş. Yeni insanlarla tanış. Sohbeti gerçek hayata taşı.")
                         .font(.system(size: 15, weight: .medium, design: .rounded))
@@ -129,8 +130,8 @@ struct WelcomeView: View {
                         .frame(maxWidth: 310, alignment: .leading).padding(.top, 14)
 
                     WelcomeSocialCanvas()
-                        .frame(height: min(315, proxy.size.height * 0.38))
-                        .padding(.top, 22)
+                        .frame(height: min(300, proxy.size.height * 0.33))
+                        .padding(.top, 18)
 
                     Spacer(minLength: 18)
 
@@ -181,7 +182,7 @@ struct WelcomeView: View {
                             Haptics.impact(.light)
                             showingEmailSignIn = true
                         } label: {
-                            Text("Üniversite e-postanla devam et")
+                            Text("E-posta ile devam et")
                                 .font(.system(size: 14, weight: .semibold, design: .rounded))
                                 .foregroundStyle(CampusTheme.ink.opacity(0.6))
                                 .frame(height: 32)

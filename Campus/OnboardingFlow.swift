@@ -119,8 +119,8 @@ private struct IdentityStep: View {
             title: "Profil değil,\nkısa bir portre.",
             subtitle: "İlk izlenimi sade tut. Bunların hepsini daha sonra değiştirebilirsin.",
             content: VStack(spacing: 22) {
-                EditorialField(label: "ADIN", placeholder: "Cem", text: $draft.name)
-                EditorialField(label: "BÖLÜMÜN", placeholder: "Endüstri Mühendisliği", text: $draft.department)
+                EditorialField(label: "ADIN", placeholder: "örneğin Deniz", text: $draft.name)
+                EditorialField(label: "BÖLÜMÜN", placeholder: "örneğin Endüstri Mühendisliği", text: $draft.department)
                 VStack(alignment: .leading, spacing: 8) {
                     Eyebrow(text: "doğum tarihin", color: CampusTheme.ink.opacity(0.42))
                     DatePicker("", selection: $draft.birthDate, in: ...AgeLimit.latestBirthDate, displayedComponents: .date)
@@ -282,7 +282,7 @@ private struct ReadyStep: View {
                     Text("✓").font(.system(size: 90, weight: .thin, design: .serif)).foregroundStyle(CampusTheme.acid)
                 }
                 Eyebrow(text: "doğrulandı", color: CampusTheme.acid)
-                Text("Hoş geldin,\n\(name.isEmpty ? "Cem" : name).")
+                Text(name.isEmpty ? "Hoş geldin." : "Hoş geldin,\n\(name).")
                     .editorialTitle(48).foregroundStyle(.white).multilineTextAlignment(.center).lineSpacing(-3)
                 Text("Kampüsün akışı, yeni insanlar ve\nyeni sohbetler seni bekliyor.")
                     .font(.system(size: 15, design: .rounded)).foregroundStyle(.white.opacity(0.5)).multilineTextAlignment(.center).lineSpacing(4)
