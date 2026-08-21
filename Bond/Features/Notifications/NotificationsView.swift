@@ -56,7 +56,7 @@ struct NotificationsView: View {
             }
             .sheet(item: $selectedProfile) { profile in
                 NavigationStack {
-                    SocialPersonDetailView(profile: profile, place: nil)
+                    SocialPersonDetailView(profile: profile, place: nil, showsClose: true)
                 }
             }
             .sheet(item: $selectedMeetingRequest) { route in

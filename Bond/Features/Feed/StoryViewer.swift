@@ -100,7 +100,7 @@ struct StoryViewer: View {
         }
         .sheet(item: $selectedStoryAuthor) { profile in
             NavigationStack {
-                SocialPersonDetailView(profile: profile, place: nil)
+                SocialPersonDetailView(profile: profile, place: nil, showsClose: true)
             }
         }
         .sheet(isPresented: $showViewers) {

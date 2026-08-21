@@ -104,7 +104,7 @@ struct SocialFeedView: View {
             }
             .sheet(item: $selectedPostAuthor) { profile in
                 NavigationStack {
-                    SocialPersonDetailView(profile: profile, place: nil)
+                    SocialPersonDetailView(profile: profile, place: nil, showsClose: true)
                 }
             }
             .sheet(item: $selectedClub) { club in

@@ -3,6 +3,10 @@ import SwiftUI
 struct SocialPersonDetailView: View {
     let profile: StudentProfile
     let place: CampusPlace?
+    /// Sheet'in kökü olarak açıldığında `true`. İtilerek açıldığında sistem
+    /// kendi geri düğmesini koyuyor; buna ek olarak bir tane daha eklemek
+    /// yan yana iki geri düğmesi bırakıyordu.
+    var showsClose = false
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
     @State private var conversationRoute: ConversationRoute?
@@ -168,9 +172,11 @@ struct SocialPersonDetailView: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button { dismiss() } label: { Image(systemName: "chevron.left") }
-                    .accessibilityLabel(L10n.Common.back)
+            if showsClose {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { dismiss() } label: { Image(systemName: "xmark") }
+                        .accessibilityLabel(L10n.Common.close)
+                }
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {

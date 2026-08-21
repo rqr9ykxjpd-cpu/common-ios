@@ -47,6 +47,11 @@ struct PlacePeopleView: View {
             }
             .navigationTitle(place.name)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(L10n.Common.close) { dismiss() }
+                }
+            }
             .navigationDestination(item: $selectedPerson) { profile in
                 SocialPersonDetailView(profile: profile, place: place)
             }
@@ -63,20 +68,6 @@ struct PlacePeopleView: View {
 
     private var placeHeader: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Button { dismiss() } label: {
-                    Image(systemName: "xmark").frame(width: 44, height: 44)
-                        .background(BondTheme.surface, in: Circle())
-                        .overlay(Circle().stroke(BondTheme.hairline))
-                }
-                .accessibilityLabel(L10n.Common.close)
-                Spacer()
-                Eyebrow(text: L10n.Places.optionalVisibility, color: BondTheme.ink.opacity(0.42))
-            }
-            Image(systemName: "mappin.and.ellipse")
-                .font(.system(size: 28, weight: .medium))
-                .foregroundStyle(BondTheme.violet)
-            Text(place.name).editorialTitle(38)
             Text(L10n.Places.visibleStudents)
                 .font(.subheadline)
                 .foregroundStyle(BondTheme.ink.opacity(0.5))
