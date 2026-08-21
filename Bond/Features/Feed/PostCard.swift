@@ -164,6 +164,7 @@ struct PostCard: View {
             .font(.system(size: 20, weight: .regular))
             .foregroundStyle(BondTheme.ink)
             .padding(.horizontal, 20)
+            .padding(.vertical, -10)
 
             VStack(alignment: .leading, spacing: 7) {
                 Text(L10n.Feed.likeCount(post.likeCount)).font(.system(size: 12, weight: .bold))
