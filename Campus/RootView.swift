@@ -103,6 +103,9 @@ struct WelcomeView: View {
     @State private var float = false
     @State private var currentAppleNonce: String?
     @State private var isSigningIn = false
+
+    /// E-posta ile giriş girişinin görünürlüğü. bkz. aşağıdaki açıklama.
+    private static let epostaGirisiAcik = false
     @State private var showingEmailSignIn = false
 
     var body: some View {
@@ -178,16 +181,30 @@ struct WelcomeView: View {
                         .buttonStyle(PressableStyle())
                         .disabled(isSigningIn)
 
-                        Button {
-                            Haptics.impact(.light)
-                            showingEmailSignIn = true
-                        } label: {
-                            Text("E-posta ile devam et")
-                                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                                .foregroundStyle(CampusTheme.ink.opacity(0.6))
-                                .frame(height: 32)
+                        // E-posta ile giriş ilk sürümde kapalı.
+                        //
+                        // Bu yol `.edu.tr` doğrulaması için yapılmıştı: üniversite
+                        // adresine bağlantı gönderip öğrenci olduğunu doğrulamak.
+                        // O şart v1'de kapalı olduğu için şu an yalnızca üçüncü,
+                        // fazladan bir giriş yolu — ve en kırılganı: mail spam'e
+                        // düşerse ya da bağlantı uygulamayı açmazsa kullanıcı
+                        // takılır ve bunu uzaktan göremeyiz.
+                        //
+                        // Kod duruyor (`EmailSignInSheet`, `completeEmailSignIn`,
+                        // URL şeması). `.edu.tr` geri geldiğinde aşağıdaki blok
+                        // yorumdan çıkarılıp `epostaGirisiAcik` true yapılır.
+                        if Self.epostaGirisiAcik {
+                            Button {
+                                Haptics.impact(.light)
+                                showingEmailSignIn = true
+                            } label: {
+                                Text("E-posta ile devam et")
+                                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(CampusTheme.ink.opacity(0.6))
+                                    .frame(height: 32)
+                            }
+                            .disabled(isSigningIn)
                         }
-                        .disabled(isSigningIn)
                     }
 
                     legalConsent
