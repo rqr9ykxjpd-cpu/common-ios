@@ -351,7 +351,7 @@ final class AppState {
             showError(error, fallback: "Giriş tamamlanamadı.")
             return
         }
-        await completeSocialSignIn()
+        _ = await completeSocialSignIn()
     }
 
     /// Apple/Google ikisi de aynı sonrası akışı paylaşır: yeni hesapsa onboarding'e,
