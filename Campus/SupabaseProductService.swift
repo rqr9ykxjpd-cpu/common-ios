@@ -593,6 +593,24 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         try await client.from("comments").delete(returning: .minimal).eq("id", value: commentID).execute()
     }
 
+    /// Satın almayı sunucudaki Edge Function'a iletir. Doğrulama orada:
+    /// fonksiyon JWS'i Apple'ın App Store Server API'siyle kontrol edip
+    /// `subscriptions` tablosunu kendisi yazıyor. İstemcinin bu tabloya yazma
+    /// yetkisi yok — olsaydı herkes kendini Pro yapardı.
+    func submitPurchase(jws: String, productID: String) async throws {
+        guard currentUserID != nil else { throw BackendServiceError.missingSession }
+        try await client.functions.invoke(
+            "verify-purchase",
+            options: FunctionInvokeOptions(body: PurchasePayload(jws: jws, productID: productID))
+        )
+    }
+
+    func fetchMyPlan() async throws -> SubscriptionTier {
+        guard currentUserID != nil else { throw BackendServiceError.missingSession }
+        let plan: String = try await client.rpc("my_plan").execute().value
+        return SubscriptionTier(serverValue: plan)
+    }
+
     func fetchMyProfile() async throws -> ProfileDraft? {
         guard currentUserID != nil else { throw BackendServiceError.missingSession }
         let rows: [MyProfileRow] = try await client.rpc("get_my_profile").execute().value
@@ -1734,6 +1752,15 @@ private struct DiscoveryPageParams: Encodable {
     enum CodingKeys: String, CodingKey {
         case pageLimit = "page_limit"
         case pageOffset = "page_offset"
+    }
+}
+
+private struct PurchasePayload: Encodable {
+    let jws: String
+    let productID: String
+    enum CodingKeys: String, CodingKey {
+        case jws
+        case productID = "product_id"
     }
 }
 

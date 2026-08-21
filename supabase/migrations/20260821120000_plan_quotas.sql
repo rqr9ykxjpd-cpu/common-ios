@@ -31,8 +31,22 @@ begin;
 create table if not exists public.subscriptions (
   user_id uuid primary key references public.profiles(id) on delete cascade,
   plan text not null default 'free' check (plan in ('free', 'plus', 'pro')),
+  -- Apple'ın abonelik kimliği. Tekil: bir abonelik yalnızca bir hesabı açar.
+  -- Olmasaydı tek Pro aboneliğinin makbuzu elden ele dolaşıp elli hesabı
+  -- açardı; Apple'ın kendi doğrulaması bunu engellemiyor, çünkü makbuz gerçek.
+  original_transaction_id text unique,
+  product_id text,
+  expires_at timestamptz,
   updated_at timestamptz not null default now()
 );
+
+-- Tablo daha önce bu sütunlar olmadan oluşturulduysa.
+alter table public.subscriptions add column if not exists original_transaction_id text;
+alter table public.subscriptions add column if not exists product_id text;
+alter table public.subscriptions add column if not exists expires_at timestamptz;
+create unique index if not exists subscriptions_original_transaction_idx
+  on public.subscriptions (original_transaction_id)
+  where original_transaction_id is not null;
 
 alter table public.subscriptions enable row level security;
 
@@ -49,9 +63,16 @@ grant select on public.subscriptions to authenticated;
 -- Sınır tetikleyicileri, beğeniyi yapan kişinin kademesini okumak zorunda;
 -- o satır o kişiye ait olduğu için normal yetkiyle görünmez. Bu yüzden
 -- security definer.
+-- Süresi geçmiş abonelik hak vermiyor. Apple yenilemeyi bildirene kadar satır
+-- eski haliyle duruyor; tarihe bakmasaydık iptal eden kullanıcı sınırsız
+-- kalırdı.
 create or replace function public.plan_of(account uuid)
 returns text language sql stable security definer set search_path = '' as $$
-  select coalesce((select plan from public.subscriptions where user_id = account), 'free');
+  select coalesce((
+    select plan from public.subscriptions
+    where user_id = account
+      and (expires_at is null or expires_at > now())
+  ), 'free');
 $$;
 
 revoke all on function public.plan_of(uuid) from public, anon, authenticated;
@@ -65,24 +86,51 @@ revoke all on function public.plan_of(uuid) from public, anon, authenticated;
 --
 -- Test için (SQL editöründe, service_role ile):
 --   select public.set_plan('<kullanıcı-uuid>', 'pro');
-create or replace function public.set_plan(account uuid, new_plan text)
+create or replace function public.set_plan(
+  account uuid,
+  new_plan text,
+  original_transaction text default null,
+  product text default null,
+  expires timestamptz default null
+)
 returns void language plpgsql security definer set search_path = '' as $$
 begin
   if new_plan not in ('free', 'plus', 'pro') then raise exception 'Invalid plan'; end if;
-  insert into public.subscriptions (user_id, plan, updated_at)
-  values (account, new_plan, now())
-  on conflict (user_id) do update set plan = excluded.plan, updated_at = now();
+
+  -- Aynı Apple aboneliği başka bir hesaba bağlıysa reddediyoruz. Aksi halde
+  -- bir kişinin makbuzu istediği kadar hesabı Pro yapardı.
+  if original_transaction is not null and exists (
+    select 1 from public.subscriptions
+    where original_transaction_id = original_transaction and user_id <> account
+  ) then
+    raise exception 'SUBSCRIPTION_ALREADY_LINKED';
+  end if;
+
+  insert into public.subscriptions (user_id, plan, original_transaction_id, product_id, expires_at, updated_at)
+  values (account, new_plan, original_transaction, product, expires, now())
+  on conflict (user_id) do update set
+    plan = excluded.plan,
+    original_transaction_id = coalesce(excluded.original_transaction_id, public.subscriptions.original_transaction_id),
+    product_id = coalesce(excluded.product_id, public.subscriptions.product_id),
+    expires_at = excluded.expires_at,
+    updated_at = now();
 end;
 $$;
 
-revoke all on function public.set_plan(uuid, text) from public, anon, authenticated;
-grant execute on function public.set_plan(uuid, text) to service_role;
+revoke all on function public.set_plan(uuid, text, text, text, timestamptz) from public, anon, authenticated;
+grant execute on function public.set_plan(uuid, text, text, text, timestamptz) to service_role;
+-- Eski iki parametreli sürüm kaldıysa kalmasın.
+drop function if exists public.set_plan(uuid, text);
 
 -- Kendi kademeni okumak için. Hiç abone olmamış kullanıcının `subscriptions`'ta
 -- satırı yok; boş sonuç yerine 'free' dönsün diye tek bir yer.
 create or replace function public.my_plan()
 returns text language sql stable security definer set search_path = '' as $$
-  select coalesce((select plan from public.subscriptions where user_id = auth.uid()), 'free');
+  select coalesce((
+    select plan from public.subscriptions
+    where user_id = auth.uid()
+      and (expires_at is null or expires_at > now())
+  ), 'free');
 $$;
 
 revoke all on function public.my_plan() from public, anon;

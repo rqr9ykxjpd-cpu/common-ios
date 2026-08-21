@@ -12,14 +12,21 @@ import SwiftUI
 /// geliyordu (bkz. `CampusTheme.onAccent`).
 struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppState.self) private var appState
 
     /// Sınıra takılarak açıldıysa başlık ona göre değişiyor.
     var quota: QuotaKind?
 
-    /// Geçici fiyatlar. Gerçekleri App Store Connect'te tanımlanan üründen
-    /// okunacak; Apple fiyatı kullanıcının ülkesine göre biçimlendiriyor.
+    /// Ürün yüklenene kadar gösterilecek fiyatlar. Gerçek fiyat App Store'dan
+    /// geliyor: Apple kullanıcının ülkesine ve para birimine göre biçimlendiriyor,
+    /// ayrıca fiyatı biz değiştirsek bile burası kendiliğinden doğru kalıyor.
     var plusFiyat = "₺59,99"
     var proFiyat = "₺299,99"
+
+    private var magaza: SubscriptionStore { appState.subscriptions }
+
+    /// Satın alma sonucuna göre kullanıcıya söylenecek söz.
+    @State private var uyari: String?
 
     /// Hakkı biten ücretsiz kullanıcıya iki seçenek birden sunuluyor; birini
     /// gizlemek "acaba diğeri daha mı iyiydi" sorusunu askıda bırakırdı.
@@ -55,6 +62,12 @@ struct PaywallView: View {
             NavigationStack {
                 LegalTextView(title: belge.title, blocks: belge.blocks)
             }
+        }
+        .task { await magaza.loadProducts() }
+        .alert("Bir sorun oldu", isPresented: Binding(get: { uyari != nil }, set: { if !$0 { uyari = nil } })) {
+            Button("Tamam", role: .cancel) { uyari = nil }
+        } message: {
+            Text(uyari ?? "")
         }
     }
 
@@ -159,8 +172,8 @@ struct PaywallView: View {
     /// Plan seçimi. Büyük kartlar yerine iki satır: seçili olan yanıyor.
     private var planSecimi: some View {
         VStack(spacing: 8) {
-            planSatiri(.plus, fiyat: plusFiyat, not: nil)
-            planSatiri(.pro, fiyat: proFiyat, not: "sınırsız")
+            planSatiri(.plus, fiyat: magaza.displayPrice(for: .plus) ?? plusFiyat, not: nil)
+            planSatiri(.pro, fiyat: magaza.displayPrice(for: .pro) ?? proFiyat, not: "sınırsız")
         }
         .padding(.bottom, 10)
     }
@@ -231,7 +244,10 @@ struct PaywallView: View {
                 .lineSpacing(2)
 
             HStack(spacing: 12) {
-                Button("Satın alımları geri yükle") {}
+                Button(magaza.isRestoring ? "Geri yükleniyor…" : "Satın alımları geri yükle") {
+                    Task { await geriYukle() }
+                }
+                .disabled(magaza.isRestoring)
                 Text("·").foregroundStyle(.white.opacity(0.25))
                 Button("Koşullar") { legalDocument = .kosullar }
                 Text("·").foregroundStyle(.white.opacity(0.25))
@@ -244,6 +260,16 @@ struct PaywallView: View {
 
     private var eylem: some View {
         VStack(spacing: 10) {
+            // Ürünler gelmediyse sebebini söylüyoruz. Sessizce sönük duran bir
+            // düğme, kullanıcıya "uygulama bozuk" dedirtiyor; oysa sorun çoğu
+            // zaman geçici ve kendisi çözebiliyor.
+            if let hata = magaza.productLoadFailure, magaza.products.isEmpty {
+                Text(hata)
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundStyle(CampusTheme.coral)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+            }
             eylemDugmesi
             yasalDipnot
         }
@@ -254,15 +280,51 @@ struct PaywallView: View {
     }
 
     private var eylemDugmesi: some View {
-        Button {} label: {
-            Text("\(secili.title.uppercased())'A GEÇ")
-                .font(.system(size: 13, weight: .black, design: .rounded))
-                .tracking(1.2)
-                .foregroundStyle(CampusTheme.onAccent)
-                .frame(maxWidth: .infinity)
-                .frame(height: 56)
-                .background(CampusTheme.acid, in: Capsule())
+        let calisiyor = magaza.purchasingTier != nil
+        // Ürün gelmediyse düğme açılmıyor. Dokununca hiçbir şey olmayan bir
+        // düğme, kullanıcıya uygulamanın bozuk olduğunu düşündürür.
+        let hazir = magaza.product(for: secili) != nil && !calisiyor && !magaza.isRestoring
+        return Button {
+            Task { await satinAl() }
+        } label: {
+            ZStack {
+                if calisiyor {
+                    ProgressView().tint(CampusTheme.onAccent)
+                } else {
+                    Text("\(secili.title.uppercased())'A GEÇ")
+                        .font(.system(size: 13, weight: .black, design: .rounded))
+                        .tracking(1.2)
+                }
+            }
+            .foregroundStyle(CampusTheme.onAccent)
+            .frame(maxWidth: .infinity)
+            .frame(height: 56)
+            .background(CampusTheme.acid.opacity(hazir ? 1 : 0.35), in: Capsule())
         }
         .buttonStyle(PressableStyle())
+        .disabled(!hazir)
+    }
+
+    private func satinAl() async {
+        switch await magaza.purchase(secili) {
+        case .success:
+            Haptics.success()
+            dismiss()
+        case .cancelled:
+            break
+        case .pending:
+            uyari = "Satın alman onay bekliyor. Onaylanınca aboneliğin kendiliğinden açılacak."
+        case .failed(let mesaj):
+            uyari = mesaj
+        }
+    }
+
+    private func geriYukle() async {
+        if let mesaj = await magaza.restore() {
+            uyari = mesaj
+        } else {
+            Haptics.success()
+            dismiss()
+        }
     }
 }

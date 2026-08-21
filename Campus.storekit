@@ -1,0 +1,77 @@
+{
+  "identifier" : "A1B2C3D4",
+  "nonRenewingSubscriptions" : [ ],
+  "products" : [ ],
+  "settings" : {
+    "_applicationInternalID" : "0",
+    "_developerTeamID" : "0",
+    "_lastSynchronizedDate" : 0
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21563251",
+      "localizations" : [ ],
+      "name" : "Common Üyelik",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [ ],
+          "codeOffers" : [ ],
+          "displayPrice" : "59.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6741001001",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Daha fazla tanışma hakkı, profil ziyaretçileri, mesaj düzenleme ve silme.",
+              "displayName" : "Common Plus",
+              "locale" : "tr_TR"
+            },
+            {
+              "description" : "More likes, profile visitors, message editing and deletion.",
+              "displayName" : "Common Plus",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.campus.social.plus.weekly",
+          "recurringSubscriptionPeriod" : "P1W",
+          "referenceName" : "Common Plus Haftalık",
+          "subscriptionGroupID" : "21563251",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [ ]
+        },
+        {
+          "adHocOffers" : [ ],
+          "codeOffers" : [ ],
+          "displayPrice" : "299.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "6741001002",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Sınırsız tanışma, story izlenme sayıları, story duraklatma ve hayalet mod.",
+              "displayName" : "Common Pro",
+              "locale" : "tr_TR"
+            },
+            {
+              "description" : "Unlimited likes, story view counts, story pause and ghost mode.",
+              "displayName" : "Common Pro",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.campus.social.pro.weekly",
+          "recurringSubscriptionPeriod" : "P1W",
+          "referenceName" : "Common Pro Haftalık",
+          "subscriptionGroupID" : "21563251",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [ ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

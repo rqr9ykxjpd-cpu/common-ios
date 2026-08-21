@@ -227,9 +227,18 @@ struct SampleProductService: ProductService {
 
     // Profil
     func saveProfile(_ draft: ProfileDraft) async throws { await store.save(draft) }
+    // Örnek veride sunucu yok: satın alma bildirimi sessizce yutuluyor,
+    // kademe `-tier` argümanıyla elle veriliyor (bkz. CampusApp).
+    func submitPurchase(jws: String, productID: String) async throws {}
+    func fetchMyPlan() async throws -> SubscriptionTier { .free }
+
     func fetchMyProfile() async throws -> ProfileDraft? { hasProfile ? await store.myDraft() : nil }
+    /// Örnek veride depolama yok, imzalı adres de yok. Yine de boş dönmüyoruz:
+    /// fotoğraf zorunluluğu kapısı (bkz. `AppState.requiresAvatarStep`) örnek
+    /// veriyle gezerken uygulamayı kayıt akışına düşürüyor, hiçbir ekran
+    /// görülemiyordu. Bu adres yalnızca "fotoğrafı var" demek için.
     func fetchMyProfilePhotos() async throws -> ProfilePhotosResult {
-        ProfilePhotosResult(avatarURL: nil, galleryURLs: [])
+        ProfilePhotosResult(avatarURL: URL(string: "sample://avatar"), galleryURLs: [])
     }
     func updateAvatar(_ imageData: Data?) async throws -> URL? { nil }
     func updateGallery(_ images: [Data]) async throws -> [URL] { [] }

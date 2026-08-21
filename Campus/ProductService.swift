@@ -83,6 +83,13 @@ protocol ProductService: Sendable {
     /// Sunucudaki profil. Kullanıcının profili henüz yoksa `nil` döner — giriş akışı
     /// bu ayrımı kullanıp kullanıcıyı boş uygulamaya değil onboarding'e yönlendirir.
     func fetchMyProfile() async throws -> ProfileDraft?
+    /// Apple'ın imzaladığı satın alma belgesini sunucuya iletir. Sunucu belgeyi
+    /// Apple'a doğrulatıp kademeyi kendisi yazıyor; istemcinin "ben Pro oldum"
+    /// demesi tek başına hiçbir şey değiştirmiyor.
+    func submitPurchase(jws: String, productID: String) async throws
+    /// Sunucunun bildiği kademe. Sınırları uygulayan kayıt bu; cihazın bildiğiyle
+    /// ayrışırsa doğru olan budur.
+    func fetchMyPlan() async throws -> SubscriptionTier
     func fetchMyProfilePhotos() async throws -> ProfilePhotosResult
     func updateAvatar(_ imageData: Data?) async throws -> URL?
     func updateGallery(_ images: [Data]) async throws -> [URL]
@@ -186,6 +193,8 @@ struct UnconfiguredProductService: ProductService {
     func deletePost(_ postID: UUID) async throws { try fail() }
     func deleteComment(_ commentID: UUID) async throws { try fail() }
     func fetchMyProfile() async throws -> ProfileDraft? { try fail() }
+    func submitPurchase(jws: String, productID: String) async throws { try fail() }
+    func fetchMyPlan() async throws -> SubscriptionTier { try fail() }
     func fetchMyProfilePhotos() async throws -> ProfilePhotosResult { try fail() }
     func updateAvatar(_ imageData: Data?) async throws -> URL? { try fail() }
     func updateGallery(_ images: [Data]) async throws -> [URL] { try fail() }

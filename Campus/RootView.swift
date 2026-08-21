@@ -40,6 +40,10 @@ struct RootView: View {
             PaywallView(quota: appState.quotaHit)
         }
         .task { await appState.restoreBackendSession() }
+        // Ürünler ve haklar açılışta okunuyor: aboneliği başka cihazda alan ya
+        // da uygulamayı silip kuran kullanıcı, paywall'a hiç uğramadan
+        // hakkına kavuşmalı.
+        .task { await appState.refreshSubscriptions() }
         .onChange(of: scenePhase) { previous, phase in
             // Arka planda anlık kanal kopuyor; dönüşte kaçan mesajları getiriyoruz.
             guard phase == .active, previous != .active else { return }

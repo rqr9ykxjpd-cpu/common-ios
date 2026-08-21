@@ -100,9 +100,17 @@ final class AppState {
     /// Kendi rozetim. Sunucudan gelir; istemci kendine rozet veremez.
     private(set) var myBadge: ProfileBadge = .none
 
-    /// Kullanıcının abonelik kademesi. Ödeme bağlanana kadar herkes ücretsiz;
-    /// StoreKit devreye girince buraya yazılacak ve sunucuya da bildirilecek.
+    /// Kullanıcının abonelik kademesi. `subscriptions` (StoreKit) buraya yazıyor;
+    /// arayüz neyin kilitli olduğunu buradan okuyor.
+    ///
+    /// Bu değer **arayüz içindir**. Sayılı sınırları uygulayan sunucu kendi
+    /// kaydına bakıyor; burayı kurcalayan biri Pro ekranlarını açabilir ama
+    /// beğeni hakkını artıramaz.
     var tier: SubscriptionTier = .free
+
+    /// StoreKit katmanı. Uygulama boyunca tek örnek: `Transaction.updates`
+    /// dinleyicisi açılışta başlayıp hiç kapanmamalı.
+    let subscriptions = SubscriptionStore()
 
     /// Hayalet mod (yalnızca Pro): açıkken profil ziyaretleri ve story
     /// izlemeleri kaydedilmiyor. İki kayıt da istemciden gönderildiği için
@@ -230,6 +238,61 @@ final class AppState {
         currentUserID = defaults.string(forKey: SessionKey.userID).flatMap(UUID.init(uuidString:)) ?? UUID()
         appearance = defaults.string(forKey: SessionKey.appearance).flatMap(Appearance.init(rawValue:)) ?? .system
         loadAccountData(migratingLegacy: true)
+
+        // Cihaz bir hak gördüğünde arayüzü açıyoruz ve doğrulanmış işlemi
+        // sunucuya bildiriyoruz. Sunucu Apple'a sormadan kademeyi değiştirmiyor;
+        // bu çağrı bir talep, bir bildirim değil.
+        subscriptions.onEntitlementChange = { [weak self] kademe, satinAlma in
+            guard let self else { return }
+            self.tier = kademe
+            guard let satinAlma else { return }
+            Task { await self.syncPlanWithServer(satinAlma) }
+        }
+    }
+
+    /// Doğrulanmış satın almayı sunucuya iletir. Hata sessiz: kullanıcının
+    /// satın alması başarılı oldu, arayüzü de açıldı. Sunucu bildirimi
+    /// gecikirse `refreshEntitlements` bir sonraki açılışta tekrar deniyor —
+    /// ekranına "abonelik kaydedilemedi" yazmak, parası gitmiş kullanıcıyı
+    /// boşuna paniğe sokar.
+    private func syncPlanWithServer(_ satinAlma: SubscriptionStore.VerifiedPurchase) async {
+        do {
+            try await service.submitPurchase(jws: satinAlma.jws, productID: satinAlma.productID)
+        } catch {
+            #if DEBUG
+            print("Abonelik sunucuya bildirilemedi: \(error)")
+            #endif
+        }
+    }
+
+    /// Açılışta: ürünleri yükle, cihazdaki hakları oku, sunucuya danış.
+    ///
+    /// Sunucu asıl kaynak — sınırları uygulayan o. Ama cihaz sunucudan daha
+    /// yüksek bir hak görüyorsa (satın alma yeni oldu, doğrulama henüz
+    /// düşmedi) kullanıcıyı bekletmiyoruz: arayüzü açıp doğrulamayı tekrar
+    /// gönderiyoruz. Tersi durumda — sunucu daha yüksekse — sunucuya
+    /// uyuyoruz; abonelik başka cihazda alınmış olabilir.
+    func refreshSubscriptions() async {
+        await subscriptions.loadProducts()
+        await subscriptions.refreshEntitlements()
+        let cihaz = subscriptions.tier
+
+        let sunucu: SubscriptionTier
+        do {
+            sunucu = try await service.fetchMyPlan()
+        } catch {
+            // Sunucu kademeyi bilmiyorsa (henüz oturum yok, ağ yok ya da
+            // migration çalışmadıysa) cihazın bildiği geçerli. Kullanıcıya
+            // hata göstermiyoruz: abonelik ekranıyla ilgisi olmayan bir anda
+            // "abonelik okunamadı" demek kafa karıştırır.
+            tier = cihaz
+            return
+        }
+
+        tier = max(cihaz, sunucu)
+        if cihaz > sunucu {
+            await subscriptions.refreshEntitlements(forceSync: true)
+        }
     }
 
     /// Apple'ın verdiği ham (hash'lenmemiş) nonce'u geçir; `SupabaseProductService` bunu
@@ -292,6 +355,7 @@ final class AppState {
         await loadProfileVisits(silently: true)
         try? await service.touchLastActive()
         startMessageListener()
+        await refreshSubscriptions()
         if requiresAvatarStep(photosLoaded: fotograflarOkundu) {
             withAnimation(.smooth(duration: 0.55)) { route = .onboarding(.photo) }
             return true
@@ -359,6 +423,7 @@ final class AppState {
             await loadProfileVisits(silently: true)
             try? await service.touchLastActive()
             startMessageListener()
+            await refreshSubscriptions()
             // Geçerli oturum ve tamamlanmış profil varken karşılama ekranında bırakmak
             // kullanıcıyı hiçbir yere gidemez halde bırakıyordu.
             if requiresAvatarStep(photosLoaded: fotograflarOkundu) {

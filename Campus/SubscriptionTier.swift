@@ -17,6 +17,25 @@ enum SubscriptionTier: Int, Comparable, Codable, CaseIterable {
         lhs.rawValue < rhs.rawValue
     }
 
+    /// Sunucudaki `subscriptions.plan` metni. Bilinmeyen bir değer 'free'
+    /// sayılıyor: sunucuya sonradan eklenen bir kademe, eski uygulamada
+    /// kilitleri açmamalı.
+    init(serverValue: String) {
+        switch serverValue {
+        case "plus": self = .plus
+        case "pro": self = .pro
+        default: self = .free
+        }
+    }
+
+    var serverValue: String {
+        switch self {
+        case .free: "free"
+        case .plus: "plus"
+        case .pro: "pro"
+        }
+    }
+
     var title: String {
         switch self {
         case .free: "Ücretsiz"
