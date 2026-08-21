@@ -28,7 +28,9 @@ struct DiscoveryCard: View {
         GeometryReader { proxy in
             let height = proxy.size.height
             let width = proxy.size.width
-            let photoHeight = height * 0.50
+            // Fotoğraf kartın çoğunluğu: yarı yarıya bölünce alttaki açık panel
+            // kartı ağırlaştırıyor ve kişiye değil metne bakılıyordu.
+            let photoHeight = height * 0.72
             VStack(spacing: 0) {
                 // Fotoğraf katmanındaki her parçaya açık ölçü veriliyor: ZStack'in boyutunu
                 // çocuklarından çıkarmaya bırakmak, katmanlar farklı yükseklikler isteyince
@@ -59,6 +61,21 @@ struct DiscoveryCard: View {
                         }
                         .buttonStyle(.plain)
                         .frame(width: width, height: photoHeight)
+
+                        // Kaç fotoğraf olduğu ve kaçıncısında olunduğu hiçbir yerde
+                        // yazmıyordu; kullanıcı sağa dokununca bir şey değişeceğini
+                        // bilmiyordu.
+                        HStack(spacing: 4) {
+                            ForEach(0..<photos.count, id: \.self) { indeks in
+                                Capsule()
+                                    .fill(.white.opacity(indeks == photoIndex ? 0.95 : 0.35))
+                                    .frame(height: 3)
+                            }
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.top, 10)
+                        .frame(width: width, alignment: .top)
+                        .allowsHitTesting(false)
                     }
 
                     VStack(spacing: 0) {
