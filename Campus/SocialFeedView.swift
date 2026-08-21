@@ -61,14 +61,6 @@ struct SocialFeedView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                feedHeader
-                    .frame(height: 56)
-                    .background(CampusTheme.paper)
-                    .overlay(alignment: .bottom) {
-                        Rectangle().fill(CampusTheme.ink.opacity(0.08)).frame(height: 0.5)
-                    }
-                    .zIndex(1)
-
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(spacing: 0) {
@@ -114,7 +106,11 @@ struct SocialFeedView: View {
                 }
             }
             .background(CampusTheme.paper.ignoresSafeArea())
-            .toolbar(.hidden, for: .navigationBar)
+            // Marka başlığı artık sistemin bar'ında duruyor: kaydırınca beliren
+            // materyal, safe area ve geçişler iOS'a ait. Düğmelerin altındaki
+            // elle çizilmiş daireler kaldırıldı — sistem kendi zeminini veriyor.
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { akisAracCubugu }
             .fullScreenCover(isPresented: $showStoryComposer) {
                 CreatePostView(initialContentType: 1)
             }
@@ -204,55 +200,6 @@ struct SocialFeedView: View {
         }
     }
 
-    private var feedHeader: some View {
-        HStack(alignment: .center) {
-            Wordmark()
-            Spacer()
-            Button { showNotifications = true } label: {
-                ZStack(alignment: .topTrailing) {
-                    Image(systemName: "bell")
-                        .font(.system(size: 16, weight: .semibold))
-                        .frame(width: 44, height: 44)
-                        .background(CampusTheme.ink.opacity(0.06), in: Circle())
-                    if appState.unreadNotificationCount > 0 {
-                        Text("\(min(appState.unreadNotificationCount, 9))")
-                            .font(.system(size: 11, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
-                            .frame(width: 18, height: 18)
-                            .background(CampusTheme.coral, in: Circle())
-                            .offset(x: 2, y: -2)
-                    }
-                }
-                .accessibilityLabel("Bildirimler, \(appState.unreadNotificationCount) okunmamış")
-            }
-            .buttonStyle(PressableStyle())
-
-            // Asit yeşili yalnızca birincil eylemde ("Paylaş") kalıyor. İkincil bir
-            // gezinme ikonunda da kullanılınca göz oraya gidiyor, asıl eyleme değil;
-            // marka rengi her yerde olunca vurgu olmaktan çıkıyor.
-            Button { showChats = true } label: {
-                Image(systemName: "message.fill")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(CampusTheme.ink)
-                    .frame(width: 44, height: 44)
-                    .background(CampusTheme.ink.opacity(0.06), in: Circle())
-            }
-            .buttonStyle(PressableStyle())
-            .accessibilityLabel("Sohbetler")
-
-            Button { showPostComposer = true } label: {
-                Label("Paylaş", systemImage: "plus")
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .foregroundStyle(CampusTheme.paper)
-                    .padding(.horizontal, 14)
-                    .frame(height: 44)
-                    .background(CampusTheme.ink, in: Capsule())
-            }
-            .buttonStyle(PressableStyle())
-        }
-        .foregroundStyle(CampusTheme.ink)
-        .padding(.horizontal, 20)
-    }
 
     private var storyRail: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -467,6 +414,44 @@ struct SocialFeedView: View {
     /// etkinlik, üye sayısı ve "Katıl" bağlantısı olan bir kutuydu; iki tanesi bile
     /// ekranı dolduruyordu. Artık ad, üye sayısı ve üyelik durumu — gerisi kulübe
     /// dokununca zaten açılıyor.
+
+    /// Marka başlığı ve eylemler. Ayrı bir `ToolbarContentBuilder` olarak
+    /// duruyor: gövdenin içine gömülünce derleyici tek ifadeyi makul sürede
+    /// çözemiyor.
+    @ToolbarContentBuilder private var akisAracCubugu: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            Wordmark().foregroundStyle(CampusTheme.ink)
+        }
+        ToolbarItem(placement: .topBarTrailing) {
+            Button { showNotifications = true } label: {
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: "bell")
+                    if appState.unreadNotificationCount > 0 {
+                Text("\(min(appState.unreadNotificationCount, 9))")
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .frame(width: 15, height: 15)
+                    .background(CampusTheme.coral, in: Circle())
+                    .offset(x: 8, y: -6)
+                    }
+                }
+            }
+            .accessibilityLabel("Bildirimler, \(appState.unreadNotificationCount) okunmamış")
+        }
+        ToolbarItem(placement: .topBarTrailing) {
+            Button { showChats = true } label: {
+                Image(systemName: "message.fill")
+            }
+            .accessibilityLabel("Sohbetler")
+        }
+        ToolbarItem(placement: .topBarTrailing) {
+            Button { showPostComposer = true } label: {
+                Label("Paylaş", systemImage: "plus")
+            }
+            .accessibilityLabel("Paylaş")
+        }
+    }
+
     private func clubCard(_ club: CampusClub) -> some View {
         let joined = appState.isJoined(to: club)
         let accent = Color(hex: club.accentHex)
