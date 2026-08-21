@@ -60,7 +60,7 @@
 		     "bond://login-callback" eklenmeden bu bağlantı uygulamayı açmaz. -->
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>com.bond.social.auth</string>
+			<string>com.campus.social.auth</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>bond</string>

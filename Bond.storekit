@@ -33,7 +33,7 @@
               "locale" : "en_US"
             }
           ],
-          "productID" : "com.bond.social.plus.weekly",
+          "productID" : "com.campus.social.plus.weekly",
           "recurringSubscriptionPeriod" : "P1W",
           "referenceName" : "Bond Plus Haftalık",
           "subscriptionGroupID" : "21563251",
@@ -60,7 +60,7 @@
               "locale" : "en_US"
             }
           ],
-          "productID" : "com.bond.social.pro.weekly",
+          "productID" : "com.campus.social.pro.weekly",
           "recurringSubscriptionPeriod" : "P1W",
           "referenceName" : "Bond Pro Haftalık",
           "subscriptionGroupID" : "21563251",

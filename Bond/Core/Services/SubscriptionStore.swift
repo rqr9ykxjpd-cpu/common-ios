@@ -15,8 +15,8 @@ import StoreKit
 @Observable
 final class SubscriptionStore {
     enum ProductID {
-        static let plus = "com.bond.social.plus.weekly"
-        static let pro = "com.bond.social.pro.weekly"
+        static let plus = "com.campus.social.plus.weekly"
+        static let pro = "com.campus.social.pro.weekly"
         static let all = [plus, pro]
 
         static func tier(for id: String) -> SubscriptionTier? {

@@ -118,12 +118,12 @@ her işlem "Supabase yapılandırması eksik" hatası verir (`UnconfiguredProduc
 Bunlar tamamlanmadan uygulamaya **hiç giriş yapılamaz**.
 
 1. ✅ **Google Cloud Console** — "iOS" ve "Web application" türünde OAuth
-   client ID oluşturuldu (Bundle ID: `com.bond.social`). Üç değer de
+   client ID oluşturuldu (Bundle ID: `com.campus.social`). Üç değer de
    `.env`'e yazılı: `GOOGLE_CLIENT_ID` (iOS),
    `GOOGLE_SERVER_CLIENT_ID` (Web — Supabase'in Google provider'ındaki Client ID
    ile AYNI), `GOOGLE_REVERSED_CLIENT_ID` (iOS client ID'nin ters çevrilmiş hali).
 2. ✅ **Supabase Auth providers** — Authentication → Providers'ta hem Apple
-   (Authorized Client IDs: `com.bond.social`) hem Google (Client ID = Web
+   (Authorized Client IDs: `com.campus.social`) hem Google (Client ID = Web
    client ID) açık.
 3. ✅ **GoogleSignIn-iOS paketi** — `project.pbxproj`'a elle eklendi
    (`XCRemoteSwiftPackageReference "GoogleSignIn-iOS"`), `Package.resolved`'da

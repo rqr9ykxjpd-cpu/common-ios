@@ -10,15 +10,15 @@
 //   APPLE_ISSUER_ID    App Store Connect → Users and Access → Integrations
 //   APPLE_KEY_ID       aynı yerde oluşturulan In-App Purchase anahtarının kimliği
 //   APPLE_PRIVATE_KEY  o anahtarın .p8 dosyasının içeriği (BEGIN/END satırları dahil)
-//   APPLE_BUNDLE_ID    com.bond.social
+//   APPLE_BUNDLE_ID    com.campus.social
 //
 // SUPABASE_URL ve SUPABASE_SERVICE_ROLE_KEY ortamda hazır geliyor.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const PLAN_BY_PRODUCT: Record<string, string> = {
-  "com.bond.social.plus.weekly": "plus",
-  "com.bond.social.pro.weekly": "pro",
+  "com.campus.social.plus.weekly": "plus",
+  "com.campus.social.pro.weekly": "pro",
 };
 
 const APPLE_PRODUCTION = "https://api.storekit.itunes.apple.com";
