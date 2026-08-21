@@ -327,7 +327,8 @@ final class AppState {
         return await completeSocialSignIn()
     }
 
-    /// Üniversite e-postasına giriş bağlantısı gönderir. `.edu.tr` olmayan adresler
+    /// E-posta adresine giriş bağlantısı gönderir. `.edu.tr` şartı ilk sürümde
+    /// kapalı (bkz. 20260821180000); geri açılırsa reddedilen adresler
     /// sunucu tarafında (Before User Created hook) reddedilir — buraya "gönderildi"
     /// olarak dönerse gerçekten gönderilmiştir.
     @discardableResult

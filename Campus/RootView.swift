@@ -360,10 +360,10 @@ private struct EmailSignInSheet: View {
                 switch step {
                 case .email:
                     VStack(alignment: .leading, spacing: CampusTheme.Space.sm) {
-                        Text("Üniversite e-postan")
+                        Text("E-posta adresin")
                             .font(.system(size: 22, weight: .semibold, design: .rounded))
                             .foregroundStyle(CampusTheme.ink)
-                        Text("Yalnızca .edu.tr uzantılı adreslere bağlantı gönderiyoruz.")
+                        Text("Adresine bir giriş bağlantısı göndereceğiz.")
                             .font(.system(size: 13, design: .rounded))
                             .foregroundStyle(CampusTheme.muted)
                     }
