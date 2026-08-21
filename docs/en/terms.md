@@ -50,6 +50,25 @@ If we find that you have broken these rules we may close your account without
 warning. You can delete your own account at any time from inside the app:
 **Profile → Delete account permanently**.
 
+## Subscriptions
+
+Common's core features are free. Common Plus and Common Pro are optional
+weekly subscriptions; you can keep using the app without subscribing.
+
+Purchases are made through the App Store and charged to your App Store
+account. A subscription renews automatically and is charged again unless you
+cancel at least 24 hours before the end of the current period.
+
+Cancellation is done in your App Store account settings — we cannot cancel a
+subscription for you. When you cancel, your subscription runs until the end of
+the current period. Refund requests also go to Apple; because we never receive
+the payment, we cannot issue refunds ourselves.
+
+Prices may change. If the price of an active subscription changes, Apple will
+notify you and ask for your consent. A subscription is tied to your account
+and cannot be transferred. We may change which features require a paid plan;
+we will not take away features you have already paid for during that period.
+
 ## Limits of our responsibility
 
 Common is a tool that makes meeting people easier; it does not guarantee the

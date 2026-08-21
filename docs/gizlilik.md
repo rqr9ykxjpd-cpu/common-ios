@@ -57,6 +57,20 @@ Giriş için Google ve Apple'ın kimlik doğrulama servislerini kullanıyoruz. B
 servisler kendi gizlilik politikalarına tabidir ve bize yalnızca kimliğini
 doğrulayan asgari bilgiyi iletirler; şifreni hiçbir zaman görmeyiz.
 
+## Abonelik ve ödeme
+
+Ödemeni Apple alır, biz almayız. Kart numaran, fatura adresin veya ödeme
+bilgilerinin herhangi bir parçası bize hiçbir zaman ulaşmaz; bunları
+göremeyiz ve saklamayız.
+
+Bizim sakladığımız tek şey, hesabına bağlı olarak şunlardır: hangi kademede
+olduğun (ücretsiz, Plus, Pro), aboneliğinin bitiş tarihi ve Apple'ın o
+aboneliğe verdiği kimlik numarası. Bu numara bir ödeme bilgisi değildir; aynı
+aboneliğin birden fazla hesabı açmasını engellemek için tutulur.
+
+Bunları özellik sınırlarını uygulayabilmek için saklıyoruz. Kademeni yalnızca
+sen görebilirsin — başka kullanıcılar kimin abone olduğunu göremez.
+
 ## Ne kadar süre tutuyoruz
 
 Hesabın açık olduğu sürece. Story'ler 10 saat sonra kendiliğinden kaybolur.

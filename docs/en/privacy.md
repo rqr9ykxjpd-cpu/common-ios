@@ -59,6 +59,21 @@ We use Google's and Apple's authentication services for sign-in. They are
 governed by their own privacy policies and pass us only the minimum
 information needed to verify your identity; we never see your password.
 
+## Subscriptions and payment
+
+Apple takes your payment, not us. Your card number, billing address and any
+other payment details never reach us; we cannot see them and we do not store
+them.
+
+The only related things we store, tied to your account, are: which plan you
+are on (free, Plus, Pro), when your subscription expires, and the identifier
+Apple assigns to that subscription. That identifier is not payment
+information; it exists so that one subscription cannot unlock several
+accounts.
+
+We store this in order to enforce feature limits. Only you can see your own
+plan — other users cannot tell who is subscribed.
+
 ## How long we keep it
 
 For as long as your account exists. Stories disappear automatically after

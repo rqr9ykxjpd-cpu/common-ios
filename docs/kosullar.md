@@ -49,6 +49,26 @@ Kuralları ihlal ettiğini tespit edersek hesabını uyarı yapmadan
 kapatabiliriz. Sen de hesabını dilediğin zaman uygulama içinden
 **Profil → Hesabı kalıcı olarak sil** yolundan silebilirsin.
 
+## Abonelikler
+
+Common'ın temel özellikleri ücretsizdir. Common Plus ve Common Pro, isteğe
+bağlı haftalık aboneliklerdir; abone olmadan da uygulamayı kullanmaya devam
+edebilirsin.
+
+Satın alma App Store üzerinden yapılır ve ücret App Store hesabına yansır.
+Abonelik, dönemin bitiminden en az 24 saat önce iptal edilmezse kendiliğinden
+yenilenir ve aynı tutar tekrar tahsil edilir.
+
+İptal, App Store hesap ayarlarından yapılır — uygulama içinden iptal edemeyiz.
+İptal ettiğinde mevcut dönemin sonuna kadar aboneliğin devam eder. Ücret
+iadesi talepleri de Apple'a iletilir; ödemeyi biz almadığımız için iade
+işlemini biz yapamıyoruz.
+
+Fiyatlar değişebilir. Devam eden bir aboneliğin fiyatı değişirse Apple seni
+bilgilendirir ve onayını ister. Abonelik hesabına bağlıdır, başkasına
+devredilemez. Hangi özelliklerin ücretli olduğunu zamanla değiştirebiliriz;
+ödemesini yaptığın dönem boyunca sana tanıdığımız özellikleri geri almayız.
+
 ## Sorumluluk sınırı
 
 Common tanışmayı kolaylaştıran bir araçtır; kullanıcıların kimliğini,
