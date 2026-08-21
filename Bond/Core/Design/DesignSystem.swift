@@ -193,15 +193,45 @@ enum NavigationBarStyle {
     }
 }
 
+/// Marka adı.
+///
+/// Sistem yazı tipiyle yazılınca logo değil etiket gibi duruyordu — ekrandaki
+/// başka herhangi bir başlıktan ayırt edilemiyordu. İkondaki "b" ile aynı
+/// kesimde (New York, sistem yazı tipinin serif varyantı) yazılıyor; harfin
+/// kendisi işaret olduğu için ayrıca bir amblem gerekmiyor.
+///
+/// Harfler açılışta sırayla beliriyor. Animasyon bir kez, ~0.5 saniye:
+/// akış günde onlarca kez açılan bir ekran, sürekli dönen bir şey orada
+/// gürültü olurdu.
 struct Wordmark: View {
     var compact = false
 
+    @State private var belirdi = false
+
+    private var harfler: [(index: Int, karakter: Character)] {
+        Array(L10n.Brand.wordmark).enumerated().map { ($0.offset, $0.element) }
+    }
+
     var body: some View {
-        Text(L10n.Brand.wordmark)
-            .font(.system(size: compact ? 17 : 21, weight: .semibold, design: .default))
-            .tracking(-0.4)
-            .foregroundStyle(BondTheme.ink)
-            .accessibilityAddTraits(.isHeader)
+        HStack(spacing: 0) {
+            ForEach(harfler, id: \.index) { harf in
+                Text(String(harf.karakter))
+                    .opacity(belirdi ? 1 : 0)
+                    .offset(y: belirdi ? 0 : 7)
+                    .blur(radius: belirdi ? 0 : 3)
+                    .animation(.smooth(duration: 0.42).delay(Double(harf.index) * 0.055),
+                               value: belirdi)
+            }
+        }
+        .font(.system(size: compact ? 18 : 23, weight: .bold, design: .serif))
+        .tracking(-0.6)
+        .foregroundStyle(BondTheme.ink)
+        .fixedSize()
+        // Harf harf bölündüğü için sesli okuyucu "b-o-n-d" demesin.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(L10n.Brand.wordmark)
+        .accessibilityAddTraits(.isHeader)
+        .onAppear { belirdi = true }
     }
 }
 

@@ -88,7 +88,6 @@ struct SocialFeedView: View {
             // Marka başlığı artık sistemin bar'ında duruyor: kaydırınca beliren
             // materyal, safe area ve geçişler iOS'a ait. Düğmelerin altındaki
             // elle çizilmiş daireler kaldırıldı — sistem kendi zeminini veriyor.
-            .navigationTitle(L10n.Brand.wordmark)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { akisAracCubugu }
             .fullScreenCover(isPresented: $showStoryComposer) {
@@ -399,6 +398,12 @@ struct SocialFeedView: View {
     /// duruyor: gövdenin içine gömülünce derleyici tek ifadeyi makul sürede
     /// çözemiyor.
     @ToolbarContentBuilder private var akisAracCubugu: some ToolbarContent {
+        // Marka `.navigationTitle` ile düz metin olarak veriliyordu; başlık
+        // metnine yazı tipi verilemediği için logo değil etiket gibi duruyordu.
+        // `.principal` öğesi olarak kendi görünümünü taşıyabiliyor.
+        ToolbarItem(placement: .principal) {
+            Wordmark()
+        }
         ToolbarItem(placement: .topBarTrailing) {
             Button { showNotifications = true } label: {
                 ZStack(alignment: .topTrailing) {
