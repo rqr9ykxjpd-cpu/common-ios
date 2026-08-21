@@ -81,7 +81,16 @@ struct CampusApp: App {
         WindowGroup {
             RootView()
                 .environment(appState)
-                .onOpenURL { url in GIDSignIn.sharedInstance.handle(url) }
+                .onOpenURL { url in
+                    // Üniversite e-postasındaki giriş bağlantısı bu şemayla geliyor
+                    // (bkz. Info.plist, SupabaseProductService.requestEmailSignInLink).
+                    // Google'ın kendi geri çağrısıyla karışmasın diye şemaya bakıyoruz.
+                    if url.scheme == "common" {
+                        Task { await appState.completeEmailSignIn(url: url) }
+                    } else {
+                        GIDSignIn.sharedInstance.handle(url)
+                    }
+                }
         }
     }
 }

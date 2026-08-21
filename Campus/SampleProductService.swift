@@ -245,6 +245,8 @@ struct SampleProductService: ProductService {
     // Oturum
     func signInWithApple(idToken: String, nonce: String) async throws {}
     func signInWithGoogle(idToken: String, accessToken: String, nonce: String) async throws {}
+    func requestEmailSignInLink(email: String) async throws {}
+    func completeEmailSignIn(url: URL) async throws {}
     func restoreSession() async throws -> UUID? { SampleData.me.id }
     func signOut() async throws {}
     func deleteAccount() async throws {}

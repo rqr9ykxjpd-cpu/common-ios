@@ -55,6 +55,13 @@ protocol ProductService: Sendable {
 
     func signInWithApple(idToken: String, nonce: String) async throws
     func signInWithGoogle(idToken: String, accessToken: String, nonce: String) async throws
+    /// Üniversite e-postasına giriş bağlantısı gönderir. Sunucu tarafında (Before User
+    /// Created hook) yalnızca `.edu.tr` uzantılı adresler için hesap oluşuyor/mail
+    /// gidiyor; başka bir domain verilirse bu çağrı hata fırlatır.
+    func requestEmailSignInLink(email: String) async throws
+    /// Kullanıcı maildeki bağlantıya dokununca iOS'un uygulamaya ilettiği URL.
+    /// İçindeki token'ı doğrulayıp oturumu kurar.
+    func completeEmailSignIn(url: URL) async throws
     func restoreSession() async throws -> UUID?
     func signOut() async throws
     func deleteAccount() async throws
@@ -179,6 +186,8 @@ struct UnconfiguredProductService: ProductService {
 
     func signInWithApple(idToken: String, nonce: String) async throws { try fail() }
     func signInWithGoogle(idToken: String, accessToken: String, nonce: String) async throws { try fail() }
+    func requestEmailSignInLink(email: String) async throws { try fail() }
+    func completeEmailSignIn(url: URL) async throws { try fail() }
     func restoreSession() async throws -> UUID? { nil }
     func signOut() async throws {}
     func deleteAccount() async throws { try fail() }

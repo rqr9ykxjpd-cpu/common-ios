@@ -47,6 +47,18 @@
 				<string>$(GOOGLE_REVERSED_CLIENT_ID)</string>
 			</array>
 		</dict>
+		<!-- Üniversite e-postasına gönderilen giriş bağlantısı bu şemayla uygulamaya
+		     geri dönüyor (bkz. SupabaseProductService.requestEmailSignInLink). Supabase
+		     Dashboard'da Authentication > URL Configuration > Redirect URLs listesine
+		     "common://login-callback" eklenmeden bu bağlantı uygulamayı açmaz. -->
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.campus.social.auth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>common</string>
+			</array>
+		</dict>
 	</array>
 </dict>
 </plist>

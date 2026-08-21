@@ -103,6 +103,7 @@ struct WelcomeView: View {
     @State private var float = false
     @State private var currentAppleNonce: String?
     @State private var isSigningIn = false
+    @State private var showingEmailSignIn = false
 
     var body: some View {
         GeometryReader { proxy in
@@ -175,6 +176,17 @@ struct WelcomeView: View {
                         }
                         .buttonStyle(PressableStyle())
                         .disabled(isSigningIn)
+
+                        Button {
+                            Haptics.impact(.light)
+                            showingEmailSignIn = true
+                        } label: {
+                            Text("Üniversite e-postanla devam et")
+                                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                .foregroundStyle(CampusTheme.ink.opacity(0.6))
+                                .frame(height: 32)
+                        }
+                        .disabled(isSigningIn)
                     }
 
                     legalConsent
@@ -188,6 +200,9 @@ struct WelcomeView: View {
         .onAppear {
             withAnimation(.easeOut(duration: 0.55)) { appeared = true }
             withAnimation(.easeInOut(duration: 4).repeatForever(autoreverses: true)) { float = true }
+        }
+        .sheet(isPresented: $showingEmailSignIn) {
+            EmailSignInSheet()
         }
     }
 
@@ -314,6 +329,101 @@ struct WelcomeView: View {
     private static func sha256(_ input: String) -> String {
         let hashed = SHA256.hash(data: Data(input.utf8))
         return hashed.compactMap { String(format: "%02x", $0) }.joined()
+    }
+}
+
+/// Apple/Google yanına eklenen üçüncü giriş yolu: üniversite e-postasına giriş
+/// bağlantısı gönderip mailden dönüşü bekleme. Kod yerine link kullanıyoruz çünkü
+/// Supabase'in "Confirm signup" şablonu Free planda özelleştirilemiyor (kodu göstermek
+/// için Pro'ya geçmek ya da custom SMTP kurmak gerekiyordu, ikincisinin bu üniversite
+/// sunucusuna teslimat sorunu vardı) — varsayılan şablondaki link zaten çalışıyordu.
+/// Kabul kriteri istemcide değil sunucuda (Before User Created hook) — buradaki
+/// `.edu.tr` biçim kontrolü yalnızca erken geri bildirim için, güvenlik sınırı değil.
+private struct EmailSignInSheet: View {
+    @Environment(AppState.self) private var appState
+    @Environment(\.dismiss) private var dismiss
+
+    private enum Step { case email, sent }
+
+    @State private var step: Step = .email
+    @State private var email = ""
+    @State private var isBusy = false
+    @FocusState private var fieldFocused: Bool
+
+    private var looksLikeEduEmail: Bool {
+        email.lowercased().trimmingCharacters(in: .whitespacesAndNewlines).hasSuffix(".edu.tr")
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: CampusTheme.Space.xl) {
+                switch step {
+                case .email:
+                    VStack(alignment: .leading, spacing: CampusTheme.Space.sm) {
+                        Text("Üniversite e-postan")
+                            .font(.system(size: 22, weight: .semibold, design: .rounded))
+                            .foregroundStyle(CampusTheme.ink)
+                        Text("Yalnızca .edu.tr uzantılı adreslere bağlantı gönderiyoruz.")
+                            .font(.system(size: 13, design: .rounded))
+                            .foregroundStyle(CampusTheme.muted)
+                    }
+
+                    TextField("adin@ogrenci.universite.edu.tr", text: $email)
+                        .keyboardType(.emailAddress)
+                        .textContentType(.emailAddress)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .focused($fieldFocused)
+                        .font(.system(size: 18, weight: .medium, design: .rounded))
+                        .padding(.vertical, 10)
+                        .overlay(alignment: .bottom) { Rectangle().fill(CampusTheme.ink.opacity(0.2)).frame(height: 1) }
+
+                    Spacer(minLength: 0)
+
+                    AppButton(title: isBusy ? "Gönderiliyor…" : "Bağlantı Gönder", enabled: !isBusy && looksLikeEduEmail) {
+                        Task {
+                            Haptics.impact(.light)
+                            isBusy = true
+                            let sent = await appState.requestEmailSignInLink(email)
+                            isBusy = false
+                            if sent {
+                                Haptics.success()
+                                withAnimation(.snappy) { step = .sent }
+                            }
+                        }
+                    }
+
+                case .sent:
+                    VStack(alignment: .leading, spacing: CampusTheme.Space.sm) {
+                        Text("Gelen kutunu kontrol et")
+                            .font(.system(size: 22, weight: .semibold, design: .rounded))
+                            .foregroundStyle(CampusTheme.ink)
+                        Text("\(email) adresine bir giriş bağlantısı gönderdik. Maildeki bağlantıya dokununca uygulama otomatik açılır.")
+                            .font(.system(size: 13, design: .rounded))
+                            .foregroundStyle(CampusTheme.muted)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    Button("Farklı bir e-posta dene") {
+                        withAnimation(.snappy) { step = .email }
+                    }
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundStyle(CampusTheme.violet)
+                }
+            }
+            .padding(CampusTheme.Space.xl)
+            .background(CampusTheme.paper)
+            .dismissesKeyboardOnTap()
+            .keyboardDoneButton()
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Kapat") { dismiss() }
+                }
+            }
+            .onAppear { fieldFocused = true }
+        }
+        .presentationDetents([.medium])
     }
 }
 

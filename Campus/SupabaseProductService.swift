@@ -143,6 +143,27 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         )
     }
 
+    /// Bağlantının gerçekten gönderilip gönderilmeyeceğine sunucu karar veriyor: Auth
+    /// "Before User Created" hook'u e-posta `.edu.tr` ile bitmiyorsa hesabı oluşturmadan
+    /// reddediyor, GoTrue de bu hatayı olduğu gibi buraya taşıyor. `redirectTo` olmadan
+    /// bağlantı Supabase'in kendi web sayfasını açar, uygulamaya hiç dönmez — bu yüzden
+    /// uygulamanın kayıtlı özel URL şemasına (bkz. Info.plist, CampusApp.swift) gidiyor.
+    /// Bu şemanın Supabase Dashboard > Authentication > URL Configuration > Redirect URLs
+    /// listesinde de olması gerekiyor, yoksa GoTrue yönlendirmeyi reddeder.
+    func requestEmailSignInLink(email: String) async throws {
+        try await client.auth.signInWithOTP(
+            email: email,
+            redirectTo: URL(string: "common://login-callback")
+        )
+    }
+
+    /// Kullanıcı maildeki bağlantıya dokununca iOS'un `.onOpenURL` ile ilettiği URL.
+    /// Başarılıysa Apple/Google ile aynı şekilde oturum açılmış olur (`client.auth`ın
+    /// kendi session'ı güncellenir).
+    func completeEmailSignIn(url: URL) async throws {
+        try await client.auth.session(from: url)
+    }
+
     func restoreSession() async throws -> UUID? {
         guard client.auth.currentSession != nil else { return nil }
         return try await client.auth.session.user.id

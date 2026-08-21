@@ -327,6 +327,33 @@ final class AppState {
         return await completeSocialSignIn()
     }
 
+    /// Üniversite e-postasına giriş bağlantısı gönderir. `.edu.tr` olmayan adresler
+    /// sunucu tarafında (Before User Created hook) reddedilir — buraya "gönderildi"
+    /// olarak dönerse gerçekten gönderilmiştir.
+    @discardableResult
+    func requestEmailSignInLink(_ rawEmail: String) async -> Bool {
+        let normalized = rawEmail.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        do {
+            try await service.requestEmailSignInLink(email: normalized)
+        } catch {
+            showError(error, fallback: "Bağlantı gönderilemedi.")
+            return false
+        }
+        return true
+    }
+
+    /// `.onOpenURL` ile yakalanan giriş bağlantısını tamamlar. Apple/Google'la aynı
+    /// sonrası akışı paylaşır (`completeSocialSignIn`).
+    func completeEmailSignIn(url: URL) async {
+        do {
+            try await service.completeEmailSignIn(url: url)
+        } catch {
+            showError(error, fallback: "Giriş tamamlanamadı.")
+            return
+        }
+        await completeSocialSignIn()
+    }
+
     /// Apple/Google ikisi de aynı sonrası akışı paylaşır: yeni hesapsa onboarding'e,
     /// profili tamamlanmışsa doğrudan uygulamaya geçer.
     /// Girişin kendisi başarılı olduktan sonrası. Buradaki bir hata "giriş yapılamadı"
