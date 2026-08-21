@@ -417,6 +417,9 @@ final class AppState {
     /// yalnızca orada görünüyor. `-story <ad>` ile belirli biri seçilebilir.
     var opensStoryOf: String?
     var opensAnyStory = false
+    /// `-profile [ad]`: kişi kartını açar; ad verilmezse kendi profilim.
+    /// Kurucu profilinin nasıl göründüğünü görmenin başka yolu yok.
+    var opensProfileOf: String??
     /// Yalnızca geliştirme derlemesinde: Plus ekranını açar (tasarım kontrolü).
     var opensPaywall = false
     var opensProNote = false
@@ -1747,7 +1750,8 @@ private extension String {
 struct PersonProfileData {
     var interests: [String]
     var galleryURLs: [URL]
-    var badge: ProfileBadge
+    /// bkz. `PersonDetails.badge`.
+    var badge: ProfileBadge?
     var posts: [SocialPost]
 }
 

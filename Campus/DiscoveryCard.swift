@@ -104,8 +104,9 @@ struct DiscoveryCard: View {
                             // başlasın diye açıkça sola yaslanıyor.
                             HStack {
                                 Text(rozetAlt)
-                                    .font(.system(size: 11, weight: .semibold, design: .rounded))
-                                    .foregroundStyle(CampusTheme.acid)
+                                    .font(.system(size: 12, design: .serif))
+                                    .italic()
+                                    .foregroundStyle(CampusTheme.ember)
                                 Spacer(minLength: 0)
                             }
                         }
@@ -142,10 +143,10 @@ struct DiscoveryCard: View {
             // hafif bir hâle. Renk zaten rozetin rengi, yeni bir dil eklemiyor.
             .overlay(
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .stroke(kurucu ? CampusTheme.acid.opacity(0.75) : .white.opacity(0.16),
+                    .stroke(kurucu ? CampusTheme.ember.opacity(0.85) : .white.opacity(0.16),
                             lineWidth: kurucu ? 2 : 1)
             )
-            .shadow(color: kurucu ? CampusTheme.acid.opacity(0.28) : .clear, radius: 18)
+            .shadow(color: kurucu ? CampusTheme.ember.opacity(0.32) : .clear, radius: 18)
             .shadow(color: .black.opacity(0.3), radius: 24, y: 12)
         }
         // SwiftUI kart görünümünü sonraki profil için yeniden kullanıyor; sıfırlamazsak

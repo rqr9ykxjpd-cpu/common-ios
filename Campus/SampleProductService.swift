@@ -179,6 +179,13 @@ actor SampleStore {
 
     func allMeetingRequests() -> [MeetingRequest] { meetingRequests }
 
+    /// Kimlikten kişi. "Ben" de dahil: kendi profilime baktığımda da doğru
+    /// rozet ve ilgi alanları gelsin.
+    func profile(id: UUID) -> StudentProfile? {
+        if id == SampleData.me.id { return SampleData.me }
+        return profiles.first { $0.id == id }
+    }
+
     func addMeetingRequest(to profileID: UUID, placeID: UUID) {
         guard let profile = SampleData.profiles.first(where: { $0.id == profileID }),
               let place = places.first(where: { $0.id == placeID }) else { return }
@@ -320,8 +327,15 @@ struct SampleProductService: ProductService {
     func resetPasses() async throws {}
 
     func fetchPersonDetails(_ profileID: UUID) async throws -> PersonDetails {
-        PersonDetails(interests: ["Kahve", "Fotoğraf", "Yürüyüş"], galleryURLs: [],
-                      badge: .none, posts: [])
+        // Rozet sabit `.none` idi ve örnek modda kurucu rozetini eziyordu:
+        // kurucuya özel görünümü geliştirirken hiç görünmüyordu.
+        let kisi = await store.profile(id: profileID)
+        return PersonDetails(
+            interests: kisi.map { Array($0.interests) } ?? ["Kahve", "Fotoğraf", "Yürüyüş"],
+            galleryURLs: [],
+            badge: kisi?.badge,
+            posts: await store.allPosts().filter { $0.authorID == profileID }
+        )
     }
 
     func fetchSavedPosts() async throws -> [BackendPost] { await store.allPosts().filter(\.saved) }

@@ -25,15 +25,12 @@ enum ProfileBadge: String, Codable, Hashable {
         case .none: .clear
         case .verified: CampusTheme.violet
         case .moderator: CampusTheme.violet
-        case .founder: CampusTheme.acid
+        case .founder: CampusTheme.ember
         }
     }
 
-    /// Zemine göre okunur yazı rengi. `acid` açık olduğu için üstüne sabit koyu,
-    /// `violet` koyu olduğu için üstüne beyaz.
-    var accentForeground: Color {
-        self == .founder ? CampusTheme.onAccent : .white
-    }
+    /// Üç zemin de koyu ya da doygun; üstlerine beyaz gidiyor.
+    var accentForeground: Color { .white }
 
     var systemImage: String? {
         switch self {

@@ -168,6 +168,17 @@ struct SocialFeedView: View {
                 if appState.opensComposer { showPostComposer = true }
                 if appState.opensPlacesWall { showPlacesWall = true }
             }
+            .fullScreenCover(item: Binding(
+                get: { appState.opensProfileOf.map { DebugProfileRoute(name: $0) } },
+                set: { if $0 == nil { appState.opensProfileOf = nil } }
+            )) { rota in
+                NavigationStack {
+                    let kisi = rota.name.flatMap { ad in
+                        appState.profiles.first { $0.name.localizedCaseInsensitiveCompare(ad) == .orderedSame }
+                    } ?? appState.currentUserProfile
+                    SocialPersonDetailView(profile: kisi, place: nil)
+                }
+            }
             .task(id: appState.clubs.count) {
                 if appState.opensFirstClub, selectedClub == nil { selectedClub = appState.clubs.first }
             }
@@ -1391,3 +1402,11 @@ struct ProfileMedia: View {
             .overlay(Image(systemName: "person.crop.circle.fill").font(.largeTitle).foregroundStyle(.white.opacity(0.35)))
     }
 }
+
+#if DEBUG
+/// `-profile` bayrağının sunum kimliği.
+struct DebugProfileRoute: Identifiable {
+    let name: String?
+    var id: String { name ?? "ben" }
+}
+#endif

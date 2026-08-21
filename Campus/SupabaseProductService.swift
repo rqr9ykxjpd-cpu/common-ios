@@ -917,7 +917,7 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
         return PersonDetails(
             interests: interestRows.map(\.interest).sorted(),
             galleryURLs: photoRows.compactMap { urls[$0.storagePath] },
-            badge: await badges(for: [profileID])[profileID] ?? .none,
+            badge: await badges(for: [profileID])[profileID],
             posts: await posts(byAuthor: profileID)
         )
     }

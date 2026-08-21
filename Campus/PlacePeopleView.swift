@@ -183,6 +183,17 @@ struct SocialPersonDetailView: View {
     }
 
     private var visiblePlace: CampusPlace? { place }
+
+    /// Kurucu profili. Rozet tek başına yeterince ayırt edici değildi: ekranın
+    /// geri kalanı herkesinkiyle aynı görünüyordu.
+    private var kurucu: Bool { (details?.badge ?? profile.badge) == .founder }
+
+    /// İlgi alanı çipinin zemini. Kurucu profilinde vurgu rengi turuncu; ortak
+    /// ilgi alanı vurgusu her profilde olduğu gibi duruyor.
+    private func cipZemini(paylasilan: Bool) -> Color {
+        if paylasilan { return CampusTheme.acid.opacity(0.5) }
+        return kurucu ? CampusTheme.ember.opacity(0.12) : CampusTheme.ink.opacity(0.055)
+    }
     private var pendingRequest: MeetingRequest? {
         guard let visiblePlace else { return nil }
         return appState.meetingRequest(for: profile, at: visiblePlace)
@@ -207,11 +218,14 @@ struct SocialPersonDetailView: View {
                             ProfileBadgeLabel(badge: details?.badge ?? profile.badge)
                         }
                         if let rozetAlt = (details?.badge ?? profile.badge).subtitle {
+                            // Yuvarlak, yarı saydam gri bir satırdı; ekrandaki
+                            // diğer bilgi satırlarından ayrışmıyor, öylece
+                            // duruyordu. Serif italik bir künye satırı gibi
+                            // okunuyor ve rozetin rengini taşıyor.
                             Text(rozetAlt)
-                                .font(.system(size: 12, weight: .semibold, design: .rounded))
-                                .foregroundStyle(CampusTheme.ink.opacity(0.5))
-                        }
-                        HStack {
+                                .font(.system(size: 14, design: .serif))
+                                .italic()
+                                .foregroundStyle(CampusTheme.ember)
                         }
                         Text("\(profile.department) · \(profile.university) · \(profile.year)")
                             .font(.subheadline.bold()).foregroundStyle(CampusTheme.ink.opacity(0.5))
@@ -391,7 +405,7 @@ struct SocialPersonDetailView: View {
                             .font(.system(size: 12, weight: paylasilan ? .bold : .medium, design: .rounded))
                             .foregroundStyle(CampusTheme.ink)
                             .padding(.horizontal, 11).frame(height: 30)
-                            .background(paylasilan ? CampusTheme.acid.opacity(0.5) : CampusTheme.ink.opacity(0.055), in: Capsule())
+                            .background(cipZemini(paylasilan: paylasilan), in: Capsule())
                     }
                 }
             }
@@ -406,7 +420,7 @@ struct SocialPersonDetailView: View {
             VStack(alignment: .leading, spacing: 10) {
                 Text("FOTOĞRAFLARI")
                     .font(.system(size: 11, weight: .bold, design: .rounded)).tracking(0.7)
-                    .foregroundStyle(CampusTheme.ink.opacity(0.45))
+                    .foregroundStyle(kurucu ? CampusTheme.ember : CampusTheme.ink.opacity(0.45))
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(fotograflar, id: \.self) { url in
@@ -430,7 +444,7 @@ struct SocialPersonDetailView: View {
             VStack(alignment: .leading, spacing: 10) {
                 Text("PAYLAŞIMLARI")
                     .font(.system(size: 11, weight: .bold, design: .rounded)).tracking(0.7)
-                    .foregroundStyle(CampusTheme.ink.opacity(0.45))
+                    .foregroundStyle(kurucu ? CampusTheme.ember : CampusTheme.ink.opacity(0.45))
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 3), count: 3), spacing: 3) {
                     ForEach(gonderiler) { post in
                         Button {

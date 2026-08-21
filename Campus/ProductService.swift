@@ -268,6 +268,9 @@ enum ProductServiceFactory {
 struct PersonDetails: Sendable {
     var interests: [String]
     var galleryURLs: [URL]
-    var badge: ProfileBadge
+    /// `nil` = öğrenilemedi, `.none` = rozeti yok. İkisi bir değil: eskiden
+    /// rozet sorgusu boş dönünce `.none` yazılıyor ve elimizdeki doğru rozeti
+    /// eziyordu — bir ağ hıçkırığı kurucu rozetini sessizce siliyordu.
+    var badge: ProfileBadge?
     var posts: [BackendPost]
 }

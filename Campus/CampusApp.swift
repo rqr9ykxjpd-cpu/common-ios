@@ -37,6 +37,10 @@ struct CampusApp: App {
                     state.opensStoryOf = arguments[i + 1]
                 }
             }
+            if let i = arguments.firstIndex(of: "-profile") {
+                let ad = (i + 1 < arguments.count && !arguments[i + 1].hasPrefix("-")) ? arguments[i + 1] : nil
+                state.opensProfileOf = .some(ad)
+            }
             if arguments.contains("-paywall") { state.opensPaywall = true }
             if arguments.contains("-pronote") { state.opensProNote = true }
             if arguments.contains("-cardpreview") { state.opensCardPreview = true }

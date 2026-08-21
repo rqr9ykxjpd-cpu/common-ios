@@ -33,6 +33,11 @@ enum CampusTheme {
     /// geliyordu (paylaş düğmesi, rozetler, logo işareti, buluşma düğmesi...).
     static let onAccent = Color(hex: "121210")
     static let coral = Color(hex: "FF745E")
+    /// Kurucu rengi. Uygulamanın hiçbir yerinde başka bir işi yok: bir yerde
+    /// bu turuncuyu gören, kurucu hesabına baktığını biliyor. Fıstık yeşili
+    /// (`acid`) bunu yapamıyordu — o renk zaten her ekrandaki ana eylem
+    /// düğmesinin rengi, dolayısıyla hiçbir şeyi ayırt etmiyordu.
+    static let ember = Color(hex: "D97757")
     static let violet = Color(hex: "8066FF")
 
     static let line = Color.white.opacity(0.13)
