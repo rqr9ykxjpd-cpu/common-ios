@@ -374,6 +374,7 @@ final class AppState {
     /// Yalnızca geliştirme derlemesinde: ilk kulübün sayfasını açar. Ekran
     /// görüntüsü almak için — o sayfaya normalde yalnızca dokunarak gidiliyor.
     var opensFirstClub = false
+    var opensPlacesWall = false
     /// Yalnızca geliştirme derlemesinde: Plus ekranını açar (tasarım kontrolü).
     var opensPaywall = false
     var opensProNote = false

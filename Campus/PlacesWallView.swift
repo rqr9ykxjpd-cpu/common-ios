@@ -16,9 +16,23 @@ struct PlacesWallView: View {
     @State private var selectedPeoplePlace: CampusPlace?
 
     private var grouped: [(alan: String, yerler: [CampusPlace])] {
-        Dictionary(grouping: appState.places, by: \.area)
-            .map { (alan: $0.key, yerler: $0.value.sorted { $0.name < $1.name }) }
-            .sorted { $0.alan < $1.alan }
+        // Sıra `CampusPlaceOrder`dan geliyor: en çok buluşulan yerler başta.
+        // Burası kendi alfabetik sırasını kuruyordu ve iki sorun çıkarıyordu —
+        // akıştaki şeritle bu liste birbirini tutmuyordu, ayrıca ham `<`
+        // karşılaştırması Türkçe harfleri Unicode sırasına göre diziyor:
+        // "Şamdan Kafe" en çok gidilen yer olmasına rağmen "Yemekhane"nin de
+        // altına, listenin en dibine düşüyordu.
+        Dictionary(grouping: CampusPlaceOrder.sorted(appState.places), by: \.area)
+            .map { (alan: $0.key, yerler: CampusPlaceOrder.sorted($0.value)) }
+            .sorted { grupSirasi($0) < grupSirasi($1) }
+    }
+
+    /// Grubun sırası, içindeki en öncelikli yere göre. Alanları alfabetik
+    /// dizmek, öne çıkardığımız yeri yine dibe gömüyordu.
+    private func grupSirasi(_ grup: (alan: String, yerler: [CampusPlace])) -> Int {
+        grup.yerler
+            .compactMap { CampusPlaceOrder.pinned.firstIndex(of: $0.name) }
+            .min() ?? CampusPlaceOrder.pinned.count
     }
 
     var body: some View {
@@ -129,7 +143,7 @@ struct PlacesWallView: View {
                 Text(place.name)
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
                     .foregroundStyle(CampusTheme.ink)
-                Text(isFiltered ? "Akış bu yere göre süzülüyor" : "Kimler burada, bak")
+                Text(isFiltered ? "Akış bu yere göre süzülüyor" : "Kimler burada, tıkla bak")
                     .font(.system(size: 12, design: .rounded))
                     .foregroundStyle(isFiltered ? CampusTheme.violet : CampusTheme.muted)
             }

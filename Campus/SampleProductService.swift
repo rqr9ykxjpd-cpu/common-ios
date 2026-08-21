@@ -398,6 +398,8 @@ enum SampleData {
     static func hours(_ hoursAgo: Double) -> Date { .now.addingTimeInterval(-hoursAgo * 3_600) }
 
     static let places: [CampusPlace] = [
+        CampusPlace(id: id(25), name: "Şamdan Kafe", area: "Kampüs dışı"),
+        CampusPlace(id: id(26), name: "Aytaç Cafe", area: "Kampüs dışı"),
         CampusPlace(id: id(20), name: "Merkez Kütüphane", area: "Merkez Kampüs"),
         CampusPlace(id: id(21), name: "Hazırlık Kantini", area: "Yabancı Diller"),
         CampusPlace(id: id(22), name: "Mühendislik Bahçesi", area: "Mühendislik Fakültesi"),

@@ -28,6 +28,7 @@ struct CampusApp: App {
             }
             if arguments.contains("-compose") { state.opensComposer = true }
             if arguments.contains("-club") { state.opensFirstClub = true }
+            if arguments.contains("-places") { state.opensPlacesWall = true }
             if arguments.contains("-paywall") { state.opensPaywall = true }
             if arguments.contains("-pronote") { state.opensProNote = true }
             if arguments.contains("-cardpreview") { state.opensCardPreview = true }

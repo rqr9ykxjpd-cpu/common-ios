@@ -149,7 +149,10 @@ struct SocialFeedView: View {
             }
             .task { await appState.loadFeed(); await appState.loadStories() }
 #if DEBUG
-            .onAppear { if appState.opensComposer { showPostComposer = true } }
+            .onAppear {
+                if appState.opensComposer { showPostComposer = true }
+                if appState.opensPlacesWall { showPlacesWall = true }
+            }
             .task(id: appState.clubs.count) {
                 if appState.opensFirstClub, selectedClub == nil { selectedClub = appState.clubs.first }
             }

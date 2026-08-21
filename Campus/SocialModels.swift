@@ -170,7 +170,7 @@ enum CampusPlaceOrder {
     /// Öncelik kampüsteki buluşma noktaları: insanlar fakülte binasında değil
     /// kafede oturuyor. Fakülteler listede kalıyor, sadece arkaya düşüyor.
     static let pinned = [
-        "Aytaç Cafe", "Şamdan Kafe", "Hazırlık Kantini", "Otağ",
+        "Şamdan Kafe", "Aytaç Cafe", "Hazırlık Kantini", "Otağ",
         "Yemekhane", "Merkez Kütüphane"
     ]
 
