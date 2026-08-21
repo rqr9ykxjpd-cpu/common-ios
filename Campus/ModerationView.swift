@@ -18,7 +18,11 @@ struct ModerationView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: CampusTheme.Space.lg) {
-                    baslik
+                    Text(appState.pendingReports.isEmpty
+                         ? "Bekleyen şikayet yok"
+                         : "\(appState.pendingReports.count) şikayet bekliyor")
+                        .font(.system(size: 13, design: .rounded))
+                        .foregroundStyle(appState.pendingReports.isEmpty ? CampusTheme.muted : CampusTheme.coral)
                     if appState.reports.isEmpty, appState.isLoadingReports {
                         yukleniyor
                     } else if appState.reports.isEmpty {
@@ -35,7 +39,12 @@ struct ModerationView: View {
             .refreshable { await appState.loadReports() }
             .task(id: appState.myBadge) { await appState.loadReports() }
             .background(CampusTheme.paper.ignoresSafeArea())
-            .toolbar(.hidden, for: .navigationBar)
+            .navigationTitle("Şikayetler")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Kapat") { dismiss() }
+                }
+            }
             .confirmationDialog(
                 "Hesabı geri aç",
                 isPresented: Binding(get: { geriAcilacak != nil }, set: { if !$0 { geriAcilacak = nil } }),
@@ -54,21 +63,6 @@ struct ModerationView: View {
         }
     }
 
-    private var baslik: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Şikayetler")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                Text(appState.pendingReports.isEmpty
-                     ? "Bekleyen şikayet yok"
-                     : "\(appState.pendingReports.count) şikayet bekliyor")
-                    .font(.system(size: 12, design: .rounded))
-                    .foregroundStyle(appState.pendingReports.isEmpty ? CampusTheme.muted : CampusTheme.coral)
-            }
-            Spacer()
-            AppIconButton(systemName: "xmark") { dismiss() }
-        }
-    }
 
     private var yukleniyor: some View {
         VStack(spacing: 12) {

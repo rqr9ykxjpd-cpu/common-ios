@@ -33,7 +33,9 @@ struct ProfileEditorView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: CampusTheme.Space.xl) {
-                header
+                Text("Değişiklikler kaydettiğinde yayınlanır")
+                    .font(.system(size: 12, design: .rounded))
+                    .foregroundStyle(CampusTheme.muted)
                 photos
                 basicInformation
                 about
@@ -53,7 +55,19 @@ struct ProfileEditorView: View {
         // Kaydet butonu kaydırma içeriğinin sonundayken alt çubuğun altında kalıp
         // tıklanamıyordu; forma ait birincil eylem olarak sabitleniyor.
         .safeAreaInset(edge: .bottom, spacing: 0) { saveBar }
-        .toolbar(.hidden, for: .navigationBar)
+        .navigationTitle("Profili düzenle")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            // Sistemin geri düğmesi değil: burası modal, geri gidilecek bir
+            // ekran yok ve kaydedilmemiş değişiklik varsa önce sormamız
+            // gerekiyor.
+            ToolbarItem(placement: .topBarLeading) {
+                Button("Vazgeç") { changed ? (showDiscardAlert = true) : dismiss() }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Kaydet") { save() }.disabled(!valid)
+            }
+        }
         .onAppear { loadOnce() }
         .onChange(of: avatarItem) { _, item in
             // Seçilen fotoğraf doğrudan kaydedilmiyor: önce dairesel çerçeveye göre
@@ -146,25 +160,6 @@ struct ProfileEditorView: View {
         return missing
     }
 
-    private var header: some View {
-        HStack {
-            AppIconButton(systemName: "arrow.left") {
-                changed ? (showDiscardAlert = true) : dismiss()
-            }
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Profili düzenle")
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
-                Text("Değişiklikler kaydettiğinde yayınlanır")
-                    .font(.system(size: 12, design: .rounded))
-                    .foregroundStyle(CampusTheme.muted)
-            }
-            Spacer()
-            Button("Kaydet") { save() }
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                .foregroundStyle(valid ? CampusTheme.violet : CampusTheme.muted)
-                .disabled(!valid)
-        }
-    }
 
     private var photos: some View {
         let currentAvatarData = avatarData

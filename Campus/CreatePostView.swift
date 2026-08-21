@@ -40,7 +40,7 @@ struct CreatePostView: View {
                     // tür seçici en alttaydı: ne paylaştığını yazdıktan SONRA seçiyordun,
                     // oysa tür ekranın tamamını değiştiriyor.
                     VStack(alignment: .leading, spacing: CampusTheme.Space.lg) {
-                        topBar          // kapat + tür seçimi
+                        turSecici       // ne paylaştığın: ekranın tamamını değiştiriyor
                         preview         // fotoğraf: ekranın kahramanı
                         captionField    // kutusuz, doğrudan sayfada
                         placeChip       // küçük bir ayrıntı, tam genişlik kutu değil
@@ -54,7 +54,16 @@ struct CreatePostView: View {
             .scrollDismissesKeyboard(.interactively)
             .dismissesKeyboardOnTap()
             .keyboardDoneButton()
-            .toolbar(.hidden, for: .navigationBar)
+            .navigationTitle(isStory ? "Story paylaş" : "Gönderi paylaş")
+            .navigationBarTitleDisplayMode(.inline)
+            // Story modunda zemin siyah; bar'ı elle boyamak yerine sisteme
+            // hangi şemada olduğunu söylüyoruz, materyalini ona göre seçiyor.
+            .toolbarColorScheme(isStory ? .dark : .light, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Kapat") { dismiss() }
+                }
+            }
             .safeAreaInset(edge: .bottom, spacing: 0) { bottomControls }
             .sheet(isPresented: $showCamera) {
                 CameraPicker { image in imageData = image.jpegData(compressionQuality: 0.9).flatMap(ImageCompression.prepareForUpload) }
@@ -79,15 +88,9 @@ struct CreatePostView: View {
 
     /// Kapatma ve tür seçimi. Tür yukarıda, çünkü ekranın tamamını o belirliyor:
     /// story koyu zeminde ve fotoğraf zorunlu, gönderi açık zeminde ve metin yeterli.
-    private var topBar: some View {
+    /// Kapat düğmesi native bar'a taşındı; burada yalnızca tür seçici kaldı.
+    private var turSecici: some View {
         HStack(spacing: CampusTheme.Space.md) {
-            Button { dismiss() } label: {
-                Image(systemName: "xmark").font(.system(size: 15, weight: .bold))
-                    .frame(width: 40, height: 40).background(controlBackground, in: Circle())
-            }
-            .buttonStyle(PressableStyle())
-            .accessibilityLabel("Kapat")
-
             HStack(spacing: 4) {
                 ForEach(ComposerContentType.allCases) { type in
                     Button {

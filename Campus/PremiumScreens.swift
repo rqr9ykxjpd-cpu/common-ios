@@ -562,7 +562,6 @@ struct PremiumMatchesView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: CampusTheme.Space.xl) {
-                    header
                     yanitIstekleriSatiri
                     newConnections
                     meetSuggestions
@@ -607,7 +606,12 @@ struct PremiumMatchesView: View {
                 if appState.profiles.isEmpty { await appState.loadDiscovery() }
             }
             .background(CampusTheme.paper.ignoresSafeArea())
-            .toolbar(.hidden, for: .navigationBar)
+            .navigationTitle("Sohbetler")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Kapat") { close?() ?? dismiss() }
+                }
+            }
         }
     }
 
@@ -648,19 +652,6 @@ struct PremiumMatchesView: View {
         }
     }
 
-    private var header: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Sohbetler")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                Text("Eşleşmelerin ve mesajların")
-                    .font(.system(size: 12, design: .rounded))
-                    .foregroundStyle(CampusTheme.muted)
-            }
-            Spacer()
-            AppIconButton(systemName: "xmark") { close?() ?? dismiss() }
-        }
-    }
 
     /// Sohbeti olan kişiler. Hiç yoksa bölüm tamamen gizleniyor: eskiden boş bir
     /// başlık ve altında bomboş bir şerit kalıyordu.

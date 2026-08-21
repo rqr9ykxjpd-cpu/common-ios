@@ -75,6 +75,40 @@ extension View {
     }
 }
 
+/// Native navigation bar'ı uygulamanın tipografisine ayarlar.
+///
+/// Ekranlar kendi başlıklarını çizmeyi bırakıp sistemin bar'ını kullanıyor.
+/// Sistem bar'ı varsayılan olarak SF Pro kullanıyor; uygulamanın geri kalanı
+/// yuvarlak varyantla yazılmış, dolayısıyla başlıklar tek başına ayrışıyordu.
+///
+/// Bunu sahte bir bar çizerek değil, `UINavigationBarAppearance` ile
+/// çözüyoruz — bar hâlâ sistemin bar'ı: kaydırmadaki materyal geçişi, geri
+/// düğmesi, büyük başlığın küçülmesi ve geçiş animasyonları sisteme ait.
+enum NavigationBarStyle {
+    static func install() {
+        let gorunum = UINavigationBarAppearance()
+        // `configureWithDefaultBackground`, iOS'un kendi materyalini bırakır:
+        // kaydırınca beliren blur ve şeffaflık sistemin kararı olarak kalsın.
+        gorunum.configureWithDefaultBackground()
+        gorunum.largeTitleTextAttributes = [.font: yuvarlak(34, .bold)]
+        gorunum.titleTextAttributes = [.font: yuvarlak(17, .semibold)]
+
+        let bar = UINavigationBar.appearance()
+        bar.standardAppearance = gorunum
+        bar.compactAppearance = gorunum
+        bar.scrollEdgeAppearance = gorunum
+        bar.compactScrollEdgeAppearance = gorunum
+    }
+
+    /// Sistem yazı tipinin yuvarlak varyantı. Uygulamanın her yerinde
+    /// `design: .rounded` kullanılıyor; UIKit tarafındaki karşılığı bu.
+    private static func yuvarlak(_ boyut: CGFloat, _ agirlik: UIFont.Weight) -> UIFont {
+        let temel = UIFont.systemFont(ofSize: boyut, weight: agirlik)
+        guard let tanim = temel.fontDescriptor.withDesign(.rounded) else { return temel }
+        return UIFont(descriptor: tanim, size: boyut)
+    }
+}
+
 struct Wordmark: View {
     var compact = false
 

@@ -11,7 +11,9 @@ struct NotificationsView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: CampusTheme.Space.lg) {
-                    header
+                    Text("Common'daki son hareketler")
+                        .font(.system(size: 13, design: .rounded))
+                        .foregroundStyle(CampusTheme.muted)
                     if appState.notifications.isEmpty {
                         ContentUnavailableView(
                             "Henüz bildirim yok",
@@ -46,7 +48,12 @@ struct NotificationsView: View {
             .background(CampusTheme.paper.ignoresSafeArea())
             .refreshable { await appState.loadNotifications() }
             .task { await appState.loadNotifications() }
-            .toolbar(.hidden, for: .navigationBar)
+            .navigationTitle("Bildirimler")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Kapat") { dismiss() }
+                }
+            }
             .sheet(item: $selectedProfile) { profile in
                 NavigationStack {
                     SocialPersonDetailView(profile: profile, place: nil)
@@ -64,19 +71,6 @@ struct NotificationsView: View {
         }
     }
 
-    private var header: some View {
-        HStack(alignment: .center, spacing: CampusTheme.Space.md) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Bildirimler")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                Text("Common'daki son hareketler")
-                    .font(.system(size: 13, design: .rounded))
-                    .foregroundStyle(CampusTheme.muted)
-            }
-            Spacer()
-            AppIconButton(systemName: "xmark") { dismiss() }
-        }
-    }
 
     private func notificationRow(_ notification: AppNotification) -> some View {
         HStack(alignment: .top, spacing: CampusTheme.Space.md) {

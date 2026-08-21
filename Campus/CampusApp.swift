@@ -71,6 +71,7 @@ struct CampusApp: App {
     }
 
     init() {
+        NavigationBarStyle.install()
         // Web/serverClientID olmadan `signInWithIdToken`'a giden id_token'ın audience'ı
         // Supabase'in Google provider ayarındaki Client ID ile eşleşmez ve doğrulama başarısız
         // olur — bkz. Campus/Configuration.local.xcconfig ve HANDOFF.md.

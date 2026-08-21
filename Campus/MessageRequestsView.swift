@@ -21,7 +21,9 @@ struct MessageRequestsView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: CampusTheme.Space.lg) {
-                    baslik
+                    Text("Eşleşmediğin kişilerden gelen mesajlar")
+                        .font(.system(size: 13, design: .rounded))
+                        .foregroundStyle(CampusTheme.muted)
                     if istekler.isEmpty {
                         bosDurum
                     } else {
@@ -38,26 +40,18 @@ struct MessageRequestsView: View {
             }
             .refreshable { await appState.loadMessageRequests() }
             .background(CampusTheme.paper.ignoresSafeArea())
-            .toolbar(.hidden, for: .navigationBar)
+            .navigationTitle("Yanıt istekleri")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Kapat") { dismiss() }
+                }
+            }
             .navigationDestination(item: $acilacakSohbet) { id in
                 ConversationView(conversationID: id)
             }
         }
     }
 
-    private var baslik: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Yanıt istekleri")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                Text("Eşleşmediğin kişilerden gelen mesajlar")
-                    .font(.system(size: 12, design: .rounded))
-                    .foregroundStyle(CampusTheme.muted)
-            }
-            Spacer()
-            AppIconButton(systemName: "xmark") { dismiss() }
-        }
-    }
 
     private var bosDurum: some View {
         VStack(spacing: 10) {
