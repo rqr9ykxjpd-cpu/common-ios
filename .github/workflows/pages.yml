@@ -1,0 +1,45 @@
+# Politika sayfalarını GitHub Pages'te yayınlar.
+#
+# `docs/` klasörü repoda duruyordu ama Pages hiç açılmamıştı, dolayısıyla beş
+# adres de 404 veriyordu. Gizlilik politikası adresi App Store'da zorunlu bir
+# alan; o adres açılmadan uygulama yüklenemiyor.
+#
+# `configure-pages` adımındaki `enablement: true`, Pages kapalıysa iş akışının
+# kendi jetonuyla açıyor. Böylece panelden elle bir ayar yapmak gerekmiyor ve
+# ayarın yapılıp yapılmadığı repoda görünür bir dosyaya bağlı kalıyor.
+name: Politika sayfaları
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Aynı anda tek yayın; art arda gelen push'lar birbirini ezmesin.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  yayinla:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.dagitim.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+      - id: dagitim
+        uses: actions/deploy-pages@v4
