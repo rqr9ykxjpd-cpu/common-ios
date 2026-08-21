@@ -72,6 +72,7 @@ struct DiscoveryCard: View {
                                     .frame(height: 3)
                             }
                         }
+                        .animation(.snappy(duration: 0.2), value: photoIndex)
                         .padding(.horizontal, 12)
                         .padding(.top, 10)
                         .frame(width: width, alignment: .top)
@@ -128,22 +129,6 @@ struct DiscoveryCard: View {
                     .foregroundStyle(.white)
                     .padding(16)
                     .frame(width: width, height: photoHeight)
-
-                    if photos.count > 1 {
-                        HStack(spacing: 4) {
-                            ForEach(0..<photos.count, id: \.self) { index in
-                                Capsule()
-                                    .fill(index == photoIndex ? .white : .white.opacity(0.45))
-                                    .frame(width: index == photoIndex ? 16 : 5, height: 5)
-                            }
-                        }
-                        .animation(.snappy(duration: 0.2), value: photoIndex)
-                        .padding(.horizontal, 10)
-                        .frame(height: 22)
-                        .background(.black.opacity(0.3), in: Capsule())
-                        .frame(width: width, alignment: .center)
-                        .padding(.top, 14)
-                    }
                 }
                 .frame(width: width, height: photoHeight)
                 .clipped()
