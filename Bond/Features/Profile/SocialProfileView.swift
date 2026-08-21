@@ -690,13 +690,12 @@ struct SocialProfileView: View {
                                             .background(BondTheme.acid.opacity(0.35))
                                     }
                                 }
-                                .clipped()
+                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(PressableStyle())
                     }
                 }
-                .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.control))
             }
         }
     }
