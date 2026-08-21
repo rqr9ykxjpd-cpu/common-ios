@@ -1,0 +1,93 @@
+import SwiftUI
+
+struct RootView: View {
+    @Environment(AppState.self) private var appState
+    @Environment(\.scenePhase) private var scenePhase
+
+    /// Karşılama ve kayıt akışı her zaman açık modda kalır. Bu ekranlardaki kullanıcı
+    /// henüz bir görünüm tercihi yapmadı — ayara ancak giriş yaptıktan sonra ulaşıyor —
+    /// ve telefonu koyu diye uygulamanın ilk izlenimini koyu göstermek onun seçimi değil.
+    /// Koyu mod, isteyenin uygulama içinden açtığı bir tercih olarak kalıyor.
+    private var resolvedColorScheme: ColorScheme? {
+        switch appState.route {
+        case .welcome, .onboarding: .light
+        case .app: appState.appearance.colorScheme
+        }
+    }
+
+    var body: some View {
+        Group {
+            switch appState.route {
+            case .welcome:
+                WelcomeView()
+            case .onboarding(let step):
+                OnboardingFlow(step: step)
+            case .app:
+                MainTabView()
+            }
+        }
+        .preferredColorScheme(resolvedColorScheme)
+        // Sınıra hangi ekranda takılırsan takıl, açılacak yer burası: tek bir
+        // sunum noktası, her ekrana ayrı ayrı bağlamaktan güvenli.
+        .sheet(isPresented: Binding(
+            get: { appState.paywallVisible },
+            set: { appState.paywallVisible = $0; if !$0 { appState.quotaHit = nil } }
+        )) {
+            PaywallView(quota: appState.quotaHit)
+        }
+        .task { await appState.restoreBackendSession() }
+        // Ürünler ve haklar açılışta okunuyor: aboneliği başka cihazda alan ya
+        // da uygulamayı silip kuran kullanıcı, paywall'a hiç uğramadan
+        // hakkına kavuşmalı.
+        .task { await appState.refreshSubscriptions() }
+        .onChange(of: scenePhase) { previous, phase in
+            // Arka planda anlık kanal kopuyor; dönüşte kaçan mesajları getiriyoruz.
+            guard phase == .active, previous != .active else { return }
+            Task { await appState.refreshAfterForeground() }
+        }
+        .overlay(alignment: .top) {
+            if let toast = appState.toast {
+                AppToast(message: toast)
+                    .padding(.horizontal, CampusTheme.Space.lg)
+                    // Alttaki ekranlar zemini `ignoresSafeArea` ile çizdiği için bu
+                    // katman da ekranın en tepesine hizalanıyordu: mesaj durum
+                    // çubuğunun ve çentiğin arkasında kalıp okunmuyordu. Hataların
+                    // tamamı buradan gösterildiği için kullanıcı "hiçbir şey olmuyor"
+                    // sanıyordu.
+                    .safeAreaPadding(.top)
+                    .padding(.top, CampusTheme.Space.sm)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .zIndex(100)
+            }
+        }
+        .task(id: appState.toast) {
+            guard let toast = appState.toast else { return }
+            // Süre metnin uzunluğuna göre: "Gönderi paylaşıldı" ile iki satırlık bir hata
+            // açıklaması aynı sürede kaybolunca uzun olan okunamıyordu.
+            let readingTime = 1.6 + Double(toast.text.count) * 0.045
+            try? await Task.sleep(for: .seconds(min(max(readingTime, 2.4), 6)))
+            guard !Task.isCancelled, appState.toast == toast else { return }
+            withAnimation(.snappy) { appState.toast = nil }
+        }
+    }
+}
+
+private struct AppToast: View {
+    let message: AppToastMessage
+
+    var body: some View {
+        HStack(spacing: CampusTheme.Space.sm) {
+            Image(systemName: message.systemImage)
+                .foregroundStyle(message.kind == .error ? CampusTheme.coral : CampusTheme.acid)
+            Text(message.text)
+                .font(CampusTheme.Typography.footnote.weight(.medium))
+                .lineLimit(6)
+            Spacer(minLength: 0)
+        }
+        .foregroundStyle(CampusTheme.ink)
+        .padding(.horizontal, CampusTheme.Space.lg)
+        .frame(minHeight: 48)
+        .background(CampusTheme.surface, in: Capsule())
+        .accessibilityElement(children: .combine)
+    }
+}

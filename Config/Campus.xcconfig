@@ -1,0 +1,13 @@
+// Safe defaults. Real values come from Config/Generated.xcconfig
+// (produced by Scripts/sync-env.sh from the git-ignored .env).
+//
+// "//" starts a comment in xcconfig files — writing https:// directly
+// truncates the URL to "https:" and silently breaks the client.
+SUPABASE_SLASH = /
+SUPABASE_HOST =
+SUPABASE_URL = https:$(SUPABASE_SLASH)$(SUPABASE_SLASH)$(SUPABASE_HOST)
+SUPABASE_PUBLISHABLE_KEY =
+GOOGLE_CLIENT_ID =
+GOOGLE_SERVER_CLIENT_ID =
+GOOGLE_REVERSED_CLIENT_ID =
+#include? "Generated.xcconfig"

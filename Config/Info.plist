@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Varsayılan dil Türkçe. Desteklenmeyen bir telefon dilinde iOS buna düşer;
+	     İngilizce telefonda Campus/Resources altındaki kataloglar en'i seçer. -->
+	<!-- İzin metinlerinin çevirisi InfoPlist.xcstrings'te. Buradaki Türkçe,
+	     development region yedeği: anahtar yoksa iOS kamera/galeri erişiminde çöker. -->
+	<!-- Yalnızca HTTPS kullanıyoruz; bu Apple'ın muafiyet kapsamında. Bu anahtar
+	     olmadan App Store Connect her yüklemede ihracat beyanı soruyor ve build
+	     o cevap verilene kadar test edilemiyor. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>NSCameraUsageDescription</key>
+	<string>Gönderi ve story paylaşırken fotoğraf çekebilmen için kameraya erişmemiz gerekiyor.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Profil fotoğrafını ve paylaşımlarını seçebilmen için galerine erişmemiz gerekiyor.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Çektiğin fotoğrafı galerine kaydedebilmek için izin gerekiyor.</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>tr</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>tr</string>
+		<string>en</string>
+	</array>
+	<!--
+	  GoogleSignIn SDK Info.plist'te tam olarak GIDClientID / GIDServerClientID arıyor
+	  (GOOGLE_CLIENT_ID anahtarını yok sayıyor). GIDClientID Config/Generated.xcconfig
+	  (.env → Scripts/sync-env.sh) üzerinden gelir. URL scheme xcconfig'ten bir
+	  derleme geride kalabildiği için sync-env.sh Config/GeneratedInfo.plist'e
+	  literal basar ve INFOPLIST_FILE onu kullanır. Paketlenmiş Info.plist'i
+	  sonradan yamamak Xcode 26'da "mutable output" hatası verir. Supabase
+	  anahtarları derlemede AppSecrets.swift olarak üretilir.
+
+	  Bu dosya Campus/ dışında olmalı: senkronize grup onu kaynak olarak da kopyalayıp
+	  "Multiple commands produce" hatası verir.
+	-->
+	<key>SUPABASE_URL</key>
+	<string>$(SUPABASE_URL)</string>
+	<key>SUPABASE_PUBLISHABLE_KEY</key>
+	<string>$(SUPABASE_PUBLISHABLE_KEY)</string>
+	<key>GIDClientID</key>
+	<string>$(GOOGLE_CLIENT_ID)</string>
+	<key>GIDServerClientID</key>
+	<string>$(GOOGLE_SERVER_CLIENT_ID)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>$(GOOGLE_REVERSED_CLIENT_ID)</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>$(GOOGLE_REVERSED_CLIENT_ID)</string>
+			</array>
+		</dict>
+		<!-- Üniversite e-postasına gönderilen giriş bağlantısı bu şemayla uygulamaya
+		     geri dönüyor (bkz. SupabaseProductService.requestEmailSignInLink). Supabase
+		     Dashboard'da Authentication > URL Configuration > Redirect URLs listesine
+		     "common://login-callback" eklenmeden bu bağlantı uygulamayı açmaz. -->
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.campus.social.auth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>common</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

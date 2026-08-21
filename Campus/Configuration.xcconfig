@@ -1,9 +1,0 @@
-// Safe defaults. Put real values in Configuration.local.xcconfig (git-ignored).
-// "//" starts a comment in xcconfig files - writing the URL directly truncates it to
-// "https:", which still passes the app's `url.scheme == "https"` check and produces a
-// silently broken client. The slash is split into a variable to avoid that.
-SUPABASE_SLASH = /
-SUPABASE_HOST = ucaatxhjmdfrholysnip.supabase.co
-SUPABASE_URL = https:$(SUPABASE_SLASH)$(SUPABASE_SLASH)$(SUPABASE_HOST)
-SUPABASE_PUBLISHABLE_KEY = sb_publishable_t05crSUCkkiJJxvnMNsFWg_CXtjIuoi
-#include? "Configuration.local.xcconfig"

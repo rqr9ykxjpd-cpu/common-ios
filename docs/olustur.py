@@ -123,7 +123,7 @@ def bloklar(md: str):
 
 satirlar = [
     "// Bu dosya `docs/olustur.py` tarafından üretiliyor. Elle düzenleme —",
-    "// kaynak metinler docs/gizlilik.md ve docs/kosullar.md.",
+    "// kaynak metinler docs/gizlilik.md, docs/kosullar.md, docs/en/privacy.md, docs/en/terms.md.",
     "",
     "enum LegalBlock {",
     "    case baslik(String)",
@@ -134,8 +134,16 @@ satirlar = [
     "",
     "enum LegalTexts {",
 ]
-for ad, baslik in SAYFALAR:
+for ad, _ in SAYFALAR:
     kaynak = (KLASOR / f"{ad}.md").read_text(encoding="utf-8")
+    satirlar.append(f"    static let {ad}: [LegalBlock] = [")
+    for tur, metin in bloklar(kaynak):
+        metin = metin.replace("**", "")
+        satirlar.append(f'        .{tur}("{swift_kacir(metin)}"),')
+    satirlar.append("    ]")
+    satirlar.append("")
+for ad, _ in INGILIZCE:
+    kaynak = (KLASOR / "en" / f"{ad}.md").read_text(encoding="utf-8")
     satirlar.append(f"    static let {ad}: [LegalBlock] = [")
     for tur, metin in bloklar(kaynak):
         metin = metin.replace("**", "")
@@ -144,6 +152,6 @@ for ad, baslik in SAYFALAR:
     satirlar.append("")
 satirlar.append("}")
 
-hedef = KLASOR.parent / "Campus" / "LegalTexts.swift"
+hedef = KLASOR.parent / "Campus" / "Core" / "Components" / "LegalTexts.swift"
 hedef.write_text("\n".join(satirlar) + "\n", encoding="utf-8")
-print(f"  {hedef.name} üretildi")
+print(f"  {hedef.relative_to(KLASOR.parent)} üretildi")

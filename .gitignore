@@ -13,11 +13,14 @@ xcuserdata/
 .swiftpm/
 
 # Local backend credentials
-Campus/Configuration.local.xcconfig
-*.xcconfig.local
 .env
 .env.*
 !.env.example
+Config/Generated.xcconfig
+Config/GeneratedInfo.plist
+Campus/Core/Generated/
+Campus/Configuration.local.xcconfig
+*.xcconfig.local
 
 # Temporary files
 *.tmp
