@@ -72,6 +72,21 @@ struct MeetingRequest: Identifiable, Hashable {
     }
 }
 
+/// Eşleşmeden gelen yanıt isteği.
+///
+/// Mesajlaşma eşleşmeye bağlı ve bu veritabanı seviyesinde zorunlu. Şartı
+/// tamamen kaldırmak "herkes herkese yazabilir" demekti. Ara yol: eşleşmeden
+/// yazılan mesaj sohbete düşmüyor, karşı tarafa bir istek olarak gidiyor.
+/// Kabul edilirse eşleşme kuruluyor ve ilk mesaj sohbete yazılıyor.
+struct MessageRequest: Identifiable, Hashable {
+    let id: UUID
+    let profile: StudentProfile
+    let body: String
+    let direction: MeetingRequestDirection
+    var status: MeetingRequestStatus
+    let createdAt: Date
+}
+
 enum AppNotificationKind: Hashable {
     case like, comment, match, message, club, meetingRequest
 

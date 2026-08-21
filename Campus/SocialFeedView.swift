@@ -149,6 +149,21 @@ struct SocialFeedView: View {
             }
             .task { await appState.loadFeed(); await appState.loadStories() }
 #if DEBUG
+            .task(id: appState.stories.count) {
+                guard appState.opensAnyStory, appState.selectedStory == nil,
+                      !appState.stories.isEmpty else { return }
+                if let ad = appState.opensStoryOf {
+                    appState.selectedStory = appState.stories.first {
+                        $0.author.name.localizedCaseInsensitiveCompare(ad) == .orderedSame
+                    }
+                } else {
+                    // Eşleşilmemiş biri: istek alanı yalnızca orada çıkıyor.
+                    let sohbetler = Set(appState.conversations.map(\.profile.id))
+                    appState.selectedStory = appState.stories.first {
+                        !$0.isMine && !sohbetler.contains($0.author.id)
+                    }
+                }
+            }
             .onAppear {
                 if appState.opensComposer { showPostComposer = true }
                 if appState.opensPlacesWall { showPlacesWall = true }
@@ -858,6 +873,7 @@ struct StoryViewer: View {
     @State private var progress: CGFloat = 0
     @State private var reply = ""
     @State private var replySent = false
+    @State private var sendingRequest = false
     @State private var liked = false
     @State private var showViewers = false
     @State private var isPaused = false
@@ -1057,24 +1073,44 @@ struct StoryViewer: View {
                 // Kendi story'ne yanıt yazma alanı çıkıyordu.
                 EmptyView()
             } else if replySent {
-                Label("Yanıt gönderildi", systemImage: "checkmark.circle.fill")
+                Label(conversation(with: story.author) == nil ? "İsteğin gönderildi" : "Yanıt gönderildi",
+                      systemImage: "checkmark.circle.fill")
                     .font(.subheadline.bold()).foregroundStyle(CampusTheme.acid)
                     .frame(maxWidth: .infinity, alignment: .center).frame(height: 46)
             } else if conversation(with: story.author) == nil {
-                // Eşleşme yoksa yazamıyorsun ama beğenebiliyorsun.
-                HStack(spacing: 12) {
-                    Button { toggleStoryLike() } label: {
-                        Image(systemName: liked ? "heart.fill" : "heart")
-                            .font(.title3).foregroundStyle(liked ? CampusTheme.coral : .white)
-                            .frame(width: 44, height: 44)
+                // Eşleşme yoksa da yazabiliyorsun ama mesaj doğrudan düşmüyor:
+                // karşı tarafa istek olarak gidiyor. Eşleşme şartını tamamen
+                // kaldırmak istenmeyen mesaj yağmuru demekti; hiç yazdırmamak
+                // ise utangaç kullanıcıyı susturuyordu.
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 10) {
+                        Button { toggleStoryLike() } label: {
+                            Image(systemName: liked ? "heart.fill" : "heart")
+                                .font(.title3).foregroundStyle(liked ? CampusTheme.coral : .white)
+                                .frame(width: 44, height: 44)
+                        }
+                        .accessibilityLabel(liked ? "Beğeniyi kaldır" : "Story'yi beğen")
+                        TextField("İstek gönder...", text: $reply)
+                            .focused($replyFocused)
+                            .padding(.horizontal, 16).frame(height: 46)
+                            .background(.black.opacity(0.2), in: Capsule())
+                            .overlay(Capsule().stroke(.white.opacity(0.55)))
+                        Button { sendRequest() } label: {
+                            Image(systemName: "paperplane.fill")
+                                .font(.title3).foregroundStyle(.white)
+                                .frame(width: 44, height: 44)
+                                .opacity(reply.trimmingCharacters(in: .whitespaces).isEmpty ? 0.35 : 1)
+                        }
+                        .disabled(reply.trimmingCharacters(in: .whitespaces).isEmpty || sendingRequest)
+                        .accessibilityLabel("İsteği gönder")
                     }
-                    .accessibilityLabel(liked ? "Beğeniyi kaldır" : "Story'yi beğen")
-                    Text("Yanıt yazmak için Tanış'ta eşleşmelisiniz.")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.75))
-                    Spacer()
+                    // Ne olacağını önden söylüyoruz: kullanıcı mesajının
+                    // doğrudan gittiğini sanıp cevap beklemesin.
+                    Text("Eşleşmediniz. Mesajın istek olarak gider, kabul ederse sohbet açılır.")
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.6))
+                        .padding(.leading, 4)
                 }
-                .frame(height: 46)
             } else {
                 HStack(spacing: 10) {
                     TextField("\(story.author.name) kişisine yanıtla...", text: $reply)
@@ -1140,6 +1176,22 @@ struct StoryViewer: View {
     /// "gönderildi" işaretini açıyor ve titreşim veriyordu. Kalp de yalnızca
     /// yerel bir değişkeni çeviriyordu. Kullanıcı yazdığını ulaştı sanıyor,
     /// karşı tarafa hiçbir şey gitmiyordu.
+    private func sendRequest() {
+        guard let story else { return }
+        let metin = reply.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !metin.isEmpty, !sendingRequest else { return }
+        sendingRequest = true
+        replyFocused = false
+        Task {
+            let oldu = await appState.sendMessageRequest(to: story.author, body: metin, storyID: story.id)
+            sendingRequest = false
+            guard oldu else { return }
+            reply = ""
+            withAnimation(.snappy) { replySent = true }
+            Haptics.success()
+        }
+    }
+
     private func sendReply() {
         guard let story, let conversation = conversation(with: story.author) else { return }
         let metin = reply.trimmingCharacters(in: .whitespacesAndNewlines)

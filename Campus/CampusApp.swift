@@ -29,6 +29,14 @@ struct CampusApp: App {
             if arguments.contains("-compose") { state.opensComposer = true }
             if arguments.contains("-club") { state.opensFirstClub = true }
             if arguments.contains("-places") { state.opensPlacesWall = true }
+            if arguments.contains("-chats") { state.opensChats = true }
+            if arguments.contains("-requests") { state.opensMessageRequests = true }
+            if let i = arguments.firstIndex(of: "-story") {
+                state.opensAnyStory = true
+                if i + 1 < arguments.count, !arguments[i + 1].hasPrefix("-") {
+                    state.opensStoryOf = arguments[i + 1]
+                }
+            }
             if arguments.contains("-paywall") { state.opensPaywall = true }
             if arguments.contains("-pronote") { state.opensProNote = true }
             if arguments.contains("-cardpreview") { state.opensCardPreview = true }

@@ -193,6 +193,30 @@ actor SampleStore {
         meetingRequests[index].status = accept ? .accepted : .declined
     }
 
+    // MARK: Yanıt istekleri
+
+    private var messageRequests: [MessageRequest] = SampleData.messageRequests
+
+    func allMessageRequests() -> [MessageRequest] { messageRequests }
+
+    func addMessageRequest(to profileID: UUID, body: String) {
+        guard let profile = profiles.first(where: { $0.id == profileID }) else { return }
+        messageRequests.insert(
+            MessageRequest(id: UUID(), profile: profile, body: body,
+                           direction: .outgoing, status: .pending, createdAt: .now),
+            at: 0
+        )
+    }
+
+    func respondToMessageRequest(_ id: UUID, accept: Bool) -> UUID? {
+        guard let index = messageRequests.firstIndex(where: { $0.id == id }) else { return nil }
+        messageRequests[index].status = accept ? .accepted : .declined
+        guard accept else { return nil }
+        // Örnek veride kabul, var olan bir sohbete bağlanıyor: gerçek akışta
+        // sunucu eşleşmeyi kuruyor.
+        return conversations.first(where: { $0.profile.id == messageRequests[index].profile.id })?.id
+    }
+
     // MARK: Profil
 
     func allVisits() -> [ProfileVisit] { visits }
@@ -322,6 +346,19 @@ struct SampleProductService: ProductService {
     }
     func respondToMeetingRequest(_ requestID: UUID, accept: Bool) async throws {
         await store.respondToMeetingRequest(requestID, accept: accept)
+    }
+    func sendMessageRequest(to profileID: UUID, body: String, storyID: UUID?) async throws {
+        await store.addMessageRequest(to: profileID, body: body)
+    }
+    func fetchMessageRequests() async throws -> [MessageRequest] { await store.allMessageRequests() }
+    func acceptMessageRequest(_ requestID: UUID) async throws -> UUID {
+        guard let eslesme = await store.respondToMessageRequest(requestID, accept: true) else {
+            throw BackendServiceError.missingSession
+        }
+        return eslesme
+    }
+    func declineMessageRequest(_ requestID: UUID) async throws {
+        _ = await store.respondToMessageRequest(requestID, accept: false)
     }
     func fetchStories() async throws -> [CampusStory] { await store.allStories() }
     func publishStory(imageData: Data, caption: String, placeID: UUID?) async throws {
@@ -661,6 +698,17 @@ enum SampleData {
             MeetingRequest(profile: profiles[4], place: places[0], direction: .incoming, status: .pending, createdAt: date(1.2)),
             MeetingRequest(profile: profiles[1], place: places[1], direction: .outgoing, status: .accepted, createdAt: date(2.5)),
             MeetingRequest(profile: profiles[3], place: places[4], direction: .incoming, status: .declined, createdAt: date(4))
+        ]
+    }
+
+    static var messageRequests: [MessageRequest] {
+        [
+            MessageRequest(id: UUID(), profile: profiles[2],
+                           body: "Selam! Story'deki kütüphane köşesi neresi? Ben de sessiz bir yer arıyorum.",
+                           direction: .incoming, status: .pending, createdAt: hours(3)),
+            MessageRequest(id: UUID(), profile: profiles[0],
+                           body: "Fotoğraf kulübüne sen de mi gidiyorsun?",
+                           direction: .incoming, status: .pending, createdAt: date(1.1))
         ]
     }
 

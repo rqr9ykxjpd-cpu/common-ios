@@ -81,6 +81,14 @@ final class AppState {
     var stories: [CampusStory] = []
     var notifications: [AppNotification] = []
     var meetingRequests: [MeetingRequest] = []
+
+    /// Eşleşmeden gelen/giden yanıt istekleri.
+    var messageRequests: [MessageRequest] = []
+
+    /// Cevap bekleyen gelen istekler. Rozet ve liste bunu kullanıyor.
+    var pendingMessageRequests: [MessageRequest] {
+        messageRequests.filter { $0.direction == .incoming && $0.status == .pending }
+    }
     /// Profilini görüntüleyenler; yalnızca sahibine görünür.
     var profileVisits: [ProfileVisit] = []
     /// Kampüs yerleri, `places` tablosundan gelir.
@@ -352,6 +360,7 @@ final class AppState {
         await loadStories()
         await loadClubs(silently: true)
         await loadMeetingRequests()
+        await loadMessageRequests(silently: true)
         await loadProfileVisits(silently: true)
         try? await service.touchLastActive()
         startMessageListener()
@@ -375,6 +384,12 @@ final class AppState {
     /// görüntüsü almak için — o sayfaya normalde yalnızca dokunarak gidiliyor.
     var opensFirstClub = false
     var opensPlacesWall = false
+    var opensChats = false
+    var opensMessageRequests = false
+    /// `-story`: eşleşilmemiş birinin story'sini açar — istek gönderme alanı
+    /// yalnızca orada görünüyor. `-story <ad>` ile belirli biri seçilebilir.
+    var opensStoryOf: String?
+    var opensAnyStory = false
     /// Yalnızca geliştirme derlemesinde: Plus ekranını açar (tasarım kontrolü).
     var opensPaywall = false
     var opensProNote = false
@@ -421,6 +436,7 @@ final class AppState {
             await loadStories()
             await loadClubs(silently: true)
             await loadMeetingRequests()
+            await loadMessageRequests(silently: true)
             await loadProfileVisits(silently: true)
             try? await service.touchLastActive()
             startMessageListener()
@@ -595,6 +611,7 @@ final class AppState {
         await loadStories()
         await loadClubs(silently: true)
         await loadMeetingRequests()
+        await loadMessageRequests(silently: true)
         try? await service.touchLastActive()
         startMessageListener()
 
@@ -1051,6 +1068,71 @@ final class AppState {
             meetingRequests = try await service.fetchMeetingRequests()
         } catch {
             showError(error, fallback: "Buluşma istekleri yüklenemedi.")
+        }
+    }
+
+    func loadMessageRequests(silently: Bool = false) async {
+        do {
+            messageRequests = try await service.fetchMessageRequests()
+        } catch {
+            if !silently { showError(error, fallback: "Yanıt istekleri yüklenemedi.") }
+        }
+    }
+
+    /// Eşleşmeden yanıt. Sohbete değil, karşı tarafa istek olarak gider.
+    ///
+    /// Sunucu iki durumu ayrı kodlarla reddediyor ve ikisi de kullanıcıya
+    /// açıkça söylenmeli: reddedilmiş birine tekrar yazmak ve günlük tavanı
+    /// aşmak. "Bir şeyler ters gitti" demek, kullanıcıya tekrar tekrar
+    /// denetirdi.
+    @discardableResult
+    func sendMessageRequest(to profile: StudentProfile, body: String, storyID: UUID? = nil) async -> Bool {
+        let metin = body.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !metin.isEmpty else { return false }
+        do {
+            try await service.sendMessageRequest(to: profile.id, body: metin, storyID: storyID)
+            await loadMessageRequests(silently: true)
+            return true
+        } catch {
+            let ham = String(describing: error)
+            if ham.contains("MESSAGE_REQUEST_DECLINED") {
+                showError("\(profile.name) isteğini yanıtlamadı. Tekrar yazamazsın.")
+            } else if ham.contains("MESSAGE_REQUEST_RATE") {
+                showError("Bugünlük yeterince istek gönderdin. Yarın tekrar dene.")
+            } else if ham.contains("message_requests_pending_idx") || ham.contains("duplicate key") {
+                showError("\(profile.name) kişisine zaten bir isteğin var, cevabını bekle.")
+            } else {
+                showError(error, fallback: "İsteğin gönderilemedi.")
+            }
+            return false
+        }
+    }
+
+    /// Kabul: sunucu eşleşmeyi kurup ilk mesajı sohbete yazıyor ve eşleşmenin
+    /// kimliğini dönüyor. Dönen kimlikle sohbeti açabiliyoruz.
+    func acceptMessageRequest(_ requestID: UUID) async -> UUID? {
+        do {
+            let eslesme = try await service.acceptMessageRequest(requestID)
+            await loadMessageRequests(silently: true)
+            await loadConversations()
+            Haptics.success()
+            return eslesme
+        } catch {
+            showError(error, fallback: "İstek kabul edilemedi.")
+            return nil
+        }
+    }
+
+    func declineMessageRequest(_ requestID: UUID) async {
+        // İyimser: satır listeden hemen kalkıyor. Reddetmek geri alınabilir bir
+        // şey değil, kullanıcının beklemesi için sebep yok.
+        let onceki = messageRequests
+        messageRequests.removeAll { $0.id == requestID }
+        do {
+            try await service.declineMessageRequest(requestID)
+        } catch {
+            messageRequests = onceki
+            showError(error, fallback: "İstek reddedilemedi.")
         }
     }
 

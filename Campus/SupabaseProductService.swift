@@ -1076,6 +1076,61 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
             .execute()
     }
 
+    // MARK: - Yanıt istekleri
+
+    func sendMessageRequest(to profileID: UUID, body: String, storyID: UUID?) async throws {
+        guard let userID = currentUserID else { throw BackendServiceError.missingSession }
+        try await client.from("message_requests")
+            .insert(MessageRequestInsert(senderID: userID, recipientID: profileID,
+                                         body: body, storyID: storyID), returning: .minimal)
+            .execute()
+    }
+
+    func fetchMessageRequests() async throws -> [MessageRequest] {
+        guard let userID = currentUserID else { throw BackendServiceError.missingSession }
+        let rows: [MessageRequestRow] = try await client
+            .from("message_requests")
+            .select("""
+            id,sender_id,recipient_id,body,status,created_at,\
+            sender:profiles!message_requests_sender_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),\
+            recipient:profiles!message_requests_recipient_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified)
+            """)
+            .order("created_at", ascending: false)
+            .execute()
+            .value
+        let peerPaths = rows.compactMap { $0.senderID == userID ? $0.recipient?.avatarPath : $0.sender?.avatarPath }
+        let urlMap = await signedURLs(bucket: "profile-photos", paths: peerPaths)
+        return rows.compactMap { row in
+            let outgoing = row.senderID == userID
+            guard let peer = outgoing ? row.recipient : row.sender else { return nil }
+            return MessageRequest(
+                id: row.id,
+                profile: peer.studentProfile(avatarURL: peer.avatarPath.flatMap { urlMap[$0] }),
+                body: row.body,
+                direction: outgoing ? .outgoing : .incoming,
+                status: row.requestStatus,
+                createdAt: row.createdAt
+            )
+        }
+    }
+
+    /// Kabul sunucudaki fonksiyonda: eşleşmeyi kurmak, ilk mesajı sohbete
+    /// yazmak ve durumu güncellemek tek işlemde olmak zorunda. Parça parça
+    /// yapılsaydı arada kopan bağlantı "kabul edildi ama sohbet yok" bırakırdı.
+    func acceptMessageRequest(_ requestID: UUID) async throws -> UUID {
+        try await client
+            .rpc("accept_message_request", params: MessageRequestAcceptParams(request: requestID))
+            .execute()
+            .value
+    }
+
+    func declineMessageRequest(_ requestID: UUID) async throws {
+        try await client.from("message_requests")
+            .update(MeetingRequestStatusUpdate(status: "declined"), returning: .minimal)
+            .eq("id", value: requestID)
+            .execute()
+    }
+
     func touchLastActive() async throws {
         try await client.rpc("touch_last_active").execute()
     }
@@ -1431,6 +1486,49 @@ private struct MeetingRequestRow: Decodable {
         default: .pending
         }
     }
+}
+
+private struct MessageRequestRow: Decodable {
+    let id: UUID
+    let senderID: UUID
+    let recipientID: UUID
+    let body: String
+    let status: String
+    let createdAt: Date
+    let sender: SupabaseProfileRow?
+    let recipient: SupabaseProfileRow?
+
+    enum CodingKeys: String, CodingKey {
+        case id, body, status, sender, recipient
+        case senderID = "sender_id"
+        case recipientID = "recipient_id"
+        case createdAt = "created_at"
+    }
+
+    var requestStatus: MeetingRequestStatus {
+        switch status {
+        case "accepted": .accepted
+        case "declined": .declined
+        default: .pending
+        }
+    }
+}
+
+private struct MessageRequestInsert: Encodable {
+    let senderID: UUID
+    let recipientID: UUID
+    let body: String
+    let storyID: UUID?
+    enum CodingKeys: String, CodingKey {
+        case body
+        case senderID = "sender_id"
+        case recipientID = "recipient_id"
+        case storyID = "story_id"
+    }
+}
+
+private struct MessageRequestAcceptParams: Encodable {
+    let request: UUID
 }
 
 private struct MeetingRequestInsert: Encodable {

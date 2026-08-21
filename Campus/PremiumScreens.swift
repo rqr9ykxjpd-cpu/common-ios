@@ -63,6 +63,13 @@ struct PremiumDiscoverView: View {
             if appState.profiles.isEmpty { await appState.loadDiscovery(reset: true) }
             await appState.loadConversations()
         }
+#if DEBUG
+        .onAppear { if appState.opensChats { showChats = true } }
+        .fullScreenCover(isPresented: Binding(
+            get: { appState.opensMessageRequests },
+            set: { appState.opensMessageRequests = $0 }
+        )) { MessageRequestsView() }
+#endif
         .fullScreenCover(isPresented: $showChats) {
             PremiumMatchesView(close: { showChats = false })
         }
@@ -556,6 +563,7 @@ struct PremiumMatchesView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: CampusTheme.Space.xl) {
                     header
+                    yanitIstekleriSatiri
                     newConnections
                     meetSuggestions
                     AppSectionHeader(title: "Mesajlar")
@@ -589,7 +597,10 @@ struct PremiumMatchesView: View {
                 .padding(.top, CampusTheme.Space.md)
                 .padding(.bottom, CampusTheme.Space.xxl)
             }
-            .refreshable { await appState.loadConversations() }
+            .refreshable {
+                await appState.loadConversations()
+                await appState.loadMessageRequests(silently: true)
+            }
             .task {
                 // Kullanıcı Tanış sekmesine hiç uğramadan buraya gelebilir; o durumda
                 // aday listesi boş olur ve öneri şeridi hiç görünmezdi.
@@ -597,6 +608,43 @@ struct PremiumMatchesView: View {
             }
             .background(CampusTheme.paper.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
+        }
+    }
+
+    /// Eşleşmediğin kişilerden gelen istekler. Yalnızca bekleyen varken
+    /// görünüyor: boş bir satır her açılışta yer kaplar ve okunmaz hale gelir.
+    /// Bildirimi kaçıran kişi kendisine yazıldığını başka türlü öğrenemiyordu.
+    @ViewBuilder private var yanitIstekleriSatiri: some View {
+        let bekleyen = appState.pendingMessageRequests
+        if !bekleyen.isEmpty {
+            NavigationLink {
+                MessageRequestsView()
+            } label: {
+                HStack(spacing: CampusTheme.Space.md) {
+                    Image(systemName: "tray.full.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(CampusTheme.violet)
+                        .frame(width: 38, height: 38)
+                        .background(CampusTheme.violet.opacity(0.12), in: Circle())
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(bekleyen.count == 1 ? "1 yanıt isteği" : "\(bekleyen.count) yanıt isteği")
+                            .font(.system(size: 15, weight: .bold, design: .rounded))
+                            .foregroundStyle(CampusTheme.ink)
+                        Text("Eşleşmediğin kişilerden")
+                            .font(.system(size: 12, design: .rounded))
+                            .foregroundStyle(CampusTheme.muted)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(CampusTheme.muted)
+                }
+                .padding(CampusTheme.Space.md)
+                .background(CampusTheme.surface, in: RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous).stroke(CampusTheme.hairline))
+                .contentShape(RoundedRectangle(cornerRadius: CampusTheme.Radius.card, style: .continuous))
+            }
+            .buttonStyle(PressableStyle())
         }
     }
 

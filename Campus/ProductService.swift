@@ -118,6 +118,12 @@ protocol ProductService: Sendable {
     func fetchMeetingRequests() async throws -> [MeetingRequest]
     func sendMeetingRequest(to profileID: UUID, placeID: UUID) async throws
     func respondToMeetingRequest(_ requestID: UUID, accept: Bool) async throws
+    /// Eşleşmeden yanıt. Sohbete değil, karşı tarafa istek olarak gider.
+    func sendMessageRequest(to profileID: UUID, body: String, storyID: UUID?) async throws
+    func fetchMessageRequests() async throws -> [MessageRequest]
+    /// Kabul, eşleşmeyi kurup ilk mesajı sohbete yazar ve eşleşmenin kimliğini döner.
+    func acceptMessageRequest(_ requestID: UUID) async throws -> UUID
+    func declineMessageRequest(_ requestID: UUID) async throws
     /// Kartlardaki aktiflik etiketi `last_active_at`'e bakıyor; bu alan hiçbir yerde
     /// güncellenmediği için herkes sürekli "Bu hafta aktif" görünüyordu.
     func touchLastActive() async throws
@@ -215,6 +221,10 @@ struct UnconfiguredProductService: ProductService {
     func fetchMeetingRequests() async throws -> [MeetingRequest] { try fail() }
     func sendMeetingRequest(to profileID: UUID, placeID: UUID) async throws { try fail() }
     func respondToMeetingRequest(_ requestID: UUID, accept: Bool) async throws { try fail() }
+    func sendMessageRequest(to profileID: UUID, body: String, storyID: UUID?) async throws { try fail() }
+    func fetchMessageRequests() async throws -> [MessageRequest] { try fail() }
+    func acceptMessageRequest(_ requestID: UUID) async throws -> UUID { try fail() }
+    func declineMessageRequest(_ requestID: UUID) async throws { try fail() }
     func touchLastActive() async throws {}
     func fetchStories() async throws -> [CampusStory] { try fail() }
     func publishStory(imageData: Data, caption: String, placeID: UUID?) async throws { try fail() }
