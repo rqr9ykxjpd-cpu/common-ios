@@ -18,7 +18,7 @@ KALIP = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{baslik} — Common</title>
+<title>{baslik} — Bond</title>
 <style>
   :root {{ color-scheme: light dark; }}
   body {{ margin: 0 auto; padding: 2.5rem 1.25rem 4rem; max-width: 44rem;
@@ -36,7 +36,7 @@ KALIP = """<!doctype html>
 </style>
 </head>
 <body>
-<nav><a href="./">Common</a></nav>
+<nav><a href="./">Bond</a></nav>
 {govde}
 </body>
 </html>
@@ -152,6 +152,6 @@ for ad, _ in INGILIZCE:
     satirlar.append("")
 satirlar.append("}")
 
-hedef = KLASOR.parent / "Campus" / "Core" / "Components" / "LegalTexts.swift"
+hedef = KLASOR.parent / "Bond" / "Core" / "Components" / "LegalTexts.swift"
 hedef.write_text("\n".join(satirlar) + "\n", encoding="utf-8")
 print(f"  {hedef.relative_to(KLASOR.parent)} üretildi")

@@ -18,8 +18,8 @@ xcuserdata/
 !.env.example
 Config/Generated.xcconfig
 Config/GeneratedInfo.plist
-Campus/Core/Generated/
-Campus/Configuration.local.xcconfig
+Bond/Core/Generated/
+Bond/Configuration.local.xcconfig
 *.xcconfig.local
 
 # Temporary files

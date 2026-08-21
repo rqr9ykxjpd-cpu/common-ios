@@ -10,7 +10,7 @@ set -eu
 
 ROOT="${SRCROOT:-$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)}"
 ENV_FILE="$ROOT/.env"
-SECRETS_DIR="$ROOT/Campus/Core/Generated"
+SECRETS_DIR="$ROOT/Bond/Core/Generated"
 SECRETS_SWIFT="$SECRETS_DIR/AppSecrets.swift"
 XCCONFIG_OUT="$ROOT/Config/Generated.xcconfig"
 

@@ -2,12 +2,12 @@
 
 **Son güncelleme:** 19 Ağustos 2026
 
-Common'ı kullanarak bu koşulları kabul etmiş olursun. Kabul etmiyorsan
+Bond'u kullanarak bu koşulları kabul etmiş olursun. Kabul etmiyorsan
 uygulamayı kullanma.
 
 ## Kimler kullanabilir
 
-Common, Yalova Üniversitesi öğrencileri içindir ve **18 yaşından büyük**
+Bond, Yalova Üniversitesi öğrencileri içindir ve **18 yaşından büyük**
 olman gerekir. Hesabını kendi adına açarsın; başkasının kimliğine bürünemez,
 sahte profil oluşturamazsın. Hesabını başkasına devredemez, paylaşamazsın.
 
@@ -51,7 +51,7 @@ kapatabiliriz. Sen de hesabını dilediğin zaman uygulama içinden
 
 ## Abonelikler
 
-Common'ın temel özellikleri ücretsizdir. Common Plus ve Common Pro, isteğe
+Bond'un temel özellikleri ücretsizdir. Bond Plus ve Bond Pro, isteğe
 bağlı haftalık aboneliklerdir; abone olmadan da uygulamayı kullanmaya devam
 edebilirsin.
 
@@ -71,7 +71,7 @@ devredilemez. Hangi özelliklerin ücretli olduğunu zamanla değiştirebiliriz;
 
 ## Sorumluluk sınırı
 
-Common tanışmayı kolaylaştıran bir araçtır; kullanıcıların kimliğini,
+Bond tanışmayı kolaylaştıran bir araçtır; kullanıcıların kimliğini,
 söylediklerinin doğruluğunu veya niyetlerini garanti etmez. Tanıştığın
 kişilerle buluşurken kendi güvenliğinden sen sorumlusun: ilk buluşmaları
 kalabalık ve açık yerlerde yapmanı, yakınlarından birine haber vermeni

@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<!-- Varsayılan dil Türkçe. Desteklenmeyen bir telefon dilinde iOS buna düşer;
-	     İngilizce telefonda Campus/Resources altındaki kataloglar en'i seçer. -->
+	     İngilizce telefonda Bond/Resources altındaki kataloglar en'i seçer. -->
 	<!-- İzin metinlerinin çevirisi InfoPlist.xcstrings'te. Buradaki Türkçe,
 	     development region yedeği: anahtar yoksa iOS kamera/galeri erişiminde çöker. -->
 	<!-- Yalnızca HTTPS kullanıyoruz; bu Apple'ın muafiyet kapsamında. Bu anahtar
@@ -33,7 +33,7 @@
 	  sonradan yamamak Xcode 26'da "mutable output" hatası verir. Supabase
 	  anahtarları derlemede AppSecrets.swift olarak üretilir.
 
-	  Bu dosya Campus/ dışında olmalı: senkronize grup onu kaynak olarak da kopyalayıp
+	  Bu dosya Bond/ dışında olmalı: senkronize grup onu kaynak olarak da kopyalayıp
 	  "Multiple commands produce" hatası verir.
 	-->
 	<key>SUPABASE_URL</key>
@@ -57,13 +57,13 @@
 		<!-- Üniversite e-postasına gönderilen giriş bağlantısı bu şemayla uygulamaya
 		     geri dönüyor (bkz. SupabaseProductService.requestEmailSignInLink). Supabase
 		     Dashboard'da Authentication > URL Configuration > Redirect URLs listesine
-		     "common://login-callback" eklenmeden bu bağlantı uygulamayı açmaz. -->
+		     "bond://login-callback" eklenmeden bu bağlantı uygulamayı açmaz. -->
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>com.campus.social.auth</string>
+			<string>com.bond.social.auth</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>common</string>
+				<string>bond</string>
 			</array>
 		</dict>
 	</array>

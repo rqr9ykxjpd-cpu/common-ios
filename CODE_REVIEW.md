@@ -1,4 +1,4 @@
-# Campus (Common) — Kod İncelemesi
+# Bond — Kod İncelemesi
 
 **Tarih:** 17 Ağustos 2026
 **Kapsam:** 26 Swift dosyası (~6.900 satır) + Supabase şeması (unified migration)
@@ -158,7 +158,7 @@ Sıfır `LocalizedStringKey` / `String(localized:)` kullanımı — tüm metinle
 `RootView.swift:151-152` — `repeatForever` ile sürekli dönen float ve glow animasyonları. `accessibilityReduceMotion` hiçbir yerde kontrol edilmiyor. Vestibüler duyarlılığı olan kullanıcılar için rahatsız edici; ayrıca sürekli animasyon pil tüketiyor.
 
 ### 29. Kontrast oranları yetersiz
-`CampusTheme.muted` (#77746D), `paper` (#F2EFE7) üzerinde yaklaşık **4.0:1** — WCAG AA'nın küçük metin için istediği 4.5:1'in altında. Ayrıca `ink.opacity(0.40)`–`0.52` kombinasyonları yaygın kullanılıyor (`RootView.swift:120, 214`) ve bunlar net şekilde başarısız.
+`BondTheme.muted` (#77746D), `paper` (#F2EFE7) üzerinde yaklaşık **4.0:1** — WCAG AA'nın küçük metin için istediği 4.5:1'in altında. Ayrıca `ink.opacity(0.40)`–`0.52` kombinasyonları yaygın kullanılıyor (`RootView.swift:120, 214`) ve bunlar net şekilde başarısız.
 
 ### 30. Mesajlar ana navigasyonda yok
 `MainTabView.swift:21-23` — sekmeler yalnızca Akış / Tanış / Profil. Sohbetler `PremiumDiscoverView` içine gömülü. Mesajlaşma bir tanışma uygulamasının en sık kullanılan ekranıdır; ana sekme olmalı ve okunmamış rozeti taşımalı.

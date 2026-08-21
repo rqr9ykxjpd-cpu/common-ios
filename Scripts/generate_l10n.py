@@ -7,9 +7,9 @@ from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-L10N_DIR = ROOT / "Campus" / "Core" / "Localization"
-STRINGS_PATH = ROOT / "Campus" / "Resources" / "Localizable.xcstrings"
-INFOPLIST_PATH = ROOT / "Campus" / "Resources" / "InfoPlist.xcstrings"
+L10N_DIR = ROOT / "Bond" / "Core" / "Localization"
+STRINGS_PATH = ROOT / "Bond" / "Resources" / "Localizable.xcstrings"
+INFOPLIST_PATH = ROOT / "Bond" / "Resources" / "InfoPlist.xcstrings"
 
 PREFIX_ENUM = {
     "common": "Common",
@@ -52,7 +52,7 @@ PREFIX_ENUM = {
 # (key, tr, en) veya (key, tr, en, [(arg, "String"|"Int")])
 S: list = [
     # Brand
-    ("brand.wordmark", "common", "common"),
+    ("brand.wordmark", "bond", "bond"),
     # Common
     ("common.close", "Kapat", "Close"),
     ("common.done", "Bitti", "Done"),
@@ -84,8 +84,13 @@ S: list = [
     ("tabs.discover", "Tanış", "Meet"),
     ("tabs.profile", "Profil", "Profile"),
     # Welcome
-    ("welcome.headline", "Kampüste olup\nbitenlere dahil ol.", "Be part of what’s\nhappening on campus."),
-    ("welcome.subtitle", "Anlarını paylaş. Yeni insanlarla tanış. Sohbeti gerçek hayata taşı.", "Share moments. Meet new people. Take the chat into real life."),
+    ("welcome.headline", "Bond'a hoş geldin", "Welcome to Bond"),
+    ("welcome.featureShareTitle", "Anlarını paylaş", "Share moments"),
+    ("welcome.featureShareBody", "Kampüsteki günün akışta görünsün.", "Your campus day belongs in the feed."),
+    ("welcome.featureMeetTitle", "Yeni insanlarla tanış", "Meet new people"),
+    ("welcome.featureMeetBody", "Keşifte kartları kaydır, sohbeti başlat.", "Swipe cards in Discover and start a chat."),
+    ("welcome.featureOfflineTitle", "Sohbeti gerçek hayata taşı", "Take it offline"),
+    ("welcome.featureOfflineBody", "Mekânda buluş, kampüste yüz yüze gel.", "Turn the chat into a real meetup."),
     ("welcome.googleContinue", "Google ile Devam Et", "Continue with Google"),
     ("welcome.emailContinue", "E-posta ile devam et", "Continue with email"),
     ("welcome.legalConsent", "Devam ederek [Kullanım Koşulları](%@) ve [Gizlilik Politikası](%@) metinlerini kabul etmiş olursun.", "By continuing, you agree to the [Terms of Use](%@) and [Privacy Policy](%@).", [("terms", "String"), ("privacy", "String")]),
@@ -98,11 +103,6 @@ S: list = [
     ("welcome.checkInbox", "Gelen kutunu kontrol et", "Check your inbox"),
     ("welcome.linkSent", "%@ adresine bir giriş bağlantısı gönderdik. Maildeki bağlantıya dokununca uygulama otomatik açılır.", "We sent a sign-in link to %@. Tap the link in the email and the app will open.", [("email", "String")]),
     ("welcome.tryDifferentEmail", "Farklı bir e-posta dene", "Try a different email"),
-    ("welcome.canvasPostMeta", "Ece bir an paylaştı", "Ece shared a moment"),
-    ("welcome.canvasCaption", "Ders sonrası planı: kendimizi dışarı atmak.", "After class: let’s get out of here."),
-    ("welcome.canvasPlace", "Hazırlık Kantini", "Prep cafeteria"),
-    ("welcome.canvasChatMeta", "Yeni bir sohbet başladı", "A new chat just started"),
-    ("welcome.canvasQuote", "“Kahve için hâlâ geç değil.”", "“It’s not too late for coffee.”"),
     # Auth / session toasts
     ("auth.appleFailed", "Apple ile giriş yapılamadı.", "Couldn’t sign in with Apple."),
     ("auth.googleFailed", "Google ile giriş yapılamadı.", "Couldn’t sign in with Google."),
@@ -126,7 +126,7 @@ S: list = [
     ("onboarding.department", "Bölümün", "Your department"),
     ("onboarding.departmentPlaceholder", "örneğin Endüstri Mühendisliği", "e.g. Industrial Engineering"),
     ("onboarding.birthDate", "Doğum tarihin", "Date of birth"),
-    ("onboarding.ageNote", "Common yalnızca 18 yaş ve üzeri öğrenciler içindir.", "Common is only for students 18 and over."),
+    ("onboarding.ageNote", "Bond yalnızca 18 yaş ve üzeri öğrenciler içindir.", "Bond is only for students 18 and over."),
     ("onboarding.preferencesEyebrow", "Tanışma tercihlerin", "Who you want to meet"),
     ("onboarding.preferencesTitle", "Kısaca\nseni tanıyalım.", "Let’s get\nto know you."),
     ("onboarding.preferencesSubtitle", "Kimlerin gösterileceği cinsiyetine göre belirlenir. İkisini de sonradan değiştirebilirsin.", "Who you see is based on your gender. You can change both later."),
@@ -146,7 +146,7 @@ S: list = [
     ("onboarding.welcomePlain", "Hoş geldin.", "Welcome."),
     ("onboarding.welcomeName", "Hoş geldin,\n%@.", "Welcome,\n%@.", [("name", "String")]),
     ("onboarding.readySubtitle", "Kampüsün akışı, yeni insanlar ve yeni sohbetler seni bekliyor.", "The campus feed, new people, and new chats are waiting."),
-    ("onboarding.enter", "Common'a Gir", "Enter Common"),
+    ("onboarding.enter", "Bond'a Gir", "Enter Bond"),
     ("onboarding.saveFailed", "Profilin kaydedilemedi.", "Couldn’t save your profile."),
     ("onboarding.needPhoto", "Devam etmek için bir profil fotoğrafı seçmelisin.", "Choose a profile photo to continue."),
     ("onboarding.photoUploadFailed", "Fotoğrafın yüklenemedi. Tekrar dene.", "Couldn’t upload your photo. Try again."),
@@ -284,7 +284,7 @@ S: list = [
     ("discovery.safety", "Güvenlik seçenekleri", "Safety options"),
     ("discovery.prevPhoto", "Önceki fotoğraf", "Previous photo"),
     ("discovery.nextPhoto", "Sonraki fotoğraf", "Next photo"),
-    ("discovery.matchEyebrowBrand", "common / yeni bağlantı", "common / new connection"),
+    ("discovery.matchEyebrowBrand", "bond / yeni bağlantı", "bond / new connection"),
     ("discovery.matchEyebrow", "karşılıklı merak", "mutual curiosity"),
     ("discovery.matchTitle", "Sen ve %@\n**denk geldiniz.**", "You and %@\n**just matched.**", [("name", "String")]),
     ("discovery.matchSubtitle", "İlk mesajın mükemmel olması gerekmiyor.\nSadece size ait olsun.", "The first message doesn’t have to be perfect.\nJust make it yours."),
@@ -543,7 +543,7 @@ S: list = [
     ("paywall.plus", "PLUS", "PLUS"),
     ("paywall.pro", "PRO", "PRO"),
     ("paywall.specialNote", "bu verilere erişmek için özel\nkullanıcılarımızdan olmalısın", "to see this you need to be one of\nour special members"),
-    ("paywall.planName", "Common %@", "Common %@", [("tier", "String")]),
+    ("paywall.planName", "Bond %@", "Bond %@", [("tier", "String")]),
     ("paywall.unlimited", "sınırsız", "unlimited"),
     ("paywall.perWeek", "/ hafta", "/ week"),
     ("paywall.handNote", "merak etme, kimse senin Plus olduğunu bilmeyecek ☺", "don’t worry, nobody will know you’re on Plus ☺"),
@@ -607,7 +607,7 @@ S: list = [
     ("error.timeout", "İşlem zaman aşımına uğradı. Tekrar dene.", "That timed out. Try again."),
     ("error.googleNotConfigured", "Google girişi yapılandırılmamış. .env içine GOOGLE_CLIENT_ID ve GOOGLE_SERVER_CLIENT_ID yazıp uygulamayı yeniden derle.", "Google sign-in isn’t configured. Add GOOGLE_CLIENT_ID and GOOGLE_SERVER_CLIENT_ID to .env and rebuild."),
     # Notifications
-    ("notification.intro", "Common'daki son hareketler", "Latest activity on Common"),
+    ("notification.intro", "Bond'daki son hareketler", "Latest activity on Bond"),
     ("notification.empty", "Henüz bildirim yok", "No notifications yet"),
     ("notification.emptyBody", "Yeni etkileşimler burada görünecek.", "New activity will show up here."),
     ("notification.markRead", "Okundu olarak işaretle", "Mark as read"),
@@ -676,7 +676,7 @@ S: list = [
     ("meetingStatus.declined", "Reddedildi", "Declined"),
     ("badge.verified", "Doğrulanmış hesap", "Verified account"),
     ("badge.moderator", "Moderatör", "Moderator"),
-    ("badge.founder", "Common kurucusu", "Common founder"),
+    ("badge.founder", "Bond kurucusu", "Bond founder"),
     ("badge.founderSubtitle", "Girişimci · Startup · Developer", "Founder · Startup · Developer"),
     ("quota.likeTitle", "Beğeni hakkın\nbitti.", "You’re out of\nlikes."),
     ("quota.meetingRequestTitle", "Buluşma isteği\nhakkın bitti.", "You’re out of\nmeetup requests."),
@@ -792,6 +792,8 @@ S: list = [
 
 
 INFO_PLIST = {
+    "CFBundleDisplayName": ("Bond", "Bond"),
+    "CFBundleName": ("Bond", "Bond"),
     "NSCameraUsageDescription": (
         "Gönderi ve story paylaşırken fotoğraf çekebilmen için kameraya erişmemiz gerekiyor.",
         "We need camera access so you can take photos for posts and stories.",

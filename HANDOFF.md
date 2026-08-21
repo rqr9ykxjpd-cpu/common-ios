@@ -1,4 +1,4 @@
-# Common (Campus) — Devir Notu
+# Bond — Devir Notu
 
 SwiftUI + Supabase kampüs sosyal/tanışma uygulaması. Bu belge, projeyi devralan
 kişi veya araç için mevcut durumu, kurulumu ve karşılaşılan tuzakları anlatır.
@@ -11,7 +11,7 @@ kişi veya araç için mevcut durumu, kurulumu ve karşılaşılan tuzakları an
 cp .env.example .env
 # .env içindeki SUPABASE_* ve GOOGLE_* değerlerini doldur
 ./Scripts/sync-env.sh
-open Campus.xcodeproj
+open Bond.xcodeproj
 ```
 
 **Backend'e bağlanmak için** kökteki `.env` gerekir. Bu dosya `.gitignore`'da —
@@ -29,7 +29,7 @@ GOOGLE_REVERSED_CLIENT_ID=<GOOGLE_CLIENT_ID'nin ters çevrilmiş hali>
 
 `Scripts/sync-env.sh` üç çıktı üretir (üçü de gitignore'da):
 
-- `Campus/Core/Generated/AppSecrets.swift` — uygulama Supabase URL/key ve Google
+- `Bond/Core/Generated/AppSecrets.swift` — uygulama Supabase URL/key ve Google
   client ID'leri buradan okur. Xcode her derlemede bu script'i Compile Sources'tan
   önce çalıştırır.
 - `Config/Generated.xcconfig` — `GOOGLE_CLIENT_ID` Info.plist'teki `GIDClientID`'ye
@@ -51,10 +51,10 @@ dahil hiçbir şey çalışmaz — önce `.env` içindeki `SUPABASE_HOST`'u kont
 **Supabase projesi:** `.env` içindeki host. Migration'lar `supabase/migrations/`
 altında, uygulanma sırası dosya adındaki zaman damgasına göre.
 
-Swift kaynakları özellik klasörlerinde durur (`Campus/App`, `Campus/Core`,
-`Campus/Features`). Xcode 16 senkronize grup kullandığı için yeni dosyalar
-`Campus/` altına konunca hedefe kendiliğinden eklenir. `Config/Info.plist`
-bilinçli olarak `Campus/` dışındadır — aksi halde "Multiple commands produce"
+Swift kaynakları özellik klasörlerinde durur (`Bond/App`, `Bond/Core`,
+`Bond/Features`). Xcode 16 senkronize grup kullandığı için yeni dosyalar
+`Bond/` altına konunca hedefe kendiliğinden eklenir. `Config/Info.plist`
+bilinçli olarak `Bond/` dışındadır — aksi halde "Multiple commands produce"
 hatası çıkar.
 
 ---
@@ -85,7 +85,7 @@ eşleşmeyi bitirme.
 **Görünüm:** Koyu mod bir tercih olarak var (Profil > Görünüm: Sistem/Açık/Koyu,
 `UserDefaults`'ta saklanır). Karşılama ve kayıt akışı bilinçli olarak her zaman
 açık modda — kullanıcı o aşamada ayara ulaşamıyor. Tanış, story ve eşleşme anı
-ekranları medya tuvali olarak koyu kalır (`CampusTheme.canvasDark`).
+ekranları medya tuvali olarak koyu kalır (`BondTheme.canvasDark`).
 
 Tasarım dili Apple ürün sayfası token'larında: beyaz tuval (`#FFFFFF`),
 bölüm yüzeyi (`#F5F5F7`), `#1D1D1F` yazı, `#0071E3` birincil eylem, `#0066CC`
@@ -118,12 +118,12 @@ her işlem "Supabase yapılandırması eksik" hatası verir (`UnconfiguredProduc
 Bunlar tamamlanmadan uygulamaya **hiç giriş yapılamaz**.
 
 1. ✅ **Google Cloud Console** — "iOS" ve "Web application" türünde OAuth
-   client ID oluşturuldu (Bundle ID: `com.campus.social`). Üç değer de
+   client ID oluşturuldu (Bundle ID: `com.bond.social`). Üç değer de
    `.env`'e yazılı: `GOOGLE_CLIENT_ID` (iOS),
    `GOOGLE_SERVER_CLIENT_ID` (Web — Supabase'in Google provider'ındaki Client ID
    ile AYNI), `GOOGLE_REVERSED_CLIENT_ID` (iOS client ID'nin ters çevrilmiş hali).
 2. ✅ **Supabase Auth providers** — Authentication → Providers'ta hem Apple
-   (Authorized Client IDs: `com.campus.social`) hem Google (Client ID = Web
+   (Authorized Client IDs: `com.bond.social`) hem Google (Client ID = Web
    client ID) açık.
 3. ✅ **GoogleSignIn-iOS paketi** — `project.pbxproj`'a elle eklendi
    (`XCRemoteSwiftPackageReference "GoogleSignIn-iOS"`), `Package.resolved`'da
@@ -140,7 +140,7 @@ Bunlar tamamlanmadan uygulamaya **hiç giriş yapılamaz**.
    taşınırsa tekrar sırayla çalıştırmak güvenli.
 5. ⬜ **Apple Developer (her makinede ayrı)** — Xcode açan her geliştirici
    kendi makinesinde Signing & Capabilities'te kendi takımını seçmeli; proje
-   zaten `Campus/Resources/Campus.entitlements` ile "Sign in with Apple" istiyor,
+   zaten `Bond/Resources/Bond.entitlements` ile "Sign in with Apple" istiyor,
    otomatik imzalama App ID'yi buna göre günceller. Bu, git ile taşınmaz —
    yeni bir Mac'te her seferinde elle yapılır.
 6. ⬜ **`.env` her makinede ayrı** — `.gitignore`'da,
@@ -164,7 +164,7 @@ Bunlar bu projede bizzat yaşandı; tekrar düşmemek için not edildi.
    özel anahtarlar build ayarında doğru çözümlense de Info.plist'e hiç
    yazılmıyordu; uygulama demo modundan çıkamıyordu. Çözüm: gerçek bir
    `Config/Info.plist` şablonu; `INFOPLIST_FILE` derlemede üretilen
-   `Config/GeneratedInfo.plist`. Şablon `Campus/` klasörünün **dışında** olmalı,
+   `Config/GeneratedInfo.plist`. Şablon `Bond/` klasörünün **dışında** olmalı,
    aksi halde senkronize grup onu kaynak olarak da kopyalayıp "Multiple commands
    produce" hatası veriyor. Supabase anahtarları artık Info.plist yerine derlemede
    üretilen `AppSecrets.swift` üzerinden okunur; Google URL scheme
