@@ -34,7 +34,7 @@ create table if not exists public.subscriptions (
   -- Apple'ın abonelik kimliği. Tekil: bir abonelik yalnızca bir hesabı açar.
   -- Olmasaydı tek Pro aboneliğinin makbuzu elden ele dolaşıp elli hesabı
   -- açardı; Apple'ın kendi doğrulaması bunu engellemiyor, çünkü makbuz gerçek.
-  original_transaction_id text unique,
+  original_transaction_id text,
   product_id text,
   expires_at timestamptz,
   updated_at timestamptz not null default now()
@@ -61,8 +61,9 @@ revoke all on public.subscriptions from anon, authenticated;
 grant select on public.subscriptions to authenticated;
 
 -- Sınır tetikleyicileri, beğeniyi yapan kişinin kademesini okumak zorunda;
--- o satır o kişiye ait olduğu için normal yetkiyle görünmez. Bu yüzden
+-- o satır o kişiye ait olduğu için normal yetkiyle görünmez — bu yüzden
 -- security definer.
+--
 -- Süresi geçmiş abonelik hak vermiyor. Apple yenilemeyi bildirene kadar satır
 -- eski haliyle duruyor; tarihe bakmasaydık iptal eden kullanıcı sınırsız
 -- kalırdı.
