@@ -206,6 +206,13 @@ struct SocialPersonDetailView: View {
                             // çekilen değer varsa o kullanılıyor.
                             ProfileBadgeLabel(badge: details?.badge ?? profile.badge)
                         }
+                        if let rozetAlt = (details?.badge ?? profile.badge).subtitle {
+                            Text(rozetAlt)
+                                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                                .foregroundStyle(CampusTheme.ink.opacity(0.5))
+                        }
+                        HStack {
+                        }
                         Text("\(profile.department) · \(profile.university) · \(profile.year)")
                             .font(.subheadline.bold()).foregroundStyle(CampusTheme.ink.opacity(0.5))
 

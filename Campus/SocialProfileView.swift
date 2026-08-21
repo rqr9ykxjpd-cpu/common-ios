@@ -171,6 +171,12 @@ struct SocialProfileView: View {
                     // doğrulaması diye bir şey yok, yani herkes için yanlıştı.
                     ProfileBadgeLabel(badge: appState.myBadge)
                         .padding(.top, 2)
+                    if let altSatir = appState.myBadge.subtitle {
+                        Text(altSatir)
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .foregroundStyle(CampusTheme.ink.opacity(0.5))
+                            .padding(.top, 1)
+                    }
                 }
                 Spacer(minLength: 0)
             }

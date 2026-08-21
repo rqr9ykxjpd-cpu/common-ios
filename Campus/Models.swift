@@ -44,6 +44,15 @@ enum ProfileBadge: String, Codable, Hashable {
         }
     }
 
+    /// Yalnızca profil ekranlarında, rozetin altında görünen ikinci satır.
+    /// Akış ve listelerde gösterilmiyor: oralarda satır yüksekliğini bozar.
+    var subtitle: String? {
+        switch self {
+        case .founder: "Girişimci · Startup · Developer"
+        case .none, .verified, .moderator: nil
+        }
+    }
+
     /// Profil ekranında rozetin yanında yazan açıklama.
     var title: String? {
         switch self {
