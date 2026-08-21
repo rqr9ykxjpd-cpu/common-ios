@@ -45,7 +45,8 @@ struct PlacePeopleView: View {
                 }
                 .refreshable { await reload() }
             }
-            .toolbar(.hidden, for: .navigationBar)
+            .navigationTitle(place.name)
+            .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(item: $selectedPerson) { profile in
                 SocialPersonDetailView(profile: profile, place: place)
             }

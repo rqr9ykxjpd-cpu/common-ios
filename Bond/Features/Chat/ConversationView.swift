@@ -18,7 +18,6 @@ struct ConversationView: View {
     var body: some View {
         VStack(spacing: 0) {
             if let conversation {
-                header(conversation)
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(spacing: 10) {
@@ -88,7 +87,8 @@ struct ConversationView: View {
         }
         .background(BondTheme.paper.ignoresSafeArea())
         .foregroundStyle(BondTheme.ink)
-        .toolbar(.hidden, for: .navigationBar)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar { sohbetAracCubugu }
         .onAppear { appState.markConversationRead(conversationID) }
         .alert(L10n.Chat.unmatchConfirm, isPresented: $showUnmatchAlert) {
             Button(L10n.Common.cancel, role: .cancel) {}
@@ -109,49 +109,56 @@ struct ConversationView: View {
         }
     }
 
-    private func header(_ conversation: Conversation) -> some View {
-        HStack(spacing: 12) {
-            Button { dismiss() } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 17, weight: .semibold)).frame(width: 44, height: 44)
-            }
-            .accessibilityLabel(L10n.Common.back)
-            Button { showProfile = true } label: {
-                HStack(spacing: 10) {
-                    ProfileMedia(url: conversation.profile.imageURL, data: nil, assetName: conversation.profile.imageAssetName)
-                        .frame(width: 42, height: 42)
-                        .clipShape(Circle())
-                    Text(conversation.profile.name)
-                        .font(.system(size: 16, weight: .semibold))
+
+    /// Sohbet başlığı. Kişiye dokununca profili açılıyor; sağdaki menü
+    /// şikayet, engelleme ve eşleşmeyi bitirme.
+    @ToolbarContentBuilder private var sohbetAracCubugu: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            Button { dismiss() } label: { Image(systemName: "chevron.left") }
+                .accessibilityLabel(L10n.Common.back)
+        }
+        ToolbarItem(placement: .principal) {
+            if let conversation = appState.conversations.first(where: { $0.id == conversationID }) {
+                Button { showProfile = true } label: {
+                    HStack(spacing: 8) {
+                        ProfileMedia(url: conversation.profile.imageURL, data: nil,
+                                     assetName: conversation.profile.imageAssetName)
+                            .frame(width: 28, height: 28)
+                            .clipShape(Circle())
+                        Text(conversation.profile.name)
+                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    }
+                    .foregroundStyle(BondTheme.ink)
                 }
-                .foregroundStyle(BondTheme.ink)
-                .contentShape(Rectangle())
+                .buttonStyle(.plain)
+                .accessibilityLabel(L10n.Feed.openProfile(conversation.profile.name))
             }
-            .buttonStyle(PressableStyle())
-            .accessibilityLabel(L10n.Feed.openProfile(conversation.profile.name))
-            Spacer()
+        }
+        ToolbarItem(placement: .topBarTrailing) {
             Menu {
                 Menu {
                     ForEach(ReportReason.allCases) { reason in
-                        Button(reason.title) { appState.report(conversation.profile, reason: reason) }
+                        Button(reason.title) {
+                            if let c = appState.conversations.first(where: { $0.id == conversationID }) {
+                                appState.report(c.profile, reason: reason)
+                            }
+                        }
                     }
                 } label: {
                     Label(L10n.Common.report, systemImage: "flag")
                 }
                 Button(L10n.Chat.endMatch, role: .destructive) { showUnmatchAlert = true }
                 Button(L10n.Common.block, role: .destructive) {
-                    appState.block(conversation.profile)
+                    if let c = appState.conversations.first(where: { $0.id == conversationID }) {
+                        appState.block(c.profile)
+                    }
                     dismiss()
                 }
             } label: {
                 Image(systemName: "ellipsis")
-                    .font(.system(size: 17, weight: .semibold)).frame(width: 44, height: 44)
             }
             .accessibilityLabel(L10n.Chat.options)
         }
-        .padding(.horizontal, 10).padding(.vertical, 8)
-        .background(BondTheme.surface)
-        .overlay(alignment: .bottom) { Rectangle().fill(BondTheme.hairline).frame(height: 0.5) }
     }
 
     /// Karşı tarafla gerçekten paylaşılan ilgi alanları. Bu not daha önce sabit bir

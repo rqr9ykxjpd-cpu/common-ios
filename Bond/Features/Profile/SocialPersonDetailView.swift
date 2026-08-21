@@ -34,6 +34,8 @@ struct SocialPersonDetailView: View {
         return appState.meetingRequest(for: profile, at: visiblePlace)
     }
 
+    /// Durum çubuğu + gezinme çubuğu yüksekliği. Kahraman fotoğraf bunların
+    /// altına uzanıyor; yükseklik sabit yazılmıyor, sistemden okunuyor.
     var body: some View {
         ZStack(alignment: .topLeading) {
             BondTheme.paper.ignoresSafeArea()
@@ -156,15 +158,21 @@ struct SocialPersonDetailView: View {
                 }
             }
 
-            Button { dismiss() } label: {
-                Image(systemName: "arrow.left").foregroundStyle(.white)
-                    .frame(width: 44, height: 44).background(.black.opacity(0.55), in: Circle())
+        }
+        .ignoresSafeArea(edges: .top)
+        // Kahraman fotoğrafın üstünde iki düğme yüzüyordu: elle çizilmiş siyah
+        // daireler, elle verilmiş 16pt kenar boşluğu, safe area'yı taklit eden
+        // konumlar. Aynı iş sistemin bar'ında yapılıyor; bar fotoğrafın üstünde
+        // şeffaf duruyor ve kaydırınca kendi materyalini getiriyor.
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button { dismiss() } label: { Image(systemName: "chevron.left") }
+                    .accessibilityLabel(L10n.Common.back)
             }
-            .accessibilityLabel(L10n.Common.back)
-            .padding(16)
-
-            HStack {
-                Spacer()
+            ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Menu {
                         ForEach(ReportReason.allCases) { reason in
@@ -178,13 +186,10 @@ struct SocialPersonDetailView: View {
                         dismiss()
                     }
                 } label: {
-                    Image(systemName: "ellipsis").foregroundStyle(.white)
-                        .frame(width: 44, height: 44).background(.black.opacity(0.55), in: Circle())
+                    Image(systemName: "ellipsis")
                 }
             }
-            .padding(16)
         }
-        .toolbar(.hidden, for: .navigationBar)
         // Ziyaret yalnızca birinin profili kasıtlı olarak açıldığında kaydedilir;
         // keşif destesinde kart çevirmek ziyaret sayılmaz.
         .task {

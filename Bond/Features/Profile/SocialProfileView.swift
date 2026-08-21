@@ -69,7 +69,8 @@ struct SocialProfileView: View {
             }
             }
             .background(BondTheme.paper.ignoresSafeArea())
-            .toolbar(.hidden, for: .navigationBar)
+            .navigationTitle(L10n.Tabs.profile)
+            .navigationBarTitleDisplayMode(.inline)
             // Tam ekran: sekme çubuğu düzenleme ekranının üstüne binip alttaki
             // "Değişiklikleri kaydet" butonunu tıklanamaz hale getiriyordu.
             .fullScreenCover(isPresented: $showEditor) {
