@@ -13,6 +13,7 @@ struct SocialPersonDetailView: View {
     @State private var selectedPost: SocialPost?
     @State private var details: PersonProfileData?
     @State private var reacted = false
+    @State private var showBlockConfirmation = false
 
     private var isMe: Bool { profile.id == appState.currentUserID }
     private var isMatched: Bool { conversation(with: profile) != nil }
@@ -69,14 +70,14 @@ struct SocialPersonDetailView: View {
                                 .foregroundStyle(BondTheme.ember)
                         }
                         Text("\(DepartmentCatalog.display(profile.department)) · \(profile.university) · \(AcademicYear.display(profile.year))")
-                            .font(.subheadline.bold()).foregroundStyle(BondTheme.ink.opacity(0.5))
+                            .font(.system(size: 15, weight: .bold)).foregroundStyle(BondTheme.muted)
 
                         if let visiblePlace {
                             HStack(spacing: 10) {
                                 Image(systemName: "location.fill").foregroundStyle(BondTheme.violet)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(L10n.Profile.visibleNowCaps).font(.system(size: 11, weight: .bold)).tracking(0.7)
-                                    Text(visiblePlace.name).font(.headline)
+                                    Text(visiblePlace.name).font(.system(size: 17, weight: .semibold))
                                 }
                                 Spacer()
                                 Circle().fill(.green).frame(width: 8, height: 8)
@@ -108,7 +109,7 @@ struct SocialPersonDetailView: View {
                             } label: {
                                 Label(reacted ? L10n.Profile.likeSent : L10n.Discovery.meet,
                                       systemImage: reacted ? "checkmark" : "heart.fill")
-                                    .font(.subheadline.bold()).foregroundStyle(BondTheme.ink)
+                                    .font(.system(size: 15, weight: .bold)).foregroundStyle(BondTheme.ink)
                                     .frame(maxWidth: .infinity).frame(height: 50)
                                     .background(reacted ? BondTheme.ink.opacity(0.08) : BondTheme.acid,
                                                 in: RoundedRectangle(cornerRadius: 14))
@@ -118,12 +119,12 @@ struct SocialPersonDetailView: View {
 
                             Text(L10n.Profile.likeHint)
                                 .font(.system(size: 11))
-                                .foregroundStyle(BondTheme.ink.opacity(0.45))
+                                .foregroundStyle(BondTheme.muted)
                                 .frame(maxWidth: .infinity, alignment: .center)
                         } else {
                         Button { openConversation() } label: {
                             Label(L10n.Profile.sendMessage, systemImage: "message.fill")
-                                .font(.subheadline.bold()).foregroundStyle(BondTheme.paper)
+                                .font(.system(size: 15, weight: .bold)).foregroundStyle(BondTheme.paper)
                                 .frame(maxWidth: .infinity).frame(height: 50)
                                 .background(BondTheme.ink, in: RoundedRectangle(cornerRadius: 14))
                         }
@@ -140,7 +141,7 @@ struct SocialPersonDetailView: View {
                             VStack(spacing: 7) {
                                 Button { sendRequest() } label: {
                                     Label(pendingRequest == nil ? L10n.Profile.meetHere : L10n.Profile.requestSent, systemImage: pendingRequest == nil ? "cup.and.saucer.fill" : "checkmark")
-                                        .font(.subheadline.bold())
+                                        .font(.system(size: 15, weight: .bold))
                                         .foregroundStyle(pendingRequest == nil ? BondTheme.onAccent : BondTheme.ink.opacity(0.55))
                                         .frame(maxWidth: .infinity).frame(height: 50)
                                         .background(pendingRequest == nil ? BondTheme.acid : BondTheme.ink.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
@@ -151,7 +152,7 @@ struct SocialPersonDetailView: View {
                                 if pendingRequest == nil {
                                     Text(L10n.Profile.noNotifyIfIgnored)
                                         .font(.system(size: 11))
-                                        .foregroundStyle(BondTheme.ink.opacity(0.45))
+                                        .foregroundStyle(BondTheme.muted)
                                 }
                             }
                         }
@@ -188,13 +189,25 @@ struct SocialPersonDetailView: View {
                         Label(L10n.Common.report, systemImage: "flag")
                     }
                     Button(L10n.Feed.blockUser, role: .destructive) {
-                        appState.block(profile)
-                        dismiss()
+                        showBlockConfirmation = true
                     }
                 } label: {
                     Image(systemName: "ellipsis")
                 }
             }
+        }
+        .confirmationDialog(
+            L10n.Chat.blockConfirm(profile.name),
+            isPresented: $showBlockConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(L10n.Feed.blockUser, role: .destructive) {
+                appState.block(profile)
+                dismiss()
+            }
+            Button(L10n.Common.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.Chat.blockBody)
         }
         // Ziyaret yalnızca birinin profili kasıtlı olarak açıldığında kaydedilir;
         // keşif destesinde kart çevirmek ziyaret sayılmaz.
@@ -266,13 +279,13 @@ struct SocialPersonDetailView: View {
             VStack(alignment: .leading, spacing: 10) {
                 Text(L10n.Profile.photos)
                     .font(.system(size: 11, weight: .bold)).tracking(0.7)
-                    .foregroundStyle(kurucu ? BondTheme.ember : BondTheme.ink.opacity(0.45))
+                    .foregroundStyle(kurucu ? BondTheme.ember : BondTheme.muted)
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(fotograflar, id: \.self) { url in
                             ProfileMedia(url: url, data: nil)
                                 .frame(width: 132, height: 176)
-                                .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous))
+                                .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous))
                         }
                     }
                 }
@@ -290,7 +303,7 @@ struct SocialPersonDetailView: View {
             VStack(alignment: .leading, spacing: 10) {
                 Text(L10n.Profile.theirPostsCaps)
                     .font(.system(size: 11, weight: .bold)).tracking(0.7)
-                    .foregroundStyle(kurucu ? BondTheme.ember : BondTheme.ink.opacity(0.45))
+                    .foregroundStyle(kurucu ? BondTheme.ember : BondTheme.muted)
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 3), count: 3), spacing: 3) {
                     ForEach(gonderiler) { post in
                         Button {

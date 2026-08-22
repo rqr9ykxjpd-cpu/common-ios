@@ -2,6 +2,7 @@ import Foundation
 
 extension L10n {
     enum Errors {
+        static var title: String { String(localized: "error.title") }
         static var configMissing: String { String(localized: "error.configMissing") }
         static var missingSession: String { String(localized: "error.missingSession") }
         static var incompleteProfile: String { String(localized: "error.incompleteProfile") }

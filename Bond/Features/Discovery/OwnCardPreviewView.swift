@@ -123,11 +123,11 @@ struct OwnCardPreviewView: View {
             }
             Text(L10n.Discovery.missingFooter)
                 .font(.system(size: 12))
-                .foregroundStyle(.white.opacity(0.45))
+                .foregroundStyle(.white.opacity(0.65))
                 .padding(.top, 2)
         }
         .padding(BondTheme.Space.lg)
-        .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous))
+        .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
         .padding(.horizontal, BondTheme.Space.lg)
     }
 }

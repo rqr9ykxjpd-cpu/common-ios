@@ -124,17 +124,19 @@ struct AppNotification: Identifiable, Hashable {
     let title: String
     let body: String
     let actor: StudentProfile?
-    let meetingRequestID: UUID?
+    /// Mesaj ve eşleşme bildirimlerinin doğrudan açacağı gerçek sohbet.
+    /// Yanıt isteklerinde eşleşme henüz oluşmadığı için `nil` kalır.
+    let conversationID: UUID?
     let createdAt: Date
     var isRead: Bool
 
-    init(id: UUID = UUID(), kind: AppNotificationKind, title: String, body: String, actor: StudentProfile? = nil, meetingRequestID: UUID? = nil, createdAt: Date = .now, isRead: Bool = false) {
+    init(id: UUID = UUID(), kind: AppNotificationKind, title: String, body: String, actor: StudentProfile? = nil, conversationID: UUID? = nil, createdAt: Date = .now, isRead: Bool = false) {
         self.id = id
         self.kind = kind
         self.title = title
         self.body = body
         self.actor = actor
-        self.meetingRequestID = meetingRequestID
+        self.conversationID = conversationID
         self.createdAt = createdAt
         self.isRead = isRead
     }

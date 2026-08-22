@@ -25,6 +25,9 @@ extension L10n {
         static var noIssue: String { String(localized: "moderation.noIssue") }
         static var removedContent: String { String(localized: "moderation.removedContent") }
         static var suspend: String { String(localized: "moderation.suspend") }
+        static func suspendConfirm(_ name: String) -> String {
+            L10n.format("moderation.suspendConfirm", name)
+        }
         static var suspendHint: String { String(localized: "moderation.suspendHint") }
         static var resultRemoved: String { String(localized: "moderation.resultRemoved") }
         static var resultSuspended: String { String(localized: "moderation.resultSuspended") }

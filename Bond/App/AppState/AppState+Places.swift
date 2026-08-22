@@ -4,11 +4,16 @@ import SwiftUI
 extension AppState {
     /// - Parameter silently: bkz. `loadProfileVisits(silently:)`.
     func loadPlaces(silently: Bool = false) async {
+        isLoadingPlaces = true
+        defer { isLoadingPlaces = false }
         do {
-            let loaded = try await service.fetchPlaces()
-            if !loaded.isEmpty { places = loaded }
+            places = try await service.fetchPlaces()
+            placesError = nil
         } catch {
-            if !silently { showError(error, fallback: L10n.Places.loadFailed) }
+            guard !isCancellation(error), !silently else { return }
+            let message = UserFacingError.message(error, fallback: L10n.Places.loadFailed)
+            placesError = message
+            if !places.isEmpty { showError(message) }
         }
     }
     func togglePresence(at place: CampusPlace) {
@@ -29,18 +34,13 @@ extension AppState {
 
     /// Bir yerde şu an görünen kişiler. Bu liste koda gömülü sabit isimlerdi; herkese
     /// aynı sahte kişiler gösteriliyordu.
-    func peopleAtPlace(_ place: CampusPlace) async -> [StudentProfile] {
-        do {
-            let digerleri = try await service.fetchPeopleAtPlace(place.id)
-            // Sunucu sorgusu kişinin kendisini eliyor. "Buradayım" dedikten sonra
-            // listede kendini görmemek, görünür olup olmadığını belirsiz bırakıyor:
-            // insan kendi adını görene kadar işe yaradığından emin olamıyor.
-            guard currentVisiblePlace?.id == place.id else { return digerleri }
-            return [currentUserProfile] + digerleri.filter { $0.id != currentUserID }
-        } catch {
-            showError(error, fallback: L10n.Places.peopleFailed)
-            return []
-        }
+    func peopleAtPlace(_ place: CampusPlace) async throws -> [StudentProfile] {
+        let digerleri = try await service.fetchPeopleAtPlace(place.id)
+        // Sunucu sorgusu kişinin kendisini eliyor. "Buradayım" dedikten sonra
+        // listede kendini görmemek, görünür olup olmadığını belirsiz bırakıyor:
+        // insan kendi adını görene kadar işe yaradığından emin olamıyor.
+        guard currentVisiblePlace?.id == place.id else { return digerleri }
+        return [currentUserProfile] + digerleri.filter { $0.id != currentUserID }
     }
 
     func isJoined(to club: CampusClub) -> Bool {

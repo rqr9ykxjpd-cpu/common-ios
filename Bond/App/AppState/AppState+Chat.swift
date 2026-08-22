@@ -64,6 +64,33 @@ extension AppState {
         await loadStories()
         try? await service.touchLastActive()
     }
+    /// Engellediğin kişiler. Ayarlardaki liste bunu okuyor.
+    ///
+    /// Engelleme geri alınabilir olmalı: menüde şikayet etmenin hemen yanında
+    /// duruyor, yanlışlıkla basmak kolay ve şu ana kadar geri dönüşü yoktu.
+    func loadBlockedProfiles() async {
+        do {
+            blockedProfiles = try await service.fetchBlockedProfiles()
+        } catch {
+            showError(error, fallback: L10n.Profile.blockedLoadFailed)
+        }
+    }
+
+    func unblock(_ profileID: UUID) async {
+        // İyimser: satır listeden hemen kalkıyor. Başarısız olursa geri geliyor.
+        let onceki = blockedProfiles
+        blockedProfiles.removeAll { $0.id == profileID }
+        do {
+            try await service.unblockUser(profileID)
+            Haptics.success()
+            // Engeli kalkan kişi keşifte ve akışta tekrar görünebilmeli.
+            await loadDiscovery()
+        } catch {
+            blockedProfiles = onceki
+            showError(error, fallback: L10n.Profile.unblockFailed)
+        }
+    }
+
     func block(_ profile: StudentProfile) {
         Task {
             do {
@@ -73,6 +100,13 @@ extension AppState {
                 posts.removeAll { $0.author.id == profile.id }
                 notifications.removeAll { $0.actor?.id == profile.id }
                 if selectedConversation?.profile.id == profile.id { selectedConversation = nil }
+                if !blockedProfiles.contains(where: { $0.id == profile.id }) {
+                    blockedProfiles.insert(
+                        BlockedProfile(id: profile.id, name: profile.name,
+                                       imageURL: profile.imageURL, blockedAt: .now),
+                        at: 0
+                    )
+                }
                 show(L10n.Chat.blocked(profile.name))
                 Haptics.success()
             } catch {
@@ -112,10 +146,16 @@ extension AppState {
         }
     }
     func loadMessageRequests(silently: Bool = false) async {
+        isLoadingMessageRequests = true
+        defer { isLoadingMessageRequests = false }
         do {
             messageRequests = try await service.fetchMessageRequests()
+            messageRequestsError = nil
         } catch {
-            if !silently { showError(error, fallback: L10n.Chat.requestsLoadFailed) }
+            guard !isCancellation(error), !silently else { return }
+            let message = UserFacingError.message(error, fallback: L10n.Chat.requestsLoadFailed)
+            messageRequestsError = message
+            if !messageRequests.isEmpty { showError(message) }
         }
     }
 
@@ -180,8 +220,12 @@ extension AppState {
         defer { isLoadingConversations = false }
         do {
             conversations = try await service.fetchConversations()
+            conversationsError = nil
         } catch {
-            showError(error, fallback: L10n.Chat.loadFailed)
+            guard !isCancellation(error) else { return }
+            let message = UserFacingError.message(error, fallback: L10n.Chat.loadFailed)
+            conversationsError = message
+            if !conversations.isEmpty { showError(message) }
         }
     }
 

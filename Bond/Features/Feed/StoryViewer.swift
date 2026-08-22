@@ -47,8 +47,16 @@ struct StoryViewer: View {
                         .ignoresSafeArea()
 
                     HStack(spacing: 0) {
-                        Color.clear.contentShape(Rectangle()).onTapGesture { previous() }
-                        Color.clear.contentShape(Rectangle()).onTapGesture { next() }
+                        Button(action: previous) {
+                            Color.clear.contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(L10n.Story.previous)
+                        Button(action: next) {
+                            Color.clear.contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(L10n.Story.next)
                     }
                     .padding(.top, 90).padding(.bottom, 115)
 
@@ -137,6 +145,8 @@ struct StoryViewer: View {
                     }
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(L10n.Story.progress(currentIndex + 1, stories.count))
     }
 
     private func storyHeader(_ story: CampusStory) -> some View {
@@ -147,9 +157,9 @@ struct StoryViewer: View {
                         .frame(width: 38, height: 38)
                         .clipShape(Circle())
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(story.author.name).font(.subheadline.bold())
+                        Text(story.author.name).font(.system(size: 15, weight: .bold))
                         if let place = story.place {
-                            Label(place.name, systemImage: "mappin").font(.caption).opacity(0.72)
+                            Label(place.name, systemImage: "mappin").font(.system(size: 12)).opacity(0.72)
                         }
                     }
                 }
@@ -171,6 +181,7 @@ struct StoryViewer: View {
                         .frame(height: 44)
                         .background(.black.opacity(0.28), in: Capsule())
                 }
+                .accessibilityLabel("\(L10n.Story.viewersTitle), \(viewRecords(story.id).count)")
                 Menu {
                     Button(L10n.Story.delete, systemImage: "trash", role: .destructive) {
                         showDeleteConfirmation = true
@@ -178,8 +189,10 @@ struct StoryViewer: View {
                 } label: {
                     Image(systemName: "ellipsis").frame(width: 44, height: 44)
                 }
+                .accessibilityLabel(L10n.Common.options)
             }
             Button(action: close) { Image(systemName: "xmark").frame(width: 44, height: 44) }
+                .accessibilityLabel(L10n.Common.close)
         }
     }
 
@@ -215,7 +228,7 @@ struct StoryViewer: View {
             } else if replySent {
                 Label(conversation(with: story.author) == nil ? "İsteğin gönderildi" : "Yanıt gönderildi",
                       systemImage: "checkmark.circle.fill")
-                    .font(.subheadline.bold()).foregroundStyle(BondTheme.onCanvasDark)
+                    .font(.system(size: 15, weight: .bold)).foregroundStyle(BondTheme.onCanvasDark)
                     .frame(maxWidth: .infinity, alignment: .center).frame(height: 46)
             } else if conversation(with: story.author) == nil {
                 // Eşleşme yoksa da yazabiliyorsun ama mesaj doğrudan düşmüyor:
@@ -226,7 +239,7 @@ struct StoryViewer: View {
                     HStack(spacing: 10) {
                         Button { toggleStoryLike() } label: {
                             Image(systemName: liked ? "heart.fill" : "heart")
-                                .font(.title3).foregroundStyle(liked ? BondTheme.coral : .white)
+                                .font(.system(size: 20)).foregroundStyle(liked ? BondTheme.coral : .white)
                                 .frame(width: 44, height: 44)
                         }
                         .accessibilityLabel(liked ? L10n.Story.unlike : L10n.Story.like)
@@ -237,7 +250,7 @@ struct StoryViewer: View {
                             .overlay(Capsule().stroke(.white.opacity(0.55)))
                         Button { sendRequest() } label: {
                             Image(systemName: "paperplane.fill")
-                                .font(.title3).foregroundStyle(.white)
+                                .font(.system(size: 20)).foregroundStyle(.white)
                                 .frame(width: 44, height: 44)
                                 .opacity(reply.trimmingCharacters(in: .whitespaces).isEmpty ? 0.35 : 1)
                         }
@@ -260,7 +273,7 @@ struct StoryViewer: View {
                         .overlay(Capsule().stroke(.white.opacity(0.55)))
                     Button { sendReply() } label: {
                         Image(systemName: reply.isEmpty ? "heart.fill" : "paperplane.fill")
-                            .font(.title3).foregroundStyle(liked ? BondTheme.coral : .white)
+                            .font(.system(size: 20)).foregroundStyle(liked ? BondTheme.coral : .white)
                             .frame(width: 44, height: 44)
                     }
                     .accessibilityLabel(reply.isEmpty ? L10n.Chat.sendHeart : L10n.Common.send)
@@ -369,12 +382,12 @@ struct StoryViewersSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(spacing: BondTheme.Space.lg) {
-                        summary(value: "\(records.count)", label: "Kişi")
+                        summary(value: "\(records.count)", label: L10n.Story.people)
                         if appState.tier.canSeeStoryViewCounts {
-                            summary(value: "\(totalViews)", label: "Toplam izleme")
+                            summary(value: "\(totalViews)", label: L10n.Story.totalViews)
                         } else {
                             Button { showProNote = true } label: {
-                                summary(value: "↑", label: "Toplam izleme")
+                                summary(value: "↑", label: L10n.Story.totalViews)
                             }
                             .buttonStyle(PressableStyle())
                         }
@@ -429,7 +442,7 @@ struct StoryViewersSheet: View {
                                             .accessibilityLabel(L10n.Story.viewCountLocked)
                                         }
                                         Image(systemName: "chevron.right")
-                                            .font(.caption.bold())
+                                            .font(.system(size: 12, weight: .bold))
                                             .foregroundStyle(BondTheme.muted)
                                     }
                                     .foregroundStyle(BondTheme.ink)
@@ -467,8 +480,8 @@ struct StoryViewersSheet: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(BondTheme.Space.lg)
-        .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.control))
-        .overlay(RoundedRectangle(cornerRadius: BondTheme.Radius.control).stroke(BondTheme.hairline))
+        .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface))
+        .overlay(RoundedRectangle(cornerRadius: BondTheme.Radius.surface).stroke(BondTheme.hairline))
     }
 }
 

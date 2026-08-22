@@ -54,6 +54,10 @@ extension L10n {
             L10n.format("chat.manyShared", a, b, Int64(count))
         }
         static var newMatch: String { String(localized: "chat.newMatch") }
+        static func blockConfirm(_ name: String) -> String {
+            L10n.format("chat.blockConfirm", name)
+        }
+        static var blockBody: String { String(localized: "chat.blockBody") }
         static func blocked(_ name: String) -> String {
             L10n.format("chat.blocked", name)
         }
@@ -75,6 +79,8 @@ extension L10n {
         static var declineFailed: String { String(localized: "chat.declineFailed") }
         static var loadFailed: String { String(localized: "chat.loadFailed") }
         static var sendFailed: String { String(localized: "chat.sendFailed") }
+        static var deleteMessageConfirm: String { String(localized: "chat.deleteMessageConfirm") }
+        static var deleteMessageBody: String { String(localized: "chat.deleteMessageBody") }
         static var deleteFailed: String { String(localized: "chat.deleteFailed") }
         static var editFailed: String { String(localized: "chat.editFailed") }
         static var reactionFailed: String { String(localized: "chat.reactionFailed") }

@@ -25,3 +25,6 @@ Bond/Configuration.local.xcconfig
 # Temporary files
 *.tmp
 *.swp
+
+# Cursor'ın kendi ayarları; projeye ait değil.
+.cursor/

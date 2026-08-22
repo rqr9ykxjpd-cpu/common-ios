@@ -7,6 +7,12 @@ extension L10n {
         static var delete: String { String(localized: "story.delete") }
         static var paused: String { String(localized: "story.paused") }
         static var pausePro: String { String(localized: "story.pausePro") }
+        static var people: String { String(localized: "story.people") }
+        static var previous: String { String(localized: "story.previous") }
+        static var next: String { String(localized: "story.next") }
+        static func progress(_ current: Int, _ total: Int) -> String {
+            L10n.format("story.progress", Int64(current), Int64(total))
+        }
         static var replyPlaceholder: String { String(localized: "story.replyPlaceholder") }
         static var sendRequest: String { String(localized: "story.sendRequest") }
         static var requestHint: String { String(localized: "story.requestHint") }
@@ -18,6 +24,7 @@ extension L10n {
         static func viewCount(_ count: Int) -> String {
             L10n.format("story.viewCount", Int64(count))
         }
+        static var totalViews: String { String(localized: "story.totalViews") }
         static var viewCountLocked: String { String(localized: "story.viewCountLocked") }
         static var viewersTitle: String { String(localized: "story.viewersTitle") }
         static var unlike: String { String(localized: "story.unlike") }

@@ -10,6 +10,7 @@ struct PostCard: View {
     let delete: () -> Void
     @State private var showComments = false
     @State private var showDeleteConfirmation = false
+    @State private var showBlockConfirmation = false
 
     /// Görselin gösterileceği yükseklik oranı (yükseklik = genişlik × bu değer).
     ///
@@ -43,28 +44,41 @@ struct PostCard: View {
         return remoteImageSize
     }
 
+    @ViewBuilder
+    private var authorBadge: some View {
+        if let icon = post.author.badge.systemImage,
+           let title = post.author.badge.title {
+            Label(title, systemImage: icon)
+                .font(BondTheme.Typography.caption.weight(.semibold))
+                .foregroundStyle(post.author.badge == .founder ? BondTheme.ember : BondTheme.icon)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+        }
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 13) {
-            HStack(spacing: 11) {
+        VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
+            HStack(spacing: BondTheme.Space.compact) {
                 Button(action: openProfile) {
-                    HStack(spacing: 11) {
+                    HStack(spacing: BondTheme.Space.compact) {
                         ProfileMedia(url: post.author.imageURL, data: nil, assetName: post.author.imageAssetName)
-                            .frame(width: 42, height: 42)
+                            .frame(width: 44, height: 44)
                             .clipShape(Circle())
-                        VStack(alignment: .leading, spacing: 3) {
-                            HStack(spacing: 5) {
-                                Text(post.author.name).font(.system(size: 14, weight: .bold))
-                                // Tik önceden koşulsuzdu: her gönderi yazarı doğrulanmış
-                                // görünüyordu ve işaret hiçbir şey ifade etmiyordu.
-                                ProfileBadgeLabel(badge: post.author.badge, compact: true)
+                        VStack(alignment: .leading, spacing: BondTheme.Space.xs) {
+                            HStack(spacing: BondTheme.Space.sm) {
+                                Text(post.author.name)
+                                    .font(BondTheme.Typography.subheadline.weight(.semibold))
+                                    .lineLimit(1)
+                                    .layoutPriority(1)
+                                authorBadge
                             }
                             // İkinci satır eskiden yalnızca gönderide yer varsa
                             // çıkıyordu; yer yokken 42 puntoluk yuvarlağın yanında
                             // tek satır kalıyor ve satır yüksekliği tutmuyordu.
                             // Yer yoksa bölüm ve sınıf yazılıyor, satır hep iki.
                             Text(altSatir)
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundStyle(BondTheme.ink.opacity(0.45))
+                                .font(BondTheme.Typography.caption)
+                                .foregroundStyle(BondTheme.muted)
                                 .lineLimit(1)
                         }
                     }
@@ -91,13 +105,16 @@ struct PostCard: View {
                         } label: {
                             Label(L10n.Common.report, systemImage: "flag")
                         }
-                        Button(L10n.Feed.blockUser, role: .destructive) { appState.block(post.author) }
+                        Button(L10n.Feed.blockUser, role: .destructive) {
+                            showBlockConfirmation = true
+                        }
                     }
                 } label: {
                     Image(systemName: "ellipsis")
                         .foregroundStyle(BondTheme.ink.opacity(0.5))
                         .frame(width: 44, height: 44)
                 }
+                .accessibilityLabel(L10n.Common.options)
             }
             .padding(.horizontal, 20)
 
@@ -145,51 +162,72 @@ struct PostCard: View {
                     }
             }
 
-            HStack(spacing: BondTheme.Space.sm) {
+            HStack(spacing: 0) {
                 Button(action: toggleLike) {
                     Image(systemName: post.liked ? "heart.fill" : "heart")
+                        .font(.system(size: 22, weight: .medium))
                         .foregroundStyle(post.liked ? BondTheme.coral : BondTheme.ink)
+                        .frame(width: 24, height: 24)
                         .frame(width: 44, height: 44)
                 }
-                Button { showComments = true } label: { Image(systemName: "bubble.left").frame(width: 44, height: 44) }
+                .accessibilityLabel(post.liked ? L10n.Feed.unlike : L10n.Feed.like)
+                .accessibilityAddTraits(post.liked ? .isSelected : [])
+                Button { showComments = true } label: {
+                    Image(systemName: "bubble.left")
+                        .font(.system(size: 21, weight: .regular))
+                        .frame(width: 24, height: 24)
+                        .frame(width: 44, height: 44)
+                }
                     .accessibilityLabel(L10n.Feed.openComments)
-                ShareLink(item: "\(post.author.name): \(post.caption)") { Image(systemName: "paperplane").frame(width: 44, height: 44) }
+                ShareLink(item: "\(post.author.name): \(post.caption)") {
+                    Image(systemName: "paperplane")
+                        .font(.system(size: 21, weight: .regular))
+                        .frame(width: 24, height: 24)
+                        .frame(width: 44, height: 44)
+                }
+                    .accessibilityLabel(L10n.Feed.share)
                 Spacer()
                 Button(action: toggleSaved) {
                     Image(systemName: post.saved ? "bookmark.fill" : "bookmark")
+                        .font(.system(size: 21, weight: .regular))
                         .foregroundStyle(post.saved ? BondTheme.violet : BondTheme.ink)
+                        .frame(width: 24, height: 24)
                         .frame(width: 44, height: 44)
                 }
+                .accessibilityLabel(post.saved ? L10n.Feed.removeSaved : L10n.Feed.save)
+                .accessibilityAddTraits(post.saved ? .isSelected : [])
             }
-            .font(.system(size: 20, weight: .regular))
             .foregroundStyle(BondTheme.ink)
             .padding(.horizontal, 20)
-            .padding(.vertical, -10)
 
-            VStack(alignment: .leading, spacing: 7) {
-                Text(L10n.Feed.likeCount(post.likeCount)).font(.system(size: 12, weight: .bold))
+            VStack(alignment: .leading, spacing: BondTheme.Space.xs) {
+                Text(L10n.Feed.likeCount(post.likeCount))
+                    .font(BondTheme.Typography.footnote.weight(.semibold))
                 if !post.caption.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                    post.imageURL != nil || post.imageAssetName != nil || post.localImageData != nil {
                     Text("**\(post.author.name)**  \(post.caption)")
-                        .font(.system(size: 14)).lineSpacing(3)
+                        .font(BondTheme.Typography.subheadline)
+                        .lineSpacing(2)
                 }
                 if !post.comments.isEmpty {
                     Button {
                         showComments = true
                     } label: {
                         Text(post.comments.count == 1 ? L10n.Feed.oneComment : L10n.Feed.allComments(post.comments.count))
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(BondTheme.Typography.footnote.weight(.semibold))
                             .foregroundStyle(BondTheme.muted)
                             .frame(minHeight: 44, alignment: .leading)
                     }
                     .buttonStyle(.plain)
                     ForEach(post.comments.suffix(2)) { comment in
                         Text("**\(comment.author)**  \(comment.body)")
-                            .font(.system(size: 13)).foregroundStyle(BondTheme.ink.opacity(0.62))
+                            .font(BondTheme.Typography.footnote)
+                            .foregroundStyle(BondTheme.muted)
                     }
                 }
                 Text(post.createdAt.relativeTurkish)
-                    .font(.system(size: 11, weight: .medium)).foregroundStyle(BondTheme.muted)
+                    .font(BondTheme.Typography.caption)
+                    .foregroundStyle(BondTheme.muted)
             }
             .foregroundStyle(BondTheme.ink)
             .padding(.horizontal, 20)
@@ -205,6 +243,18 @@ struct PostCard: View {
             Button(L10n.Common.cancel, role: .cancel) {}
         } message: {
             Text(L10n.Feed.irreversible)
+        }
+        .confirmationDialog(
+            L10n.Chat.blockConfirm(post.author.name),
+            isPresented: $showBlockConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(L10n.Feed.blockUser, role: .destructive) {
+                appState.block(post.author)
+            }
+            Button(L10n.Common.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.Chat.blockBody)
         }
     }
 }

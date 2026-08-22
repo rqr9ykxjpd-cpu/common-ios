@@ -21,10 +21,10 @@ struct MessageRequestsView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: BondTheme.Space.lg) {
                     Text(L10n.Chat.requestsIntro)
-                        .font(.system(size: 13))
+                        .font(BondTheme.Typography.footnote)
                         .foregroundStyle(BondTheme.muted)
                     if istekler.isEmpty {
-                        bosDurum
+                        requestState
                     } else {
                         LazyVStack(spacing: BondTheme.Space.md) {
                             ForEach(istekler) { istek in
@@ -38,11 +38,33 @@ struct MessageRequestsView: View {
                 .padding(.bottom, BondTheme.Space.xxl)
             }
             .refreshable { await appState.loadMessageRequests() }
+            .task { await appState.loadMessageRequests() }
             .background(BondTheme.paper.ignoresSafeArea())
             .navigationTitle(L10n.Chat.requestsTitle)
             .navigationDestination(item: $acilacakSohbet) { id in
                 ConversationView(conversationID: id)
             }
+    }
+
+    @ViewBuilder
+    private var requestState: some View {
+        if appState.isLoadingMessageRequests {
+            AppLoadingView()
+        } else if let error = appState.messageRequestsError {
+            ContentUnavailableView {
+                Label(L10n.Errors.title, systemImage: "wifi.exclamationmark")
+            } description: {
+                Text(error)
+            } actions: {
+                Button(L10n.Common.retry) {
+                    Task { await appState.loadMessageRequests() }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(BondTheme.acid)
+            }
+        } else {
+            bosDurum
+        }
     }
 
 
@@ -52,9 +74,9 @@ struct MessageRequestsView: View {
                 .font(.system(size: 30, weight: .light))
                 .foregroundStyle(BondTheme.muted)
             Text(L10n.Chat.noRequests)
-                .font(.system(size: 15, weight: .semibold))
+                .font(BondTheme.Typography.headline)
             Text(L10n.Chat.noRequestsBody)
-                .font(.system(size: 13))
+                .font(BondTheme.Typography.footnote)
                 .foregroundStyle(BondTheme.muted)
                 .multilineTextAlignment(.center)
         }
@@ -70,7 +92,7 @@ struct MessageRequestsView: View {
             NavigationLink {
                 SocialPersonDetailView(profile: istek.profile, place: nil)
             } label: {
-                HStack(spacing: 12) {
+                HStack(spacing: BondTheme.Space.compact) {
                     ProfileMedia(url: istek.profile.imageURL, data: nil,
                                  assetName: istek.profile.imageAssetName)
                         .frame(width: 46, height: 46)
@@ -78,13 +100,14 @@ struct MessageRequestsView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 6) {
                             Text(istek.profile.name)
-                                .font(.system(size: 15, weight: .bold))
+                                .font(BondTheme.Typography.subheadline.weight(.bold))
                                 .foregroundStyle(BondTheme.ink)
                             ProfileBadgeLabel(badge: istek.profile.badge, compact: true)
                         }
                         Text("\(istek.profile.department) · \(AcademicYear.display(istek.profile.year))")
-                            .font(.system(size: 12))
+                            .font(BondTheme.Typography.caption)
                             .foregroundStyle(BondTheme.muted)
+                            .lineLimit(2)
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
@@ -96,43 +119,22 @@ struct MessageRequestsView: View {
             .buttonStyle(PressableStyle())
 
             Text(istek.body)
-                .font(.system(size: 15))
+                .font(BondTheme.Typography.body)
                 .foregroundStyle(BondTheme.ink)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(12)
-                .background(BondTheme.paper, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .padding(BondTheme.Space.compact)
+                .background(BondTheme.paper, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
 
-            HStack(spacing: 10) {
-                Button {
-                    islemdeki = istek.id
-                    Task {
-                        await appState.declineMessageRequest(istek.id)
-                        islemdeki = nil
-                    }
-                } label: {
-                    Text(L10n.Chat.decline)
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(BondTheme.ink)
-                        .frame(maxWidth: .infinity).frame(height: 44)
-                        .background(BondTheme.ink.opacity(0.06), in: Capsule())
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: BondTheme.Space.compact) {
+                    declineButton(for: istek)
+                    acceptButton(for: istek)
                 }
-                .buttonStyle(PressableStyle())
-
-                Button {
-                    islemdeki = istek.id
-                    Task {
-                        acilacakSohbet = await appState.acceptMessageRequest(istek.id)
-                        islemdeki = nil
-                    }
-                } label: {
-                    Text(L10n.Chat.accept)
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(BondTheme.onAccent)
-                        .frame(maxWidth: .infinity).frame(height: 44)
-                        .background(BondTheme.acid, in: Capsule())
+                VStack(spacing: BondTheme.Space.sm) {
+                    declineButton(for: istek)
+                    acceptButton(for: istek)
                 }
-                .buttonStyle(PressableStyle())
             }
             .disabled(calisiyor)
             .opacity(calisiyor ? 0.5 : 1)
@@ -140,11 +142,45 @@ struct MessageRequestsView: View {
             // Reddetmenin kalıcı olduğunu önden söylüyoruz: geri alınamayan bir
             // karar, sonucunu söylemeden sunulmamalı.
             Text(L10n.Chat.requestFootnote)
-                .font(.system(size: 11))
+                .font(BondTheme.Typography.caption)
                 .foregroundStyle(BondTheme.muted)
         }
         .padding(BondTheme.Space.md)
-        .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous).stroke(BondTheme.hairline))
+        .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous).stroke(BondTheme.hairline))
+    }
+
+    private func declineButton(for request: MessageRequest) -> some View {
+        Button {
+            islemdeki = request.id
+            Task {
+                await appState.declineMessageRequest(request.id)
+                islemdeki = nil
+            }
+        } label: {
+            Text(L10n.Chat.decline)
+                .font(BondTheme.Typography.footnote.weight(.semibold))
+                .foregroundStyle(BondTheme.ink)
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .background(BondTheme.ink.opacity(0.06), in: Capsule())
+        }
+        .buttonStyle(PressableStyle())
+    }
+
+    private func acceptButton(for request: MessageRequest) -> some View {
+        Button {
+            islemdeki = request.id
+            Task {
+                acilacakSohbet = await appState.acceptMessageRequest(request.id)
+                islemdeki = nil
+            }
+        } label: {
+            Text(L10n.Chat.accept)
+                .font(BondTheme.Typography.footnote.weight(.semibold))
+                .foregroundStyle(BondTheme.onAccent)
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .background(BondTheme.acid, in: Capsule())
+        }
+        .buttonStyle(PressableStyle())
     }
 }

@@ -15,6 +15,8 @@ struct ConversationView: View {
     @State private var showPaywall = false
     @State private var activeMessageActions: UUID?
     @State private var showUnmatchAlert = false
+    @State private var showBlockConfirmation = false
+    @State private var messagePendingDeletion: UUID?
     @FocusState private var focused: Bool
 
     private var conversation: Conversation? { appState.conversations.first { $0.id == conversationID } }
@@ -38,7 +40,7 @@ struct ConversationView: View {
                                     edit: { beginEdit(message) },
                                     delete: {
                                         activeMessageActions = nil
-                                        appState.deleteMessage(message.id, in: conversationID)
+                                        messagePendingDeletion = message.id
                                     },
                                     canEdit: appState.tier.canEditMessages,
                                     showPaywall: {
@@ -75,12 +77,12 @@ struct ConversationView: View {
                 VStack(spacing: 14) {
                     Image(systemName: "bubble.left.and.exclamationmark.bubble.right")
                         .font(.system(size: 34, weight: .light))
-                        .foregroundStyle(BondTheme.ink.opacity(0.35))
+                        .foregroundStyle(BondTheme.icon)
                     Text(L10n.Chat.missing)
                         .font(.system(size: 16, weight: .semibold))
                     Text(L10n.Chat.unmatchedMaybe)
                         .font(.system(size: 13))
-                        .foregroundStyle(BondTheme.ink.opacity(0.5))
+                        .foregroundStyle(BondTheme.muted)
                     Button(L10n.Common.goBack) { dismiss() }
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(BondTheme.violet)
@@ -102,6 +104,39 @@ struct ConversationView: View {
             }
         } message: {
             Text(L10n.Chat.unmatchBody)
+        }
+        .confirmationDialog(
+            L10n.Chat.blockConfirm(conversation?.profile.name ?? L10n.Common.someone),
+            isPresented: $showBlockConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(L10n.Common.block, role: .destructive) {
+                guard let profile = conversation?.profile else { return }
+                appState.block(profile)
+                dismiss()
+            }
+            Button(L10n.Common.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.Chat.blockBody)
+        }
+        .confirmationDialog(
+            L10n.Chat.deleteMessageConfirm,
+            isPresented: Binding(
+                get: { messagePendingDeletion != nil },
+                set: { if !$0 { messagePendingDeletion = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button(L10n.Common.delete, role: .destructive) {
+                guard let messageID = messagePendingDeletion else { return }
+                appState.deleteMessage(messageID, in: conversationID)
+                messagePendingDeletion = nil
+            }
+            Button(L10n.Common.cancel, role: .cancel) {
+                messagePendingDeletion = nil
+            }
+        } message: {
+            Text(L10n.Chat.deleteMessageBody)
         }
         .sheet(isPresented: $showPaywall) { PaywallView() }
         .sheet(isPresented: $showProfile) {
@@ -154,12 +189,7 @@ struct ConversationView: View {
                     Label(L10n.Common.report, systemImage: "flag")
                 }
                 Button(L10n.Chat.endMatch, role: .destructive) { showUnmatchAlert = true }
-                Button(L10n.Common.block, role: .destructive) {
-                    if let c = appState.conversations.first(where: { $0.id == conversationID }) {
-                        appState.block(c.profile)
-                    }
-                    dismiss()
-                }
+                Button(L10n.Common.block, role: .destructive) { showBlockConfirmation = true }
             } label: {
                 Image(systemName: "ellipsis")
             }

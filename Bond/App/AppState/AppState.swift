@@ -74,9 +74,18 @@ final class AppState {
     var isLoadingFeed = false
     var isLoadingStories = false
     var isLoadingConversations = false
+    var isLoadingNotifications = false
+    var isLoadingMessageRequests = false
+    var isLoadingPlaces = false
     var isReactingToProfile = false
     var discoveryError: String?
+    var conversationsError: String?
+    var notificationsError: String?
+    var messageRequestsError: String?
+    var placesError: String?
     var conversations: [Conversation] = []
+    /// Engellediğin kişiler; ayarlardaki liste için.
+    var blockedProfiles: [BlockedProfile] = []
     var posts: [SocialPost] = []
     var stories: [CampusStory] = []
     var notifications: [AppNotification] = []

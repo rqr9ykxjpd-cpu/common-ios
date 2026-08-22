@@ -32,5 +32,6 @@ extension L10n {
         static var learnMore: String { String(localized: "common.learnMore") }
         static var emptyContent: String { String(localized: "common.emptyContent") }
         static var empty: String { String(localized: "common.empty") }
+        static var options: String { String(localized: "common.options") }
     }
 }

@@ -148,8 +148,8 @@ struct CreatePostView: View {
             .padding(14)
             .accessibilityLabel(L10n.Composer.takePhoto)
         }
-        .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.hero, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: BondTheme.Radius.hero, style: .continuous).stroke(controlStroke))
+        .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous).stroke(controlStroke))
         .animation(.snappy, value: contentType)
     }
 
@@ -286,7 +286,7 @@ private struct ComposerPreview: View {
                 .frame(height: height(for: image.size))
                 .clipped()
         } else {
-            RoundedRectangle(cornerRadius: BondTheme.Radius.hero, style: .continuous)
+            RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous)
                 .fill(background)
                 .frame(height: isStory ? 420 : 260)
                 .overlay {

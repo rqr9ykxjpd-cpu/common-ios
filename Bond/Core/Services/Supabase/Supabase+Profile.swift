@@ -161,6 +161,44 @@ extension SupabaseProductService {
         try await client.rpc("block_user", params: BlockParams(target: profileID)).execute()
     }
 
+    /// Engellediğin kişiler.
+    ///
+    /// İki adım: önce kendi engel kayıtların (`blocks` üzerinde `blocker_id =
+    /// auth.uid()` kuralıyla okunuyor), sonra o kimliklere ait profiller.
+    /// İkinci sorgu bazılarını döndürmeyebilir — profil görünürlük kuralı
+    /// "engellediğim kişi" durumunu kapsamıyor. Eksik gelenler listeden
+    /// düşmüyor; adsız görünüyorlar ama engelleri kaldırılabiliyor.
+    func fetchBlockedProfiles() async throws -> [BlockedProfile] {
+        guard let userID = currentUserID else { throw BackendServiceError.missingSession }
+        let rows: [BlockRow] = try await client
+            .from("blocks")
+            .select("blocked_id,created_at")
+            .eq("blocker_id", value: userID)
+            .order("created_at", ascending: false)
+            .execute()
+            .value
+        guard !rows.isEmpty else { return [] }
+
+        let profiles: [SupabaseProfileRow] = (try? await client
+            .from("profiles")
+            .select("id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified")
+            .in("id", values: rows.map(\.blockedID))
+            .execute()
+            .value) ?? []
+        let byID = Dictionary(uniqueKeysWithValues: profiles.map { ($0.id, $0) })
+        let urlMap = await signedURLs(bucket: "profile-photos", paths: profiles.compactMap(\.avatarPath))
+
+        return rows.map { row in
+            let profil = byID[row.blockedID]
+            return BlockedProfile(
+                id: row.blockedID,
+                name: profil?.name,
+                imageURL: profil?.avatarPath.flatMap { urlMap[$0] },
+                blockedAt: row.createdAt
+            )
+        }
+    }
+
     func unblockUser(_ profileID: UUID) async throws {
         guard let userID = currentUserID else { throw BackendServiceError.missingSession }
         try await client.from("blocks").delete(returning: .minimal)
@@ -286,5 +324,14 @@ extension SupabaseProductService {
             ))
         }
         return sonuc
+    }
+}
+
+private struct BlockRow: Decodable {
+    let blockedID: UUID
+    let createdAt: Date
+    enum CodingKeys: String, CodingKey {
+        case blockedID = "blocked_id"
+        case createdAt = "created_at"
     }
 }

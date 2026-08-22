@@ -51,11 +51,20 @@ extension SupabaseProductService {
             .execute()
     }
 
-    func respondToMeetingRequest(_ requestID: UUID, accept: Bool) async throws {
+    func respondToMeetingRequest(_ requestID: UUID, accept: Bool) async throws -> UUID? {
+        if accept {
+            let conversationID: UUID = try await client
+                .rpc("accept_meeting_request", params: MeetingRequestAcceptParams(request: requestID))
+                .execute()
+                .value
+            return conversationID
+        }
+
         try await client.from("meeting_requests")
-            .update(MeetingRequestStatusUpdate(status: accept ? "accepted" : "declined"), returning: .minimal)
+            .update(MeetingRequestStatusUpdate(status: "declined"), returning: .minimal)
             .eq("id", value: requestID)
             .execute()
+        return nil
     }
 
     func touchLastActive() async throws {

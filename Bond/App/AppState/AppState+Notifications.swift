@@ -9,10 +9,18 @@ extension AppState {
     /// Bildirimleri sunucudan yükler. Bu ekran şimdiye kadar yalnızca demo örneklerinden
     /// besleniyordu; gerçek kullanıcı eşleşme veya mesaj aldığında hiçbir şey görmüyordu.
     func loadNotifications() async {
+        isLoadingNotifications = true
+        defer { isLoadingNotifications = false }
         do {
             notifications = try await service.fetchNotifications().map(appNotification(from:))
+            notificationsError = nil
         } catch {
-            showError(error, fallback: L10n.Notification.loadFailed)
+            guard !isCancellation(error) else { return }
+            let message = UserFacingError.message(error, fallback: L10n.Notification.loadFailed)
+            notificationsError = message
+            // Eski içerik hâlâ ekrandaysa yenileme hatasını görünür kıl; ilk yükleme
+            // hatasında ise ekran kendi kalıcı retry durumunu gösterir.
+            if !notifications.isEmpty { showError(message) }
         }
     }
 
@@ -66,6 +74,7 @@ extension AppState {
             title: NotificationCopy.title(kind: backend.kind, actorName: actor?.name ?? L10n.Common.someone, serverTitle: backend.title),
             body: NotificationCopy.body(kind: backend.kind, actorName: actor?.name ?? L10n.Common.someone, serverTitle: backend.title, serverBody: backend.body),
             actor: actor,
+            conversationID: backend.matchID,
             createdAt: backend.createdAt,
             isRead: backend.isRead
         )

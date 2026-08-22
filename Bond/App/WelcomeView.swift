@@ -43,7 +43,7 @@ struct WelcomeView: View {
                 .padding(.top, BondTheme.Space.xxl)
             }
             .padding(.horizontal, BondTheme.Space.lg)
-            .padding(.top, BondTheme.Space.xxxl)
+            .padding(.top, BondTheme.Space.xxl)
             .padding(.bottom, BondTheme.Space.lg)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -294,7 +294,7 @@ struct EmailSignInSheet: View {
                         .focused($fieldFocused)
                         .font(BondTheme.Typography.body)
                         .padding(BondTheme.Space.md)
-                        .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous))
+                        .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
 
                     Spacer(minLength: 0)
 

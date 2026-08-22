@@ -38,7 +38,7 @@ struct PremiumProfileView: View {
             Text(number).font(.system(size: 10, design: .monospaced)).foregroundStyle(BondTheme.ink.opacity(0.4))
             Image(systemName: icon).frame(width: 22)
             Text(title).font(.system(size: 15, weight: .semibold))
-            Spacer(); Image(systemName: "arrow.right").font(.caption)
+            Spacer(); Image(systemName: "arrow.right").font(.system(size: 12))
         }
         .foregroundStyle(BondTheme.ink).padding(.vertical, 18)
         .overlay(alignment: .bottom) { Rectangle().fill(BondTheme.ink.opacity(0.14)).frame(height: 1) }

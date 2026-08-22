@@ -47,6 +47,14 @@ extension L10n {
         static var aboutSection: String { String(localized: "profile.aboutSection") }
         static var termsHint: String { String(localized: "profile.termsHint") }
         static var privacyHint: String { String(localized: "profile.privacyHint") }
+        static var blocked: String { String(localized: "profile.blocked") }
+        static var blockedHint: String { String(localized: "profile.blockedHint") }
+        static var blockedEmpty: String { String(localized: "profile.blockedEmpty") }
+        static var blockedEmptyHint: String { String(localized: "profile.blockedEmptyHint") }
+        static var blockedUnknown: String { String(localized: "profile.blockedUnknown") }
+        static var unblock: String { String(localized: "profile.unblock") }
+        static var blockedLoadFailed: String { String(localized: "profile.blockedLoadFailed") }
+        static var unblockFailed: String { String(localized: "profile.unblockFailed") }
         static var support: String { String(localized: "profile.support") }
         static var supportHint: String { String(localized: "profile.supportHint") }
         static var accountBusy: String { String(localized: "profile.accountBusy") }

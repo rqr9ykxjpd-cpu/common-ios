@@ -49,7 +49,7 @@ enum BondTheme {
     static let coral = adaptive(light: "FF3B30", dark: "FF453A")
     /// Kurucu rozeti. Paletin dışındaki tek semantik işaret — bir yerde bu
     /// rengi gören kurucu profiline baktığını bilir.
-    static let ember = Color(hex: "D97757")
+    static let ember = adaptive(light: "B85C3D", dark: "E89478")
 
     static let line = Color.white.opacity(0.18)
     /// Liste ayırıcı. Kart ve yüzeylerde kullanılmaz; secondary düğme ve List için.
@@ -58,18 +58,18 @@ enum BondTheme {
     enum Space {
         static let xs: CGFloat = 4
         static let sm: CGFloat = 8
+        static let compact: CGFloat = 12
         static let md: CGFloat = 16
         static let lg: CGFloat = 20
         static let xl: CGFloat = 24
         static let xxl: CGFloat = 32
-        static let xxxl: CGFloat = 40
     }
 
     enum Radius {
-        /// Pill kontroller. `Capsule` tercih edilir; RoundedRectangle için yeterince büyük.
-        static let control: CGFloat = 100
-        static let card: CGFloat = 28
-        static let hero: CGFloat = 28
+        /// Form alanı, satır ve ikincil içerik yüzeyi.
+        static let surface: CGFloat = 16
+        /// Büyük fotoğraf ve ürünün çekirdek medya yüzeyi.
+        static let media: CGFloat = 24
     }
 
     enum Motion {
@@ -77,16 +77,28 @@ enum BondTheme {
         static var easing: Animation { .easeOut(duration: duration) }
     }
 
+    /// Sabit punto; sistem metin boyutu ayarıyla büyümez.
+    ///
+    /// Önce metin stili olarak tanımlıydılar (`.system(.headline, ...)`) ve
+    /// sistem ayarıyla ölçekleniyorlardı. Uygulamanın geri kalanı ise sabit
+    /// punto kullanıyordu — 233 sabite karşı 49 ölçeklenebilir. Sonuç tutarsızdı:
+    /// çoğu ekran ayarı yok sayıyor, azınlık büyüyor ve bazıları kırılıyordu.
+    /// Ayarlar ekranında "Şikayetler" kelimenin ortasından bölünüyordu.
+    ///
+    /// Değerler iOS'un varsayılan punto karşılıkları; varsayılan boyuttaki
+    /// görünüm birebir aynı kaldı, yalnızca büyümesi durdu.
     enum Typography {
-        static var largeTitle: Font { .system(.largeTitle, design: .default).weight(.semibold) }
-        static var title: Font { .system(.title, design: .default).weight(.semibold) }
-        static var title2: Font { .system(.title2, design: .default).weight(.semibold) }
-        static var title3: Font { .system(.title3, design: .default).weight(.semibold) }
-        static var heading: Font { .system(.title3, design: .default).weight(.semibold) }
-        static var body: Font { .system(.body, design: .default) }
-        static var callout: Font { .system(.callout, design: .default) }
-        static var footnote: Font { .system(.footnote, design: .default) }
-        static var caption: Font { .system(.caption, design: .default) }
+        static var largeTitle: Font { .system(size: 34, weight: .semibold) }
+        static var title: Font { .system(size: 28, weight: .semibold) }
+        static var title2: Font { .system(size: 22, weight: .semibold) }
+        static var title3: Font { .system(size: 20, weight: .semibold) }
+        static var heading: Font { .system(size: 20, weight: .semibold) }
+        static var headline: Font { .system(size: 17, weight: .semibold) }
+        static var subheadline: Font { .system(size: 15) }
+        static var body: Font { .system(size: 17) }
+        static var callout: Font { .system(size: 16) }
+        static var footnote: Font { .system(size: 13) }
+        static var caption: Font { .system(size: 12) }
     }
 }
 
@@ -358,7 +370,7 @@ struct AppTextLink: View {
                 Text(title)
                 if showsChevron {
                     Image(systemName: "chevron.right")
-                        .font(.footnote.weight(.semibold))
+                        .font(.system(size: 13, weight: .semibold))
                 }
             }
             .font(BondTheme.Typography.body)
@@ -379,7 +391,7 @@ struct AppSurface<Content: View>: View {
     var body: some View {
         content
             .padding(BondTheme.Space.lg)
-            .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous))
+            .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
     }
 }
 
@@ -414,7 +426,7 @@ struct AppEmptyState: View {
         }
         .foregroundStyle(BondTheme.ink)
         .frame(maxWidth: .infinity)
-        .padding(.vertical, BondTheme.Space.xxxl)
+        .padding(.vertical, BondTheme.Space.xxl)
         .padding(.horizontal, BondTheme.Space.lg)
     }
 }
@@ -431,7 +443,7 @@ struct AppLoadingView: View {
                 .foregroundStyle(BondTheme.muted)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, BondTheme.Space.xxxl)
+        .padding(.vertical, BondTheme.Space.xxl)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(message)
     }

@@ -4,6 +4,8 @@ extension L10n {
     enum Places {
         static var loadFailedTitle: String { String(localized: "places.loadFailedTitle") }
         static var loadFailedBody: String { String(localized: "places.loadFailedBody") }
+        static var emptyTitle: String { String(localized: "places.emptyTitle") }
+        static var emptyBody: String { String(localized: "places.emptyBody") }
         static var title: String { String(localized: "places.title") }
         static var clearFilter: String { String(localized: "places.clearFilter") }
         static func visibleAt(_ place: String) -> String {

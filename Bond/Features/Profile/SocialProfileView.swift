@@ -2,21 +2,13 @@ import SwiftUI
 
 struct SocialProfileView: View {
     @Environment(AppState.self) private var appState
-    @State private var showSaved = false
     @State private var showVisits = false
-    @State private var showTerms = false
-    @State private var showPrivacy = false
     @State private var showPaywall = false
-    @State private var showModeration = false
     @State private var showPhoto = false
     @State private var enUstte = true
-    @Environment(\.openURL) private var openURL
     @State private var showComposer = false
-    @State private var showMeetingRequests = false
-    @State private var showSignOutAlert = false
-    @State private var showDeleteAccountAlert = false
     @State private var showEditor = false
-    @State private var showCardPreview = false
+    @State private var showSettings = false
     /// Izgaradan açılan gönderi. Gönderiler tıklanabilir değildi: kendi
     /// paylaşımını açıp yorumlarını okumanın ya da silmenin yolu yoktu.
     @State private var selectedPost: SocialPost?
@@ -26,17 +18,14 @@ struct SocialProfileView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollViewReader { proxy in
             ScrollView {
-                // Ekran dört bölgeye ayrıldı. Önceden dokuz bölüm vardı ve hepsi aynı
-                // yuvarlak kartın içinde yüzüyordu — aynı köşe yarıçapı, aynı çerçeve,
-                // aynı ağırlık. Hiyerarşi olmadığı için hiçbiri öne çıkmıyordu.
+                // Profil içeriği ayarlardan ayrıldı. Kimlik ve üretimler bu sayfada,
+                // hesap işlemleri native ayar sheet'inde yaşıyor.
                 VStack(alignment: .leading, spacing: BondTheme.Space.xl) {
-                    identityHeader      // kim olduğun
-                    completion          // yalnızca eksikse
-                    about               // kendi anlatın
-                    posts               // ürettiklerin — ayarların üstünde
-                    settingsList        // her şeyin yapıldığı tek liste
+                    identityHeader
+                    completion
+                    about
+                    posts
                 }
                 .padding(.horizontal, BondTheme.Space.lg)
                 .padding(.top, BondTheme.Space.sm)
@@ -51,10 +40,10 @@ struct SocialProfileView: View {
             .overlay(alignment: .bottom) {
                 if enUstte {
                     Button {
-                        withAnimation(.easeInOut(duration: 0.35)) { proxy.scrollTo("hesabin", anchor: .top) }
+                        showSettings = true
                     } label: {
-                        Label(L10n.Profile.moreSettings, systemImage: "chevron.down")
-                            .font(.system(size: 12, weight: .bold))
+                        Label(L10n.Profile.moreSettings, systemImage: "gearshape")
+                            .font(BondTheme.Typography.footnote.weight(.semibold))
                             .foregroundStyle(BondTheme.paper)
                             .padding(.horizontal, 14).frame(height: 38)
                             .background(BondTheme.ink, in: Capsule())
@@ -67,7 +56,6 @@ struct SocialProfileView: View {
                     .transition(.opacity)
                 }
             }
-            }
             .background(BondTheme.paper.ignoresSafeArea())
             .navigationTitle(L10n.Tabs.profile)
             .navigationBarTitleDisplayMode(.inline)
@@ -76,9 +64,15 @@ struct SocialProfileView: View {
             .fullScreenCover(isPresented: $showEditor) {
                 NavigationStack { ProfileEditorView() }
             }
-            .sheet(isPresented: $showCardPreview) { OwnCardPreviewView() }
+            .sheet(isPresented: $showSettings) {
+                ProfileSettingsView()
+            }
 #if DEBUG
-            .onAppear { if appState.opensCardPreview { showCardPreview = true } }
+            .onAppear {
+                if appState.opensCardPreview || appState.opensModeration {
+                    showSettings = true
+                }
+            }
 #endif
             .sheet(item: $selectedPost) { secili in
                 // Kartın beğeni/kaydetme sonrası güncel kalması için gönderiyi anlık
@@ -106,50 +100,12 @@ struct SocialProfileView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showSaved) { savedPostsSheet.task { await appState.loadSavedPosts() } }
-            .sheet(isPresented: $showVisits) { visitorsSheet }
+            .sheet(isPresented: $showVisits) { ProfileVisitorsView() }
             .sheet(isPresented: $showPaywall) { PaywallView() }
-            .fullScreenCover(isPresented: $showModeration) { ModerationView() }
-#if DEBUG
-            .onAppear { if appState.opensModeration { showModeration = true } }
-#endif
-            // Rozetli hesapta bekleyen şikayet sayısı satırda görünüyor.
-            // Rozet oturum geri yüklendikten sonra geldiği için açılışa değil
-            // rozetin kendisine bağlı: ekran açıldığında `isModerator` henüz
-            // false oluyor ve sorgu hiç yapılmıyordu.
-            .task(id: appState.myBadge) { await appState.loadReports() }
             .fullScreenCover(isPresented: $showPhoto) {
                 PhotoZoomView(url: appState.avatarURL, data: appState.avatarData)
             }
-            .sheet(isPresented: $showTerms) {
-                NavigationStack {
-                    LegalTextView(title: LegalDocumentRoute.kosullar.title, blocks: LegalDocumentRoute.kosullar.blocks)
-                }
-            }
-            .sheet(isPresented: $showPrivacy) {
-                NavigationStack {
-                    LegalTextView(title: LegalDocumentRoute.gizlilik.title, blocks: LegalDocumentRoute.gizlilik.blocks)
-                }
-            }
             .sheet(isPresented: $showComposer) { CreatePostView() }
-            .sheet(isPresented: $showMeetingRequests) {
-                MeetingRequestsView()
-                    .presentationDetents([.large])
-                    .presentationDragIndicator(.visible)
-                    .presentationCornerRadius(28)
-            }
-            .alert(L10n.Profile.signOutConfirm, isPresented: $showSignOutAlert) {
-                Button(L10n.Common.cancel, role: .cancel) {}
-                Button(L10n.Profile.signOut, role: .destructive) { Task { await appState.signOut() } }
-            } message: {
-                Text(L10n.Profile.signOutBody)
-            }
-            .alert(L10n.Profile.deleteConfirm, isPresented: $showDeleteAccountAlert) {
-                Button(L10n.Common.cancel, role: .cancel) {}
-                Button(L10n.Profile.deleteAccount, role: .destructive) { Task { await appState.deleteAccount() } }
-            } message: {
-                Text(L10n.Profile.deleteBody)
-            }
         }
     }
 
@@ -172,14 +128,14 @@ struct SocialProfileView: View {
                 .disabled(appState.avatarURL == nil && appState.avatarData == nil)
                 .accessibilityLabel(L10n.Profile.zoomPhoto)
 
-                VStack(alignment: .leading, spacing: 5) {
+                VStack(alignment: .leading, spacing: BondTheme.Space.xs) {
                     Text(displayName)
-                        .font(.system(size: 26, weight: .bold))
-                        .lineLimit(1)
+                        .font(BondTheme.Typography.title2.weight(.bold))
+                        .lineLimit(2)
                     Text("\(department) · \(AcademicYear.display(appState.draft.year))")
-                        .font(.system(size: 14))
+                        .font(BondTheme.Typography.subheadline)
                         .foregroundStyle(BondTheme.muted)
-                        .lineLimit(1)
+                        .lineLimit(2)
                     // Önceden herkeste "Doğrulanmış YÜ öğrencisi" yazıyordu; üniversite
                     // doğrulaması diye bir şey yok, yani herkes için yanlıştı.
                     ProfileBadgeLabel(badge: appState.myBadge)
@@ -189,7 +145,7 @@ struct SocialProfileView: View {
                         // renginde duruyor; burada gri yuvarlak kalınca aynı
                         // hesap iki ekranda iki farklı kimlik gibi görünüyordu.
                         Text(altSatir)
-                            .font(.system(size: 13))
+                            .font(BondTheme.Typography.footnote)
                             .italic()
                             .foregroundStyle(appState.myBadge.accent)
                             .padding(.top, 1)
@@ -198,47 +154,70 @@ struct SocialProfileView: View {
                 Spacer(minLength: 0)
             }
 
-            HStack(spacing: BondTheme.Space.sm) {
-                statPill(value: appState.currentUserPosts.count, label: L10n.Profile.statPosts)
-                // Üstteki rozet de aynı kilide tabi olmalı: ayarlardaki satırı
-                // kilitleyip burayı açık bırakmak, kısıtı anlamsız kılıyordu.
-                Button {
-                    if appState.tier.canSeeProfileVisitors { showVisits = true } else { showPaywall = true }
-                } label: {
-                    statPill(value: appState.profileVisits.count, label: L10n.Profile.statVisitors)
-                }
-                .buttonStyle(PressableStyle())
-                Spacer(minLength: 0)
-                Button { showEditor = true } label: {
-                    Text(L10n.Profile.edit)
-                        .font(.system(size: 11, weight: .black))
-                        .tracking(1)
-                        .foregroundStyle(BondTheme.paper)
-                        .padding(.horizontal, 18)
-                        .frame(height: 38)
-                        .background(BondTheme.ink, in: Capsule())
-                }
-                .buttonStyle(PressableStyle())
-                .accessibilityLabel(L10n.Profile.editA11y)
-            }
+            profileActions
         }
         .foregroundStyle(BondTheme.ink)
     }
 
+    private var profileActions: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: BondTheme.Space.sm) {
+                postsStat
+                visitorsStat
+                Spacer(minLength: 0)
+                editProfileButton
+            }
+            VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
+                postsStat
+                visitorsStat
+                editProfileButton
+            }
+        }
+    }
+
+    private var postsStat: some View {
+        statPill(value: appState.currentUserPosts.count, label: L10n.Profile.statPosts)
+    }
+
+    private var visitorsStat: some View {
+        // Üstteki rozet de aynı kilide tabi olmalı: ayarlardaki satırı
+        // kilitleyip burayı açık bırakmak, kısıtı anlamsız kılıyordu.
+        Button {
+            if appState.tier.canSeeProfileVisitors { showVisits = true } else { showPaywall = true }
+        } label: {
+            statPill(value: appState.profileVisits.count, label: L10n.Profile.statVisitors)
+        }
+        .buttonStyle(PressableStyle())
+    }
+
+    private var editProfileButton: some View {
+        Button { showEditor = true } label: {
+            Text(L10n.Profile.edit)
+                .font(BondTheme.Typography.footnote.weight(.semibold))
+                .foregroundStyle(BondTheme.paper)
+                .padding(.horizontal, 18)
+                .frame(minHeight: 38)
+                .background(BondTheme.ink, in: Capsule())
+        }
+        .buttonStyle(PressableStyle())
+        .accessibilityLabel(L10n.Profile.editA11y)
+    }
+
     /// Sayaçlar artık ayrı bir bölüm değil, adın hemen altında küçük etiketler.
     private func statPill(value: Int, label: String) -> some View {
-        HStack(spacing: 5) {
+        HStack(spacing: BondTheme.Space.xs) {
             Text("\(value)")
-                .font(.system(size: 14, weight: .bold))
+                .font(BondTheme.Typography.subheadline.weight(.bold))
                 .monospacedDigit()
             Text(label)
-                .font(.system(size: 12))
+                .font(BondTheme.Typography.caption)
                 .foregroundStyle(BondTheme.muted)
         }
         .foregroundStyle(BondTheme.ink)
         .padding(.horizontal, 12)
-        .frame(height: 38)
+        .frame(minHeight: 38)
         .background(BondTheme.ink.opacity(0.05), in: Capsule())
+        .fixedSize(horizontal: true, vertical: false)
     }
 
     /// Yalnızca eksikse ve tek satır. Önceden ekranın beşte birini kaplayan bir kart
@@ -260,20 +239,20 @@ struct SocialProfileView: View {
 
                     VStack(alignment: .leading, spacing: 1) {
                         Text(L10n.Profile.completion(appState.profileCompletion))
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(BondTheme.Typography.subheadline.weight(.semibold))
                         Text(L10n.Profile.completionHint)
-                            .font(.system(size: 12))
+                            .font(BondTheme.Typography.caption)
                             .foregroundStyle(BondTheme.muted)
                     }
                     Spacer(minLength: 0)
                     Image(systemName: "chevron.right")
-                        .font(.caption.bold())
+                        .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(BondTheme.muted)
                 }
                 .foregroundStyle(BondTheme.ink)
                 .padding(.horizontal, BondTheme.Space.md)
                 .frame(minHeight: 58)
-                .background(BondTheme.violet.opacity(0.07), in: RoundedRectangle(cornerRadius: BondTheme.Radius.control, style: .continuous))
+                .background(BondTheme.violet.opacity(0.07), in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
                 .contentShape(Rectangle())
             }
             .buttonStyle(PressableStyle())
@@ -285,7 +264,7 @@ struct SocialProfileView: View {
     private var about: some View {
         VStack(alignment: .leading, spacing: BondTheme.Space.md) {
             Text(L10n.Profile.about)
-                .font(.system(size: 17, weight: .bold))
+                .font(BondTheme.Typography.headline)
                 .foregroundStyle(BondTheme.ink)
             if appState.draft.bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 Text(L10n.Profile.aboutPlaceholder)
@@ -295,10 +274,10 @@ struct SocialProfileView: View {
                     .foregroundStyle(BondTheme.ink.opacity(0.82))
             }
             if !appState.draft.interests.isEmpty {
-                FlowLayout(spacing: 7) {
+                FlowLayout(spacing: BondTheme.Space.sm) {
                     ForEach(appState.draft.interests.sorted(), id: \.self) { interest in
                         Text(InterestCatalog.displayName(interest))
-                            .font(.system(size: 12, weight: .medium))
+                            .font(BondTheme.Typography.footnote.weight(.medium))
                             .foregroundStyle(BondTheme.ink)
                             .padding(.horizontal, 11)
                             .frame(height: 30)
@@ -308,320 +287,9 @@ struct SocialProfileView: View {
                 .padding(.top, 2)
             }
         }
-        .font(.system(size: 14))
+        .font(BondTheme.Typography.body)
         .lineSpacing(4)
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    /// Profilden yapılan her şey tek listede. Önceden dört ayrı yüzen kart vardı
-    /// (kart önizleme, buluşma istekleri, görünüm, hesap) ve aralarında üç düğmelik
-    /// bir sıra. Hepsi aynı ağırlıkta olduğu için hiçbiri öne çıkmıyor, ekran da
-    /// gereksiz uzuyordu.
-    private var settingsList: some View {
-        @Bindable var state = appState
-        return VStack(alignment: .leading, spacing: BondTheme.Space.md) {
-            // Bölüm başlıkları eklendi: sayfa başlıksız bir liste yığınıydı ve
-            // aşağıda bir şey olduğu anlaşılmıyordu, kullanıcı hiç kaydırmıyordu.
-            AppSectionHeader(title: L10n.Profile.yourAccount).id("hesabin")
-            VStack(spacing: 0) {
-                listRow(
-                    icon: "rectangle.portrait.on.rectangle.portrait.angled",
-                    title: L10n.Profile.cardHow,
-                    detail: L10n.Profile.cardHowHint
-                ) { showCardPreview = true }
-
-                // Moderasyon yalnızca rozetli hesaplarda görünüyor. Şikayet
-                // kutusu olmadan şikayetler hiçbir yere ulaşmıyordu.
-                if appState.isModerator {
-                    listDivider
-                    listRow(icon: appState.pendingReports.isEmpty ? "shield" : "shield.fill",
-                            title: L10n.Profile.reports,
-                            detail: appState.pendingReports.isEmpty
-                                ? L10n.Profile.reportsHint
-                                : L10n.Profile.reportsWaiting(appState.pendingReports.count)) {
-                        showModeration = true
-                    }
-                }
-
-                listDivider
-                listRow(icon: "bookmark", title: L10n.Profile.saved,
-                        detail: L10n.Profile.savedHint) { showSaved = true }
-
-                listDivider
-                // Profiline bakanlar Plus'a özel. Satır gizlenmiyor: kilit,
-                // özelliğin varlığını gösteriyor.
-                listRow(icon: appState.tier.canSeeProfileVisitors ? "eye" : "lock.fill",
-                        title: L10n.Profile.visitors,
-                        detail: L10n.Profile.visitorsHint,
-                        trailing: appState.tier.canSeeProfileVisitors
-                            ? (appState.profileVisits.isEmpty ? nil : "\(appState.profileVisits.count)")
-                            : L10n.Tier.plus) {
-                    if appState.tier.canSeeProfileVisitors { showVisits = true } else { showPaywall = true }
-                }
-
-                listDivider
-                listRow(icon: "cup.and.saucer", title: L10n.Profile.meetings,
-                        detail: L10n.Profile.meetingsHint,
-                        badge: appState.pendingIncomingMeetingRequestCount) { showMeetingRequests = true }
-            }
-            .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous).stroke(BondTheme.hairline))
-
-            // Görünüm ayrı duruyor: satır değil, seçim.
-            VStack(alignment: .leading, spacing: 10) {
-                Text(L10n.Profile.appearanceSection)
-                    .font(.system(size: 11, weight: .bold))
-                    .tracking(1)
-                    .foregroundStyle(BondTheme.muted)
-                Picker(L10n.Profile.appearance, selection: $state.appearance) {
-                    ForEach(AppState.Appearance.allCases) { option in
-                        Text(option.title).tag(option)
-                    }
-                }
-                .pickerStyle(.segmented)
-            }
-            .padding(.top, BondTheme.Space.sm)
-
-
-            AppSectionHeader(title: L10n.Profile.privacy)
-            // Hayalet mod yalnızca Pro'da. Kilitliyken de görünüyor ki neyin
-            // sunulduğu belli olsun.
-            VStack(spacing: 0) {
-                listRow(icon: appState.tier.hasGhostMode ? "eye.slash" : "lock.fill",
-                        title: L10n.Profile.ghost,
-                        detail: appState.tier.hasGhostMode
-                            ? (appState.ghostMode
-                                ? L10n.Profile.ghostOnDetail
-                                : L10n.Common.off)
-                            : L10n.Profile.ghostOffDetail,
-                        trailing: appState.tier.hasGhostMode ? (appState.ghostMode ? L10n.Common.on : L10n.Common.off) : L10n.Tier.pro) {
-                    if appState.tier.hasGhostMode {
-                        appState.ghostMode.toggle()
-                        Haptics.impact(.light)
-                    } else {
-                        showPaywall = true
-                    }
-                }
-            }
-
-            VStack(spacing: 0) {
-                listRow(icon: "rectangle.portrait.and.arrow.right", title: L10n.Profile.signOut,
-                        detail: L10n.Profile.signOutHint,
-                        disabled: appState.isAccountActionInProgress) { showSignOutAlert = true }
-                listDivider
-                listRow(icon: "trash", title: L10n.Profile.deletePermanent,
-                        detail: L10n.Profile.irreversible,
-                        destructive: true,
-                        disabled: appState.isAccountActionInProgress) { showDeleteAccountAlert = true }
-            }
-            .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous).stroke(BondTheme.hairline))
-            .padding(.top, BondTheme.Space.sm)
-
-            AppSectionHeader(title: L10n.Profile.aboutSection)
-            // En altta: hukuki metinler ikincil, sık kullanılan işlemleri aşağı
-            // itmemeli. Koşullar eskiden yalnızca karşılama ekranındaydı, yani
-            // giriş yaptıktan sonra bir daha ulaşılamıyordu.
-            VStack(spacing: 0) {
-                listRow(icon: "doc.text", title: L10n.Legal.terms,
-                        detail: L10n.Profile.termsHint) { showTerms = true }
-                listDivider
-                listRow(icon: "hand.raised", title: L10n.Legal.privacy,
-                        detail: L10n.Profile.privacyHint) { showPrivacy = true }
-                listDivider
-                // Kullanıcı içeriği olan uygulamalarda Apple ulaşılabilir bir
-                // iletişim adresi arıyor; kullanıcının da bir sorun olduğunda
-                // yazacak bir yeri olmalıydı.
-                listRow(icon: "envelope", title: L10n.Profile.support,
-                        detail: L10n.Profile.supportHint) {
-                    guard let url = Self.destekURL else { return }
-                    openURL(url)
-                }
-            }
-            .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous).stroke(BondTheme.hairline))
-
-            if appState.isAccountActionInProgress {
-                HStack(spacing: 8) {
-                    ProgressView()
-                    Text(L10n.Profile.accountBusy)
-                }
-                .font(.caption)
-                .foregroundStyle(BondTheme.muted)
-            }
-        }
-    }
-
-    private var listDivider: some View {
-        Divider().overlay(BondTheme.hairline).padding(.leading, 58)
-    }
-
-    /// Liste satırı. İkonlar nötr: asit yeşili kartlar iki ayrı satırda kullanılıyordu
-    /// ve marka rengi her yerde olunca vurgu olmaktan çıkıyordu.
-    /// Destek adresi politika metinlerinde de yazan adresle aynı.
-    private static let destekURL = URL(string: "mailto:220207018@yalova.edu.tr?subject=Bond%20destek")
-
-    private func listRow(
-        icon: String,
-        title: String,
-        detail: String,
-        trailing: String? = nil,
-        badge: Int = 0,
-        destructive: Bool = false,
-        disabled: Bool = false,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack(spacing: BondTheme.Space.md) {
-                Image(systemName: icon)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(destructive ? BondTheme.coral : BondTheme.ink)
-                    .frame(width: 30, height: 30)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(destructive ? BondTheme.coral : BondTheme.ink)
-                    Text(detail)
-                        .font(.system(size: 12))
-                        .foregroundStyle(BondTheme.muted)
-                }
-                Spacer(minLength: 0)
-                if badge > 0 {
-                    Text("\(badge)")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(minWidth: 22, minHeight: 22)
-                        .background(BondTheme.coral, in: Capsule())
-                        .accessibilityLabel(L10n.Profile.badgeWaiting("\(badge)"))
-                } else if let trailing {
-                    Text(trailing)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(BondTheme.muted)
-                        .monospacedDigit()
-                }
-                Image(systemName: "chevron.right")
-                    .font(.caption.bold())
-                    .foregroundStyle(BondTheme.muted)
-            }
-            .padding(.horizontal, BondTheme.Space.md)
-            .frame(minHeight: 60)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(PressableStyle())
-        .disabled(disabled)
-        .opacity(disabled ? 0.45 : 1)
-    }
-
-    private var visitorsSheet: some View {
-        NavigationStack {
-            ScrollView {
-                if appState.profileVisits.isEmpty {
-                    ContentUnavailableView(
-                        L10n.Profile.noVisitors,
-                        systemImage: "eye",
-                        description: Text(L10n.Profile.noVisitorsBody)
-                    )
-                    .padding(.top, BondTheme.Space.xxl)
-                } else {
-                    LazyVStack(spacing: BondTheme.Space.sm) {
-                        // Satırlar düz metindi: profiline kimin baktığını görüyor ama
-                        // o kişiye ulaşamıyordun.
-                        ForEach(appState.profileVisits) { visit in
-                            NavigationLink {
-                                SocialPersonDetailView(profile: visit.profile, place: nil)
-                            } label: {
-                                HStack(spacing: BondTheme.Space.md) {
-                                    ProfileMedia(url: visit.profile.imageURL, data: nil, assetName: nil)
-                                        .frame(width: 48, height: 48)
-                                        .clipShape(Circle())
-                                    VStack(alignment: .leading, spacing: 3) {
-                                        HStack(spacing: 5) {
-                                            Text(visit.profile.name)
-                                                .font(.system(size: 15, weight: .bold))
-                                            ProfileBadgeLabel(badge: visit.profile.badge, compact: true)
-                                        }
-                                        Text(DepartmentCatalog.display(visit.profile.department))
-                                            .font(.system(size: 12))
-                                            .foregroundStyle(BondTheme.muted)
-                                    }
-                                    Spacer(minLength: 0)
-                                    Text(visit.visitedAt.relativeTurkish)
-                                        .font(.system(size: 11))
-                                        .foregroundStyle(BondTheme.muted)
-                                    Image(systemName: "chevron.right")
-                                        .font(.caption.bold())
-                                        .foregroundStyle(BondTheme.ink.opacity(0.3))
-                                }
-                                .foregroundStyle(BondTheme.ink)
-                                .padding(BondTheme.Space.md)
-                                .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous))
-                            }
-                            .buttonStyle(PressableStyle())
-                        }
-                    }
-                    .padding(BondTheme.Space.lg)
-                }
-            }
-            .background(BondTheme.paper.ignoresSafeArea())
-            .refreshable { await appState.loadProfileVisits() }
-            .task { await appState.loadProfileVisits() }
-            .navigationTitle(L10n.Profile.visitors)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) { Button(L10n.Common.done) { showVisits = false } }
-            }
-        }
-    }
-
-    private var savedPostsSheet: some View {
-        NavigationStack {
-            ScrollView {
-                if appState.savedPosts.isEmpty {
-                    ContentUnavailableView(
-                        L10n.Profile.noSaved,
-                        systemImage: "bookmark",
-                        description: Text(L10n.Profile.noSavedBody)
-                    )
-                    .padding(.top, BondTheme.Space.xxl)
-                } else {
-                    LazyVStack(spacing: BondTheme.Space.md) {
-                        ForEach(appState.savedPosts) { post in
-                            HStack(spacing: BondTheme.Space.md) {
-                                ProfileMedia(url: post.imageURL, data: post.localImageData, assetName: nil)
-                                    .frame(width: 64, height: 78)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(post.author.name)
-                                        .font(.system(size: 14, weight: .bold))
-                                    Text(post.caption)
-                                        .font(.system(size: 13))
-                                        .foregroundStyle(BondTheme.muted)
-                                        .lineLimit(2)
-                                }
-                                Spacer(minLength: 0)
-                                Button {
-                                    appState.toggleSaved(postID: post.id)
-                                } label: {
-                                    Image(systemName: "bookmark.fill")
-                                        .foregroundStyle(BondTheme.violet)
-                                        .frame(width: 44, height: 44)
-                                }
-                                .accessibilityLabel(L10n.Profile.unsave)
-                            }
-                            .padding(BondTheme.Space.md)
-                            .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous))
-                        }
-                    }
-                    .padding(BondTheme.Space.lg)
-                }
-            }
-            .background(BondTheme.paper.ignoresSafeArea())
-            .navigationTitle(L10n.Profile.saved)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) { Button(L10n.Common.done) { showSaved = false } }
-            }
-        }
     }
 
     @ViewBuilder
@@ -629,40 +297,19 @@ struct SocialProfileView: View {
         VStack(alignment: .leading, spacing: BondTheme.Space.md) {
             AppSectionHeader(title: L10n.Profile.myPosts)
             if appState.currentUserPosts.isEmpty {
-                AppSurface {
-                    VStack(spacing: 8) {
-                        Image(systemName: "photo.on.rectangle.angled")
-                            .font(.system(size: 20, weight: .regular))
-                            .foregroundStyle(BondTheme.violet)
-                        // El yazısı, sayfanın geri kalanının aksine bir davet gibi
-                        // dursun: boş durum bir hata değil, bir başlangıç.
-                        Text(L10n.Profile.firstPostHint)
-                            .font(.custom("BradleyHandITCTT-Bold", size: 21))
-                            .foregroundStyle(BondTheme.coral)
-                            .rotationEffect(.degrees(-1.5))
-                        Text(L10n.Profile.firstPostBody)
-                            .font(.system(size: 13))
-                            .foregroundStyle(BondTheme.muted)
-                            .multilineTextAlignment(.center)
-                        // Paylaşım düğmesi profilin tepesindeki üçlü sıradan kaldırıldı
-                        // (akış başlığındaki "Paylaş" ile birebir aynı işi yapıyordu).
-                        // Boş durumda burada durması hem daha yerinde hem keşfedilebilir.
-                        Button {
-                            Haptics.impact(.light)
-                            showComposer = true
-                        } label: {
-                            Text(L10n.Profile.shareCta)
-                                .font(.system(size: 11, weight: .black)).tracking(1)
-                                .foregroundStyle(BondTheme.paper)
-                                .padding(.horizontal, 22).frame(height: 42)
-                                .background(BondTheme.ink, in: Capsule())
-                        }
-                        .buttonStyle(PressableStyle())
-                        .padding(.top, 4)
+                ContentUnavailableView {
+                    Label(L10n.Profile.firstPostHint, systemImage: "photo.on.rectangle.angled")
+                } description: {
+                    Text(L10n.Profile.firstPostBody)
+                } actions: {
+                    Button(L10n.Profile.shareCta) {
+                        Haptics.impact(.light)
+                        showComposer = true
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 6)
+                    .buttonStyle(.borderedProminent)
+                    .tint(BondTheme.acid)
                 }
+                .frame(maxWidth: .infinity)
             } else {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 3), count: 3), spacing: 3) {
                     ForEach(appState.currentUserPosts) { post in

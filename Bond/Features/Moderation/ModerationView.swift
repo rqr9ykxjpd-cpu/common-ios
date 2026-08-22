@@ -13,6 +13,7 @@ struct ModerationView: View {
 
     @State private var islemdeki: UUID?
     @State private var geriAcilacak: ModerationReport?
+    @State private var askiyaAlinacak: ModerationReport?
 
     var body: some View {
         NavigationStack {
@@ -60,6 +61,26 @@ struct ModerationView: View {
             } message: {
                 Text(L10n.Moderation.reopenBody(geriAcilacak?.reported.name ?? ""))
             }
+            .confirmationDialog(
+                L10n.Moderation.suspendConfirm(askiyaAlinacak?.reported.name ?? ""),
+                isPresented: Binding(
+                    get: { askiyaAlinacak != nil },
+                    set: { if !$0 { askiyaAlinacak = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button(L10n.Moderation.suspend, role: .destructive) {
+                    if let kayit = askiyaAlinacak {
+                        resolve(kayit, as: .accountSuspended)
+                    }
+                    askiyaAlinacak = nil
+                }
+                Button(L10n.Common.cancel, role: .cancel) {
+                    askiyaAlinacak = nil
+                }
+            } message: {
+                Text(L10n.Moderation.suspendHint)
+            }
         }
     }
 
@@ -94,7 +115,7 @@ struct ModerationView: View {
             VStack(alignment: .leading, spacing: BondTheme.Space.md) {
                 Text(ad)
                     .font(.system(size: 11, weight: .bold)).tracking(0.7)
-                    .foregroundStyle(BondTheme.ink.opacity(0.45))
+                    .foregroundStyle(BondTheme.muted)
                 ForEach(kayitlar) { kayit in satir(kayit) }
             }
         }
@@ -189,17 +210,17 @@ struct ModerationView: View {
             }
         }
         .padding(BondTheme.Space.md)
-        .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous).stroke(BondTheme.hairline))
+        .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous).stroke(BondTheme.hairline))
     }
 
     private func eylem(_ baslik: String, _ sonuc: ModerationReport.Resolution,
                        _ kayit: ModerationReport, zemin: Color, yazi: Color) -> some View {
         Button {
-            islemdeki = kayit.id
-            Task {
-                await appState.resolveReport(kayit, resolution: sonuc)
-                islemdeki = nil
+            if sonuc == .accountSuspended {
+                askiyaAlinacak = kayit
+            } else {
+                resolve(kayit, as: sonuc)
             }
         } label: {
             Text(baslik)
@@ -209,6 +230,14 @@ struct ModerationView: View {
                 .background(zemin, in: Capsule())
         }
         .buttonStyle(PressableStyle())
+    }
+
+    private func resolve(_ report: ModerationReport, as resolution: ModerationReport.Resolution) {
+        islemdeki = report.id
+        Task {
+            await appState.resolveReport(report, resolution: resolution)
+            islemdeki = nil
+        }
     }
 
     private func sonucMetni(_ raw: String?) -> String {

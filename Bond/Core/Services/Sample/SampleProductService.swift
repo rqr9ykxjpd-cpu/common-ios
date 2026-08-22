@@ -114,8 +114,9 @@ struct SampleProductService: ProductService {
     func fetchSavedPosts() async throws -> [BackendPost] { await store.allPosts().filter(\.saved) }
 
     // Güvenlik
-    func blockUser(_ profileID: UUID) async throws {}
-    func unblockUser(_ profileID: UUID) async throws {}
+    func blockUser(_ profileID: UUID) async throws { await store.block(profileID) }
+    func unblockUser(_ profileID: UUID) async throws { await store.unblock(profileID) }
+    func fetchBlockedProfiles() async throws -> [BlockedProfile] { await store.allBlocked() }
     func reportUser(_ profileID: UUID, reason: ReportReason, details: String?) async throws {}
     func fetchReports() async throws -> [ModerationReport] { await store.allReports() }
     func resolveReport(_ reportID: UUID, resolution: String) async throws {
@@ -141,7 +142,7 @@ struct SampleProductService: ProductService {
     func sendMeetingRequest(to profileID: UUID, placeID: UUID) async throws {
         await store.addMeetingRequest(to: profileID, placeID: placeID)
     }
-    func respondToMeetingRequest(_ requestID: UUID, accept: Bool) async throws {
+    func respondToMeetingRequest(_ requestID: UUID, accept: Bool) async throws -> UUID? {
         await store.respondToMeetingRequest(requestID, accept: accept)
     }
     func sendMessageRequest(to profileID: UUID, body: String, storyID: UUID?) async throws {

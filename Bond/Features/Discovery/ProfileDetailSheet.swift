@@ -6,6 +6,7 @@ struct ProfileDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedPhoto = 0
     @State private var details: PersonProfileData?
+    @State private var showBlockConfirmation = false
 
     /// Gönderiler isme göre süzülüyordu: aynı adlı iki kişi karışırdı ve akışa
     /// girmemiş gönderiler hiç görünmezdi. Artık kişinin gönderileri sunucudan,
@@ -35,6 +36,19 @@ struct ProfileDetailSheet: View {
         .background(BondTheme.paper.ignoresSafeArea())
         .foregroundStyle(BondTheme.ink)
         .safeAreaInset(edge: .bottom, spacing: 0) { decisionBar }
+        .confirmationDialog(
+            L10n.Chat.blockConfirm(profile.name),
+            isPresented: $showBlockConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(L10n.Feed.blockUser, role: .destructive) {
+                appState.block(profile)
+                dismiss()
+            }
+            Button(L10n.Common.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.Chat.blockBody)
+        }
     }
 
     private var galleryPageCount: Int { max(galeri.count, 1) }
@@ -173,7 +187,7 @@ struct ProfileDetailSheet: View {
                         ForEach(profilePosts) { post in
                             ProfileMedia(url: post.imageURL, data: post.localImageData, assetName: post.imageAssetName)
                                 .frame(width: 150, height: 188)
-                                .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous))
+                                .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous))
                         }
                     }
                 }
@@ -191,7 +205,9 @@ struct ProfileDetailSheet: View {
             } label: {
                 Label(L10n.Common.report, systemImage: "flag")
             }
-            Button(L10n.Feed.blockUser, role: .destructive) { appState.block(profile) }
+            Button(L10n.Feed.blockUser, role: .destructive) {
+                showBlockConfirmation = true
+            }
         } label: {
             Label(L10n.Discovery.safety, systemImage: "shield")
                 .font(.system(size: 13, weight: .semibold))

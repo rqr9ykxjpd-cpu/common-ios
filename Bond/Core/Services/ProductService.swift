@@ -102,6 +102,9 @@ protocol ProductService: Sendable {
     func updateGallery(_ images: [Data]) async throws -> [URL]
     func blockUser(_ profileID: UUID) async throws
     func unblockUser(_ profileID: UUID) async throws
+    /// Engellediğin kişiler. Engeli kaldırabilmek için önce kimi engellediğini
+    /// görebilmen gerekiyor; engelleme tek yönlü bir kapı olmamalı.
+    func fetchBlockedProfiles() async throws -> [BlockedProfile]
     func reportUser(_ profileID: UUID, reason: ReportReason, details: String?) async throws
     /// Şikayet listesi. Yalnızca moderatör okuyabiliyor; başkası çağırırsa boş döner.
     func fetchReports() async throws -> [ModerationReport]
@@ -132,7 +135,9 @@ protocol ProductService: Sendable {
     func fetchPlaces() async throws -> [CampusPlace]
     func fetchMeetingRequests() async throws -> [MeetingRequest]
     func sendMeetingRequest(to profileID: UUID, placeID: UUID) async throws
-    func respondToMeetingRequest(_ requestID: UUID, accept: Bool) async throws
+    /// Kabul edilirse oluşturulan/yeniden açılan sohbetin kimliğini döner.
+    /// Reddetme işleminde eşleşme oluşmadığı için `nil` döner.
+    func respondToMeetingRequest(_ requestID: UUID, accept: Bool) async throws -> UUID?
     /// Eşleşmeden yanıt. Sohbete değil, karşı tarafa istek olarak gider.
     func sendMessageRequest(to profileID: UUID, body: String, storyID: UUID?) async throws
     func fetchMessageRequests() async throws -> [MessageRequest]
@@ -218,6 +223,7 @@ struct UnconfiguredProductService: ProductService {
     func updateGallery(_ images: [Data]) async throws -> [URL] { try fail() }
     func blockUser(_ profileID: UUID) async throws { try fail() }
     func unblockUser(_ profileID: UUID) async throws { try fail() }
+    func fetchBlockedProfiles() async throws -> [BlockedProfile] { try fail() }
     func reportUser(_ profileID: UUID, reason: ReportReason, details: String?) async throws { try fail() }
     func fetchReports() async throws -> [ModerationReport] { try fail() }
     func resolveReport(_ reportID: UUID, resolution: String) async throws { try fail() }
@@ -236,7 +242,7 @@ struct UnconfiguredProductService: ProductService {
     func fetchPlaces() async throws -> [CampusPlace] { try fail() }
     func fetchMeetingRequests() async throws -> [MeetingRequest] { try fail() }
     func sendMeetingRequest(to profileID: UUID, placeID: UUID) async throws { try fail() }
-    func respondToMeetingRequest(_ requestID: UUID, accept: Bool) async throws { try fail() }
+    func respondToMeetingRequest(_ requestID: UUID, accept: Bool) async throws -> UUID? { try fail() }
     func sendMessageRequest(to profileID: UUID, body: String, storyID: UUID?) async throws { try fail() }
     func fetchMessageRequests() async throws -> [MessageRequest] { try fail() }
     func acceptMessageRequest(_ requestID: UUID) async throws -> UUID { try fail() }

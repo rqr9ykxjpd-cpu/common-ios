@@ -42,12 +42,7 @@ struct PlacesWallView: View {
                     visibilityCard
 
                     if appState.places.isEmpty {
-                        ContentUnavailableView(
-                            L10n.Places.loadFailedTitle,
-                            systemImage: "mappin.slash",
-                            description: Text(L10n.Places.loadFailedBody)
-                        )
-                        .padding(.top, BondTheme.Space.xxl)
+                        placesState
                     } else {
                         ForEach(grouped, id: \.alan) { grup in
                             VStack(alignment: .leading, spacing: BondTheme.Space.md) {
@@ -69,8 +64,8 @@ struct PlacesWallView: View {
                                         placeRow(place)
                                     }
                                 }
-                                .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous))
-                                .overlay(RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous).stroke(BondTheme.hairline))
+                                .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
+                                .overlay(RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous).stroke(BondTheme.hairline))
                             }
                         }
                     }
@@ -79,6 +74,9 @@ struct PlacesWallView: View {
                 .padding(.bottom, BondTheme.Space.xxl)
             }
             .background(BondTheme.paper.ignoresSafeArea())
+            .task {
+                if appState.places.isEmpty { await appState.loadPlaces() }
+            }
             .navigationTitle(L10n.Places.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -97,6 +95,31 @@ struct PlacesWallView: View {
             .sheet(item: $selectedPeoplePlace) { place in
                 PlacePeopleView(place: place)
             }
+        }
+    }
+
+    @ViewBuilder
+    private var placesState: some View {
+        if appState.isLoadingPlaces {
+            AppLoadingView()
+        } else if let error = appState.placesError {
+            ContentUnavailableView {
+                Label(L10n.Places.loadFailedTitle, systemImage: "wifi.exclamationmark")
+            } description: {
+                Text(error)
+            } actions: {
+                Button(L10n.Common.retry) {
+                    Task { await appState.loadPlaces() }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(BondTheme.acid)
+            }
+        } else {
+            ContentUnavailableView(
+                L10n.Places.emptyTitle,
+                systemImage: "mappin.slash",
+                description: Text(L10n.Places.emptyBody)
+            )
         }
     }
 
@@ -126,7 +149,7 @@ struct PlacesWallView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(BondTheme.Space.lg)
-        .background(BondTheme.violet.opacity(0.07), in: RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous))
+        .background(BondTheme.violet.opacity(0.07), in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
     }
 
     private func placeRow(_ place: CampusPlace) -> some View {

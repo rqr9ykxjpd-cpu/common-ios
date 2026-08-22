@@ -3,8 +3,10 @@ import SwiftUI
 struct NotificationsView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var selectedProfile: StudentProfile?
-    @State private var selectedMeetingRequest: MeetingRequestRoute?
+    @State private var showMessageRequests = false
+    @State private var showMeetingRequests = false
     @State private var conversationRoute: NotificationConversationRoute?
 
     var body: some View {
@@ -12,16 +14,10 @@ struct NotificationsView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: BondTheme.Space.lg) {
                     Text(L10n.Notification.intro)
-                        .font(.system(size: 13))
+                        .font(BondTheme.Typography.footnote)
                         .foregroundStyle(BondTheme.muted)
                     if appState.notifications.isEmpty {
-                        ContentUnavailableView(
-                            L10n.Notification.empty,
-                            systemImage: "bell",
-                            description: Text(L10n.Notification.emptyBody)
-                        )
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, BondTheme.Space.xxl)
+                        notificationState
                     } else {
                         LazyVStack(spacing: 0) {
                             ForEach(appState.notifications.sorted(by: { $0.createdAt > $1.createdAt })) { notification in
@@ -47,20 +43,29 @@ struct NotificationsView: View {
             }
             .background(BondTheme.paper.ignoresSafeArea())
             .refreshable { await appState.loadNotifications() }
-            .task { await appState.loadNotifications() }
+            .task {
+                // Eski bildirimlerde sohbet kimliği olmayabilir. Liste görünmeden
+                // sohbetleri yükleyerek kişi bazlı güvenli fallback'i hazır tutuyoruz.
+                async let conversations: Void = appState.loadConversations()
+                async let notifications: Void = appState.loadNotifications()
+                _ = await (conversations, notifications)
+            }
             .navigationTitle(L10n.Notification.title)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(L10n.Common.close) { dismiss() }
                 }
             }
+            .navigationDestination(isPresented: $showMessageRequests) {
+                MessageRequestsView()
+            }
             .sheet(item: $selectedProfile) { profile in
                 NavigationStack {
                     SocialPersonDetailView(profile: profile, place: nil, showsClose: true)
                 }
             }
-            .sheet(item: $selectedMeetingRequest) { route in
-                MeetingRequestsView(initialRequestID: route.id)
+            .sheet(isPresented: $showMeetingRequests) {
+                MeetingRequestsView()
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
                     .presentationCornerRadius(28)
@@ -68,6 +73,31 @@ struct NotificationsView: View {
             .fullScreenCover(item: $conversationRoute) { route in
                 NavigationStack { ConversationView(conversationID: route.id, showsClose: true) }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var notificationState: some View {
+        if appState.isLoadingNotifications {
+            AppLoadingView()
+        } else if let error = appState.notificationsError {
+            ContentUnavailableView {
+                Label(L10n.Errors.title, systemImage: "wifi.exclamationmark")
+            } description: {
+                Text(error)
+            } actions: {
+                Button(L10n.Common.retry) {
+                    Task { await appState.loadNotifications() }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(BondTheme.acid)
+            }
+        } else {
+            ContentUnavailableView(
+                L10n.Notification.empty,
+                systemImage: "bell",
+                description: Text(L10n.Notification.emptyBody)
+            )
         }
     }
 
@@ -94,16 +124,16 @@ struct NotificationsView: View {
                     .overlay(Circle().stroke(BondTheme.paper, lineWidth: 2))
             }
 
-            VStack(alignment: .leading, spacing: 5) {
+            VStack(alignment: .leading, spacing: BondTheme.Space.xs) {
                 Text(notification.title)
-                    .font(.system(size: 14, weight: notification.isRead ? .semibold : .bold))
+                    .font(BondTheme.Typography.subheadline.weight(notification.isRead ? .semibold : .bold))
                     .foregroundStyle(BondTheme.ink)
                 Text(notification.body)
-                    .font(.system(size: 13))
+                    .font(BondTheme.Typography.footnote)
                     .foregroundStyle(BondTheme.muted)
-                    .lineLimit(2)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
                 Text(notification.createdAt.relativeTurkish)
-                    .font(.system(size: 11))
+                    .font(BondTheme.Typography.caption)
                     .foregroundStyle(BondTheme.muted)
             }
             Spacer(minLength: BondTheme.Space.sm)
@@ -120,19 +150,30 @@ struct NotificationsView: View {
 
     private func open(_ notification: AppNotification) {
         appState.markNotificationRead(notification.id)
-        if notification.kind == .meetingRequest, let requestID = notification.meetingRequestID {
-            selectedMeetingRequest = MeetingRequestRoute(id: requestID)
+        if notification.kind == .meetingRequest {
+            showMeetingRequests = true
             return
         }
+
+        if notification.kind == .message {
+            if let conversationID = notification.conversationID
+                ?? notification.actor.flatMap({ appState.conversationID(for: $0) }) {
+                conversationRoute = NotificationConversationRoute(id: conversationID)
+            } else {
+                // Eşleşme kimliği olmayan `message`, backend'de yanıt isteğidir.
+                showMessageRequests = true
+            }
+            return
+        }
+
         guard let actor = notification.actor else {
             appState.show(notification.body)
             return
         }
-        if notification.kind == .message || notification.kind == .match {
-            // Sohbet henüz yüklenmemişse kişiyi açıyoruz; uydurma bir sohbete
-            // yazılan mesaj sunucuda reddedilip ekrandan siliniyordu.
-            if let id = appState.conversationID(for: actor) {
-                conversationRoute = NotificationConversationRoute(id: id)
+        if notification.kind == .match {
+            if let conversationID = notification.conversationID
+                ?? appState.conversationID(for: actor) {
+                conversationRoute = NotificationConversationRoute(id: conversationID)
             } else {
                 selectedProfile = actor
             }
@@ -153,9 +194,5 @@ struct NotificationsView: View {
 }
 
 private struct NotificationConversationRoute: Identifiable {
-    let id: UUID
-}
-
-private struct MeetingRequestRoute: Identifiable {
     let id: UUID
 }

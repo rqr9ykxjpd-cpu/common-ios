@@ -28,6 +28,6 @@ struct ProfileMedia: View {
 
     private var fallback: some View {
         LinearGradient(colors: [BondTheme.violet.opacity(0.9), BondTheme.coral.opacity(0.85)], startPoint: .topLeading, endPoint: .bottomTrailing)
-            .overlay(Image(systemName: "person.crop.circle.fill").font(.largeTitle).foregroundStyle(.white.opacity(0.35)))
+            .overlay(Image(systemName: "person.crop.circle.fill").font(.system(size: 34)).foregroundStyle(.white.opacity(0.35)))
     }
 }

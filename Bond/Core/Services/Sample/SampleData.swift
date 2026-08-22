@@ -281,6 +281,16 @@ enum SampleData {
         ]
     }
 
+    /// Biri adsız: gizlilik kuralı yüzünden profili okunamayan engelli
+    /// kullanıcının listede nasıl göründüğünü örnek veriyle de görebilelim.
+    static var blockedProfiles: [BlockedProfile] {
+        [
+            BlockedProfile(id: profiles[3].id, name: profiles[3].name,
+                           imageURL: profiles[3].imageURL, blockedAt: hours(30)),
+            BlockedProfile(id: id(91), name: nil, imageURL: nil, blockedAt: date(6))
+        ]
+    }
+
     static var reports: [ModerationReport] {
         [
             ModerationReport(id: UUID(), reporter: profiles[0], reported: profiles[3],

@@ -20,6 +20,7 @@ struct MatchMomentView: View {
                     Button(action: close) {
                         Image(systemName: "xmark").frame(width: 44, height: 44)
                     }
+                    .accessibilityLabel(L10n.Common.close)
                 }
                 .padding(24)
 
@@ -33,7 +34,7 @@ struct MatchMomentView: View {
                         .offset(x: -58)
                         .shadow(color: .black.opacity(0.35), radius: 25, y: 18)
                     Circle().fill(BondTheme.onCanvasDark).frame(width: 68, height: 68)
-                        .overlay(Image(systemName: "link").font(.title2.bold()).foregroundStyle(BondTheme.canvasDark))
+                        .overlay(Image(systemName: "link").font(.system(size: 22, weight: .bold)).foregroundStyle(BondTheme.canvasDark))
                         .scaleEffect(appeared ? 1 : 0.2)
                 }
                 .frame(height: 310)

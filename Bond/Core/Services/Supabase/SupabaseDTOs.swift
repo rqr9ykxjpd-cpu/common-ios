@@ -267,6 +267,10 @@ struct MeetingRequestInsert: Encodable {
     }
 }
 
+struct MeetingRequestAcceptParams: Encodable {
+    let request: UUID
+}
+
 struct MeetingRequestStatusUpdate: Encodable {
     let status: String
 }

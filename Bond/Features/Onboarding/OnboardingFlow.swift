@@ -4,6 +4,7 @@ import PhotosUI
 struct OnboardingFlow: View {
     @Environment(AppState.self) private var appState
     let step: AppState.OnboardingStep
+    @State private var showSignOutConfirmation = false
 
     var body: some View {
         @Bindable var appState = appState
@@ -11,7 +12,13 @@ struct OnboardingFlow: View {
             BondTheme.paper.ignoresSafeArea()
             VStack(spacing: 0) {
                 if step != .ready {
-                    OnboardingHeader(step: step) { appState.goBack(from: step) }
+                    OnboardingHeader(step: step) {
+                        if step == .identity {
+                            showSignOutConfirmation = true
+                        } else {
+                            appState.goBack(from: step)
+                        }
+                    }
                 }
                 Group {
                     switch step {
@@ -36,6 +43,14 @@ struct OnboardingFlow: View {
         .scrollDismissesKeyboard(.interactively)
         .dismissesKeyboardOnTap()
         .keyboardDoneButton()
+        .alert(L10n.Profile.signOutConfirm, isPresented: $showSignOutConfirmation) {
+            Button(L10n.Common.cancel, role: .cancel) {}
+            Button(L10n.Profile.signOut, role: .destructive) {
+                Task { await appState.signOut() }
+            }
+        } message: {
+            Text(L10n.Profile.signOutBody)
+        }
     }
 }
 
@@ -129,7 +144,7 @@ private struct IdentityStep: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(BondTheme.Space.lg)
-                .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous))
+                .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
             },
             footer: PrimaryEditorialButton(title: L10n.Common.continue_, enabled: valid, action: submit)
         )
@@ -233,7 +248,7 @@ private struct InterestsStep: View {
             HStack(spacing: 6) {
                 if disabled {
                     Image(systemName: "lock.fill")
-                        .font(.caption.weight(.semibold))
+                        .font(.system(size: 12, weight: .semibold))
                 }
                 Text(InterestCatalog.displayName(option))
                     .font(BondTheme.Typography.footnote.weight(.medium))
@@ -284,7 +299,7 @@ private struct ReadyStep: View {
                     Spacer(minLength: 0)
                 }
                 .padding(BondTheme.Space.md)
-                .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous))
+                .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
                 .padding(.horizontal, BondTheme.Space.lg)
             }
             PrimaryEditorialButton(
@@ -311,7 +326,7 @@ private struct OnboardingField: View {
                 .foregroundStyle(BondTheme.ink)
         }
         .padding(BondTheme.Space.lg)
-        .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous))
+        .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
     }
 }
 
@@ -337,7 +352,7 @@ private struct PhotoStep: View {
                     ZStack(alignment: .bottomTrailing) {
                         ProfileMedia(url: nil, data: currentAvatar)
                             .frame(width: 168, height: 208)
-                            .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous))
                         if loading {
                             ProgressView().tint(.white).padding(12)
                         } else {

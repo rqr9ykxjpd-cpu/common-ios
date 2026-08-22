@@ -42,26 +42,26 @@ struct ClubDetailView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 12) {
-                        Eyebrow(text: L10n.Club.upcoming, color: BondTheme.ink.opacity(0.4))
+                        Eyebrow(text: L10n.Club.upcoming, color: BondTheme.muted)
                         // Sunucuda `next_event` varsayılanı boş metin. Etkinlik
                         // girilmemiş kulüplerde kart bomboş görünüyordu.
                         let etkinlik = club.nextEvent.trimmingCharacters(in: .whitespacesAndNewlines)
                         HStack(spacing: 13) {
                             Image(systemName: etkinlik.isEmpty ? "calendar" : "calendar.badge.clock")
-                                .font(.title2)
+                                .font(.system(size: 22))
                                 .foregroundStyle(etkinlik.isEmpty
                                                  ? BondTheme.ink.opacity(0.25)
                                                  : Color(hex: club.accentHex))
                             VStack(alignment: .leading, spacing: 4) {
                                 if etkinlik.isEmpty {
                                     Text(L10n.Club.noEvent)
-                                        .font(.subheadline)
-                                        .foregroundStyle(BondTheme.ink.opacity(0.45))
+                                        .font(.system(size: 15))
+                                        .foregroundStyle(BondTheme.muted)
                                 } else {
-                                    Text(etkinlik).font(.headline)
+                                    Text(etkinlik).font(.system(size: 17, weight: .semibold))
                                     if let place = club.meetingPlace {
                                         Label(place.name, systemImage: "mappin.and.ellipse")
-                                            .font(.caption).foregroundStyle(BondTheme.ink.opacity(0.5))
+                                            .font(.system(size: 12)).foregroundStyle(BondTheme.muted)
                                     }
                                 }
                             }
@@ -72,7 +72,7 @@ struct ClubDetailView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 12) {
-                        Eyebrow(text: L10n.Club.whatToExpect, color: BondTheme.ink.opacity(0.4))
+                        Eyebrow(text: L10n.Club.whatToExpect, color: BondTheme.muted)
                         benefit(L10n.Club.benefitMeet)
                         benefit(L10n.Club.benefitEvents)
                         benefit(L10n.Club.benefitProjects)
@@ -102,7 +102,7 @@ struct ClubDetailView: View {
     private func infoCard(value: String, label: String, icon: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Image(systemName: icon).foregroundStyle(Color(hex: club.accentHex))
-            Text(value).font(.headline)
+            Text(value).font(.system(size: 17, weight: .semibold))
             Text(label).font(.system(size: 11, weight: .bold)).tracking(0.7).opacity(0.55)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -113,9 +113,9 @@ struct ClubDetailView: View {
     private func benefit(_ text: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "checkmark")
-                .font(.caption.bold()).foregroundStyle(Color(hex: club.accentHex))
+                .font(.system(size: 12, weight: .bold)).foregroundStyle(Color(hex: club.accentHex))
                 .frame(width: 24, height: 24).background(Color(hex: club.accentHex).opacity(0.12), in: Circle())
-            Text(text).font(.subheadline).foregroundStyle(BondTheme.ink.opacity(0.7))
+            Text(text).font(.system(size: 15)).foregroundStyle(BondTheme.ink.opacity(0.7))
         }
     }
 }

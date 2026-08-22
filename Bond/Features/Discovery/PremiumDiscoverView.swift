@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PremiumDiscoverView: View {
     @Environment(AppState.self) private var appState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var drag: CGSize = .zero
     /// Karar eşiği geçildiğinde bir kez titreşim vermek için. Kullanıcı kartı
     /// bırakmadan önce "yeterince kaydırdım mı" diye kestirmek zorundaydı.
@@ -12,52 +13,80 @@ struct PremiumDiscoverView: View {
     @State private var matchConversation: MatchConversationRoute?
 
     var body: some View {
-        ZStack {
-            BondTheme.canvasDark.ignoresSafeArea()
-            GrainOverlay().ignoresSafeArea()
+        NavigationStack {
+            ZStack {
+                BondTheme.canvasDark.ignoresSafeArea()
+                GrainOverlay().ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                topBar
-                if let profile = appState.profiles.first {
-                    ZStack {
-                        DiscoveryCard(profile: profile, highlightedInterests: appState.draft.interests)
-                            // Kararın rengi kartın tamamına yayılıyor: damga küçük ve
-                            // köşede kalıyordu, kaydırırken göz kartın ortasında oluyor.
-                            .overlay {
-                                RoundedRectangle(cornerRadius: BondTheme.Radius.hero, style: .continuous)
-                                    .fill(drag.width > 0 ? BondTheme.onCanvasDark : BondTheme.coral)
-                                    .opacity(0.3 * swipeProgress)
-                                    .allowsHitTesting(false)
-                            }
-                            .overlay(alignment: .top) {
-                                HStack {
-                                    decisionStamp(L10n.Discovery.meetStamp, color: BondTheme.onCanvasDark, rotation: -12)
-                                        .opacity(drag.width > 0 ? swipeProgress : 0)
-                                    Spacer()
-                                    // Eskiden beyazdı: iki karar da aynı renkteydi ve
-                                    // hangisinin ne olduğu yalnızca yazıdan anlaşılıyordu.
-                                    decisionStamp(L10n.Discovery.passStamp, color: BondTheme.coral, rotation: 12)
-                                        .opacity(drag.width < 0 ? swipeProgress : 0)
+                VStack(spacing: 0) {
+                    if let profile = appState.profiles.first {
+                        ZStack {
+                            DiscoveryCard(profile: profile, highlightedInterests: appState.draft.interests)
+                                // Kararın rengi kartın tamamına yayılıyor: damga küçük ve
+                                // köşede kalıyordu, kaydırırken göz kartın ortasında oluyor.
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous)
+                                        .fill(drag.width > 0 ? BondTheme.onCanvasDark : BondTheme.coral)
+                                        .opacity(0.3 * swipeProgress)
+                                        .allowsHitTesting(false)
                                 }
-                                .padding(20)
-                            }
-                            .offset(drag)
-                            .rotationEffect(.degrees(Double(drag.width / 35)))
-                            .contentShape(RoundedRectangle(cornerRadius: BondTheme.Radius.hero, style: .continuous))
-                            .onTapGesture { detailVisible = true }
-                            .gesture(swipeGesture)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 10)
+                                .overlay(alignment: .top) {
+                                    HStack {
+                                        decisionStamp(L10n.Discovery.meetStamp, color: BondTheme.onCanvasDark, rotation: -12)
+                                            .opacity(drag.width > 0 ? swipeProgress : 0)
+                                        Spacer()
+                                        // Eskiden beyazdı: iki karar da aynı renkteydi ve
+                                        // hangisinin ne olduğu yalnızca yazıdan anlaşılıyordu.
+                                        decisionStamp(L10n.Discovery.passStamp, color: BondTheme.coral, rotation: 12)
+                                            .opacity(drag.width < 0 ? swipeProgress : 0)
+                                    }
+                                    .padding(20)
+                                }
+                                .offset(drag)
+                                .rotationEffect(.degrees(Double(drag.width / 35)))
+                                .contentShape(RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous))
+                                .onTapGesture { detailVisible = true }
+                                .gesture(swipeGesture)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 10)
 
-                    swipeHint
-                    controls
-                } else {
-                    emptyState
+                        swipeHint
+                        controls
+                    } else {
+                        emptyState
+                    }
+                }
+                .padding(.bottom, 8)
+            }
+            .navigationTitle(L10n.Discovery.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button {
+                        Haptics.impact(.light)
+                        showFilters = true
+                    } label: {
+                        Image(systemName: appState.discoveryFilters.activeCount > 0
+                              ? "line.3.horizontal.decrease.circle.fill"
+                              : "line.3.horizontal.decrease.circle")
+                    }
+                    .accessibilityLabel(appState.discoveryFilters.activeCount > 0
+                        ? L10n.Discovery.filtersActiveA11y(appState.discoveryFilters.activeCount)
+                        : L10n.Discovery.filtersA11y)
+
+                    Button {
+                        Haptics.impact(.light)
+                        showChats = true
+                    } label: {
+                        Image(systemName: "message")
+                    }
+                    .accessibilityLabel(L10n.Discovery.chats)
                 }
             }
-            .padding(.bottom, 8)
-
+            .toolbarBackground(BondTheme.canvasDark, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
         }
         .task {
             if appState.profiles.isEmpty { await appState.loadDiscovery(reset: true) }
@@ -102,65 +131,6 @@ struct PremiumDiscoverView: View {
         }
     }
 
-    private var topBar: some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(L10n.Discovery.title)
-                    .font(.system(size: 26, weight: .bold))
-                Text(L10n.Discovery.subtitle)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.5))
-            }
-            Spacer()
-            Button {
-                Haptics.impact(.light)
-                showFilters = true
-            } label: {
-                ZStack(alignment: .topTrailing) {
-                    Image(systemName: "line.3.horizontal.decrease.circle")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 44, height: 44)
-                        .background(.white.opacity(0.1), in: Circle())
-                    if appState.discoveryFilters.activeCount > 0 {
-                        Text("\(appState.discoveryFilters.activeCount)")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(BondTheme.canvasDark)
-                            .frame(width: 17, height: 17)
-                            .background(BondTheme.onCanvasDark, in: Circle())
-                    }
-                }
-                .accessibilityLabel(appState.discoveryFilters.activeCount > 0
-                    ? L10n.Discovery.filtersActiveA11y(appState.discoveryFilters.activeCount)
-                    : L10n.Discovery.filtersA11y)
-            }
-            .buttonStyle(PressableStyle())
-            Button {
-                Haptics.impact(.light)
-                showChats = true
-            } label: {
-                HStack(spacing: 7) {
-                    Image(systemName: "message.fill")
-                    Text(L10n.Discovery.chats)
-                        .font(.system(size: 11, weight: .bold))
-                        .lineLimit(1)
-                }
-                .foregroundStyle(BondTheme.canvasDark)
-                .padding(.horizontal, 14)
-                .frame(height: 44)
-                .background(BondTheme.onCanvasDark, in: Capsule())
-                .contentShape(Capsule())
-            }
-            .buttonStyle(PressableStyle())
-            .zIndex(10)
-        }
-        .foregroundStyle(.white)
-        .padding(.horizontal, 16)
-        .padding(.top, 6)
-        .frame(height: 62)
-    }
-
-
     /// Kaydırma sırasında kararın ne yönde olduğunu gösterir. Sürükleme hareketi vardı ama
     /// hiçbir görsel karşılığı yoktu; kullanıcı kartı bırakana kadar ne olacağını bilmiyordu.
     private var swipeProgress: CGFloat {
@@ -185,12 +155,12 @@ struct PremiumDiscoverView: View {
             Label(L10n.Discovery.swipePass, systemImage: "arrow.left")
                 .foregroundStyle(drag.width < 0
                                  ? BondTheme.coral
-                                 : .white.opacity(0.4))
+                                 : .white.opacity(0.65))
             Text("·").foregroundStyle(.white.opacity(0.25))
             Label(L10n.Discovery.swipeMeet, systemImage: "arrow.right")
                 .foregroundStyle(drag.width > 0
                                  ? BondTheme.onCanvasDark
-                                 : .white.opacity(0.4))
+                                 : .white.opacity(0.65))
         }
         .font(.system(size: 11, weight: .semibold))
         .animation(.easeOut(duration: 0.15), value: drag.width > 0)
@@ -266,7 +236,7 @@ struct PremiumDiscoverView: View {
                 // olduğu anlaşılmıyordu; kullanıcı filtreyi daralttığını unutmuş olabilir.
                 if activeFilters > 0 {
                     Text(L10n.Discovery.filtersOpen(activeFilters))
-                        .font(.subheadline)
+                        .font(.system(size: 15))
                         .foregroundStyle(.white.opacity(0.58))
                         .multilineTextAlignment(.center)
                     VStack(spacing: 10) {
@@ -287,7 +257,7 @@ struct PremiumDiscoverView: View {
                     }
                 } else {
                     Text(L10n.Discovery.emptyHint)
-                        .font(.subheadline)
+                        .font(.system(size: 15))
                         .foregroundStyle(.white.opacity(0.58))
                         .multilineTextAlignment(.center)
                     Button {
@@ -317,15 +287,20 @@ struct PremiumDiscoverView: View {
                 }
             }
             .onEnded { value in
-                abs(value.translation.width) > 100 ? dismiss(value.translation.width > 0 ? 1 : -1) : withAnimation(.spring(response: 0.4, dampingFraction: 0.76)) { drag = .zero }
+                abs(value.translation.width) > 100
+                    ? dismiss(value.translation.width > 0 ? 1 : -1)
+                    : withAnimation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.76)) { drag = .zero }
             }
     }
 
     private func dismiss(_ direction: CGFloat) {
         guard let profile = appState.profiles.first else { return }
         Haptics.impact(direction > 0 ? .medium : .light)
-        withAnimation(.easeIn(duration: 0.24)) { drag = CGSize(width: direction * 650, height: 20) }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.24) {
+        let duration = reduceMotion ? 0 : 0.24
+        withAnimation(reduceMotion ? nil : .easeIn(duration: duration)) {
+            drag = CGSize(width: direction * 650, height: 20)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
             drag = .zero
             Task { await appState.react(to: profile, liked: direction > 0) }
         }

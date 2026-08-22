@@ -145,3 +145,15 @@ struct StudentProfile: Identifiable, Hashable {
     }
 }
 
+/// Engellenen bir kişi.
+///
+/// Ad ve fotoğraf isteğe bağlı: gizlilik kuralı "engellediğim kişi"yi
+/// görünür kılmıyor, dolayısıyla ortak bir gönderi/eşleşme yoksa profil satırı
+/// okunamayabiliyor. O durumda listede yalnızca tarih ve engeli kaldırma
+/// düğmesi kalıyor — kimliği okuyamamak, engeli kaldıramamak için sebep değil.
+struct BlockedProfile: Identifiable, Hashable {
+    let id: UUID
+    let name: String?
+    let imageURL: URL?
+    let blockedAt: Date
+}

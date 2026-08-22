@@ -184,6 +184,23 @@ actor SampleStore {
     private var reports: [ModerationReport] = SampleData.reports
     private var suspended: Set<UUID> = []
 
+    // MARK: Engellenenler
+
+    private var blocked: [BlockedProfile] = SampleData.blockedProfiles
+
+    func allBlocked() -> [BlockedProfile] { blocked }
+
+    func block(_ profileID: UUID) {
+        guard !blocked.contains(where: { $0.id == profileID }) else { return }
+        let kisi = profiles.first { $0.id == profileID }
+        blocked.insert(BlockedProfile(id: profileID, name: kisi?.name,
+                                      imageURL: kisi?.imageURL, blockedAt: .now), at: 0)
+    }
+
+    func unblock(_ profileID: UUID) {
+        blocked.removeAll { $0.id == profileID }
+    }
+
     func allReports() -> [ModerationReport] {
         reports.map { rapor in
             var kopya = rapor
@@ -218,9 +235,25 @@ actor SampleStore {
         )
     }
 
-    func respondToMeetingRequest(_ id: UUID, accept: Bool) {
-        guard let index = meetingRequests.firstIndex(where: { $0.id == id }) else { return }
+    func respondToMeetingRequest(_ id: UUID, accept: Bool) -> UUID? {
+        guard let index = meetingRequests.firstIndex(where: { $0.id == id }) else { return nil }
         meetingRequests[index].status = accept ? .accepted : .declined
+        guard accept else { return nil }
+
+        let profile = meetingRequests[index].profile
+        if let existing = conversations.first(where: { $0.profile.id == profile.id }) {
+            return existing.id
+        }
+
+        let conversation = Conversation(
+            id: UUID(),
+            profile: profile,
+            messages: [],
+            updatedAt: .now,
+            unreadCount: 0
+        )
+        conversations.insert(conversation, at: 0)
+        return conversation.id
     }
 
     // MARK: Yanıt istekleri

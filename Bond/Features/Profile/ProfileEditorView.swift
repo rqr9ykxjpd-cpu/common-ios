@@ -171,9 +171,9 @@ struct ProfileEditorView: View {
                     ZStack(alignment: .bottomTrailing) {
                         ProfileMedia(url: currentAvatarURL, data: currentAvatarData)
                             .frame(width: 104, height: 128)
-                            .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous))
                         Image(systemName: "camera.fill")
-                            .font(.caption.bold())
+                            .font(.system(size: 12, weight: .bold))
                             .foregroundStyle(BondTheme.paper)
                             .frame(width: 30, height: 30)
                             .background(BondTheme.ink, in: Circle())
@@ -199,8 +199,8 @@ struct ProfileEditorView: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(BondTheme.ink)
                     .frame(maxWidth: .infinity).frame(height: 46)
-                    .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.control))
-                    .overlay(RoundedRectangle(cornerRadius: BondTheme.Radius.control).stroke(BondTheme.hairline))
+                    .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface))
+                    .overlay(RoundedRectangle(cornerRadius: BondTheme.Radius.surface).stroke(BondTheme.hairline))
             }
             .buttonStyle(PressableStyle())
 
@@ -214,7 +214,7 @@ struct ProfileEditorView: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 12))
                                 Button { galleryData.remove(at: index) } label: {
                                     Image(systemName: "xmark")
-                                        .font(.caption.bold()).foregroundStyle(.white)
+                                        .font(.system(size: 12, weight: .bold)).foregroundStyle(.white)
                                         .frame(width: 44, height: 44).background(.black.opacity(0.62), in: Circle())
                                 }
                                 .accessibilityLabel(L10n.Profile.removePhoto)
@@ -259,7 +259,7 @@ struct ProfileEditorView: View {
                     .font(.system(size: 15))
                     .lineLimit(4...7)
                     .padding(12)
-                    .background(BondTheme.ink.opacity(0.045), in: RoundedRectangle(cornerRadius: BondTheme.Radius.control))
+                    .background(BondTheme.ink.opacity(0.045), in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface))
             }
         }
     }
@@ -328,7 +328,7 @@ struct ProfileEditorView: View {
                         Spacer()
                         Text(appState.currentVisiblePlace?.name ?? L10n.Common.off)
                             .foregroundStyle(BondTheme.muted)
-                        Image(systemName: "chevron.up.chevron.down").font(.caption)
+                        Image(systemName: "chevron.up.chevron.down").font(.system(size: 12))
                     }
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(BondTheme.ink)
@@ -413,7 +413,7 @@ private struct ProfileTextField: View {
             TextField(title, text: $text)
                 .font(.system(size: 16, weight: .medium))
                 .padding(.horizontal, 12).frame(height: 46)
-                .background(BondTheme.ink.opacity(0.045), in: RoundedRectangle(cornerRadius: BondTheme.Radius.control))
+                .background(BondTheme.ink.opacity(0.045), in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface))
         }
     }
 }

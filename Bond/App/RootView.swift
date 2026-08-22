@@ -3,6 +3,7 @@ import SwiftUI
 struct RootView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Karşılama ve kayıt akışı her zaman açık modda kalır. Bu ekranlardaki kullanıcı
     /// henüz bir görünüm tercihi yapmadı — ayara ancak giriş yaptıktan sonra ulaşıyor —
@@ -27,6 +28,12 @@ struct RootView: View {
             }
         }
         .preferredColorScheme(resolvedColorScheme)
+        .transaction { transaction in
+            if reduceMotion {
+                transaction.animation = nil
+                transaction.disablesAnimations = true
+            }
+        }
         // Sınıra hangi ekranda takılırsan takıl, açılacak yer burası: tek bir
         // sunum noktası, her ekrana ayrı ayrı bağlamaktan güvenli.
         .sheet(isPresented: Binding(
@@ -45,15 +52,29 @@ struct RootView: View {
             guard phase == .active, previous != .active else { return }
             Task { await appState.refreshAfterForeground() }
         }
+        .alert(
+            L10n.Errors.title,
+            isPresented: Binding(
+                get: { appState.toast?.kind == .error },
+                set: { isPresented in
+                    if !isPresented, appState.toast?.kind == .error {
+                        appState.toast = nil
+                    }
+                }
+            )
+        ) {
+            Button(L10n.Common.ok) { appState.toast = nil }
+        } message: {
+            if let error = appState.toast, error.kind == .error {
+                Text(error.text)
+            }
+        }
         .overlay(alignment: .top) {
-            if let toast = appState.toast {
+            if let toast = appState.toast, toast.kind == .info {
                 AppToast(message: toast)
                     .padding(.horizontal, BondTheme.Space.lg)
-                    // Alttaki ekranlar zemini `ignoresSafeArea` ile çizdiği için bu
-                    // katman da ekranın en tepesine hizalanıyordu: mesaj durum
-                    // çubuğunun ve çentiğin arkasında kalıp okunmuyordu. Hataların
-                    // tamamı buradan gösterildiği için kullanıcı "hiçbir şey olmuyor"
-                    // sanıyordu.
+                    // Alttaki ekranlar zemini `ignoresSafeArea` ile çizdiği için bilgi
+                    // mesajını durum çubuğunun ve çentiğin altında tutuyoruz.
                     .safeAreaPadding(.top)
                     .padding(.top, BondTheme.Space.sm)
                     .transition(.move(edge: .top).combined(with: .opacity))
@@ -61,9 +82,9 @@ struct RootView: View {
             }
         }
         .task(id: appState.toast) {
-            guard let toast = appState.toast else { return }
-            // Süre metnin uzunluğuna göre: "Gönderi paylaşıldı" ile iki satırlık bir hata
-            // açıklaması aynı sürede kaybolunca uzun olan okunamıyordu.
+            guard let toast = appState.toast, toast.kind == .info else { return }
+            // Kısa bilgi mesajlarının süresini metnin okunma uzunluğuna göre ayarlıyoruz.
+            // Hatalar native alert içinde kullanıcı kapatana kadar görünür kalıyor.
             let readingTime = 1.6 + Double(toast.text.count) * 0.045
             try? await Task.sleep(for: .seconds(min(max(readingTime, 2.4), 6)))
             guard !Task.isCancelled, appState.toast == toast else { return }

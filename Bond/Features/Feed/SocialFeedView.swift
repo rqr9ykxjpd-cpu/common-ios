@@ -272,13 +272,13 @@ struct SocialFeedView: View {
                 }
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right")
-                    .font(.caption.bold())
+                    .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(BondTheme.muted)
             }
             .padding(.horizontal, BondTheme.Space.md)
             .frame(minHeight: 62)
-            .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous).stroke(BondTheme.hairline))
+            .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous).stroke(BondTheme.hairline))
             .contentShape(Rectangle())
         }
         .buttonStyle(PressableStyle())
@@ -475,7 +475,7 @@ private struct AddStoryBubble: View {
                         .overlay(Image(systemName: "person.fill").foregroundStyle(BondTheme.ink.opacity(0.28)))
                         .clipShape(Circle())
                     Image(systemName: "plus")
-                        .font(.caption2.bold()).foregroundStyle(BondTheme.onAccent)
+                        .font(.system(size: 11, weight: .bold)).foregroundStyle(BondTheme.onAccent)
                         .frame(width: 19, height: 19).background(BondTheme.acid, in: Circle())
                         .offset(x: -1, y: -1)
                 }

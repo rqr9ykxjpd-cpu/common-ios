@@ -34,22 +34,36 @@ extension AppState {
         }
     }
 
-    func respondToMeetingRequest(_ requestID: UUID, accept: Bool) {
-        guard let index = meetingRequests.firstIndex(where: { $0.id == requestID && $0.direction == .incoming && $0.status == .pending }) else { return }
+    func respondToMeetingRequest(_ requestID: UUID, accept: Bool) async -> UUID? {
+        guard let index = meetingRequests.firstIndex(where: { $0.id == requestID && $0.direction == .incoming && $0.status == .pending }) else { return nil }
         let previous = meetingRequests[index].status
+        let previousNotifications = notifications
+        let requesterID = meetingRequests[index].profile.id
         meetingRequests[index].status = accept ? .accepted : .declined
-        notifications.removeAll { $0.meetingRequestID == requestID }
-        show(accept ? L10n.Meetings.accepted : L10n.Meetings.declined)
-        Haptics.success()
-        Task {
-            do {
-                try await service.respondToMeetingRequest(requestID, accept: accept)
-            } catch {
-                if let refreshed = meetingRequests.firstIndex(where: { $0.id == requestID }) {
-                    meetingRequests[refreshed].status = previous
+        // Bildirim tablosu buluşma isteğinin kimliğini taşımıyor. Yanıtlanan
+        // kişiden gelen bekleyen buluşma bildirimini yerelde temizliyoruz.
+        notifications.removeAll {
+            $0.kind == .meetingRequest && $0.actor?.id == requesterID
+        }
+
+        do {
+            let conversationID = try await service.respondToMeetingRequest(requestID, accept: accept)
+            if let conversationID {
+                await loadConversations()
+                guard conversations.contains(where: { $0.id == conversationID }) else {
+                    return nil
                 }
-                showError(error, fallback: L10n.Meetings.respondFailed)
             }
+            show(accept ? L10n.Meetings.accepted : L10n.Meetings.declined)
+            Haptics.success()
+            return conversationID
+        } catch {
+            if let refreshed = meetingRequests.firstIndex(where: { $0.id == requestID }) {
+                meetingRequests[refreshed].status = previous
+            }
+            notifications = previousNotifications
+            showError(error, fallback: L10n.Meetings.respondFailed)
+            return nil
         }
     }
 

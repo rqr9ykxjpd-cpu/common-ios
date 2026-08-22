@@ -6,6 +6,7 @@ struct PlacePeopleView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var people: [StudentProfile] = []
     @State private var isLoading = true
+    @State private var loadError: String?
     @State private var selectedPerson: StudentProfile?
 
     var body: some View {
@@ -20,6 +21,18 @@ struct PlacePeopleView: View {
                                 .tint(BondTheme.violet)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 40)
+                        } else if let loadError {
+                            ContentUnavailableView {
+                                Label(L10n.Errors.title, systemImage: "wifi.exclamationmark")
+                            } description: {
+                                Text(loadError)
+                            } actions: {
+                                Button(L10n.Common.retry) {
+                                    Task { await reload() }
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .tint(BondTheme.acid)
+                            }
                         } else if people.isEmpty {
                             // Kimse görünmüyorsa bunu açıkça söylüyoruz; eskiden sahte
                             // isimlerle dolu olduğu için boş durum hiç görünmüyordu.
@@ -27,9 +40,9 @@ struct PlacePeopleView: View {
                                 Image(systemName: "person.2.slash")
                                     .font(.system(size: 26, weight: .light))
                                 Text(L10n.Places.emptyHere)
-                                    .font(.subheadline.bold())
+                                    .font(.system(size: 15, weight: .bold))
                                 Text(L10n.Places.emptyHereHint)
-                                    .font(.caption)
+                                    .font(.system(size: 12))
                                     .foregroundStyle(BondTheme.ink.opacity(0.5))
                             }
                             .foregroundStyle(BondTheme.ink.opacity(0.6))
@@ -62,18 +75,25 @@ struct PlacePeopleView: View {
     }
 
     private func reload() async {
-        people = await appState.peopleAtPlace(place)
-        isLoading = false
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            people = try await appState.peopleAtPlace(place)
+            loadError = nil
+        } catch {
+            guard !appState.isCancellation(error) else { return }
+            loadError = UserFacingError.message(error, fallback: L10n.Places.peopleFailed)
+        }
     }
 
     private var placeHeader: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(L10n.Places.visibleStudents)
-                .font(.subheadline)
+                .font(.system(size: 15))
                 .foregroundStyle(BondTheme.ink.opacity(0.5))
             // Kendisi artık listenin içinde; elle eklemek iki kez sayardı.
             Label(L10n.Places.visibleCount(people.count), systemImage: "person.2.fill")
-                .font(.caption.bold())
+                .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(BondTheme.violet)
 
             Button { appState.togglePresence(at: place) } label: {
@@ -83,7 +103,7 @@ struct PlacePeopleView: View {
                         Text(isHere ? L10n.Places.youAreHere : L10n.Places.imHere)
                             .font(.system(size: 11, weight: .black)).tracking(1)
                         Text(isHere ? L10n.Places.tapToHide : L10n.Places.makeVisible)
-                            .font(.caption).opacity(0.65)
+                            .font(.system(size: 12)).opacity(0.65)
                     }
                     Spacer()
                 }
@@ -117,13 +137,13 @@ struct PlacePeopleView: View {
                         .clipShape(Circle())
                     VStack(alignment: .leading, spacing: 5) {
                         HStack(spacing: 5) {
-                            Text("\(profile.name), \(profile.age)").font(.headline)
+                            Text("\(profile.name), \(profile.age)").font(.system(size: 17, weight: .semibold))
                             ProfileBadgeLabel(badge: profile.badge, compact: true)
                         }
                         Text("\(profile.department) · \(AcademicYear.display(profile.year))")
-                            .font(.caption).foregroundStyle(BondTheme.ink.opacity(0.5))
+                            .font(.system(size: 12)).foregroundStyle(BondTheme.ink.opacity(0.5))
                         Label(place.name, systemImage: "location.fill")
-                            .font(.caption.bold()).foregroundStyle(BondTheme.violet)
+                            .font(.system(size: 12, weight: .bold)).foregroundStyle(BondTheme.violet)
                     }
                     Spacer(minLength: 0)
                 }
@@ -134,7 +154,7 @@ struct PlacePeopleView: View {
             if benMiyim {
                 Text(L10n.Common.youBadge)
                     .font(.system(size: 10, weight: .black)).tracking(0.6)
-                    .foregroundStyle(BondTheme.ink.opacity(0.45))
+                    .foregroundStyle(BondTheme.muted)
             } else {
                 Button {
                     Haptics.impact(.light)

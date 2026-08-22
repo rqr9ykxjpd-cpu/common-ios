@@ -19,14 +19,20 @@ struct PremiumMatchesView: View {
                     AppSectionHeader(title: L10n.Chat.messages)
                     if appState.conversations.isEmpty, appState.isLoadingConversations {
                         // Yüklenirken "henüz sohbetin yok" yazıyordu.
-                        VStack(spacing: 12) {
-                            ProgressView().tint(BondTheme.violet)
-                            Text(L10n.Chat.loading)
-                                .font(.system(size: 13))
-                                .foregroundStyle(BondTheme.muted)
+                        AppLoadingView(message: L10n.Chat.loading)
+                    } else if appState.conversations.isEmpty,
+                              let error = appState.conversationsError {
+                        ContentUnavailableView {
+                            Label(L10n.Errors.title, systemImage: "wifi.exclamationmark")
+                        } description: {
+                            Text(error)
+                        } actions: {
+                            Button(L10n.Common.retry) {
+                                Task { await appState.loadConversations() }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(BondTheme.acid)
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 50)
                     } else if appState.conversations.isEmpty {
                         emptyConversations
                     } else {
@@ -54,7 +60,10 @@ struct PremiumMatchesView: View {
             .task {
                 // Kullanıcı Tanış sekmesine hiç uğramadan buraya gelebilir; o durumda
                 // aday listesi boş olur ve öneri şeridi hiç görünmezdi.
+                async let conversations: Void = appState.loadConversations()
+                async let requests: Void = appState.loadMessageRequests(silently: true)
                 if appState.profiles.isEmpty { await appState.loadDiscovery() }
+                _ = await (conversations, requests)
             }
             .background(BondTheme.paper.ignoresSafeArea())
             .navigationTitle(L10n.Chat.title)
@@ -95,9 +104,9 @@ struct PremiumMatchesView: View {
                         .foregroundStyle(BondTheme.muted)
                 }
                 .padding(BondTheme.Space.md)
-                .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous).stroke(BondTheme.hairline))
-                .contentShape(RoundedRectangle(cornerRadius: BondTheme.Radius.card, style: .continuous))
+                .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous).stroke(BondTheme.hairline))
+                .contentShape(RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
             }
             .buttonStyle(PressableStyle())
         }
@@ -191,7 +200,7 @@ struct PremiumMatchesView: View {
     private var emptyConversations: some View {
         VStack(spacing: BondTheme.Space.sm) {
             Image(systemName: "message")
-                .font(.title2)
+                .font(.system(size: 22))
                 .foregroundStyle(BondTheme.muted)
             Text(L10n.Chat.emptyTitle)
                 .font(.system(size: 15, weight: .semibold))

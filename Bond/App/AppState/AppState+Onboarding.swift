@@ -68,10 +68,10 @@ extension AppState {
     }
 
     func goBack(from step: OnboardingStep) {
-        if let previous = OnboardingStep(rawValue: step.rawValue - 1) {
-            withAnimation(BondTheme.Motion.easing) { route = .onboarding(previous) }
-        } else {
-            withAnimation(BondTheme.Motion.easing) { route = .welcome }
-        }
+        // İlk adımda gerçek oturum açıkken yalnızca Welcome ekranına dönmek,
+        // arayüz ile kimlik durumunu birbirinden koparıyordu. İlk adımın çıkışı
+        // OnboardingFlow'daki onaylı `signOut()` üzerinden yapılır.
+        guard let previous = OnboardingStep(rawValue: step.rawValue - 1) else { return }
+        withAnimation(BondTheme.Motion.easing) { route = .onboarding(previous) }
     }
 }

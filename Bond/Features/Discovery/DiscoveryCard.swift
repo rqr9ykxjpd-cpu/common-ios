@@ -96,7 +96,7 @@ struct DiscoveryCard: View {
                         Spacer()
                         HStack(alignment: .lastTextBaseline, spacing: 8) {
                             Text(profile.name).font(.system(size: 34, weight: .bold))
-                            Text("\(profile.age)").font(.title3.weight(.medium))
+                            Text("\(profile.age)").font(.system(size: 20, weight: .medium))
                             Spacer()
                         }
                         if let rozetAlt = profile.badge.subtitle {
@@ -230,7 +230,7 @@ struct DiscoveryCard: View {
                     .font(.system(size: 9, weight: .bold))
                 Spacer()
             }
-            .foregroundStyle(BondTheme.ink.opacity(0.38))
+            .foregroundStyle(BondTheme.muted)
         }
         .foregroundStyle(BondTheme.ink)
         .padding(16)

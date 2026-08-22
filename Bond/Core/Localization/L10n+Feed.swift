@@ -39,6 +39,9 @@ extension L10n {
         static var deletePostConfirm: String { String(localized: "feed.deletePostConfirm") }
         static var blockUser: String { String(localized: "feed.blockUser") }
         static var like: String { String(localized: "feed.like") }
+        static var unlike: String { String(localized: "feed.unlike") }
+        static var save: String { String(localized: "feed.save") }
+        static var removeSaved: String { String(localized: "feed.removeSaved") }
         static var openComments: String { String(localized: "feed.openComments") }
         static func likeCount(_ count: Int) -> String {
             L10n.format("feed.likeCount", Int64(count))
