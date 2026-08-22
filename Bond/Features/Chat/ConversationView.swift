@@ -3,6 +3,10 @@ import SwiftUI
 struct ConversationView: View {
     @Environment(AppState.self) private var appState
     let conversationID: UUID
+    /// Modal olarak (fullScreenCover kökünde) açıldığında `true`. İtilerek
+    /// açıldığında sistem kendi geri düğmesini koyuyor; buna ek olarak bir tane
+    /// daha eklemek yan yana iki geri düğmesi bırakıyordu.
+    var showsClose = false
     @Environment(\.dismiss) private var dismiss
     @State private var draft = ""
     @State private var showProfile = false
@@ -113,9 +117,11 @@ struct ConversationView: View {
     /// Sohbet başlığı. Kişiye dokununca profili açılıyor; sağdaki menü
     /// şikayet, engelleme ve eşleşmeyi bitirme.
     @ToolbarContentBuilder private var sohbetAracCubugu: some ToolbarContent {
-        ToolbarItem(placement: .topBarLeading) {
-            Button { dismiss() } label: { Image(systemName: "chevron.left") }
-                .accessibilityLabel(L10n.Common.back)
+        if showsClose {
+            ToolbarItem(placement: .topBarLeading) {
+                Button { dismiss() } label: { Image(systemName: "xmark") }
+                    .accessibilityLabel(L10n.Common.close)
+            }
         }
         ToolbarItem(placement: .principal) {
             if let conversation = appState.conversations.first(where: { $0.id == conversationID }) {

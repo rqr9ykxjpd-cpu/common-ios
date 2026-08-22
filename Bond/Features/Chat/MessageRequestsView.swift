@@ -18,7 +18,6 @@ struct MessageRequestsView: View {
     private var istekler: [MessageRequest] { appState.pendingMessageRequests }
 
     var body: some View {
-        NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: BondTheme.Space.lg) {
                     Text(L10n.Chat.requestsIntro)
@@ -41,15 +40,9 @@ struct MessageRequestsView: View {
             .refreshable { await appState.loadMessageRequests() }
             .background(BondTheme.paper.ignoresSafeArea())
             .navigationTitle(L10n.Chat.requestsTitle)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(L10n.Common.close) { dismiss() }
-                }
-            }
             .navigationDestination(item: $acilacakSohbet) { id in
                 ConversationView(conversationID: id)
             }
-        }
     }
 
 

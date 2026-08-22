@@ -203,7 +203,7 @@ struct SocialPersonDetailView: View {
             details = await appState.personDetails(for: profile.id)
         }
         .fullScreenCover(item: $conversationRoute) { route in
-            NavigationStack { ConversationView(conversationID: route.id) }
+            NavigationStack { ConversationView(conversationID: route.id, showsClose: true) }
         }
         .sheet(item: $selectedPost) { secili in
             let guncel = appState.posts.first(where: { $0.id == secili.id }) ?? secili

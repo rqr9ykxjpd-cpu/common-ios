@@ -68,7 +68,7 @@ struct PremiumDiscoverView: View {
         .fullScreenCover(isPresented: Binding(
             get: { appState.opensMessageRequests },
             set: { appState.opensMessageRequests = $0 }
-        )) { MessageRequestsView() }
+        )) { NavigationStack { MessageRequestsView() } }
 #endif
         .fullScreenCover(isPresented: $showChats) {
             PremiumMatchesView(close: { showChats = false })
@@ -98,7 +98,7 @@ struct PremiumDiscoverView: View {
             }
         }
         .fullScreenCover(item: $matchConversation) { route in
-            NavigationStack { ConversationView(conversationID: route.id) }
+            NavigationStack { ConversationView(conversationID: route.id, showsClose: true) }
         }
     }
 

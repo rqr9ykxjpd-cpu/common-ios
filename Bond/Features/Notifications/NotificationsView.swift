@@ -66,7 +66,7 @@ struct NotificationsView: View {
                     .presentationCornerRadius(28)
             }
             .fullScreenCover(item: $conversationRoute) { route in
-                NavigationStack { ConversationView(conversationID: route.id) }
+                NavigationStack { ConversationView(conversationID: route.id, showsClose: true) }
             }
         }
     }
