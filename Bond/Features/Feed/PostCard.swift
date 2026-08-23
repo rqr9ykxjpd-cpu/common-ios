@@ -10,6 +10,7 @@ struct PostCard: View {
     let delete: () -> Void
     @State private var showComments = false
     @State private var showDeleteConfirmation = false
+    @State private var showModeratorRemove = false
     @State private var showBlockConfirmation = false
 
     /// Görselin gösterileceği yükseklik oranı (yükseklik = genişlik × bu değer).
@@ -107,6 +108,15 @@ struct PostCard: View {
                         }
                         Button(L10n.Feed.blockUser, role: .destructive) {
                             showBlockConfirmation = true
+                        }
+                        // Moderasyon eylemleri yalnızca rozetli hesapta görünür.
+                        // Asıl kapı sunucudaki izin kuralı; buradaki kontrol
+                        // sadece menüyü kalabalıklaştırmamak için.
+                        if appState.isModerator {
+                            Divider()
+                            Button(L10n.Moderation.removePost, systemImage: "trash.slash", role: .destructive) {
+                                showModeratorRemove = true
+                            }
                         }
                     }
                 } label: {
@@ -237,6 +247,14 @@ struct PostCard: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
                 .presentationCornerRadius(28)
+        }
+        .confirmationDialog(L10n.Moderation.removePostConfirm, isPresented: $showModeratorRemove, titleVisibility: .visible) {
+            Button(L10n.Moderation.removePost, role: .destructive) {
+                Task { await appState.moderatorRemovePost(post.id) }
+            }
+            Button(L10n.Common.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.Moderation.removePostBody)
         }
         .confirmationDialog(L10n.Feed.deletePostConfirm, isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
             Button(L10n.Feed.deletePost, role: .destructive, action: delete)

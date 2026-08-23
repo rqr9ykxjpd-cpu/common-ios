@@ -271,7 +271,7 @@ struct PaywallView: View {
             // Ürünler gelmediyse sebebini söylüyoruz. Sessizce sönük duran bir
             // düğme, kullanıcıya "uygulama bozuk" dedirtiyor; oysa sorun çoğu
             // zaman geçici ve kendisi çözebiliyor.
-            if let hata = magaza.productLoadFailure, magaza.products.isEmpty {
+            if let hata = magaza.productLoadFailure, magaza.products.isEmpty, !magaza.canPurchase(secili) {
                 Text(hata)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(BondTheme.coral)
@@ -291,7 +291,7 @@ struct PaywallView: View {
         let calisiyor = magaza.purchasingTier != nil
         // Ürün gelmediyse düğme açılmıyor. Dokununca hiçbir şey olmayan bir
         // düğme, kullanıcıya uygulamanın bozuk olduğunu düşündürür.
-        let hazir = magaza.product(for: secili) != nil && !calisiyor && !magaza.isRestoring
+        let hazir = magaza.canPurchase(secili) && !calisiyor && !magaza.isRestoring
         return Button {
             Task { await satinAl() }
         } label: {

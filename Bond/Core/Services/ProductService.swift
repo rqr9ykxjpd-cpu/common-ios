@@ -55,9 +55,7 @@ protocol ProductService: Sendable {
 
     func signInWithApple(idToken: String, nonce: String) async throws
     func signInWithGoogle(idToken: String, accessToken: String, nonce: String) async throws
-    /// E-posta adresine giriş bağlantısı gönderir. Sunucu tarafındaki (Before User
-    /// Created hook) `.edu.tr` şartı ilk sürümde kapalı; açıkken yalnızca o adresler için hesap oluşuyor/mail
-    /// gidiyor; başka bir domain verilirse bu çağrı hata fırlatır.
+    /// E-posta adresine giriş bağlantısı gönderir.
     func requestEmailSignInLink(email: String) async throws
     /// Kullanıcı maildeki bağlantıya dokununca iOS'un uygulamaya ilettiği URL.
     /// İçindeki token'ı doğrulayıp oturumu kurar.

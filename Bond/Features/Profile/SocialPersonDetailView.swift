@@ -14,6 +14,7 @@ struct SocialPersonDetailView: View {
     @State private var details: PersonProfileData?
     @State private var reacted = false
     @State private var showBlockConfirmation = false
+    @State private var showSuspendConfirmation = false
 
     private var isMe: Bool { profile.id == appState.currentUserID }
     private var isMatched: Bool { conversation(with: profile) != nil }
@@ -169,6 +170,17 @@ struct SocialPersonDetailView: View {
         // daireler, elle verilmiş 16pt kenar boşluğu, safe area'yı taklit eden
         // konumlar. Aynı iş sistemin bar'ında yapılıyor; bar fotoğrafın üstünde
         // şeffaf duruyor ve kaydırınca kendi materyalini getiriyor.
+        .confirmationDialog(L10n.Moderation.suspendAccount, isPresented: $showSuspendConfirmation, titleVisibility: .visible) {
+            Button(L10n.Moderation.suspendAccount, role: .destructive) {
+                Task {
+                    await appState.suspendAccount(profile.id)
+                    dismiss()
+                }
+            }
+            Button(L10n.Common.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.Moderation.suspendAccountBody)
+        }
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
@@ -190,6 +202,15 @@ struct SocialPersonDetailView: View {
                     }
                     Button(L10n.Feed.blockUser, role: .destructive) {
                         showBlockConfirmation = true
+                    }
+                    // Moderatör moderatörü askıya alamıyor; sunucu da reddediyor
+                    // ama düğmeyi hiç göstermemek daha anlaşılır.
+                    if appState.isModerator, !isMe,
+                       profile.badge != .founder, profile.badge != .moderator {
+                        Divider()
+                        Button(L10n.Moderation.suspendAccount, systemImage: "nosign", role: .destructive) {
+                            showSuspendConfirmation = true
+                        }
                     }
                 } label: {
                     Image(systemName: "ellipsis")

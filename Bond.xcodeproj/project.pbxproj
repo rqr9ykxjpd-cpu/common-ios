@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		A00000000000000000000012 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = A00000000000000000000011 /* Supabase */; };
 		A00000000000000000000014 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = A00000000000000000000015 /* GoogleSignIn */; };
+		A00000000000000000000022 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = A00000000000000000000021 /* RevenueCat */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,6 +32,7 @@
 			files = (
 				A00000000000000000000012 /* Supabase in Frameworks */,
 				A00000000000000000000014 /* GoogleSignIn in Frameworks */,
+				A00000000000000000000022 /* RevenueCat in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -77,6 +79,7 @@
 			packageProductDependencies = (
 				A00000000000000000000011 /* Supabase */,
 				A00000000000000000000015 /* GoogleSignIn */,
+				A00000000000000000000021 /* RevenueCat */,
 			);
 			productName = Bond;
 			productReference = A00000000000000000000007 /* Bond.app */;
@@ -104,6 +107,7 @@
 			packageReferences = (
 				A00000000000000000000013 /* XCRemoteSwiftPackageReference "supabase-swift" */,
 				A00000000000000000000016 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				A00000000000000000000020 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A00000000000000000000004 /* Products */;
@@ -350,6 +354,14 @@
 				minimumVersion = 9.0.0;
 			};
 		};
+		A00000000000000000000020 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios-spm.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.32.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -362,6 +374,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A00000000000000000000016 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
 			productName = GoogleSignIn;
+		};
+		A00000000000000000000021 /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A00000000000000000000020 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */;
+			productName = RevenueCat;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

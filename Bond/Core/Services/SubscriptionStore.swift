@@ -1,4 +1,5 @@
 import Foundation
+import RevenueCat
 import StoreKit
 
 /// StoreKit 2 katmanı: ürünleri yükler, satın alır, hakları takip eder.
@@ -83,6 +84,25 @@ final class SubscriptionStore {
                 await self.handle(update)
             }
         }
+        if Purchases.isConfigured {
+            Task { [weak self] in
+                for await info in Purchases.shared.customerInfoStream {
+                    await self?.applyRevenueCat(info, sync: false)
+                }
+            }
+        }
+    }
+
+    func identify(userID: UUID) async {
+        guard Purchases.isConfigured else { return }
+        _ = try? await Purchases.shared.logIn(userID.uuidString)
+        await refreshEntitlements()
+    }
+
+    func resetIdentity() async {
+        guard Purchases.isConfigured, Purchases.shared.isAnonymous == false else { return }
+        _ = try? await Purchases.shared.logOut()
+        await refreshEntitlements()
     }
 
     // MARK: - Ürünler
@@ -112,6 +132,11 @@ final class SubscriptionStore {
         }
     }
 
+    func canPurchase(_ tier: SubscriptionTier) -> Bool {
+        guard tier != .free else { return false }
+        return product(for: tier) != nil || Purchases.isConfigured
+    }
+
     /// Apple'ın biçimlendirdiği fiyat. Ürün yüklenmediyse nil — yer tutucu bir
     /// fiyat göstermek, kullanıcıya yanlış rakam söylemek olurdu.
     func displayPrice(for tier: SubscriptionTier) -> String? {
@@ -121,12 +146,16 @@ final class SubscriptionStore {
     // MARK: - Satın alma
 
     func purchase(_ tier: SubscriptionTier) async -> PurchaseOutcome {
-        guard let product = product(for: tier) else {
-            return .failed(L10n.Paywall.unavailable)
-        }
         guard purchasingTier == nil else { return .cancelled }
         purchasingTier = tier
         defer { purchasingTier = nil }
+
+        if Purchases.isConfigured {
+            return await purchaseWithRevenueCat(tier)
+        }
+        guard let product = product(for: tier) else {
+            return .failed(L10n.Paywall.unavailable)
+        }
 
         do {
             switch try await product.purchase() {
@@ -157,8 +186,13 @@ final class SubscriptionStore {
         isRestoring = true
         defer { isRestoring = false }
         do {
-            try await AppStore.sync()
-            await refreshEntitlements()
+            if Purchases.isConfigured {
+                let info = try await Purchases.shared.restorePurchases()
+                applyRevenueCat(info, sync: true)
+            } else {
+                try await AppStore.sync()
+                await refreshEntitlements()
+            }
             return tier == .free ? L10n.Paywall.noSubscription : nil
         } catch {
             return UserFacingError.message(error, fallback: L10n.Paywall.restoreFailed)
@@ -169,10 +203,19 @@ final class SubscriptionStore {
 
     /// Cihazdaki etkin abonelikleri okur. En yüksek kademe kazanır: Plus'tan
     /// Pro'ya geçen kullanıcıda ikisi birden bir süre etkin görünebiliyor.
-    func refreshEntitlements(latest: VerificationResult<Transaction>? = nil,
+    func refreshEntitlements(latest: StoreKit.VerificationResult<Transaction>? = nil,
                              forceSync: Bool = false) async {
+        if Purchases.isConfigured, latest == nil {
+            do {
+                applyRevenueCat(try await Purchases.shared.customerInfo(), sync: forceSync)
+                return
+            } catch {
+                // RevenueCat okunamazsa cihazdaki StoreKit haklarına düş.
+            }
+        }
+
         var enYuksek: SubscriptionTier = .free
-        var kaynak: VerificationResult<Transaction>? = latest
+        var kaynak: StoreKit.VerificationResult<Transaction>? = latest
 
         for await result in Transaction.currentEntitlements {
             guard let islem = try? checkVerified(result),
@@ -193,20 +236,20 @@ final class SubscriptionStore {
         }
     }
 
-    private func handle(_ result: VerificationResult<Transaction>) async {
+    private func handle(_ result: StoreKit.VerificationResult<Transaction>) async {
         guard let islem = try? checkVerified(result) else { return }
         await islem.finish()
         await refreshEntitlements(latest: result)
     }
 
-    private func checkVerified(_ result: VerificationResult<Transaction>) throws -> Transaction {
+    private func checkVerified(_ result: StoreKit.VerificationResult<Transaction>) throws -> Transaction {
         switch result {
         case .verified(let islem): islem
         case .unverified: throw StoreError.unverified
         }
     }
 
-    private func verifiedPurchase(_ result: VerificationResult<Transaction>) -> VerifiedPurchase? {
+    private func verifiedPurchase(_ result: StoreKit.VerificationResult<Transaction>) -> VerifiedPurchase? {
         guard let islem = try? checkVerified(result) else { return nil }
         return VerifiedPurchase(
             productID: islem.productID,
@@ -220,5 +263,47 @@ final class SubscriptionStore {
     enum StoreError: LocalizedError {
         case unverified
         var errorDescription: String? { L10n.Paywall.unverified }
+    }
+
+    private func purchaseWithRevenueCat(_ tier: SubscriptionTier) async -> PurchaseOutcome {
+        let productID = tier == .pro ? ProductID.pro : ProductID.plus
+        let storeProducts = await Purchases.shared.products([productID])
+        guard let storeProduct = storeProducts.first else {
+            return .failed(L10n.Paywall.unavailable)
+        }
+        do {
+            let result = try await Purchases.shared.purchase(product: storeProduct)
+            if result.userCancelled { return .cancelled }
+            applyRevenueCat(result.customerInfo, sync: true)
+            return .success(tierFromRevenueCat(result.customerInfo))
+        } catch {
+            let nsError = error as NSError
+            if nsError.domain == ErrorCode.errorDomain,
+               ErrorCode(rawValue: nsError.code) == .purchaseCancelledError {
+                return .cancelled
+            }
+            if nsError.domain == ErrorCode.errorDomain,
+               ErrorCode(rawValue: nsError.code) == .paymentPendingError {
+                return .pending
+            }
+            return .failed(UserFacingError.message(error, fallback: L10n.Paywall.purchaseFailed))
+        }
+    }
+
+    private func applyRevenueCat(_ info: CustomerInfo, sync: Bool) {
+        let kademe = tierFromRevenueCat(info)
+        let degisti = kademe != tier
+        tier = kademe
+        if degisti || sync {
+            onEntitlementChange?(kademe, nil)
+        }
+    }
+
+    private func tierFromRevenueCat(_ info: CustomerInfo) -> SubscriptionTier {
+        let entitlements = info.entitlements
+        let proAktif = entitlements.active.contains { ["bond_pro", "pro"].contains($0.key) }
+        if proAktif { return .pro }
+        let plusAktif = entitlements.active.contains { ["bond_plus", "plus"].contains($0.key) }
+        return plusAktif ? .plus : .free
     }
 }

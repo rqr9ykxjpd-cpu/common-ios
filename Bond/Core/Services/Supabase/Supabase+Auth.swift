@@ -25,11 +25,9 @@ extension SupabaseProductService {
         )
     }
 
-    /// Bağlantının gerçekten gönderilip gönderilmeyeceğine sunucu karar veriyor: Auth
-    /// "Before User Created" hook'u e-posta `.edu.tr` ile bitmiyorsa hesabı oluşturmadan
-    /// reddediyor, GoTrue de bu hatayı olduğu gibi buraya taşıyor. `redirectTo` olmadan
-    /// bağlantı Supabase'in kendi web sayfasını açar, uygulamaya hiç dönmez — bu yüzden
-    /// uygulamanın kayıtlı özel URL şemasına (bkz. Info.plist, BondApp.swift) gidiyor.
+    /// `redirectTo` olmadan bağlantı Supabase'in kendi web sayfasını açar, uygulamaya
+    /// hiç dönmez — bu yüzden uygulamanın kayıtlı özel URL şemasına
+    /// (bkz. Info.plist, BondApp.swift) gidiyor.
     /// Bu şemanın Supabase Dashboard > Authentication > URL Configuration > Redirect URLs
     /// listesinde de olması gerekiyor, yoksa GoTrue yönlendirmeyi reddeder.
     func requestEmailSignInLink(email: String) async throws {

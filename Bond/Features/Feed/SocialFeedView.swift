@@ -406,17 +406,21 @@ struct SocialFeedView: View {
         }
         ToolbarItem(placement: .topBarTrailing) {
             Button { showNotifications = true } label: {
-                ZStack(alignment: .topTrailing) {
-                    Image(systemName: "bell")
-                    if appState.unreadNotificationCount > 0 {
-                Text("\(min(appState.unreadNotificationCount, 9))")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 15, height: 15)
-                    .background(BondTheme.coral, in: Circle())
-                    .offset(x: 8, y: -6)
+                // Rozet eskiden offset ile toolbar kapsülünün dışına taşıyordu;
+                // kenar clip yüzünden kırmızı daire yarım görünüyordu. İkonun
+                // etrafında boşluk bırakıp rozeti bu alanın içinde tutuyoruz.
+                Image(systemName: "bell")
+                    .padding(.top, 5)
+                    .padding(.trailing, 7)
+                    .overlay(alignment: .topTrailing) {
+                        if appState.unreadNotificationCount > 0 {
+                            Text("\(min(appState.unreadNotificationCount, 9))")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(minWidth: 15, minHeight: 15)
+                                .background(BondTheme.coral, in: Capsule())
+                        }
                     }
-                }
             }
             .accessibilityLabel(L10n.Feed.notificationsA11y(appState.unreadNotificationCount))
         }

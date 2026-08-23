@@ -332,7 +332,20 @@ final class AppState {
     /// düşmedi) kullanıcıyı bekletmiyoruz: arayüzü açıp doğrulamayı tekrar
     /// gönderiyoruz. Tersi durumda — sunucu daha yüksekse — sunucuya
     /// uyuyoruz; abonelik başka cihazda alınmış olabilir.
+#if DEBUG
+    /// `-tier plus|pro` ile elle verilen kademe. Açılıştaki abonelik tazelemesi
+    /// bunu ezmesin diye tutuluyor: örnek modda sunucu da cihaz da 'free'
+    /// döndürüyor ve bayrak hiç tutmuyordu, Pro ekranları test edilemiyordu.
+    var debugTierOverride: SubscriptionTier?
+#endif
+
     func refreshSubscriptions() async {
+#if DEBUG
+        if let debugTierOverride {
+            tier = debugTierOverride
+            return
+        }
+#endif
         await subscriptions.loadProducts()
         await subscriptions.refreshEntitlements()
         let cihaz = subscriptions.tier

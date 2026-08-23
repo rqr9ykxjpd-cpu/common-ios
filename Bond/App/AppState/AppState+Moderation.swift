@@ -38,6 +38,24 @@ extension AppState {
     }
 
     /// Moderatör olarak gönderi kaldırır.
+    /// Moderatör olarak hesabı askıya alır.
+    ///
+    /// Şikayet ekranındaki askıya almadan farkı: bu, bir şikayete bağlı değil.
+    /// Sunucu yine `is_moderator()` kontrolünü yapıyor, buradaki kontrol
+    /// yalnızca menüyü gizlemek için.
+    func suspendAccount(_ profileID: UUID) async {
+        do {
+            try await service.setAccountActive(profileID, active: false)
+            // Askıya alınan kişi keşiften ve akıştan hemen kalksın.
+            profiles.removeAll { $0.id == profileID }
+            posts.removeAll { $0.author.id == profileID }
+            show(L10n.Moderation.suspended)
+            Haptics.success()
+        } catch {
+            showError(error, fallback: L10n.Moderation.suspendFailed)
+        }
+    }
+
     func moderatorRemovePost(_ postID: UUID) async {
         do {
             try await service.moderatorDeletePost(postID)

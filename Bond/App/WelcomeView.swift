@@ -250,13 +250,12 @@ struct WelcomeView: View {
     }
 }
 
-/// Apple/Google yanına eklenen üçüncü giriş yolu: üniversite e-postasına giriş
-/// bağlantısı gönderip mailden dönüşü bekleme. Kod yerine link kullanıyoruz çünkü
+/// Apple/Google yanına eklenen üçüncü giriş yolu: e-postaya giriş bağlantısı
+/// gönderip mailden dönüşü bekleme. Kod yerine link kullanıyoruz çünkü
 /// Supabase'in "Confirm signup" şablonu Free planda özelleştirilemiyor (kodu göstermek
 /// için Pro'ya geçmek ya da custom SMTP kurmak gerekiyordu, ikincisinin bu üniversite
 /// sunucusuna teslimat sorunu vardı) — varsayılan şablondaki link zaten çalışıyordu.
-/// Kabul kriteri istemcide değil sunucuda (Before User Created hook) — buradaki
-/// `.edu.tr` biçim kontrolü yalnızca erken geri bildirim için, güvenlik sınırı değil.
+/// Buton yalnızca adresin e-posta gibi durmasını bekler.
 struct EmailSignInSheet: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
@@ -268,8 +267,12 @@ struct EmailSignInSheet: View {
     @State private var isBusy = false
     @FocusState private var fieldFocused: Bool
 
-    private var looksLikeEduEmail: Bool {
-        email.lowercased().trimmingCharacters(in: .whitespacesAndNewlines).hasSuffix(".edu.tr")
+    private var looksLikeEmail: Bool {
+        let value = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let at = value.firstIndex(of: "@") else { return false }
+        let local = value[..<at]
+        let domain = value[value.index(after: at)...]
+        return !local.isEmpty && domain.contains(".") && !domain.hasPrefix(".") && !domain.hasSuffix(".")
     }
 
     var body: some View {
@@ -298,7 +301,7 @@ struct EmailSignInSheet: View {
 
                     Spacer(minLength: 0)
 
-                    AppButton(title: isBusy ? L10n.Common.sending : L10n.Welcome.sendLink, enabled: !isBusy && looksLikeEduEmail) {
+                    AppButton(title: isBusy ? L10n.Common.sending : L10n.Welcome.sendLink, enabled: !isBusy && looksLikeEmail) {
                         Task {
                             Haptics.impact(.light)
                             isBusy = true

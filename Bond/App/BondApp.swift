@@ -1,5 +1,6 @@
 import SwiftUI
 import GoogleSignIn
+import RevenueCat
 
 @main
 struct BondApp: App {
@@ -11,7 +12,15 @@ struct BondApp: App {
     /// `simctl launch ... -sample` ile) uygulama örnek veriyle açılır. Bu, sunucu
     /// olmadan ekranları gezmek ve geliştirirken doğrulama yapmak için. Arayüzde
     /// bunu tetikleyen bir düğme yok — kullanıcıya hiçbir yerde görünmez.
+    private static func configureRevenueCat() {
+        let key = AppSecrets.revenueCatAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !key.isEmpty, Purchases.isConfigured == false else { return }
+        Purchases.logLevel = .warn
+        Purchases.configure(withAPIKey: key)
+    }
+
     private static func initialState() -> AppState {
+        configureRevenueCat()
 #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
         if arguments.contains("-sample") {
@@ -47,7 +56,9 @@ struct BondApp: App {
             if arguments.contains("-cardpreview") { state.opensCardPreview = true }
             // `-tier plus` / `-tier pro`: kademeye bağlı ekranları görmek için.
             if let i = arguments.firstIndex(of: "-tier"), i + 1 < arguments.count {
-                state.tier = ["plus": .plus, "pro": .pro][arguments[i + 1]] ?? .free
+                let kademe = ["plus": SubscriptionTier.plus, "pro": .pro][arguments[i + 1]] ?? .free
+                state.tier = kademe
+                state.debugTierOverride = kademe
             }
             // Örnek veri modunda doğrudan uygulamaya giriyoruz. Eskiden açılış
             // yolu cihazda saklı oturum bayrağına bakıyordu; ekran görüntüsü
@@ -72,6 +83,7 @@ struct BondApp: App {
 
     init() {
         NavigationBarStyle.install()
+        Self.configureRevenueCat()
         // Web/serverClientID olmadan `signInWithIdToken`'a giden id_token'ın audience'ı
         // Supabase'in Google provider ayarındaki Client ID ile eşleşmez ve doğrulama başarısız
         // olur — bkz. .env ve HANDOFF.md.

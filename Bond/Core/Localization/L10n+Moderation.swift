@@ -2,6 +2,12 @@ import Foundation
 
 extension L10n {
     enum Moderation {
+        static var removePost: String { String(localized: "moderation.removePost") }
+        static var removePostConfirm: String { String(localized: "moderation.removePostConfirm") }
+        static var removePostBody: String { String(localized: "moderation.removePostBody") }
+        static var suspendAccount: String { String(localized: "moderation.suspendAccount") }
+        static var suspendAccountBody: String { String(localized: "moderation.suspendAccountBody") }
+        static var founderTools: String { String(localized: "moderation.founderTools") }
         static var noneWaiting: String { String(localized: "moderation.noneWaiting") }
         static func waitingCount(_ count: Int) -> String {
             L10n.format("moderation.waitingCount", Int64(count))
@@ -18,6 +24,7 @@ extension L10n {
         static var pending: String { String(localized: "moderation.pending") }
         static var closed: String { String(localized: "moderation.closed") }
         static var suspended: String { String(localized: "moderation.suspended") }
+        static var suspendFailed: String { String(localized: "moderation.suspendFailed") }
         static func reporter(_ name: String) -> String {
             L10n.format("moderation.reporter", name)
         }

@@ -6728,6 +6728,22 @@
         }
       }
     },
+    "moderation.founderTools": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moderation"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moderasyon"
+          }
+        }
+      }
+    },
     "moderation.loadFailed": {
       "extractionState": "manual",
       "localizations": {
@@ -6843,6 +6859,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gönderi kaldırılamadı."
+          }
+        }
+      }
+    },
+    "moderation.removePost": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove post"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gönderiyi kaldır"
+          }
+        }
+      }
+    },
+    "moderation.removePostBody": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The post is removed from everyone's feed. This can't be undone."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gönderi herkesin akışından silinir. Geri alınamaz."
+          }
+        }
+      }
+    },
+    "moderation.removePostConfirm": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove this post?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu gönderi kaldırılsın mı?"
           }
         }
       }
@@ -7017,6 +7081,38 @@
         }
       }
     },
+    "moderation.suspendAccount": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suspend account"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hesabı askıya al"
+          }
+        }
+      }
+    },
+    "moderation.suspendAccountBody": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A suspended account disappears from discovery, its profile is hidden and it can't post. You can restore it from Reports."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Askıya alınan hesap keşifte çıkmaz, profili görünmez ve yeni içerik paylaşamaz. Şikayetler ekranından geri açabilirsin."
+          }
+        }
+      }
+    },
     "moderation.suspendConfirm": {
       "extractionState": "manual",
       "localizations": {
@@ -7030,6 +7126,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ adlı kişinin hesabı askıya alınsın mı?"
+          }
+        }
+      }
+    },
+    "moderation.suspendFailed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't suspend the account."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hesap askıya alınamadı."
           }
         }
       }
@@ -8009,13 +8121,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "COMMON"
+            "value": "BOND"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "COMMON"
+            "value": "BOND"
           }
         }
       }
@@ -9199,13 +9311,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "COMMON PRO"
+            "value": "BOND PRO"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "COMMON PRO"
+            "value": "BOND PRO"
           }
         }
       }
@@ -12149,13 +12261,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "you@student.university.edu"
+            "value": "you@email.com"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "adin@ogrenci.universite.edu.tr"
+            "value": "adin@email.com"
           }
         }
       }

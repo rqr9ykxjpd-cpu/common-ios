@@ -26,10 +26,7 @@ extension AppState {
         return await completeSocialSignIn()
     }
 
-    /// E-posta adresine giriş bağlantısı gönderir. `.edu.tr` şartı ilk sürümde
-    /// kapalı (bkz. 20260821180000); geri açılırsa reddedilen adresler
-    /// sunucu tarafında (Before User Created hook) reddedilir — buraya "gönderildi"
-    /// olarak dönerse gerçekten gönderilmiştir.
+    /// E-posta adresine giriş bağlantısı gönderir.
     @discardableResult
     func requestEmailSignInLink(_ rawEmail: String) async -> Bool {
         let normalized = rawEmail.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
@@ -66,6 +63,7 @@ extension AppState {
             email = sessionEmail.lowercased()
         }
         restoreOrCreateAccount(for: email)
+        await subscriptions.identify(userID: currentUserID)
 
         let profile: ProfileDraft?
         do {
@@ -114,6 +112,7 @@ extension AppState {
                 return
             }
             currentUserID = userID
+            await subscriptions.identify(userID: currentUserID)
             // Uygulama silinip yeniden kurulduğunda yerel kayıt sıfırlanır ama Supabase oturumu
             // Keychain'de kaldığı için hâlâ geçerlidir. E-postayı oturumdan geri almazsak
             // `persistSession` boş e-posta yüzünden hiçbir şey yazmaz ve kullanıcı geçerli bir
@@ -220,6 +219,7 @@ extension AppState {
 
     func clearSession(keepAccountData: Bool) {
         stopMessageListener()
+        Task { await subscriptions.resetIdentity() }
         let accountID = currentUserID
         if !keepAccountData {
             for key in ["email", "profileDraft", "avatar", "gallery"] {
