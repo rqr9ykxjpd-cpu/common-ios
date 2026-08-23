@@ -12,7 +12,15 @@ extension AppState {
         isLoadingNotifications = true
         defer { isLoadingNotifications = false }
         do {
-            notifications = try await service.fetchNotifications().map(appNotification(from:))
+            let gelen = try await service.fetchNotifications().map(appNotification(from:))
+            // Optimistic okundu işaretleri sunucu yanıtından önce gelebilir;
+            // ezilirse zildeki rozet geri geliyormuş gibi görünür.
+            notifications = gelen.map { item in
+                guard pendingNotificationReadIDs.contains(item.id), !item.isRead else { return item }
+                var copy = item
+                copy.isRead = true
+                return copy
+            }
             notificationsError = nil
         } catch {
             guard !isCancellation(error) else { return }
@@ -26,12 +34,23 @@ extension AppState {
 
     func markNotificationRead(_ notificationID: UUID) {
         guard let index = notifications.firstIndex(where: { $0.id == notificationID }), !notifications[index].isRead else { return }
-        notifications[index].isRead = true
+        // Dizi elemanının alanını yerinde değiştirmek Observation'da rozeti
+        // her zaman yenilemiyordu; diziyi yeniden atayınca zildeki kırmızı sayı düşüyor.
+        var guncel = notifications
+        guncel[index].isRead = true
+        notifications = guncel
+        // Liste açılırken `loadNotifications` yarışı okundu işaretini geri almasın.
+        pendingNotificationReadIDs.insert(notificationID)
         Task {
-            do { try await service.markNotificationRead(notificationID) }
-            catch {
+            do {
+                try await service.markNotificationRead(notificationID)
+                pendingNotificationReadIDs.remove(notificationID)
+            } catch {
+                pendingNotificationReadIDs.remove(notificationID)
                 if let refreshed = notifications.firstIndex(where: { $0.id == notificationID }) {
-                    notifications[refreshed].isRead = false
+                    var geri = notifications
+                    geri[refreshed].isRead = false
+                    notifications = geri
                 }
                 showError(error, fallback: L10n.Notification.updateFailed)
             }
@@ -40,12 +59,19 @@ extension AppState {
 
     func markAllNotificationsRead() {
         let previous = notifications
-        for index in notifications.indices {
-            notifications[index].isRead = true
+        let ids = notifications.filter { !$0.isRead }.map(\.id)
+        notifications = notifications.map { item in
+            var copy = item
+            copy.isRead = true
+            return copy
         }
+        pendingNotificationReadIDs.formUnion(ids)
         Task {
-            do { try await service.markAllNotificationsRead() }
-            catch {
+            do {
+                try await service.markAllNotificationsRead()
+                pendingNotificationReadIDs.subtract(ids)
+            } catch {
+                pendingNotificationReadIDs.subtract(ids)
                 notifications = previous
                 showError(error, fallback: L10n.Notification.bulkFailed)
             }

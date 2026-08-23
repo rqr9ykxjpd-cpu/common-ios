@@ -102,6 +102,7 @@ extension L10n {
         static var photosSection: String { String(localized: "profile.photosSection") }
         static var addGallery: String { String(localized: "profile.addGallery") }
         static var changeGallery: String { String(localized: "profile.changeGallery") }
+        static var galleryHint: String { String(localized: "profile.galleryHint") }
         static var mainPhoto: String { String(localized: "profile.mainPhoto") }
         static var mainPhotoHint: String { String(localized: "profile.mainPhotoHint") }
         static var removePhoto: String { String(localized: "profile.removePhoto") }
@@ -136,5 +137,14 @@ extension L10n {
         static var updated: String { String(localized: "profile.updated") }
         static var visitorsLoadFailed: String { String(localized: "profile.visitorsLoadFailed") }
         static var matchLabel: String { String(localized: "profile.matchLabel") }
+        static var admirers: String { String(localized: "profile.admirers") }
+        static var admirersHint: String { String(localized: "profile.admirersHint") }
+        static var admirersEmpty: String { String(localized: "profile.admirersEmpty") }
+        static var admirersEmptyHint: String { String(localized: "profile.admirersEmptyHint") }
+        static var admirersLoadFailed: String { String(localized: "profile.admirersLoadFailed") }
+        static var admirersMatched: String { String(localized: "profile.admirersMatched") }
+        static func admirersCount(_ count: Int) -> String {
+            L10n.format("profile.admirersCount", Int64(count))
+        }
     }
 }

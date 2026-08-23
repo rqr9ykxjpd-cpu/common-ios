@@ -54,6 +54,14 @@ actor SampleStore {
         return Array(profiles[offset..<min(offset + limit, profiles.count)])
     }
 
+    /// "Yenile": desteden çıkanları geri koy (örnek modda eşleşmiş sohbetler hariç).
+    func resetDiscoveryDeck() {
+        let matchedIDs = Set(conversations.map(\.profile.id))
+        let remaining = Set(profiles.map(\.id))
+        let restored = SampleData.profiles.filter { !matchedIDs.contains($0.id) && !remaining.contains($0.id) }
+        profiles.append(contentsOf: restored)
+    }
+
     /// Örnek veride her üçüncü beğeni eşleşmeye dönüyor; eşleşme anı ekranı ve
     /// oradan açılan sohbet böylece denenebiliyor.
     func react(to profileID: UUID, liked: Bool) -> DiscoveryReactionResult {

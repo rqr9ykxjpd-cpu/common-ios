@@ -14,9 +14,27 @@ struct DiscoveryCard: View {
 
     private var kurucu: Bool { profile.badge == .founder }
 
-    /// Gösterilecek fotoğraflar. Galeri boşsa ana profil fotoğrafına düşer.
+    /// Bölüm + (kurucuda) açık üniversite adı.
+    private var educationLabel: Text {
+        let department = DepartmentCatalog.display(profile.department)
+        guard kurucu else { return Text(department) }
+
+        let uni = UniversityCatalog.display(profile.university, expanded: true)
+        return Text(department)
+            .foregroundStyle(BondTheme.ink.opacity(0.55))
+            + Text("  ·  ").foregroundStyle(BondTheme.ink.opacity(0.55))
+            + Text(uni).foregroundStyle(BondTheme.ink)
+    }
+
+    /// Gösterilecek fotoğraflar: önce ana profil fotoğrafı, sonra galeri.
+    ///
+    /// Eskiden galeri doluysa YALNIZCA galeri gösteriliyordu; kullanıcı galeriye
+    /// tek bir foto eklediği anda ana profil fotoğrafı karttan tamamen düşüyordu
+    /// ve kapak, kendi seçmediği bir galeri fotoğrafı oluyordu.
     private var photos: [URL] {
-        profile.galleryImageURLs.isEmpty ? [profile.imageURL].compactMap { $0 } : profile.galleryImageURLs
+        let hepsi = [profile.imageURL].compactMap { $0 } + profile.galleryImageURLs
+        var gorulen = Set<URL>()
+        return hepsi.filter { gorulen.insert($0).inserted }
     }
 
     private var currentPhoto: URL? {
@@ -99,9 +117,12 @@ struct DiscoveryCard: View {
                             Text("\(profile.age)").font(.system(size: 20, weight: .medium))
                             Spacer()
                         }
-                        if let rozetAlt = profile.badge.subtitle {
-                            // Sarmalayan yığın ortalı; bu satır adla aynı hizada
-                            // başlasın diye açıkça sola yaslanıyor.
+                        if profile.badge == .founder {
+                            HStack {
+                                FounderCredLine()
+                                Spacer(minLength: 0)
+                            }
+                        } else if let rozetAlt = profile.badge.subtitle {
                             HStack {
                                 Text(rozetAlt)
                                     .font(.system(size: 12))
@@ -175,9 +196,13 @@ struct DiscoveryCard: View {
     /// kartın boş kalan alt yarısını bu içerikle değerlendiriyoruz.
     private var details: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Label(DepartmentCatalog.display(profile.department), systemImage: "graduationcap.fill")
-                Spacer()
+            HStack(alignment: .firstTextBaseline) {
+                Label {
+                    educationLabel
+                } icon: {
+                    Image(systemName: "graduationcap.fill")
+                }
+                Spacer(minLength: 8)
                 Text(AcademicYear.display(profile.year))
             }
             .font(.system(size: 11, weight: .bold))

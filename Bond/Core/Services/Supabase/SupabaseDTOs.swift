@@ -906,3 +906,42 @@ struct ExpiredStoryRow: Decodable {
     let mediaPath: String?
     enum CodingKeys: String, CodingKey { case id, mediaPath = "media_path" }
 }
+
+struct AdmirerRow: Decodable {
+    let id: UUID
+    let name: String
+    let birthDate: Date
+    let university: String
+    let department: String
+    let academicYear: String
+    let bio: String
+    let avatarPath: String?
+    let isVerified: Bool
+    let badge: ProfileBadge?
+    let likedAt: Date
+    let isMatched: Bool
+
+    func admirer(avatarURL: URL?) -> Admirer {
+        let age = max(18, Calendar.current.dateComponents([.year], from: birthDate, to: .now).year ?? 18)
+        return Admirer(
+            profile: StudentProfile(
+                id: id, name: name, age: age, university: university, department: department,
+                year: academicYear, bio: bio, interests: [], imageURL: avatarURL,
+                compatibility: 0, isVerified: isVerified, badge: badge ?? .none,
+                activeLabel: L10n.Profile.matchLabel
+            ),
+            likedAt: likedAt,
+            isMatched: isMatched
+        )
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, university, department, bio, badge
+        case birthDate = "birth_date"
+        case academicYear = "academic_year"
+        case avatarPath = "avatar_path"
+        case isVerified = "is_verified"
+        case likedAt = "liked_at"
+        case isMatched = "is_matched"
+    }
+}

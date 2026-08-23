@@ -126,8 +126,11 @@ struct StoryViewer: View {
             }
         }
         .confirmationDialog(L10n.Story.deleteConfirm, isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
-            if let story, story.isMine {
-                Button(L10n.Story.delete, role: .destructive) { onDelete(story.id) }
+            if let story, story.isMine || appState.isModerator {
+                Button(
+                    story.isMine ? L10n.Story.delete : L10n.Moderation.removeStory,
+                    role: .destructive
+                ) { onDelete(story.id) }
             }
             Button(L10n.Common.cancel, role: .cancel) {}
         } message: {
@@ -182,8 +185,14 @@ struct StoryViewer: View {
                         .background(.black.opacity(0.28), in: Capsule())
                 }
                 .accessibilityLabel("\(L10n.Story.viewersTitle), \(viewRecords(story.id).count)")
+            }
+            if story.isMine || appState.isModerator {
                 Menu {
-                    Button(L10n.Story.delete, systemImage: "trash", role: .destructive) {
+                    Button(
+                        story.isMine ? L10n.Story.delete : L10n.Moderation.removeStory,
+                        systemImage: "trash",
+                        role: .destructive
+                    ) {
                         showDeleteConfirmation = true
                     }
                 } label: {

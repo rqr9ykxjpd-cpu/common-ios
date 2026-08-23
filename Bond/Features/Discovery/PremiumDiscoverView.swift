@@ -266,9 +266,13 @@ struct PremiumDiscoverView: View {
                     } label: {
                         Label(L10n.Common.refresh, systemImage: "arrow.clockwise")
                             .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(BondTheme.onCanvasDark)
+                            .foregroundStyle(BondTheme.canvasDark)
+                            .padding(.horizontal, 22)
+                            .frame(height: 46)
+                            .background(BondTheme.onCanvasDark, in: Capsule())
                     }
                     .buttonStyle(PressableStyle())
+                    .disabled(appState.isLoadingDiscovery)
                 }
             }
         }

@@ -54,5 +54,19 @@ extension SupabaseProductService {
             .execute()
     }
 
+    /// Hesabımı sağa kaydıranlar. Kurucu değilse sunucu hata döndürüyor —
+    /// buradaki çağrı sıradan bir RPC, yetki kapısı tamamen sunucuda.
+    func fetchAdmirers() async throws -> [Admirer] {
+        guard currentUserID != nil else { throw BackendServiceError.missingSession }
+        let rows: [AdmirerRow] = try await client
+            .rpc("who_liked_me")
+            .execute()
+            .value
+        let urlMap = await signedURLs(bucket: "profile-photos", paths: rows.compactMap(\.avatarPath))
+        return rows.map { row in
+            row.admirer(avatarURL: row.avatarPath.flatMap { urlMap[$0] })
+        }
+    }
+
     // MARK: - Yanıt istekleri
 }

@@ -9,6 +9,7 @@ extension AppState {
         return PersonProfileData(
             interests: uzak.interests,
             galleryURLs: uzak.galleryURLs,
+            avatarURL: uzak.avatarURL,
             badge: uzak.badge,
             posts: uzak.posts.map(socialPost(from:))
         )

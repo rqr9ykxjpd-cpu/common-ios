@@ -14,7 +14,6 @@ struct SocialProfileView: View {
     @State private var selectedPost: SocialPost?
 
     private var displayName: String { appState.draft.name.isEmpty ? L10n.Common.you : appState.draft.name }
-    private var department: String { appState.draft.department.isEmpty ? L10n.Profile.addDepartment : DepartmentCatalog.display(appState.draft.department) }
 
     var body: some View {
         NavigationStack {
@@ -132,18 +131,23 @@ struct SocialProfileView: View {
                     Text(displayName)
                         .font(BondTheme.Typography.title2.weight(.bold))
                         .lineLimit(2)
-                    Text("\(department) · \(AcademicYear.display(appState.draft.year))")
-                        .font(BondTheme.Typography.subheadline)
-                        .foregroundStyle(BondTheme.muted)
-                        .lineLimit(2)
+                    ProfileEducationLine(
+                        department: appState.draft.department.isEmpty ? L10n.Profile.addDepartment : appState.draft.department,
+                        university: appState.myBadge == .founder ? (appState.draft.university.isEmpty ? "YÜ" : appState.draft.university) : nil,
+                        year: appState.draft.year,
+                        font: BondTheme.Typography.subheadline,
+                        highlightUniversity: appState.myBadge == .founder
+                    )
+                    .padding(.top, 6)
+                    .lineLimit(2)
                     // Önceden herkeste "Doğrulanmış YÜ öğrencisi" yazıyordu; üniversite
                     // doğrulaması diye bir şey yok, yani herkes için yanlıştı.
                     ProfileBadgeLabel(badge: appState.myBadge)
                         .padding(.top, 2)
-                    if let altSatir = appState.myBadge.subtitle {
-                        // Aynı satır kişi kartında serif italik ve rozetin
-                        // renginde duruyor; burada gri yuvarlak kalınca aynı
-                        // hesap iki ekranda iki farklı kimlik gibi görünüyordu.
+                    if appState.myBadge == .founder {
+                        FounderCredLine()
+                            .padding(.top, 4)
+                    } else if let altSatir = appState.myBadge.subtitle {
                         Text(altSatir)
                             .font(BondTheme.Typography.footnote)
                             .italic()
@@ -152,6 +156,10 @@ struct SocialProfileView: View {
                     }
                 }
                 Spacer(minLength: 0)
+            }
+
+            if appState.myBadge == .founder {
+                FounderContactCard()
             }
 
             profileActions

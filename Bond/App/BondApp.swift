@@ -54,6 +54,14 @@ struct BondApp: App {
             if arguments.contains("-paywall") { state.opensPaywall = true }
             if arguments.contains("-pronote") { state.opensProNote = true }
             if arguments.contains("-cardpreview") { state.opensCardPreview = true }
+            // `-badge founder`: kurucuya özel ekranları görmek için.
+            if let i = arguments.firstIndex(of: "-badge"), i + 1 < arguments.count {
+                let rozetler: [String: ProfileBadge] = ["founder": .founder, "moderator": .moderator]
+                if let rozet = rozetler[arguments[i + 1]] {
+                    state.myBadge = rozet
+                    state.debugBadgeOverride = rozet
+                }
+            }
             // `-tier plus` / `-tier pro`: kademeye bağlı ekranları görmek için.
             if let i = arguments.firstIndex(of: "-tier"), i + 1 < arguments.count {
                 let kademe = ["plus": SubscriptionTier.plus, "pro": .pro][arguments[i + 1]] ?? .free

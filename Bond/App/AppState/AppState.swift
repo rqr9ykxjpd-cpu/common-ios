@@ -68,6 +68,8 @@ final class AppState {
     var profiles: [StudentProfile] = []
     var discoveryFilters = DiscoveryFilters()
     var isLoadingDiscovery = false
+    /// Keşif yükleme nesli: Yenile eski isteğin boş sonucunun desteyi ezmesini engeller.
+    var discoveryLoadGeneration: UInt = 0
     /// Akış ve story'ler ilk kez yüklenirken. Boş liste ile "henüz yüklenmedi"
     /// ayırt edilemiyordu: akış yüklenirken ekranda "Akış henüz boş" yazıyordu,
     /// yani kullanıcıya yanlış bilgi veriliyordu.
@@ -89,6 +91,9 @@ final class AppState {
     var posts: [SocialPost] = []
     var stories: [CampusStory] = []
     var notifications: [AppNotification] = []
+    /// Okundu diye işaretlenmiş ama sunucu henüz onaylamamış bildirimler.
+    /// Liste yenilenince rozetin geri gelmesini engeller.
+    var pendingNotificationReadIDs: Set<UUID> = []
     var meetingRequests: [MeetingRequest] = []
 
     /// Eşleşmeden gelen/giden yanıt istekleri.
@@ -102,6 +107,16 @@ final class AppState {
     /// veriyor (bkz. `set_badge`), istemci kendine veremiyor; buradaki kontrol
     /// yalnızca arayüzü gizlemek için — asıl kapı sunucudaki izin kuralları.
     var isModerator: Bool { myBadge == .founder || myBadge == .moderator }
+
+    /// "Seni beğenenler" yalnızca kurucuya açık. Bilerek `isModerator` değil:
+    /// moderatör rozeti ileride başkasına verilirse o kişi bu listeyi görmesin.
+    /// Buradaki kontrol yalnızca arayüzü gizliyor; asıl kapı `who_liked_me`
+    /// fonksiyonunun içindeki rozet kontrolü.
+    var isFounder: Bool { myBadge == .founder }
+
+    /// Hesabımı sağa kaydıranlar. Yalnızca kurucu doldurabiliyor.
+    var admirers: [Admirer] = []
+    var isLoadingAdmirers = false
 
     /// Cevap bekleyen şikayetler.
     var pendingReports: [ModerationReport] { reports.filter { $0.handledAt == nil } }
@@ -337,6 +352,11 @@ final class AppState {
     /// bunu ezmesin diye tutuluyor: örnek modda sunucu da cihaz da 'free'
     /// döndürüyor ve bayrak hiç tutmuyordu, Pro ekranları test edilemiyordu.
     var debugTierOverride: SubscriptionTier?
+
+    /// `-badge founder|moderator` ile elle verilen rozet. Kurucuya özel ekranlar
+    /// örnek modda test edilemiyordu: örnek profilin rozeti `.none` geliyor ve
+    /// giriş hiç görünmüyordu.
+    var debugBadgeOverride: ProfileBadge?
 #endif
 
     func refreshSubscriptions() async {

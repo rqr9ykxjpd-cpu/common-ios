@@ -25,6 +25,11 @@ struct SocialPersonDetailView: View {
 
     private var visiblePlace: CampusPlace? { place }
 
+    /// Hero fotoğraf: detaydan gelen imzalı URL > navigasyon URL > galeri ilk kare.
+    private var heroImageURL: URL? {
+        details?.avatarURL ?? profile.imageURL ?? details?.galleryURLs.first ?? profile.galleryImageURLs.first
+    }
+
     /// Kurucu profili. Rozet tek başına yeterince ayırt edici değildi: ekranın
     /// geri kalanı herkesinkiyle aynı görünüyordu.
     private var kurucu: Bool { (details?.badge ?? profile.badge) == .founder }
@@ -47,10 +52,11 @@ struct SocialPersonDetailView: View {
             BondTheme.paper.ignoresSafeArea()
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    ProfileMedia(url: profile.imageURL, data: nil, assetName: profile.imageAssetName)
+                    ProfileMedia(url: heroImageURL, data: nil, assetName: profile.imageAssetName)
                         .frame(maxWidth: .infinity)
                         .frame(height: 340)
                         .clipped()
+                        .id(heroImageURL?.absoluteString ?? "hero-empty")
 
                     VStack(alignment: .leading, spacing: 14) {
                         HStack(alignment: .firstTextBaseline) {
@@ -60,18 +66,23 @@ struct SocialPersonDetailView: View {
                             // çekilen değer varsa o kullanılıyor.
                             ProfileBadgeLabel(badge: details?.badge ?? profile.badge)
                         }
-                        if let rozetAlt = (details?.badge ?? profile.badge).subtitle {
-                            // Yuvarlak, yarı saydam gri bir satırdı; ekrandaki
-                            // diğer bilgi satırlarından ayrışmıyor, öylece
-                            // duruyordu. Serif italik bir künye satırı gibi
-                            // okunuyor ve rozetin rengini taşıyor.
+                        if (details?.badge ?? profile.badge) == .founder {
+                            FounderCredLine()
+                            FounderContactCard()
+                        } else if let rozetAlt = (details?.badge ?? profile.badge).subtitle {
                             Text(rozetAlt)
                                 .font(.system(size: 14))
                                 .italic()
                                 .foregroundStyle(BondTheme.ember)
                         }
-                        Text("\(DepartmentCatalog.display(profile.department)) · \(profile.university) · \(AcademicYear.display(profile.year))")
-                            .font(.system(size: 15, weight: .bold)).foregroundStyle(BondTheme.muted)
+                        ProfileEducationLine(
+                            department: profile.department,
+                            university: profile.university,
+                            year: profile.year,
+                            font: .system(size: 15, weight: .bold),
+                            highlightUniversity: (details?.badge ?? profile.badge) == .founder
+                        )
+                        .padding(.top, 18)
 
                         if let visiblePlace {
                             HStack(spacing: 10) {
@@ -110,7 +121,8 @@ struct SocialPersonDetailView: View {
                             } label: {
                                 Label(reacted ? L10n.Profile.likeSent : L10n.Discovery.meet,
                                       systemImage: reacted ? "checkmark" : "heart.fill")
-                                    .font(.system(size: 15, weight: .bold)).foregroundStyle(BondTheme.ink)
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundStyle(reacted ? BondTheme.ink.opacity(0.55) : BondTheme.onAccent)
                                     .frame(maxWidth: .infinity).frame(height: 50)
                                     .background(reacted ? BondTheme.ink.opacity(0.08) : BondTheme.acid,
                                                 in: RoundedRectangle(cornerRadius: 14))

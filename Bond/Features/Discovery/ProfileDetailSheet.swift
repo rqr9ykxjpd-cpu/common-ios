@@ -13,11 +13,15 @@ struct ProfileDetailSheet: View {
     /// kimliğine göre geliyor — kişi profilinin diğer girişleriyle aynı yol.
     private var profilePosts: [SocialPost] { details?.posts ?? [] }
 
+    /// Önce ana profil fotoğrafı, sonra galeri. Kartla aynı sıra olsun diye:
+    /// eskiden galeri doluysa ana fotoğraf hiç gösterilmiyordu, karttan detaya
+    /// geçince fotoğraf sırası değişiyordu.
     private var galeri: [URL] {
+        let avatar = details?.avatarURL ?? profile.imageURL
         let uzak = details?.galleryURLs ?? []
-        if !uzak.isEmpty { return uzak }
-        if !profile.galleryImageURLs.isEmpty { return profile.galleryImageURLs }
-        return [profile.imageURL].compactMap { $0 }
+        let hepsi = [avatar].compactMap { $0 } + (uzak.isEmpty ? profile.galleryImageURLs : uzak)
+        var gorulen = Set<URL>()
+        return hepsi.filter { gorulen.insert($0).inserted }
     }
 
     var body: some View {

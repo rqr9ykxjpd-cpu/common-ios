@@ -11,6 +11,7 @@ struct ProfileSettingsView: View {
     @State private var showPaywall = false
     @State private var showBlocked = false
     @State private var showModeration = false
+    @State private var showAdmirers = false
     @State private var showMeetingRequests = false
     @State private var showTerms = false
     @State private var showPrivacy = false
@@ -45,6 +46,19 @@ struct ProfileSettingsView: View {
                             badge: appState.pendingReports.count
                         ) {
                             showModeration = true
+                        }
+                    }
+
+                    // Yalnızca kurucuda. Moderatör rozetli biri bunu görmüyor;
+                    // sunucudaki `who_liked_me` de zaten yalnızca kurucuya açık.
+                    if appState.isFounder {
+                        settingsButton(
+                            icon: "heart.text.square",
+                            title: L10n.Profile.admirers,
+                            detail: L10n.Profile.admirersHint,
+                            badge: appState.admirers.count
+                        ) {
+                            showAdmirers = true
                         }
                     }
 
@@ -204,9 +218,15 @@ struct ProfileSettingsView: View {
                 if appState.isModerator {
                     await appState.loadReports()
                 }
+                if appState.isFounder {
+                    await appState.loadAdmirers()
+                }
             }
             .sheet(isPresented: $showCardPreview) {
                 OwnCardPreviewView()
+            }
+            .sheet(isPresented: $showAdmirers) {
+                AdmirersView()
             }
             .sheet(isPresented: $showSaved) {
                 ProfileSavedPostsView()

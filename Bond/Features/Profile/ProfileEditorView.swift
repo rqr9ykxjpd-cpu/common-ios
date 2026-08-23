@@ -204,6 +204,13 @@ struct ProfileEditorView: View {
             }
             .buttonStyle(PressableStyle())
 
+            // Kullanıcı buraya fotoğraf ekleyince nereye gittiğini bilmiyordu:
+            // galeri, Tanış kartında dokunarak geçilen fotoğraflar demek.
+            Text(L10n.Profile.galleryHint)
+                .font(.system(size: 12))
+                .foregroundStyle(BondTheme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+
             if !galleryData.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {

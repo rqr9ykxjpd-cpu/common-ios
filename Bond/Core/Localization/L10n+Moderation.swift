@@ -5,6 +5,8 @@ extension L10n {
         static var removePost: String { String(localized: "moderation.removePost") }
         static var removePostConfirm: String { String(localized: "moderation.removePostConfirm") }
         static var removePostBody: String { String(localized: "moderation.removePostBody") }
+        static var removeComment: String { String(localized: "moderation.removeComment") }
+        static var removeStory: String { String(localized: "moderation.removeStory") }
         static var suspendAccount: String { String(localized: "moderation.suspendAccount") }
         static var suspendAccountBody: String { String(localized: "moderation.suspendAccountBody") }
         static var founderTools: String { String(localized: "moderation.founderTools") }

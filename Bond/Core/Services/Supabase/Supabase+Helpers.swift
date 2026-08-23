@@ -40,12 +40,34 @@ extension SupabaseProductService {
         _ = try? await client.storage.from(bucket).remove(paths: [path])
     }
     func signedURLs(bucket: String, paths: [String]) async -> [String: URL] {
-        let uniquePaths = Array(Set(paths))
+        let uniquePaths = Array(Set(paths.filter { !$0.isEmpty }))
         guard !uniquePaths.isEmpty else { return [:] }
-        guard let results = try? await client.storage.from(bucket).createSignedURLs(paths: uniquePaths, expiresIn: 3_600) else { return [:] }
+        guard let results = try? await client.storage.from(bucket).createSignedURLs(paths: uniquePaths, expiresIn: 3_600) else {
+            // Toplu imza tamamen düşerse tek tek dene — bir path'in hatası
+            // diğerlerinin de boş gelmesine yol açmasın.
+            return await signedURLsIndividually(bucket: bucket, paths: uniquePaths)
+        }
         var map: [String: URL] = [:]
         for result in results {
-            if case let .success(path, url) = result { map[path] = url }
+            if case let .success(path, url) = result {
+                map[path] = url
+            }
+        }
+        // Bazı path'ler topluda başarısız olduysa tek tek tamamla.
+        let missing = uniquePaths.filter { map[$0] == nil }
+        if !missing.isEmpty {
+            let extras = await signedURLsIndividually(bucket: bucket, paths: missing)
+            for (path, url) in extras { map[path] = url }
+        }
+        return map
+    }
+
+    private func signedURLsIndividually(bucket: String, paths: [String]) async -> [String: URL] {
+        var map: [String: URL] = [:]
+        for path in paths {
+            if let url = try? await client.storage.from(bucket).createSignedURL(path: path, expiresIn: 3_600) {
+                map[path] = url
+            }
         }
         return map
     }

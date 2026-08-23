@@ -166,7 +166,11 @@ extension AppState {
     /// kullanıcı başka bir cihazdan girdiğinde profili sunucuda dururken boş görünüyordu.
     func applyRemoteProfile(_ profile: ProfileDraft) {
         draft = profile
+#if DEBUG
+        myBadge = debugBadgeOverride ?? profile.badge
+#else
         myBadge = profile.badge
+#endif
         discoveryFilters = profile.discoveryFilters
         persistAccount()
     }
@@ -245,6 +249,7 @@ extension AppState {
         posts = []
         stories = []
         notifications = []
+        pendingNotificationReadIDs = []
         meetingRequests = []
         profileVisits = []
         currentMatch = nil

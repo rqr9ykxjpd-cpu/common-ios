@@ -7,6 +7,8 @@ extension L10n {
         static var featureShareBody: String { String(localized: "welcome.featureShareBody") }
         static var featureMeetTitle: String { String(localized: "welcome.featureMeetTitle") }
         static var featureMeetBody: String { String(localized: "welcome.featureMeetBody") }
+        static var featureClubsTitle: String { String(localized: "welcome.featureClubsTitle") }
+        static var featureClubsBody: String { String(localized: "welcome.featureClubsBody") }
         static var featureOfflineTitle: String { String(localized: "welcome.featureOfflineTitle") }
         static var featureOfflineBody: String { String(localized: "welcome.featureOfflineBody") }
         static var googleContinue: String { String(localized: "welcome.googleContinue") }

@@ -336,19 +336,104 @@
         }
       }
     },
+    "badge.founderCallA11y": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Call %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ numarasını ara"
+          }
+        }
+      }
+    },
+    "badge.founderCredFocus": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Concept Manager"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Concept Manager"
+          }
+        }
+      }
+    },
+    "badge.founderCredRoles": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Founder · Startup Developer"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Girişimci · Startup Developer"
+          }
+        }
+      }
+    },
+    "badge.founderOffice": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Office"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ofis"
+          }
+        }
+      }
+    },
+    "badge.founderOfficePlace": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Palladium Tower · Ataşehir / Istanbul"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Palladium Tower · Ataşehir / İstanbul"
+          }
+        }
+      }
+    },
     "badge.founderSubtitle": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Founder · Startup · Developer"
+            "value": "Founder · Startup Developer · Concept Manager"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Girişimci · Startup · Developer"
+            "value": "Girişimci · Startup Developer · Concept Manager"
           }
         }
       }
@@ -2321,6 +2406,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Öğrenci"
+          }
+        }
+      }
+    },
+    "common.yalovaUniversity": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yalova University"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yalova Üniversitesi"
           }
         }
       }
@@ -6846,6 +6948,23 @@
         }
       }
     },
+    "moderation.removeComment": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove comment"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yorumu kaldır"
+          }
+        }
+      }
+    },
     "moderation.removeFailed": {
       "extractionState": "manual",
       "localizations": {
@@ -6907,6 +7026,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bu gönderi kaldırılsın mı?"
+          }
+        }
+      }
+    },
+    "moderation.removeStory": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove story"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Story’yi kaldır"
           }
         }
       }
@@ -10064,6 +10200,22 @@
         }
       }
     },
+    "profile.galleryHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These appear on your Discover card — people tap through them there. Your main photo is the round one shown in comments and chats."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu fotoğraflar Tanış kartında görünür — karşı taraf karta dokundukça aralarında geçiş yapar. Ana profil fotoğrafın ise yorumlarda ve sohbetlerde çıkan yuvarlak fotoğraf."
+          }
+        }
+      }
+    },
     "profile.genderRequired": {
       "extractionState": "manual",
       "localizations": {
@@ -12340,6 +12492,40 @@
         }
       }
     },
+    "welcome.featureClubsBody": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join events, build projects, pick up new skills."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Etkinliklere katıl, proje yap, yeni beceriler kazan."
+          }
+        }
+      }
+    },
+    "welcome.featureClubsTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grow through clubs"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kulüplerde kendini geliştir"
+          }
+        }
+      }
+    },
     "welcome.featureOfflineBody": {
       "extractionState": "manual",
       "localizations": {
@@ -12631,7 +12817,126 @@
     },
     "·": {},
     "İsteğin gönderildi": {},
-    "•": {}
+    "•": {},
+    "profile.admirers": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Who liked you"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seni beğenenler"
+          }
+        }
+      }
+    },
+    "profile.admirersHint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "People who swiped right on you"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hesabını sağa kaydıranlar"
+          }
+        }
+      }
+    },
+    "profile.admirersEmpty": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No one yet"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Henüz kimse yok"
+          }
+        }
+      }
+    },
+    "profile.admirersEmptyHint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When someone swipes right on you, they show up here."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Biri seni sağa kaydırdığında burada görünecek."
+          }
+        }
+      }
+    },
+    "profile.admirersLoadFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't load the list"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liste yüklenemedi"
+          }
+        }
+      }
+    },
+    "profile.admirersMatched": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Matched"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eşleştiniz"
+          }
+        }
+      }
+    },
+    "profile.admirersCount": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld people liked you"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld kişi seni beğendi"
+          }
+        }
+      }
+    }
   },
   "version": "1.0"
 }

@@ -157,3 +157,16 @@ struct BlockedProfile: Identifiable, Hashable {
     let imageURL: URL?
     let blockedAt: Date
 }
+
+/// Hesabımı sağa kaydıran kişi. Yalnızca kurucu görebiliyor; listeyi sunucudaki
+/// `who_liked_me` üretiyor (bkz. 20260823210000_founder_admirers.sql).
+///
+/// Sunucu fonksiyonu parametre almıyor: "şu kişiyi kimler beğendi" diye
+/// sorulamıyor, yalnızca çağıranın kendi hesabına gelen beğeniler dönüyor.
+struct Admirer: Identifiable, Hashable {
+    var id: UUID { profile.id }
+    let profile: StudentProfile
+    let likedAt: Date
+    /// Karşılık verilmiş mi. Verilmişse zaten sohbet açılmış demektir.
+    let isMatched: Bool
+}

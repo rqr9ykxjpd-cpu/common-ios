@@ -35,6 +35,11 @@ struct WelcomeView: View {
                         detail: L10n.Welcome.featureMeetBody
                     )
                     WelcomeFeatureRow(
+                        systemImage: "person.3",
+                        title: L10n.Welcome.featureClubsTitle,
+                        detail: L10n.Welcome.featureClubsBody
+                    )
+                    WelcomeFeatureRow(
                         systemImage: "mappin.and.ellipse",
                         title: L10n.Welcome.featureOfflineTitle,
                         detail: L10n.Welcome.featureOfflineBody

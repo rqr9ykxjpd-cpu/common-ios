@@ -31,7 +31,7 @@ enum BondTheme {
     /// Değer Apple mavisiydi ve beyaz zeminle birlikte Facebook/Messenger'ın
     /// birebir formülünü üretiyordu. Artık renk değil kontrast: açık modda
     /// siyah dolu kapsül, koyu modda beyaz. Renk yalnızca anlam taşıdığı yerde
-    /// kalıyor — `coral` yıkıcı, `ember` kurucu.
+    /// kalıyor — `coral` yıkıcı, `ember` kurucu (kırmızı).
     static let acid = adaptive(light: "1D1D1F", dark: "F5F5F7")
     /// `acid` zemin üstündeki yazı. `acid` moda göre ters çevrildiği için bu da
     /// çevrilmek zorunda; sabit beyaz kalsaydı koyu modda beyaz üstünde beyaz olurdu.
@@ -48,8 +48,9 @@ enum BondTheme {
     /// Hata / yıkıcı eylem. Apple sistem kırmızısı; dekoratif accent değil.
     static let coral = adaptive(light: "FF3B30", dark: "FF453A")
     /// Kurucu rozeti. Paletin dışındaki tek semantik işaret — bir yerde bu
-    /// rengi gören kurucu profiline baktığını bilir.
-    static let ember = adaptive(light: "B85C3D", dark: "E89478")
+    /// rengi gören kurucu profiline baktığını bilir. Eskiden terracotta/turuncuydu;
+    /// kuruculuk daha keskin dursun diye net kırmızıya alındı.
+    static let ember = adaptive(light: "D70015", dark: "FF453A")
 
     static let line = Color.white.opacity(0.18)
     /// Liste ayırıcı. Kart ve yüzeylerde kullanılmaz; secondary düğme ve List için.

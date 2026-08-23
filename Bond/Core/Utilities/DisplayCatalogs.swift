@@ -30,6 +30,52 @@ enum DepartmentCatalog {
         default: id
         }
     }
+
+    /// Bölüm + dil track gibi bitişik parçaları ayırır ("İktisat İngilizce" → ["İktisat", "İngilizce"]).
+    /// Katalogdaki çok kelimeli bölüm adlarını parçalamaz.
+    static func educationParts(_ id: String) -> [String] {
+        let shown = display(id).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !shown.isEmpty else { return [] }
+
+        let separators = CharacterSet(charactersIn: "·/,|")
+        if shown.rangeOfCharacter(from: separators) != nil {
+            return shown
+                .components(separatedBy: separators)
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+        }
+
+        let languageTracks = ["İngilizce", "English", "Almanca", "Fransızca", "İspanyolca"]
+        for lang in languageTracks {
+            let suffix = " \(lang)"
+            if shown.hasSuffix(suffix) {
+                let major = String(shown.dropLast(suffix.count)).trimmingCharacters(in: .whitespacesAndNewlines)
+                if !major.isEmpty { return [major, lang] }
+            }
+        }
+
+        // "İktisat (İngilizce)" biçimi
+        if let open = shown.lastIndex(of: "("), let close = shown.lastIndex(of: ")"),
+           open < close, close == shown.index(before: shown.endIndex) {
+            let major = shown[..<open].trimmingCharacters(in: .whitespacesAndNewlines)
+            let track = shown[shown.index(after: open)..<close].trimmingCharacters(in: .whitespacesAndNewlines)
+            if !major.isEmpty, !track.isEmpty { return [String(major), String(track)] }
+        }
+
+        return [shown]
+    }
+}
+
+enum UniversityCatalog {
+    /// Kısa kod ("YÜ") saklanır; ekranda istenirse açık ad gösterilir.
+    static func display(_ id: String, expanded: Bool = false) -> String {
+        let trimmed = id.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard expanded else { return trimmed }
+        switch trimmed.uppercased() {
+        case "YÜ", "YU": return L10n.Common.yalovaUniversity
+        default: return trimmed
+        }
+    }
 }
 
 enum CompatibilityCopy {

@@ -96,9 +96,15 @@ struct CommentsView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 4)
-            if comment.isMine {
+            // Kurucu/moderatör sunucuda her yorumu silebiliyor; menü yalnızca
+            // kendi yorumunda görünüyordu — yetki arayüzde eksikti.
+            if comment.isMine || appState.isModerator {
                 Menu {
-                    Button(L10n.Comments.delete, systemImage: "trash", role: .destructive) {
+                    Button(
+                        comment.isMine ? L10n.Comments.delete : L10n.Moderation.removeComment,
+                        systemImage: "trash",
+                        role: .destructive
+                    ) {
                         commentToDelete = comment
                     }
                 } label: {

@@ -22,6 +22,7 @@ extension L10n {
         static var off: String { String(localized: "common.off") }
         static var on: String { String(localized: "common.on") }
         static var student: String { String(localized: "common.student") }
+        static var yalovaUniversity: String { String(localized: "common.yalovaUniversity") }
         static var youBadge: String { String(localized: "common.youBadge") }
         static var sending: String { String(localized: "common.sending") }
         static var saving: String { String(localized: "common.saving") }

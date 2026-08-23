@@ -264,10 +264,21 @@ extension SupabaseProductService {
             .order("position", ascending: true)
             .execute()
             .value) ?? []
-        let urls = await signedURLs(bucket: "profile-photos", paths: photoRows.map(\.storagePath))
+        // Navigasyondaki kart bazen imzasız / boş avatar getiriyor; burada
+        // `avatar_path`'i yeniden okuyup imzalıyoruz.
+        let media: ProfileMediaRow? = try? await client
+            .from("profiles")
+            .select("avatar_path")
+            .eq("id", value: profileID)
+            .single()
+            .execute()
+            .value
+        let paths = photoRows.map(\.storagePath) + [media?.avatarPath].compactMap { $0 }
+        let urls = await signedURLs(bucket: "profile-photos", paths: paths)
         return PersonDetails(
             interests: interestRows.map(\.interest).sorted(),
             galleryURLs: photoRows.compactMap { urls[$0.storagePath] },
+            avatarURL: media?.avatarPath.flatMap { urls[$0] },
             badge: await badges(for: [profileID])[profileID],
             posts: await posts(byAuthor: profileID)
         )

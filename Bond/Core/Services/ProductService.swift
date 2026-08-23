@@ -106,6 +106,8 @@ protocol ProductService: Sendable {
     func reportUser(_ profileID: UUID, reason: ReportReason, details: String?) async throws
     /// Şikayet listesi. Yalnızca moderatör okuyabiliyor; başkası çağırırsa boş döner.
     func fetchReports() async throws -> [ModerationReport]
+    /// Kurucuya özel: hesabımı sağa kaydıranlar. Yetkiyi sunucu denetliyor.
+    func fetchAdmirers() async throws -> [Admirer]
     /// Şikayeti kapatır.
     func resolveReport(_ reportID: UUID, resolution: String) async throws
     /// Moderatör olarak içerik kaldırır.
@@ -224,6 +226,7 @@ struct UnconfiguredProductService: ProductService {
     func fetchBlockedProfiles() async throws -> [BlockedProfile] { try fail() }
     func reportUser(_ profileID: UUID, reason: ReportReason, details: String?) async throws { try fail() }
     func fetchReports() async throws -> [ModerationReport] { try fail() }
+    func fetchAdmirers() async throws -> [Admirer] { try fail() }
     func resolveReport(_ reportID: UUID, resolution: String) async throws { try fail() }
     func moderatorDeletePost(_ postID: UUID) async throws { try fail() }
     func setAccountActive(_ profileID: UUID, active: Bool) async throws { try fail() }
@@ -279,6 +282,9 @@ enum ProductServiceFactory {
 struct PersonDetails: Sendable {
     var interests: [String]
     var galleryURLs: [URL]
+    /// Ana profil fotoğrafı. Navigasyondaki `StudentProfile.imageURL` bazen
+    /// imzalanamamış / eksik geliyor; detay ekranı bunu yeniden çeker.
+    var avatarURL: URL?
     /// `nil` = öğrenilemedi, `.none` = rozeti yok. İkisi bir değil: eskiden
     /// rozet sorgusu boş dönünce `.none` yazılıyor ve elimizdeki doğru rozeti
     /// eziyordu — bir ağ hıçkırığı kurucu rozetini sessizce siliyordu.

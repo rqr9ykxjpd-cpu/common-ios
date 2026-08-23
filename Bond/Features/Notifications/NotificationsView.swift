@@ -46,9 +46,20 @@ struct NotificationsView: View {
             .task {
                 // Eski bildirimlerde sohbet kimliği olmayabilir. Liste görünmeden
                 // sohbetleri yükleyerek kişi bazlı güvenli fallback'i hazır tutuyoruz.
+                // Bildirimler zaten akışta yüklüyse burada tekrar çekmek, satıra
+                // basıp okundu yaptıktan hemen sonra rozeti geri getiriyordu.
                 async let conversations: Void = appState.loadConversations()
-                async let notifications: Void = appState.loadNotifications()
-                _ = await (conversations, notifications)
+                if appState.notifications.isEmpty {
+                    async let notifications: Void = appState.loadNotifications()
+                    _ = await (conversations, notifications)
+                } else {
+                    await conversations
+                }
+                // Listeye bakmak = görüldü. Satıra basmadan kapanınca rozet
+                // "1" diye kalıyordu; açılınca hepsini okundu sayıyoruz.
+                if appState.unreadNotificationCount > 0 {
+                    appState.markAllNotificationsRead()
+                }
             }
             .navigationTitle(L10n.Notification.title)
             .toolbar {

@@ -97,7 +97,9 @@ struct SampleProductService: ProductService {
     func deleteComment(_ commentID: UUID) async throws { await store.removeComment(commentID) }
     func setPostLiked(_ postID: UUID, liked: Bool) async throws { await store.setLiked(postID, liked: liked) }
     func setPostSaved(_ postID: UUID, saved: Bool) async throws { await store.setSaved(postID, saved: saved) }
-    func resetPasses() async throws {}
+    func resetPasses() async throws {
+        await store.resetDiscoveryDeck()
+    }
 
     func fetchPersonDetails(_ profileID: UUID) async throws -> PersonDetails {
         // Rozet sabit `.none` idi ve örnek modda kurucu rozetini eziyordu:
@@ -106,6 +108,7 @@ struct SampleProductService: ProductService {
         return PersonDetails(
             interests: kisi.map { Array($0.interests) } ?? ["Kahve", "Fotoğraf", "Yürüyüş"],
             galleryURLs: [],
+            avatarURL: kisi?.imageURL,
             badge: kisi?.badge,
             posts: await store.allPosts().filter { $0.authorID == profileID }
         )
@@ -119,6 +122,16 @@ struct SampleProductService: ProductService {
     func fetchBlockedProfiles() async throws -> [BlockedProfile] { await store.allBlocked() }
     func reportUser(_ profileID: UUID, reason: ReportReason, details: String?) async throws {}
     func fetchReports() async throws -> [ModerationReport] { await store.allReports() }
+    /// Örnek modda sunucuya gidilmiyor; ilk üç örnek profil beğenmiş sayılıyor.
+    func fetchAdmirers() async throws -> [Admirer] {
+        SampleData.profiles.prefix(3).enumerated().map { sira, profil in
+            Admirer(
+                profile: profil,
+                likedAt: Date().addingTimeInterval(Double(sira + 1) * -5400),
+                isMatched: sira == 0
+            )
+        }
+    }
     func resolveReport(_ reportID: UUID, resolution: String) async throws {
         await store.resolveReport(reportID, resolution: resolution)
     }

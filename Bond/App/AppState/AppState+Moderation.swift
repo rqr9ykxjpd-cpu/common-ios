@@ -13,6 +13,17 @@ extension AppState {
         }
     }
 
+    func loadAdmirers() async {
+        guard isFounder else { return }
+        isLoadingAdmirers = true
+        defer { isLoadingAdmirers = false }
+        do {
+            admirers = try await service.fetchAdmirers()
+        } catch {
+            showError(error, fallback: L10n.Profile.admirersLoadFailed)
+        }
+    }
+
     /// Şikayeti kapatır; istenirse önce içeriği kaldırır ya da hesabı askıya alır.
     func resolveReport(_ report: ModerationReport, resolution: ModerationReport.Resolution) async {
         do {

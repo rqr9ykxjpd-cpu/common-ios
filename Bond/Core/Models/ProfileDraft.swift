@@ -85,6 +85,7 @@ struct ProfileDraft: Equatable, Codable {
 struct PersonProfileData {
     var interests: [String]
     var galleryURLs: [URL]
+    var avatarURL: URL?
     /// bkz. `PersonDetails.badge`.
     var badge: ProfileBadge?
     var posts: [SocialPost]
