@@ -14,6 +14,7 @@ struct IdentifiableImage: Identifiable {
 }
 
 struct AvatarCropView: View {
+    @Environment(AppState.self) private var appState
     let image: UIImage
     let onCancel: () -> Void
     let onConfirm: (Data) -> Void
@@ -179,6 +180,7 @@ struct AvatarCropView: View {
 
         guard let data = cropped.jpegData(compressionQuality: 0.9).flatMap(ImageCompression.prepareForUpload) else {
             isRendering = false
+            appState.show(L10n.Composer.photoLoadFailed)
             return
         }
         onConfirm(data)

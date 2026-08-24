@@ -119,6 +119,16 @@ struct CampusStory: Identifiable, Hashable {
     var viewRecords: [StoryViewRecord]
     var isMine: Bool
     let expiresAt: Date
+    /// Varsayılan fotoğraf: kolon yoksa veya eski satır.
+    let mediaKind: StoryMediaKind
+    /// Yalnızca video. İmzalı MP4 adresi.
+    let videoURL: URL?
+    /// Video kapağı; fotoğrafta `imageURL` kullanılır.
+    let posterURL: URL?
+    /// Video süresi (saniye). Fotoğrafta nil.
+    let duration: TimeInterval?
+
+    var isVideo: Bool { mediaKind == .video }
 
     /// Story'nin ekranda kalma süresi. Tek kaynak burası: paylaşırken sunucuya
     /// gönderilen bitiş zamanı da bundan hesaplanıyor.
@@ -127,8 +137,12 @@ struct CampusStory: Identifiable, Hashable {
     /// değeri her zaman açıkça gönderdiği için o varsayılan hiç kullanılmıyor;
     /// süreyi değiştirmek için veritabanına dokunmak gerekmiyor.
     static let lifetime: TimeInterval = 10 * 60 * 60
+    /// Fotoğraf story'nin ekranda kalış süresi (oynatıcı).
+    static let photoPlayback: TimeInterval = 6
+    /// Sunucunun kabul ettiği üst sınır; sıkıştırma da bunu keser.
+    static let maxVideoDuration: TimeInterval = 15
 
-    init(id: UUID = UUID(), author: StudentProfile, imageURL: URL? = nil, imageAssetName: String? = nil, localImageData: Data? = nil, caption: String, place: CampusPlace? = nil, viewed: Bool = false, viewRecords: [StoryViewRecord] = [], isMine: Bool = false, expiresAt: Date = .now.addingTimeInterval(CampusStory.lifetime)) {
+    init(id: UUID = UUID(), author: StudentProfile, imageURL: URL? = nil, imageAssetName: String? = nil, localImageData: Data? = nil, caption: String, place: CampusPlace? = nil, viewed: Bool = false, viewRecords: [StoryViewRecord] = [], isMine: Bool = false, expiresAt: Date = .now.addingTimeInterval(CampusStory.lifetime), mediaKind: StoryMediaKind = .image, videoURL: URL? = nil, posterURL: URL? = nil, duration: TimeInterval? = nil) {
         self.id = id
         self.author = author
         self.imageURL = imageURL
@@ -140,8 +154,31 @@ struct CampusStory: Identifiable, Hashable {
         self.viewRecords = viewRecords
         self.isMine = isMine
         self.expiresAt = expiresAt
+        self.mediaKind = mediaKind
+        self.videoURL = videoURL
+        self.posterURL = posterURL
+        self.duration = duration
     }
 
+    func replacingAuthor(_ author: StudentProfile) -> CampusStory {
+        CampusStory(
+            id: id, author: author, imageURL: imageURL, imageAssetName: imageAssetName,
+            localImageData: localImageData, caption: caption, place: place, viewed: viewed,
+            viewRecords: viewRecords, isMine: isMine, expiresAt: expiresAt, mediaKind: mediaKind,
+            videoURL: videoURL, posterURL: posterURL, duration: duration
+        )
+    }
+}
+
+enum StoryMediaKind: String, Hashable, Sendable {
+    case image
+    case video
+}
+
+/// Story paylaşımının iki yolu. Gönderi (post) hâlâ yalnızca fotoğraf.
+enum StoryUpload: Sendable {
+    case photo(Data)
+    case video(fileURL: URL, posterJPEG: Data, duration: TimeInterval)
 }
 
 

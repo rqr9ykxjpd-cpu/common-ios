@@ -117,10 +117,7 @@ struct ProfileSettingsView: View {
                     if appState.tier.hasGhostMode {
                         Toggle(isOn: Binding(
                             get: { appState.ghostMode },
-                            set: {
-                                appState.ghostMode = $0
-                                Haptics.impact(.light)
-                            }
+                            set: { appState.setGhostMode($0) }
                         )) {
                             settingsLabel(
                                 icon: "eye.slash",

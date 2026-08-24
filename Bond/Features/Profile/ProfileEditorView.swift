@@ -72,8 +72,12 @@ struct ProfileEditorView: View {
             // konumlandırılıyor. Aksi halde kadraj neredeyse her fotoğrafta ortadan
             // kırpılıyor ve kullanıcının yapabileceği bir şey olmuyordu.
             Task {
-                guard let raw = try? await item?.loadTransferable(type: Data.self),
-                      let picked = UIImage(data: raw) else { return }
+                guard let item else { return }
+                guard let raw = try? await item.loadTransferable(type: Data.self),
+                      let picked = UIImage(data: raw) else {
+                    await MainActor.run { appState.show(L10n.Composer.photoLoadFailed) }
+                    return
+                }
                 await MainActor.run { cropCandidate = IdentifiableImage(image: picked) }
             }
         }
@@ -92,7 +96,13 @@ struct ProfileEditorView: View {
                     if let raw = try? await item.loadTransferable(type: Data.self),
                        let data = ImageCompression.prepareForUpload(raw) { loadedImages.append(data) }
                 }
-                await MainActor.run { galleryData = loadedImages }
+                await MainActor.run {
+                    if !items.isEmpty && loadedImages.isEmpty {
+                        appState.show(L10n.Composer.photoLoadFailed)
+                    } else {
+                        galleryData = loadedImages
+                    }
+                }
             }
         }
         .alert(L10n.Profile.discardTitle, isPresented: $showDiscardAlert) {
@@ -172,7 +182,7 @@ struct ProfileEditorView: View {
                         ProfileMedia(url: currentAvatarURL, data: currentAvatarData)
                             .frame(width: 104, height: 128)
                             .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous))
-                        Image(systemName: "camera.fill")
+                        Image(systemName: "photo.badge.plus")
                             .font(.system(size: 12, weight: .bold))
                             .foregroundStyle(BondTheme.paper)
                             .frame(width: 30, height: 30)
@@ -204,8 +214,10 @@ struct ProfileEditorView: View {
             }
             .buttonStyle(PressableStyle())
 
-            // Kullanıcı buraya fotoğraf ekleyince nereye gittiğini bilmiyordu:
-            // galeri, Tanış kartında dokunarak geçilen fotoğraflar demek.
+            // Kullanıcı buraya fotoğraf ekleyince nereye gittiğini bilmiyordu.
+            // Kart artık ana fotoğrafı kapak alıp galeriyi arkasına diziyor;
+            // metin de bunu anlatıyor, yoksa "ana fotoğrafım nerede" sorusu
+            // aynı yerden tekrar çıkıyor.
             Text(L10n.Profile.galleryHint)
                 .font(.system(size: 12))
                 .foregroundStyle(BondTheme.muted)
@@ -380,22 +392,17 @@ struct ProfileEditorView: View {
     // vermez ve kaydetmeden çıkıldığında mevcut fotoğraflar kaybolmuş gibi görünmez.
     private func hydrateExistingPhotos() async {
         if avatarData == nil, let url = appState.avatarURL {
-            avatarData = try? await downloadImageData(url)
+            avatarData = await appState.remoteImageData(for: url)
         }
         if galleryData.isEmpty, !appState.galleryURLs.isEmpty {
             var hydrated: [Data] = []
             for url in appState.galleryURLs {
-                if let data = try? await downloadImageData(url) { hydrated.append(data) }
+                if let data = await appState.remoteImageData(for: url) { hydrated.append(data) }
             }
             galleryData = hydrated
         }
         baselineAvatarData = avatarData
         baselineGalleryData = galleryData
-    }
-
-    private func downloadImageData(_ url: URL) async throws -> Data {
-        let (data, _) = try await URLSession.shared.data(from: url)
-        return data
     }
 
     private func save() {

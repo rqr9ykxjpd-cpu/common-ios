@@ -59,6 +59,7 @@ extension SupabaseProductService {
         filters.requiresCommonInterest = row.requireCommonInterest
         filters.campusOnly = row.campusOnly
         draft.discoveryFilters = filters
+        draft.ghostMode = row.ghostMode
         return draft
     }
 
@@ -78,15 +79,12 @@ extension SupabaseProductService {
             .order("position", ascending: true)
             .execute()
             .value
-        var avatarURL: URL?
-        if let path = profile.avatarPath {
-            avatarURL = try await client.storage.from("profile-photos").createSignedURL(path: path, expiresIn: 3_600)
-        }
-        var galleryURLs: [URL] = []
-        for photo in gallery {
-            galleryURLs.append(try await client.storage.from("profile-photos").createSignedURL(path: photo.storagePath, expiresIn: 3_600))
-        }
-        return ProfilePhotosResult(avatarURL: avatarURL, galleryURLs: galleryURLs)
+        let paths = [profile.avatarPath].compactMap { $0 } + gallery.map(\.storagePath)
+        let urls = await signedURLs(bucket: "profile-photos", paths: paths)
+        return ProfilePhotosResult(
+            avatarURL: profile.avatarPath.flatMap { urls[$0] },
+            galleryURLs: gallery.compactMap { urls[$0.storagePath] }
+        )
     }
 
     func updateAvatar(_ imageData: Data?) async throws -> URL? {
@@ -117,7 +115,7 @@ extension SupabaseProductService {
         if let oldPath = profile.avatarPath, oldPath != path {
             _ = try? await client.storage.from("profile-photos").remove(paths: [oldPath])
         }
-        return try await client.storage.from("profile-photos").createSignedURL(path: path, expiresIn: 3_600)
+        return publicProfilePhotoURL(path)
     }
 
     func updateGallery(_ images: [Data]) async throws -> [URL] {
@@ -149,7 +147,7 @@ extension SupabaseProductService {
         if !obsoletePaths.isEmpty { _ = try? await client.storage.from("profile-photos").remove(paths: obsoletePaths) }
         var urls: [URL] = []
         for path in newPaths {
-            urls.append(try await client.storage.from("profile-photos").createSignedURL(path: path, expiresIn: 3_600))
+            if let url = publicProfilePhotoURL(path) { urls.append(url) }
         }
         return urls
     }
@@ -233,6 +231,11 @@ extension SupabaseProductService {
         try await client.rpc("record_profile_visit", params: ProfileVisitParams(target: profileID)).execute()
     }
 
+    func setGhostMode(_ enabled: Bool) async throws {
+        guard currentUserID != nil else { throw BackendServiceError.missingSession }
+        try await client.rpc("set_ghost_mode", params: GhostModeParams(enabled: enabled)).execute()
+    }
+
     func fetchProfileVisits() async throws -> [ProfileVisit] {
         let rows: [ProfileVisitRow] = try await client.rpc("get_my_profile_visits").execute().value
         let avatarURLs = await signedURLs(bucket: "profile-photos", paths: rows.compactMap(\.avatarPath))
@@ -251,13 +254,15 @@ extension SupabaseProductService {
     func fetchPersonDetails(_ profileID: UUID) async throws -> PersonDetails {
         // İzin kuralları bu iki tabloyu "profil görünüyorsa okunur" diye
         // tanımlıyor, dolayısıyla ek bir sunucu değişikliği gerekmiyor.
-        let interestRows: [ProfileInterestRow] = (try? await client
+        // Üç sorgu + imza + rozet paralel; gönderiler ayrı çağrıda — aksi halde
+        // profil açılınca fotoğraflar post indirmelerini bekliyordu.
+        async let interestRowsTask: [ProfileInterestRow] = (try? await client
             .from("profile_interests")
             .select("interest")
             .eq("profile_id", value: profileID)
             .execute()
             .value) ?? []
-        let photoRows: [ProfilePhotoRow] = (try? await client
+        async let photoRowsTask: [ProfilePhotoRow] = (try? await client
             .from("profile_photos")
             .select("storage_path,position")
             .eq("profile_id", value: profileID)
@@ -266,22 +271,32 @@ extension SupabaseProductService {
             .value) ?? []
         // Navigasyondaki kart bazen imzasız / boş avatar getiriyor; burada
         // `avatar_path`'i yeniden okuyup imzalıyoruz.
-        let media: ProfileMediaRow? = try? await client
+        async let mediaTask: ProfileMediaRow? = try? await client
             .from("profiles")
             .select("avatar_path")
             .eq("id", value: profileID)
             .single()
             .execute()
             .value
+        async let badgeTask = badges(for: [profileID])[profileID]
+
+        let interestRows = await interestRowsTask
+        let photoRows = await photoRowsTask
+        let media = await mediaTask
         let paths = photoRows.map(\.storagePath) + [media?.avatarPath].compactMap { $0 }
         let urls = await signedURLs(bucket: "profile-photos", paths: paths)
         return PersonDetails(
             interests: interestRows.map(\.interest).sorted(),
             galleryURLs: photoRows.compactMap { urls[$0.storagePath] },
             avatarURL: media?.avatarPath.flatMap { urls[$0] },
-            badge: await badges(for: [profileID])[profileID],
-            posts: await posts(byAuthor: profileID)
+            badge: await badgeTask,
+            posts: []
         )
+    }
+
+    /// Profil gönderi ızgarası. Medya indirme yok — imzalı URL ile AsyncImage.
+    func fetchPersonPosts(_ profileID: UUID) async -> [BackendPost] {
+        await posts(byAuthor: profileID)
     }
 
     /// Bir kişinin gönderileri. Akıştaki sorgunun aynısı, tek bir yazarla
@@ -303,6 +318,10 @@ extension SupabaseProductService {
             paths: rows.compactMap { $0.author.avatarPath }
                 + rows.flatMap { $0.comments }.compactMap { $0.author.avatarPath }
         )
+        let mediaURLs = await signedURLs(
+            bucket: "post-media",
+            paths: rows.compactMap(\.mediaPath)
+        )
         let likeRows: [PostLikeRow] = ((try? await client
             .from("post_likes")
             .select("post_id,user_id")
@@ -317,24 +336,19 @@ extension SupabaseProductService {
             .value) as [SavedPostRow]? ?? []).map(\.postID))
         let authorBadge = await badges(for: [profileID])[profileID] ?? .none
         let userID = currentUserID
-        var sonuc: [BackendPost] = []
-        for row in rows {
-            var imageData: Data?
-            if let mediaPath = row.mediaPath {
-                imageData = try? await client.storage.from("post-media").download(path: mediaPath)
-            }
+        return rows.map { row in
             let postLikes = likeRows.filter { $0.postID == row.id }
-            sonuc.append(row.backendPost(
-                imageData: imageData,
+            return row.backendPost(
+                imageData: nil,
                 authorAvatarURL: row.author.avatarPath.flatMap { avatarURLs[$0] },
                 likeCount: postLikes.count,
                 liked: userID.map { id in postLikes.contains { $0.userID == id } } ?? false,
                 saved: savedIDs.contains(row.id),
                 badge: authorBadge,
-                commentAvatarURLs: avatarURLs
-            ))
+                commentAvatarURLs: avatarURLs,
+                imageURL: row.mediaPath.flatMap { mediaURLs[$0] }
+            )
         }
-        return sonuc
     }
 }
 

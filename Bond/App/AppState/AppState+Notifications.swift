@@ -22,6 +22,7 @@ extension AppState {
                 return copy
             }
             notificationsError = nil
+            syncApplicationBadge()
         } catch {
             guard !isCancellation(error) else { return }
             let message = UserFacingError.message(error, fallback: L10n.Notification.loadFailed)
@@ -39,6 +40,7 @@ extension AppState {
         var guncel = notifications
         guncel[index].isRead = true
         notifications = guncel
+        syncApplicationBadge()
         // Liste açılırken `loadNotifications` yarışı okundu işaretini geri almasın.
         pendingNotificationReadIDs.insert(notificationID)
         Task {
@@ -51,6 +53,7 @@ extension AppState {
                     var geri = notifications
                     geri[refreshed].isRead = false
                     notifications = geri
+                    syncApplicationBadge()
                 }
                 showError(error, fallback: L10n.Notification.updateFailed)
             }
@@ -66,6 +69,7 @@ extension AppState {
             return copy
         }
         pendingNotificationReadIDs.formUnion(ids)
+        syncApplicationBadge()
         Task {
             do {
                 try await service.markAllNotificationsRead()
@@ -73,6 +77,7 @@ extension AppState {
             } catch {
                 pendingNotificationReadIDs.subtract(ids)
                 notifications = previous
+                syncApplicationBadge()
                 showError(error, fallback: L10n.Notification.bulkFailed)
             }
         }

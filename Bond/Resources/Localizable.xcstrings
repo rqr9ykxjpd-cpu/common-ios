@@ -2189,6 +2189,23 @@
         }
       }
     },
+    "common.openSettings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Settings"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ayarlar’ı aç"
+          }
+        }
+      }
+    },
     "common.on": {
       "extractionState": "manual",
       "localizations": {
@@ -2529,6 +2546,57 @@
         }
       }
     },
+    "composer.cameraDenied": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera access is off"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kamera izni kapalı"
+          }
+        }
+      }
+    },
+    "composer.cameraDeniedBody": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To take photos, allow Bond camera access in Settings."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraf çekmek için Ayarlar’dan Bond’a kamera izni ver."
+          }
+        }
+      }
+    },
+    "composer.photoLoadFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t load that photo. Try another one."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraf yüklenemedi. Başka bir tane dene."
+          }
+        }
+      }
+    },
     "composer.changePhoto": {
       "extractionState": "manual",
       "localizations": {
@@ -2586,13 +2654,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose a photo for the story"
+            "value": "Choose a photo or video for the story"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Story için bir fotoğraf seç"
+            "value": "Story için fotoğraf veya video seç"
           }
         }
       }
@@ -2627,6 +2695,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gönderi"
+          }
+        }
+      }
+    },
+    "composer.postLimit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can have up to %lld posts on the free plan. Delete one, or continue with Plus or Pro."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ücretsiz planda en fazla %lld gönderin olabilir. Birini sil ya da Plus / Pro’ya geç."
           }
         }
       }
@@ -2756,13 +2841,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A story needs a photo"
+            "value": "A story needs a photo or video"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Story fotoğrafsız paylaşılamaz"
+            "value": "Story fotoğraf veya videosuz paylaşılamaz"
           }
         }
       }
@@ -2831,6 +2916,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "İstersen sadece yazı da paylaşabilirsin"
+          }
+        }
+      }
+    },
+    "composer.videoLoadFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t load that video. Try another one."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video yüklenemedi. Başka bir tane dene."
+          }
+        }
+      }
+    },
+    "composer.videoTooLong": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the video under 15 seconds and 28 MB."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video 15 saniyeyi ve 28 MB’ı geçmesin."
           }
         }
       }
@@ -4480,6 +4599,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Fotoğraf çok büyük. Başka bir tane dene."
+          }
+        }
+      }
+    },
+    "error.postLimit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can have up to 5 posts on the free plan. Delete one, or continue with Plus or Pro."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ücretsiz planda en fazla 5 gönderin olabilir. Birini sil ya da Plus / Pro’ya geç."
           }
         }
       }
@@ -8353,6 +8489,23 @@
         }
       }
     },
+    "paywall.featurePosts": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active posts"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktif gönderi"
+          }
+        }
+      }
+    },
     "paywall.featureRequests": {
       "extractionState": "manual",
       "localizations": {
@@ -10201,17 +10354,18 @@
       }
     },
     "profile.galleryHint": {
+      "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "These appear on your Discover card — people tap through them there. Your main photo is the round one shown in comments and chats."
-          }
-        },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bu fotoğraflar Tanış kartında görünür — karşı taraf karta dokundukça aralarında geçiş yapar. Ana profil fotoğrafın ise yorumlarda ve sohbetlerde çıkan yuvarlak fotoğraf."
+            "value": "Ana profil fotoğrafın Tanış kartının kapağı olur. Buraya eklediklerin onun arkasına dizilir — karşı taraf karta dokundukça aralarında geçer. Ana fotoğrafın ayrıca yorumlarda ve sohbetlerde yuvarlak olarak görünür."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your main photo is the cover of your Discover card. These are stacked behind it — people tap through them on the card. Your main photo also appears as the round one in comments and chats."
           }
         }
       }
@@ -10263,6 +10417,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kimin profiline girdiğin, hangi story'yi kaç kez izlediğin gizlensin"
+          }
+        }
+      }
+    },
+    "profile.ghostSaveFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t save ghost mode"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hayalet mod kaydedilemedi"
           }
         }
       }
@@ -11693,6 +11864,40 @@
         }
       }
     },
+    "quota.postDetail": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On the free plan you can have 5 posts. Plus and Pro are unlimited."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ücretsiz planda 5 gönderin olabilir. Plus ve Pro’da sınır yok."
+          }
+        }
+      }
+    },
+    "quota.postTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You’re out of\nposts."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gönderi hakkın\nbitti."
+          }
+        }
+      }
+    },
     "report.harassment": {
       "extractionState": "manual",
       "localizations": {
@@ -12933,6 +13138,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld kişi seni beğendi"
+          }
+        }
+      }
+    },
+    "welcome.signingIn": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signing you in…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giriş yapılıyor…"
           }
         }
       }

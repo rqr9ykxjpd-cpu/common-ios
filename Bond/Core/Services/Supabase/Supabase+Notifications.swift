@@ -48,7 +48,18 @@ extension SupabaseProductService {
     func registerDeviceToken(_ token: String) async throws {
         guard let userID = currentUserID else { throw BackendServiceError.missingSession }
         try await client.from("device_tokens")
-            .upsert(DeviceTokenUpsert(userID: userID, token: token, platform: "ios"), returning: .minimal)
+            .upsert(
+                DeviceTokenUpsert(userID: userID, token: token, platform: "ios", updatedAt: Date()),
+                returning: .minimal
+            )
+            .execute()
+    }
+
+    func unregisterDeviceToken(_ token: String) async throws {
+        guard currentUserID != nil else { throw BackendServiceError.missingSession }
+        try await client.from("device_tokens")
+            .delete(returning: .minimal)
+            .eq("token", value: token)
             .execute()
     }
 }

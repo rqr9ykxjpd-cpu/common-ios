@@ -11,25 +11,37 @@ extension AppState {
         isLoadingStories = true
         defer { isLoadingStories = false }
         do {
-            stories = try await service.fetchStories()
+            stories = try await service.fetchStories().map { story in
+                // Sunucu rozeti kaçırsa bile kendi story’nde yerel kurucu/mod rozeti kalsın.
+                guard story.isMine, story.author.badge == .none, myBadge != .none else { return story }
+                return story.replacingAuthor(story.author.withBadge(myBadge))
+            }
         } catch {
             showError(error, fallback: L10n.Story.loadFailed)
         }
     }
 
-    func publishStory(imageData: Data, caption: String, place: CampusPlace?) {
-        Task {
-            do {
-                try await service.publishStory(imageData: imageData, caption: caption, placeID: place?.id)
-                await loadStories()
-                Haptics.success()
-            } catch {
-                showError(error, fallback: L10n.Story.postFailed)
-            }
+    @discardableResult
+    func publishStory(_ upload: StoryUpload, caption: String, place: CampusPlace?) async -> Bool {
+        do {
+            try await service.publishStory(upload, caption: caption, placeID: place?.id)
+            await loadStories()
+            Haptics.success()
+            show(L10n.Composer.storyShared)
+            return true
+        } catch {
+            showError(error, fallback: L10n.Story.postFailed)
+            return false
         }
     }
     func deleteStory(_ storyID: UUID) {
-        guard let removed = stories.first(where: { $0.id == storyID && $0.isMine }) else { return }
+        let removed = stories.first(where: { $0.id == storyID })
+        if let removed {
+            guard removed.isMine || isModerator else { return }
+        } else {
+            // Liste senkron dışı olsa bile kurucu/moderatör sunucudan silebilsin.
+            guard isModerator else { return }
+        }
         stories.removeAll { $0.id == storyID }
         if selectedStory?.id == storyID { selectedStory = nil }
         show(L10n.Story.deleted)
@@ -37,7 +49,7 @@ extension AppState {
         Task {
             do { try await service.deleteStory(storyID) }
             catch {
-                stories.insert(removed, at: 0)
+                if let removed { stories.insert(removed, at: 0) }
                 showError(error, fallback: L10n.Story.deleteFailed)
             }
         }
@@ -49,21 +61,32 @@ extension AppState {
         let storyID = story.id
         let isMine = story.isMine
         Task {
+            // İzleyen listesini kayıt yazılmasını beklemeden çek: sayı 0'da kalmasın.
+            if isMine {
+                do {
+                    let records = try await service.fetchStoryViews(storyID)
+                    guard let index = stories.firstIndex(where: { $0.id == storyID }) else { return }
+                    if !records.isEmpty || stories[index].viewRecords.isEmpty {
+                        stories[index].viewRecords = records
+                    }
+                } catch {
+                    showError(error, fallback: L10n.Story.viewersLoadFailed)
+                }
+            }
             // Sahibinin kendi açışları da sayılıyor: kullanıcı bunu bilerek istedi,
             // sayacın çalıştığını tek hesapla da görebilmek için.
             // Hayalet moddayken hiç kaydetmiyoruz.
-            if !(ghostMode && tier.hasGhostMode) {
-                try? await service.markStoryViewed(storyID)
-            }
-            // İzleyen listesini yalnızca story sahibi görebilir; başkasının story'sinde
-            // bu sorgu boş döneceği için hiç yapmıyoruz.
-            guard isMine else { return }
+            guard !(ghostMode && tier.hasGhostMode) else { return }
             do {
-                let records = try await service.fetchStoryViews(storyID)
-                guard let index = stories.firstIndex(where: { $0.id == storyID }) else { return }
-                stories[index].viewRecords = records
+                try await service.markStoryViewed(storyID)
             } catch {
                 showError(error, fallback: L10n.Story.viewersLoadFailed)
+                return
+            }
+            guard isMine else { return }
+            if let records = try? await service.fetchStoryViews(storyID),
+               let index = stories.firstIndex(where: { $0.id == storyID }) {
+                stories[index].viewRecords = records
             }
         }
     }

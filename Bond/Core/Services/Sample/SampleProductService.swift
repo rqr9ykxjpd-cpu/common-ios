@@ -44,7 +44,7 @@ struct SampleProductService: ProductService {
     /// veriyle gezerken uygulamayı kayıt akışına düşürüyor, hiçbir ekran
     /// görülemiyordu. Bu adres yalnızca "fotoğrafı var" demek için.
     func fetchMyProfilePhotos() async throws -> ProfilePhotosResult {
-        ProfilePhotosResult(avatarURL: URL(string: "sample://avatar"), galleryURLs: [])
+        ProfilePhotosResult(avatarURL: SampleData.me.imageURL, galleryURLs: [])
     }
     func updateAvatar(_ imageData: Data?) async throws -> URL? { nil }
     func updateGallery(_ images: [Data]) async throws -> [URL] { [] }
@@ -75,7 +75,12 @@ struct SampleProductService: ProductService {
 
     // Akış
     func fetchFeed() async throws -> [BackendPost] { await store.allPosts() }
+    func countMyPosts() async throws -> Int {
+        await store.allPosts().filter { $0.authorID == SampleData.me.id }.count
+    }
     func createPost(caption: String, placeName: String?, imageData: Data?) async throws -> BackendPost {
+        let count = await store.allPosts().filter { $0.authorID == SampleData.me.id }.count
+        if count >= CampusLimits.maxPostsPerUser { throw BackendServiceError.postLimit }
         let post = SampleData.newPost(caption: caption, placeName: placeName, imageData: imageData)
         await store.insert(post)
         return post
@@ -110,8 +115,12 @@ struct SampleProductService: ProductService {
             galleryURLs: [],
             avatarURL: kisi?.imageURL,
             badge: kisi?.badge,
-            posts: await store.allPosts().filter { $0.authorID == profileID }
+            posts: []
         )
+    }
+
+    func fetchPersonPosts(_ profileID: UUID) async -> [BackendPost] {
+        await store.allPosts().filter { $0.authorID == profileID }
     }
 
     func fetchSavedPosts() async throws -> [BackendPost] { await store.allPosts().filter(\.saved) }
@@ -147,6 +156,7 @@ struct SampleProductService: ProductService {
     }
     func markAllNotificationsRead() async throws { await store.markAllNotificationsRead() }
     func registerDeviceToken(_ token: String) async throws {}
+    func unregisterDeviceToken(_ token: String) async throws {}
     func touchLastActive() async throws {}
 
     // Yer, story, kulüp, buluşma
@@ -172,17 +182,34 @@ struct SampleProductService: ProductService {
         _ = await store.respondToMessageRequest(requestID, accept: false)
     }
     func fetchStories() async throws -> [CampusStory] { await store.allStories() }
-    func publishStory(imageData: Data, caption: String, placeID: UUID?) async throws {
+    func publishStory(_ upload: StoryUpload, caption: String, placeID: UUID?) async throws {
         let places = await store.allPlaces()
-        await store.addStory(
-            CampusStory(
-                author: SampleData.me,
-                localImageData: imageData,
-                caption: caption,
-                place: placeID.flatMap { id in places.first { $0.id == id } },
-                isMine: true
+        let place = placeID.flatMap { id in places.first { $0.id == id } }
+        switch upload {
+        case .photo(let imageData):
+            await store.addStory(
+                CampusStory(
+                    author: SampleData.me,
+                    localImageData: imageData,
+                    caption: caption,
+                    place: place,
+                    isMine: true
+                )
             )
-        )
+        case .video(let fileURL, let posterJPEG, let duration):
+            await store.addStory(
+                CampusStory(
+                    author: SampleData.me,
+                    localImageData: posterJPEG,
+                    caption: caption,
+                    place: place,
+                    isMine: true,
+                    mediaKind: .video,
+                    videoURL: fileURL,
+                    duration: duration
+                )
+            )
+        }
     }
     func deleteStory(_ storyID: UUID) async throws { await store.removeStory(storyID) }
     func purgeMyExpiredStories() async {}
@@ -204,6 +231,7 @@ struct SampleProductService: ProductService {
     // Profil ziyaretleri
     func recordProfileVisit(_ profileID: UUID) async throws {}
     func fetchProfileVisits() async throws -> [ProfileVisit] { await store.allVisits() }
+    func setGhostMode(_ enabled: Bool) async throws {}
 }
 
 // MARK: - Değiştirici yardımcılar
@@ -215,7 +243,7 @@ extension BackendPost {
             authorUniversity: authorUniversity, authorDepartment: authorDepartment, authorYear: authorYear,
             authorBio: authorBio, authorVerified: authorVerified, authorBadge: authorBadge,
             authorAvatarURL: authorAvatarURL,
-            caption: caption, placeName: placeName, imageData: imageData, createdAt: createdAt,
+            caption: caption, placeName: placeName, imageData: imageData, imageURL: imageURL, createdAt: createdAt,
             comments: comments ?? self.comments,
             likeCount: likeCount ?? self.likeCount,
             liked: liked ?? self.liked,

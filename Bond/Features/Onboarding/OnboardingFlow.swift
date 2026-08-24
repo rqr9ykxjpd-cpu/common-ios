@@ -334,6 +334,7 @@ private struct OnboardingField: View {
 /// tamamlayabiliyordu; Tanış'ta gri bir kartla görünüyor, kimse beğenmiyor ve
 /// uygulamanın boş olduğunu düşünüyordu.
 private struct PhotoStep: View {
+    @Environment(AppState.self) private var appState
     @Binding var avatarData: Data?
     let submit: () -> Void
     @State private var item: PhotosPickerItem?
@@ -387,7 +388,11 @@ private struct PhotoStep: View {
                 let raw = try? await newItem?.loadTransferable(type: Data.self)
                 let picked = raw.flatMap(UIImage.init(data:))
                 await MainActor.run {
-                    if let picked { cropCandidate = IdentifiableImage(image: picked) }
+                    if let picked {
+                        cropCandidate = IdentifiableImage(image: picked)
+                    } else {
+                        appState.show(L10n.Composer.photoLoadFailed)
+                    }
                     isLoading = false
                 }
             }

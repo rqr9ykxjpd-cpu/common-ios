@@ -122,6 +122,8 @@ enum UserFacingError {
 
         // — Profil kuralları (save_my_profile içindeki kontroller) —
         (["at least three interests"], L10n.Errors.minInterests),
+        (["post_limit"], L10n.Composer.postLimit(CampusLimits.maxPostsPerUser)),
+        (["quota_post"], L10n.Composer.postLimit(CampusLimits.maxPostsPerUser)),
 
         // — Yetki ve veri —
         (["row-level security"], L10n.Errors.permission),

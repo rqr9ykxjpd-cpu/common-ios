@@ -27,23 +27,19 @@ struct ProfileBadgeLabel: View {
 /// Kurucu künyesi — rozetin altındaki kimlik satırı.
 ///
 /// Basit el yazısı (Noteworthy Bold): Girişimci · Startup Developer / Concept Manager.
+/// Çizgi yok, isimle aynı sola hizalı.
 struct FounderCredLine: View {
     var body: some View {
-        HStack(alignment: .center, spacing: 10) {
-            RoundedRectangle(cornerRadius: 1, style: .continuous)
-                .fill(BondTheme.ember)
-                .frame(width: 2, height: 40)
+        VStack(alignment: .leading, spacing: 2) {
+            Text(L10n.Badge.founderCredRoles)
+                .font(.custom("Noteworthy-Bold", size: 17))
+                .foregroundStyle(BondTheme.ember.opacity(0.9))
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(L10n.Badge.founderCredRoles)
-                    .font(.custom("Noteworthy-Bold", size: 17))
-                    .foregroundStyle(BondTheme.ember.opacity(0.9))
-
-                Text(L10n.Badge.founderCredFocus)
-                    .font(.custom("Noteworthy-Bold", size: 17))
-                    .foregroundStyle(BondTheme.ember)
-            }
+            Text(L10n.Badge.founderCredFocus)
+                .font(.custom("Noteworthy-Bold", size: 17))
+                .foregroundStyle(BondTheme.ember)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(L10n.Badge.founderCredRoles), \(L10n.Badge.founderCredFocus)")
     }

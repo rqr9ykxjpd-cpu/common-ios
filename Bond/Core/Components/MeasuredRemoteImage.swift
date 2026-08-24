@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 
 struct MeasuredRemoteImage: View {
+    @Environment(AppState.self) private var appState
     let url: URL
     @Binding var naturalSize: CGSize?
     @State private var image: UIImage?
@@ -14,13 +15,11 @@ struct MeasuredRemoteImage: View {
                 BondTheme.ink.opacity(0.06)
             }
         }
-        .task(id: url) {
-            guard let (data, _) = try? await URLSession.shared.data(from: url),
-                  let indirilen = UIImage(data: data)
-            else { return }
+        .task(id: BondImageLoader.cacheKey(for: url)) {
+            let indirilen = await appState.remoteImage(for: url)
+            guard let indirilen else { return }
             image = indirilen
             naturalSize = indirilen.size
         }
     }
 }
-

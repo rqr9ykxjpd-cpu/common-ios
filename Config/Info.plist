@@ -12,11 +12,11 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSCameraUsageDescription</key>
-	<string>Gönderi ve story paylaşırken fotoğraf çekebilmen için kameraya erişmemiz gerekiyor.</string>
+	<string>Gönderi ve story paylaşırken fotoğraf çekmek, story için de kısa video kaydetmek için kameraya erişmemiz gerekiyor.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Story için kısa video kaydederken sesini ekleyebilmen için mikrofona erişmemiz gerekiyor.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Profil fotoğrafını ve paylaşımlarını seçebilmen için galerine erişmemiz gerekiyor.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Çektiğin fotoğrafı galerine kaydedebilmek için izin gerekiyor.</string>
+	<string>Profil fotoğrafını, gönderilerini ve story videolarını seçebilmen için galerine erişmemiz gerekiyor.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>tr</string>
 	<key>CFBundleLocalizations</key>

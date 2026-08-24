@@ -30,23 +30,44 @@ extension AppState {
         isLoadingFeed = true
         defer { isLoadingFeed = false }
         do {
-            posts = try await service.fetchFeed().map(socialPost(from:))
+            posts = try await service.fetchFeed().map { backend in
+                let social = socialPost(from: backend)
+                if social.isMine, social.author.badge == .none, myBadge != .none {
+                    return socialPost(from: backend, badgeOverride: myBadge)
+                }
+                return social
+            }
         } catch {
             showError(error, fallback: L10n.Feed.loadFailed)
         }
     }
 
-    func publishPost(imageData: Data?, caption: String, place: CampusPlace?) {
+    @discardableResult
+    func publishPost(imageData: Data?, caption: String, place: CampusPlace?) async -> Bool {
         let cleanCaption = caption.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard imageData != nil || !cleanCaption.isEmpty else { return }
-        Task {
-            do {
-                let post = try await service.createPost(caption: cleanCaption, placeName: place?.name, imageData: imageData)
-                posts.insert(socialPost(from: post), at: 0)
-                Haptics.success()
-            } catch {
-                showError(error, fallback: L10n.Feed.postFailed)
+        guard imageData != nil || !cleanCaption.isEmpty else { return false }
+        do {
+            let post = try await service.createPost(caption: cleanCaption, placeName: place?.name, imageData: imageData)
+            var social = socialPost(from: post)
+            // Sunucu rozeti kaçırsa bile kendi gönderinde yerel rozet kalsın.
+            if social.isMine, social.author.badge == .none, myBadge != .none {
+                social = socialPost(from: post, badgeOverride: myBadge)
             }
+            posts.insert(social, at: 0)
+            Haptics.success()
+            show(L10n.Composer.postShared)
+            return true
+        } catch {
+            showError(error, fallback: L10n.Feed.postFailed)
+            return false
+        }
+    }
+
+    func countMyPosts() async -> Int {
+        do {
+            return try await service.countMyPosts()
+        } catch {
+            return posts.filter(\.isMine).count
         }
     }
     /// Gönderi hem akışta hem kaydedilenler listesinde bulunabilir; ikisi de güncelleniyor.
@@ -92,7 +113,7 @@ extension AppState {
     /// çünkü akış yalnızca son 100 gönderiyi getiriyor.
     func loadSavedPosts() async {
         do {
-            savedPosts = try await service.fetchSavedPosts().map(socialPost(from:))
+            savedPosts = try await service.fetchSavedPosts().map { socialPost(from: $0) }
         } catch {
             showError(error, fallback: L10n.Feed.savedLoadFailed)
         }
@@ -141,7 +162,7 @@ extension AppState {
             }
         }
     }
-    func socialPost(from post: BackendPost) -> SocialPost {
+    func socialPost(from post: BackendPost, badgeOverride: ProfileBadge? = nil) -> SocialPost {
         let age = max(18, Calendar.current.dateComponents([.year], from: post.authorBirthDate, to: .now).year ?? 18)
         let author = StudentProfile(
             id: post.authorID,
@@ -155,12 +176,13 @@ extension AppState {
             imageURL: post.authorAvatarURL,
             compatibility: 0,
             isVerified: post.authorVerified,
-            badge: post.authorBadge
+            badge: badgeOverride ?? post.authorBadge
         )
         return SocialPost(
             id: post.id,
             author: author,
             caption: post.caption,
+            imageURL: post.imageURL,
             localImageData: post.imageData,
             place: post.placeName.flatMap { name in places.first { $0.name == name } },
             liked: post.liked,

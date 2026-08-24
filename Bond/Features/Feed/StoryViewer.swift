@@ -1,4 +1,5 @@
 import SwiftUI
+import AVFoundation
 
 struct StoryViewer: View {
     @Environment(AppState.self) private var appState
@@ -18,6 +19,7 @@ struct StoryViewer: View {
     @State private var pauseHintVisible = false
     @State private var showPaywall = false
     @State private var showDeleteConfirmation = false
+    @State private var pendingDeleteID: UUID?
     @State private var selectedStoryAuthor: StudentProfile?
     @FocusState private var replyFocused: Bool
 
@@ -34,15 +36,16 @@ struct StoryViewer: View {
         stories.indices.contains(currentIndex) ? stories[currentIndex] : nil
     }
 
+    private var isInteractionBlocking: Bool {
+        replyFocused || selectedStoryAuthor != nil || isPaused || showDeleteConfirmation || showViewers
+    }
+
     var body: some View {
         GeometryReader { proxy in
             ZStack {
                 Color.black.ignoresSafeArea()
                 if let story {
-                    ProfileMedia(url: story.imageURL, data: story.localImageData, assetName: story.imageAssetName)
-                        .frame(width: proxy.size.width, height: proxy.size.height)
-                        .clipped()
-                        .ignoresSafeArea()
+                    storyCanvas(story, size: proxy.size)
                     LinearGradient(colors: [.black.opacity(0.64), .clear, .black.opacity(0.78)], startPoint: .top, endPoint: .bottom)
                         .ignoresSafeArea()
 
@@ -70,20 +73,27 @@ struct StoryViewer: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
                     .padding(.bottom, 12)
+                    // Önceki/sonraki dokunma katmanının üstünde kalsın; sil düğmesi
+                    // altındaki şeffaf butona yemesin.
+                    .zIndex(2)
                 } else {
                     Button(L10n.Common.close, action: close).foregroundStyle(.white)
                 }
             }
         }
+        .onAppear { activatePlaybackAudio() }
+        .onDisappear { deactivatePlaybackAudio() }
         .task(id: currentIndex) {
             if let story {
                 onViewed(story)
                 liked = await appState.isStoryLiked(story.id)
             }
         }
-        // `isPaused` anahtara dahil: bırakınca görev yeniden başlıyor ve ilerleme
-        // kaldığı yerden devam ediyor.
-        .task(id: "\(currentIndex)-\(replyFocused)-\(selectedStoryAuthor != nil)-\(isPaused)") { await playCurrentStory() }
+        // Onay diyaloğu açıkken de duraklat: aksi halde altta story ilerleyip
+        // silinecek kimlik kayboluyordu.
+        .task(id: "\(currentIndex)-\(replyFocused)-\(selectedStoryAuthor != nil)-\(isPaused)-\(showDeleteConfirmation)-\(showViewers)") {
+            await playCurrentStory()
+        }
         // Basılı tutunca duraklatma Plus'a özel. Ücretsizde basılı tutmak, bunun
         // bir özellik olduğunu gösteren ekranı açıyor.
         .onLongPressGesture(minimumDuration: 0.22, maximumDistance: 24) { } onPressingChanged: { basiliyor in
@@ -125,17 +135,40 @@ struct StoryViewer: View {
                     .presentationDetents([.medium])
             }
         }
-        .confirmationDialog(L10n.Story.deleteConfirm, isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
-            if let story, story.isMine || appState.isModerator {
-                Button(
-                    story.isMine ? L10n.Story.delete : L10n.Moderation.removeStory,
-                    role: .destructive
-                ) { onDelete(story.id) }
+        .alert(
+            (story?.isMine == true) ? L10n.Story.deleteConfirm : L10n.Moderation.removeStory,
+            isPresented: $showDeleteConfirmation
+        ) {
+            Button(
+                (story?.isMine == true) ? L10n.Story.delete : L10n.Moderation.removeStory,
+                role: .destructive
+            ) {
+                let id = pendingDeleteID ?? story?.id
+                pendingDeleteID = nil
+                guard let id else { return }
+                onDelete(id)
+                close()
             }
-            Button(L10n.Common.cancel, role: .cancel) {}
+            Button(L10n.Common.cancel, role: .cancel) {
+                pendingDeleteID = nil
+            }
         } message: {
             Text(L10n.Feed.irreversible)
         }
+    }
+
+    @ViewBuilder
+    private func storyCanvas(_ story: CampusStory, size: CGSize) -> some View {
+        Group {
+            if story.isVideo, let url = story.videoURL {
+                StoryVideoCanvas(url: url, isPaused: isInteractionBlocking)
+            } else {
+                ProfileMedia(url: story.imageURL, data: story.localImageData, assetName: story.imageAssetName)
+            }
+        }
+        .frame(width: size.width, height: size.height)
+        .clipped()
+        .ignoresSafeArea()
     }
 
     private var progressBars: some View {
@@ -160,7 +193,22 @@ struct StoryViewer: View {
                         .frame(width: 38, height: 38)
                         .clipShape(Circle())
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(story.author.name).font(.system(size: 15, weight: .bold))
+                        HStack(spacing: 6) {
+                            Text(story.author.name).font(.system(size: 15, weight: .bold))
+                            // Post kartındaki gibi kurucu / doğrulanmış rozeti.
+                            if let icon = story.author.badge.systemImage,
+                               let title = story.author.badge.title {
+                                Label(title, systemImage: icon)
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(
+                                        story.author.badge == .founder
+                                            ? BondTheme.ember
+                                            : .white.opacity(0.92)
+                                    )
+                                    .lineLimit(1)
+                                    .fixedSize(horizontal: true, vertical: false)
+                            }
+                        }
                         if let place = story.place {
                             Label(place.name, systemImage: "mappin").font(.system(size: 12)).opacity(0.72)
                         }
@@ -178,27 +226,32 @@ struct StoryViewer: View {
                     // Göz işareti kaç *kişi* izlediğini gösteriyor: aynı kişinin tekrar
                     // izlemesi sayıyı artırmaz. Kaç kez izlendiği izleyici listesinde,
                     // kişi bazında ("3 kez") ve "Toplam izleme" özetinde duruyor.
-                    Label("\(viewRecords(story.id).count)", systemImage: "eye.fill")
+                    // Canlı AppState listesi: açılıştaki boş snapshot 0'da kilitlenmesin.
+                    let count = appState.stories.first(where: { $0.id == story.id })?.viewRecords.count
+                        ?? viewRecords(story.id).count
+                    Label("\(count)", systemImage: "eye.fill")
                         .font(.system(size: 12, weight: .bold))
                         .padding(.horizontal, 12)
                         .frame(height: 44)
                         .background(.black.opacity(0.28), in: Capsule())
                 }
-                .accessibilityLabel("\(L10n.Story.viewersTitle), \(viewRecords(story.id).count)")
+                .accessibilityLabel("\(L10n.Story.viewersTitle), \(appState.stories.first(where: { $0.id == story.id })?.viewRecords.count ?? viewRecords(story.id).count)")
             }
+            // Menü + confirmationDialog fullScreenCover içinde çoğu zaman
+            // açılmıyordu. Tek eylem için doğrudan çöp + alert daha güvenilir.
+            // Kurucu/moderatör başkasının story'sini de kaldırabilir.
             if story.isMine || appState.isModerator {
-                Menu {
-                    Button(
-                        story.isMine ? L10n.Story.delete : L10n.Moderation.removeStory,
-                        systemImage: "trash",
-                        role: .destructive
-                    ) {
-                        showDeleteConfirmation = true
-                    }
+                Button {
+                    pendingDeleteID = story.id
+                    showDeleteConfirmation = true
                 } label: {
-                    Image(systemName: "ellipsis").frame(width: 44, height: 44)
+                    Image(systemName: "trash")
+                        .font(.system(size: 15, weight: .semibold))
+                        .frame(width: 44, height: 44)
                 }
-                .accessibilityLabel(L10n.Common.options)
+                .accessibilityLabel(
+                    story.isMine ? L10n.Story.delete : L10n.Moderation.removeStory
+                )
             }
             Button(action: close) { Image(systemName: "xmark").frame(width: 44, height: 44) }
                 .accessibilityLabel(L10n.Common.close)
@@ -293,21 +346,40 @@ struct StoryViewer: View {
 
     @MainActor
     private func playCurrentStory() async {
-        guard story != nil, !replyFocused, selectedStoryAuthor == nil, !isPaused else { return }
+        guard let story, !isInteractionBlocking else { return }
 
         let tick = Duration.milliseconds(50)
-        let increment: CGFloat = 1 / 120
+        let duration = playbackDuration(for: story)
+        let steps = max(1, duration / 0.05)
+        let increment: CGFloat = 1 / CGFloat(steps)
         while progress < 1 {
             do {
                 try await Task.sleep(for: tick)
             } catch {
                 return
             }
-            guard !Task.isCancelled, !replyFocused, selectedStoryAuthor == nil, !isPaused else { return }
+            guard !Task.isCancelled, !isInteractionBlocking else { return }
             progress = min(1, progress + increment)
         }
         guard !Task.isCancelled else { return }
         next()
+    }
+
+    private func playbackDuration(for story: CampusStory) -> TimeInterval {
+        if story.isVideo {
+            return min(CampusStory.maxVideoDuration, max(0.5, story.duration ?? CampusStory.maxVideoDuration))
+        }
+        return CampusStory.photoPlayback
+    }
+
+    private func activatePlaybackAudio() {
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(.playback, mode: .moviePlayback, options: [.duckOthers])
+        try? session.setActive(true)
+    }
+
+    private func deactivatePlaybackAudio() {
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
     private func prepareForTransition() {

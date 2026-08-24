@@ -80,6 +80,7 @@ struct WelcomeView: View {
             .frame(height: 50)
             .clipShape(Capsule())
             .disabled(isSigningIn)
+            .opacity(isSigningIn ? 0.45 : 1)
 
             Button {
                 Haptics.impact(.light)
@@ -95,6 +96,7 @@ struct WelcomeView: View {
             }
             .buttonStyle(PressableStyle())
             .disabled(isSigningIn)
+            .opacity(isSigningIn ? 0.45 : 1)
             .accessibilityLabel(L10n.Welcome.googleContinue)
 
             if Self.epostaGirisiAcik {
@@ -108,10 +110,27 @@ struct WelcomeView: View {
                         .frame(minHeight: 44)
                 }
                 .disabled(isSigningIn)
+                .opacity(isSigningIn ? 0.45 : 1)
+            }
+
+            // Giriş sırasında ekran donmuş görünüyordu: düğmeler devre dışı
+            // kalıyordu ama hiçbir görsel işaret yoktu, kullanıcı bir şey
+            // olmadığını sanıp tekrar tekrar dokunuyordu.
+            if isSigningIn {
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text(L10n.Welcome.signingIn)
+                        .font(BondTheme.Typography.footnote)
+                        .foregroundStyle(BondTheme.muted)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 4)
+                .transition(.opacity)
             }
 
             legalConsent
         }
+        .animation(.smooth(duration: 0.25), value: isSigningIn)
         .padding(.horizontal, BondTheme.Space.lg)
         .padding(.top, BondTheme.Space.md)
         .padding(.bottom, BondTheme.Space.md)

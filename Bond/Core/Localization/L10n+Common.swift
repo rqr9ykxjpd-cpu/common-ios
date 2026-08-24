@@ -6,6 +6,7 @@ extension L10n {
         static var done: String { String(localized: "common.done") }
         static var cancel: String { String(localized: "common.cancel") }
         static var ok: String { String(localized: "common.ok") }
+        static var openSettings: String { String(localized: "common.openSettings") }
         static var save: String { String(localized: "common.save") }
         static var back: String { String(localized: "common.back") }
         static var retry: String { String(localized: "common.retry") }

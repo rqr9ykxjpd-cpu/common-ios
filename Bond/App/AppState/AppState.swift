@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 @MainActor
 @Observable
@@ -157,8 +158,9 @@ final class AppState {
     let subscriptions = SubscriptionStore()
 
     /// Hayalet mod (yalnızca Pro): açıkken profil ziyaretleri ve story
-    /// izlemeleri kaydedilmiyor. İki kayıt da istemciden gönderildiği için
-    /// göndermemek yeterli — sunucuda ayrıca bir şey yapmaya gerek yok.
+    /// izlemeleri kaydedilmiyor. İstemci göndermese de sunucu `ghost_mode`
+    /// kolonuna bakıp isteği yutuyor — aksi halde uygulamayı kurcalayan
+    /// biri iz bırakabilirdi.
     /// Sınıra takılınca açılan ekran ve hangi sınıra takıldığı.
     var paywallVisible = false
     var quotaHit: QuotaKind?
@@ -172,6 +174,8 @@ final class AppState {
     var onboardingFailure: String?
     var isAccountActionInProgress = false
     var toast: AppToastMessage?
+    /// Kilit ekranındaki bildirime basınca bildirim listesini açmak için.
+    var opensNotifications = false
 
     /// Kısa bilgi mesajı gösterir (yeşil tik).
     func show(_ message: String) {
@@ -249,6 +253,8 @@ final class AppState {
         if metin.contains("QUOTA_LIKE") { return .like }
         if metin.contains("QUOTA_MEETING_REQUEST") { return .meetingRequest }
         if metin.contains("QUOTA_MEETING_ACCEPT") { return .meetingAccept }
+        if metin.contains("QUOTA_POST") || metin.contains("POST_LIMIT") { return .posts }
+        if case .postLimit = error as? BackendServiceError { return .posts }
         return nil
     }
 
@@ -386,5 +392,31 @@ final class AppState {
         if cihaz > sunucu {
             await subscriptions.refreshEntitlements(forceSync: true)
         }
+    }
+
+    /// Profil/gönderi görseli. İmzalı URL GET başarısız olursa Storage indirmesi dener.
+    func remoteImage(for url: URL) async -> UIImage? {
+        let service = service
+        return await BondImageLoader.shared.image(for: url) { target in
+            await Self.fetchMediaData(target, service: service)
+        }
+    }
+
+    func remoteImageData(for url: URL) async -> Data? {
+        await Self.fetchMediaData(url, service: service)
+    }
+
+    nonisolated private static func fetchMediaData(_ url: URL, service: any ProductService) async -> Data? {
+        if let supabase = service as? SupabaseProductService {
+            return await supabase.loadMediaData(url)
+        }
+        if url.isFileURL { return try? Data(contentsOf: url) }
+        var request = URLRequest(url: url)
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        guard let (data, response) = try? await URLSession.shared.data(for: request),
+              let http = response as? HTTPURLResponse,
+              (200...299).contains(http.statusCode),
+              !data.isEmpty else { return nil }
+        return data
     }
 }

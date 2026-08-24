@@ -8,5 +8,7 @@ extension L10n {
         static var likeDetail: String { String(localized: "quota.likeDetail") }
         static var meetingRequestDetail: String { String(localized: "quota.meetingRequestDetail") }
         static var meetingAcceptDetail: String { String(localized: "quota.meetingAcceptDetail") }
+        static var postTitle: String { String(localized: "quota.postTitle") }
+        static var postDetail: String { String(localized: "quota.postDetail") }
     }
 }

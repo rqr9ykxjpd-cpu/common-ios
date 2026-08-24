@@ -8,6 +8,9 @@ extension L10n {
         static var sharePost: String { String(localized: "composer.sharePost") }
         static var cameraUnavailable: String { String(localized: "composer.cameraUnavailable") }
         static var cameraUnavailableBody: String { String(localized: "composer.cameraUnavailableBody") }
+        static var cameraDenied: String { String(localized: "composer.cameraDenied") }
+        static var cameraDeniedBody: String { String(localized: "composer.cameraDeniedBody") }
+        static var photoLoadFailed: String { String(localized: "composer.photoLoadFailed") }
         static var pickFromLibrary: String { String(localized: "composer.pickFromLibrary") }
         static var changePhoto: String { String(localized: "composer.changePhoto") }
         static var takePhoto: String { String(localized: "composer.takePhoto") }
@@ -22,9 +25,14 @@ extension L10n {
         static var publishPost: String { String(localized: "composer.publishPost") }
         static var storyShared: String { String(localized: "composer.storyShared") }
         static var postShared: String { String(localized: "composer.postShared") }
+        static func postLimit(_ max: Int) -> String {
+            L10n.format("composer.postLimit", Int64(max))
+        }
         static var pickStoryPhoto: String { String(localized: "composer.pickStoryPhoto") }
         static var addPhoto: String { String(localized: "composer.addPhoto") }
         static var storyNeedsPhoto: String { String(localized: "composer.storyNeedsPhoto") }
         static var textOnlyOk: String { String(localized: "composer.textOnlyOk") }
+        static var videoLoadFailed: String { String(localized: "composer.videoLoadFailed") }
+        static var videoTooLong: String { String(localized: "composer.videoTooLong") }
     }
 }

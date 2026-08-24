@@ -63,6 +63,7 @@ extension AppState {
         await loadNotifications()
         await loadStories()
         try? await service.touchLastActive()
+        await startPushRegistration()
     }
     /// Engellediğin kişiler. Ayarlardaki liste bunu okuyor.
     ///

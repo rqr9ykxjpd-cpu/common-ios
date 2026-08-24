@@ -142,10 +142,12 @@ extension SupabaseProductService {
             .execute()
             .value
         let avatarURLs = await signedURLs(bucket: "profile-photos", paths: rows.compactMap { $0.viewer?.avatarPath })
-        return rows.compactMap { row in
-            guard let viewer = row.viewer else { return nil }
+        // Profil join'i RLS yüzünden boş kalsa bile izlenme düşmesin.
+        return rows.map { row in
+            let viewer = row.viewer?.studentProfile(avatarURL: row.viewer?.avatarPath.flatMap { avatarURLs[$0] })
+                ?? .anonymousViewer(id: row.viewerID)
             return StoryViewRecord(
-                viewer: viewer.studentProfile(avatarURL: viewer.avatarPath.flatMap { avatarURLs[$0] }),
+                viewer: viewer,
                 viewCount: row.viewCount,
                 lastViewedAt: row.lastViewedAt
             )

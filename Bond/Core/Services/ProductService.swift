@@ -81,6 +81,8 @@ protocol ProductService: Sendable {
     /// Bu story'yi beğenmiş miyim.
     func isStoryLiked(_ storyID: UUID) async throws -> Bool
     func fetchFeed() async throws -> [BackendPost]
+    /// Kullanıcının duran gönderi sayısı. Paylaşım tavanı buna bakıyor.
+    func countMyPosts() async throws -> Int
     func createPost(caption: String, placeName: String?, imageData: Data?) async throws -> BackendPost
     func addComment(_ body: String, to postID: UUID) async throws -> BackendComment
     func deletePost(_ postID: UUID) async throws
@@ -123,7 +125,11 @@ protocol ProductService: Sendable {
     /// Bir kişinin ilgi alanları ve galeri fotoğrafları. Gönderi ve story
     /// sorguları yazar için yalnızca temel alanları getiriyor; kişinin profiline
     /// girildiğinde kart bu yüzden bomboş görünüyordu.
+    /// Gönderiler ayrı (`fetchPersonPosts`): fotoğrafların post indirmesini
+    /// beklemesini engellemek için.
     func fetchPersonDetails(_ profileID: UUID) async throws -> PersonDetails
+    /// Profildeki gönderi ızgarası.
+    func fetchPersonPosts(_ profileID: UUID) async -> [BackendPost]
 
     /// "Geç" kararlarını siler; o kişiler keşifte tekrar görünür hale gelir.
     /// Beğenilere dokunmaz, dolayısıyla eşleşmeler etkilenmez.
@@ -132,6 +138,7 @@ protocol ProductService: Sendable {
     func markNotificationRead(_ notificationID: UUID) async throws
     func markAllNotificationsRead() async throws
     func registerDeviceToken(_ token: String) async throws
+    func unregisterDeviceToken(_ token: String) async throws
     func fetchPlaces() async throws -> [CampusPlace]
     func fetchMeetingRequests() async throws -> [MeetingRequest]
     func sendMeetingRequest(to profileID: UUID, placeID: UUID) async throws
@@ -148,7 +155,7 @@ protocol ProductService: Sendable {
     /// güncellenmediği için herkes sürekli "Bu hafta aktif" görünüyordu.
     func touchLastActive() async throws
     func fetchStories() async throws -> [CampusStory]
-    func publishStory(imageData: Data, caption: String, placeID: UUID?) async throws
+    func publishStory(_ upload: StoryUpload, caption: String, placeID: UUID?) async throws
     func deleteStory(_ storyID: UUID) async throws
     /// Süresi dolmuş kendi story'lerini siler (satır + dosya). Aksi halde her
     /// paylaşım depolamada kalıcı olarak yer kaplıyor.
@@ -164,6 +171,8 @@ protocol ProductService: Sendable {
     /// Profil ziyaretleri. Kayıt yalnızca RPC ile oluşur; istemci doğrudan yazamaz.
     func recordProfileVisit(_ profileID: UUID) async throws
     func fetchProfileVisits() async throws -> [ProfileVisit]
+    /// Hayalet mod. Pro değilken sunucu da reddeder.
+    func setGhostMode(_ enabled: Bool) async throws
     /// Eşleşmeyi sonlandırır. Engellemekten farklı: karşı taraf engellenmiş olmaz.
     func unmatch(_ matchID: UUID) async throws
 }
@@ -211,6 +220,7 @@ struct UnconfiguredProductService: ProductService {
     func setStoryLiked(_ storyID: UUID, liked: Bool) async throws { try fail() }
     func isStoryLiked(_ storyID: UUID) async throws -> Bool { try fail() }
     func fetchFeed() async throws -> [BackendPost] { try fail() }
+    func countMyPosts() async throws -> Int { try fail() }
     func createPost(caption: String, placeName: String?, imageData: Data?) async throws -> BackendPost { try fail() }
     func addComment(_ body: String, to postID: UUID) async throws -> BackendComment { try fail() }
     func deletePost(_ postID: UUID) async throws { try fail() }
@@ -235,11 +245,13 @@ struct UnconfiguredProductService: ProductService {
     func setPostSaved(_ postID: UUID, saved: Bool) async throws { try fail() }
     func fetchSavedPosts() async throws -> [BackendPost] { try fail() }
     func fetchPersonDetails(_ profileID: UUID) async throws -> PersonDetails { try fail() }
+    func fetchPersonPosts(_ profileID: UUID) async -> [BackendPost] { [] }
     func resetPasses() async throws { try fail() }
     func fetchNotifications() async throws -> [BackendNotification] { try fail() }
     func markNotificationRead(_ notificationID: UUID) async throws { try fail() }
     func markAllNotificationsRead() async throws { try fail() }
     func registerDeviceToken(_ token: String) async throws { try fail() }
+    func unregisterDeviceToken(_ token: String) async throws { try fail() }
     func fetchPlaces() async throws -> [CampusPlace] { try fail() }
     func fetchMeetingRequests() async throws -> [MeetingRequest] { try fail() }
     func sendMeetingRequest(to profileID: UUID, placeID: UUID) async throws { try fail() }
@@ -250,7 +262,7 @@ struct UnconfiguredProductService: ProductService {
     func declineMessageRequest(_ requestID: UUID) async throws { try fail() }
     func touchLastActive() async throws {}
     func fetchStories() async throws -> [CampusStory] { try fail() }
-    func publishStory(imageData: Data, caption: String, placeID: UUID?) async throws { try fail() }
+    func publishStory(_ upload: StoryUpload, caption: String, placeID: UUID?) async throws { try fail() }
     func deleteStory(_ storyID: UUID) async throws { try fail() }
     func purgeMyExpiredStories() async {}
     func markStoryViewed(_ storyID: UUID) async throws { try fail() }
@@ -261,6 +273,7 @@ struct UnconfiguredProductService: ProductService {
     func fetchPeopleAtPlace(_ placeID: UUID) async throws -> [StudentProfile] { try fail() }
     func recordProfileVisit(_ profileID: UUID) async throws { try fail() }
     func fetchProfileVisits() async throws -> [ProfileVisit] { try fail() }
+    func setGhostMode(_ enabled: Bool) async throws { try fail() }
     func unmatch(_ matchID: UUID) async throws { try fail() }
 }
 

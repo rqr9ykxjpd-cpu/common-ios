@@ -25,9 +25,10 @@ struct SocialPersonDetailView: View {
 
     private var visiblePlace: CampusPlace? { place }
 
-    /// Hero fotoğraf: detaydan gelen imzalı URL > navigasyon URL > galeri ilk kare.
+    /// Hero fotoğraf: navigasyondaki URL zaten varsa onu tut — detaydan gelen
+    /// yeni imzalı URL AsyncImage'ı sıfırdan indirmesin.
     private var heroImageURL: URL? {
-        details?.avatarURL ?? profile.imageURL ?? details?.galleryURLs.first ?? profile.galleryImageURLs.first
+        profile.imageURL ?? details?.avatarURL ?? details?.galleryURLs.first ?? profile.galleryImageURLs.first
     }
 
     /// Kurucu profili. Rozet tek başına yeterince ayırt edici değildi: ekranın
@@ -56,7 +57,6 @@ struct SocialPersonDetailView: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 340)
                         .clipped()
-                        .id(heroImageURL?.absoluteString ?? "hero-empty")
 
                     VStack(alignment: .leading, spacing: 14) {
                         HStack(alignment: .firstTextBaseline) {
@@ -244,9 +244,42 @@ struct SocialPersonDetailView: View {
         }
         // Ziyaret yalnızca birinin profili kasıtlı olarak açıldığında kaydedilir;
         // keşif destesinde kart çevirmek ziyaret sayılmaz.
+        // Fotoğraflar önce boyanır; gönderiler ikinci turda gelir — eskiden ikisi
+        // tek await'te seri indirmeyi bekliyordu.
         .task {
             appState.recordProfileVisit(profile)
-            details = await appState.personDetails(for: profile.id)
+            let seededPosts = appState.posts.filter { $0.author.id == profile.id }
+            if !profile.galleryImageURLs.isEmpty || profile.imageURL != nil || !seededPosts.isEmpty {
+                details = PersonProfileData(
+                    interests: profile.interests,
+                    galleryURLs: profile.galleryImageURLs,
+                    avatarURL: profile.imageURL,
+                    badge: profile.badge == .none ? nil : profile.badge,
+                    posts: seededPosts
+                )
+            }
+            if let fast = await appState.personDetails(for: profile.id) {
+                details = PersonProfileData(
+                    interests: fast.interests.isEmpty ? (details?.interests ?? profile.interests) : fast.interests,
+                    galleryURLs: fast.galleryURLs.isEmpty ? (details?.galleryURLs ?? []) : fast.galleryURLs,
+                    avatarURL: fast.avatarURL ?? details?.avatarURL ?? profile.imageURL,
+                    badge: fast.badge ?? details?.badge,
+                    posts: details?.posts ?? []
+                )
+            }
+            let posts = await appState.personPosts(for: profile.id)
+            if var mevcut = details {
+                mevcut.posts = posts
+                details = mevcut
+            } else if !posts.isEmpty {
+                details = PersonProfileData(
+                    interests: profile.interests,
+                    galleryURLs: [],
+                    avatarURL: profile.imageURL,
+                    badge: profile.badge == .none ? nil : profile.badge,
+                    posts: posts
+                )
+            }
         }
         .fullScreenCover(item: $conversationRoute) { route in
             NavigationStack { ConversationView(conversationID: route.id, showsClose: true) }

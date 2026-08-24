@@ -63,6 +63,7 @@ extension AppState {
 
         onboardingFailure = nil
         withAnimation(.smooth(duration: 0.55)) { route = .app }
+        await startPushRegistration()
         let name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
         show(name.isEmpty ? L10n.Auth.welcome : L10n.Auth.welcomeName(name))
     }

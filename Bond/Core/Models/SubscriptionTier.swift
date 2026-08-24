@@ -46,6 +46,14 @@ enum SubscriptionTier: Int, Comparable, Codable, CaseIterable {
 
     // MARK: - Sayılı sınırlar (nil = sınırsız)
 
+    /// Aynı anda durabilecek gönderi. nil = sınırsız (Plus ve Pro).
+    var maxPosts: Int? {
+        switch self {
+        case .free: CampusLimits.maxPostsPerUser
+        case .plus, .pro: nil
+        }
+    }
+
     /// Tanış'ta 2 günde kullanılabilecek beğeni.
     var likeQuota: Int? {
         switch self {
@@ -101,12 +109,13 @@ struct PlanFeature: Identifiable, Sendable {
 
     static let all: [PlanFeature] = [
         PlanFeature(id: 1, label: L10n.Paywall.featureLikes) { $0.likeQuota.map(String.init) ?? L10n.Paywall.infinity },
-        PlanFeature(id: 2, label: L10n.Paywall.featureRequests) { $0.meetingRequestQuota.map(String.init) ?? L10n.Paywall.infinity },
-        PlanFeature(id: 3, label: L10n.Paywall.featureAccepts) { $0.meetingAcceptQuota.map(String.init) ?? L10n.Paywall.infinity },
-        PlanFeature(id: 4, label: L10n.Paywall.featureVisitors) { $0.canSeeProfileVisitors ? L10n.Paywall.yes : L10n.Paywall.no },
-        PlanFeature(id: 5, label: L10n.Paywall.featurePause) { $0.canPauseStory ? L10n.Paywall.yes : L10n.Paywall.no },
-        PlanFeature(id: 6, label: L10n.Paywall.featureEdit) { $0.canEditMessages ? L10n.Paywall.yes : L10n.Paywall.no },
-        PlanFeature(id: 7, label: L10n.Paywall.featureViewCounts) { $0.canSeeStoryViewCounts ? L10n.Paywall.yes : L10n.Paywall.no },
-        PlanFeature(id: 8, label: L10n.Paywall.featureGhost) { $0.hasGhostMode ? L10n.Paywall.yes : L10n.Paywall.no }
+        PlanFeature(id: 2, label: L10n.Paywall.featurePosts) { $0.maxPosts.map(String.init) ?? L10n.Paywall.infinity },
+        PlanFeature(id: 3, label: L10n.Paywall.featureRequests) { $0.meetingRequestQuota.map(String.init) ?? L10n.Paywall.infinity },
+        PlanFeature(id: 4, label: L10n.Paywall.featureAccepts) { $0.meetingAcceptQuota.map(String.init) ?? L10n.Paywall.infinity },
+        PlanFeature(id: 5, label: L10n.Paywall.featureVisitors) { $0.canSeeProfileVisitors ? L10n.Paywall.yes : L10n.Paywall.no },
+        PlanFeature(id: 6, label: L10n.Paywall.featurePause) { $0.canPauseStory ? L10n.Paywall.yes : L10n.Paywall.no },
+        PlanFeature(id: 7, label: L10n.Paywall.featureEdit) { $0.canEditMessages ? L10n.Paywall.yes : L10n.Paywall.no },
+        PlanFeature(id: 8, label: L10n.Paywall.featureViewCounts) { $0.canSeeStoryViewCounts ? L10n.Paywall.yes : L10n.Paywall.no },
+        PlanFeature(id: 9, label: L10n.Paywall.featureGhost) { $0.hasGhostMode ? L10n.Paywall.yes : L10n.Paywall.no }
     ]
 }

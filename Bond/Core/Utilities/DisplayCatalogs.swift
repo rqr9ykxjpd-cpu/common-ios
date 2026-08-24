@@ -20,49 +20,86 @@ enum AcademicYear {
 enum DepartmentCatalog {
     static let all = ["Psikoloji", "Endüstri Mühendisliği", "İşletme", "Bilgisayar Mühendisliği", "Hukuk"]
 
+    private static let languageTracks = ["İngilizce", "English", "Almanca", "Fransızca", "İspanyolca"]
+
     static func display(_ id: String) -> String {
-        switch id {
-        case "Psikoloji": L10n.Department.psychology
-        case "Endüstri Mühendisliği": L10n.Department.industrial
-        case "İşletme": L10n.Department.business
-        case "Bilgisayar Mühendisliği": L10n.Department.cs
-        case "Hukuk": L10n.Department.law
-        default: id
-        }
+        let raw: String = {
+            switch id {
+            case "Psikoloji": L10n.Department.psychology
+            case "Endüstri Mühendisliği": L10n.Department.industrial
+            case "İşletme": L10n.Department.business
+            case "Bilgisayar Mühendisliği": L10n.Department.cs
+            case "Hukuk": L10n.Department.law
+            default: id
+            }
+        }()
+        return formatLanguageTrack(raw)
     }
 
-    /// Bölüm + dil track gibi bitişik parçaları ayırır ("İktisat İngilizce" → ["İktisat", "İngilizce"]).
-    /// Katalogdaki çok kelimeli bölüm adlarını parçalamaz.
+    /// Bölüm satırında gösterilecek parçalar.
+    ///
+    /// Dil track'i ayrı bir "bölüm" gibi noktalarla ayrılmasın: "İktisat İngilizce"
+    /// → tek parça "İktisat (İngilizce)". Gerçek çoklu bölüm ayırıcıları (· / , |) durur.
     static func educationParts(_ id: String) -> [String] {
         let shown = display(id).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !shown.isEmpty else { return [] }
 
+        // display() dil track'i zaten paranteze aldıysa tek parça.
+        if shown.contains("("), shown.hasSuffix(")") { return [shown] }
+
         let separators = CharacterSet(charactersIn: "·/,|")
         if shown.rangeOfCharacter(from: separators) != nil {
-            return shown
+            let parts = shown
                 .components(separatedBy: separators)
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty }
-        }
-
-        let languageTracks = ["İngilizce", "English", "Almanca", "Fransızca", "İspanyolca"]
-        for lang in languageTracks {
-            let suffix = " \(lang)"
-            if shown.hasSuffix(suffix) {
-                let major = String(shown.dropLast(suffix.count)).trimmingCharacters(in: .whitespacesAndNewlines)
-                if !major.isEmpty { return [major, lang] }
+            if parts.count >= 2, let lang = languageTrack(matching: parts.last!) {
+                let major = parts.dropLast().joined(separator: " ")
+                return ["\(major) (\(lang))"]
             }
-        }
-
-        // "İktisat (İngilizce)" biçimi
-        if let open = shown.lastIndex(of: "("), let close = shown.lastIndex(of: ")"),
-           open < close, close == shown.index(before: shown.endIndex) {
-            let major = shown[..<open].trimmingCharacters(in: .whitespacesAndNewlines)
-            let track = shown[shown.index(after: open)..<close].trimmingCharacters(in: .whitespacesAndNewlines)
-            if !major.isEmpty, !track.isEmpty { return [String(major), String(track)] }
+            return parts
         }
 
         return [shown]
+    }
+
+    /// "İktisat İngilizce" / "İktisat · İngilizce" → "İktisat (İngilizce)".
+    private static func formatLanguageTrack(_ value: String) -> String {
+        let shown = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !shown.isEmpty else { return shown }
+
+        // Zaten parantezliyse dokunma.
+        if let open = shown.lastIndex(of: "("), let close = shown.lastIndex(of: ")"),
+           open < close, close == shown.index(before: shown.endIndex) {
+            return shown
+        }
+
+        let separators = CharacterSet(charactersIn: "·/,|")
+        if shown.rangeOfCharacter(from: separators) != nil {
+            let parts = shown
+                .components(separatedBy: separators)
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+            if parts.count >= 2, let lang = languageTrack(matching: parts.last!) {
+                let major = parts.dropLast().joined(separator: " ")
+                return "\(major) (\(lang))"
+            }
+            return shown
+        }
+
+        for lang in languageTracks {
+            let suffix = " \(lang)"
+            if shown.hasSuffix(suffix) {
+                let major = String(shown.dropLast(suffix.count))
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                if !major.isEmpty { return "\(major) (\(lang))" }
+            }
+        }
+        return shown
+    }
+
+    private static func languageTrack(matching value: String) -> String? {
+        languageTracks.first { $0.compare(value, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame }
     }
 }
 

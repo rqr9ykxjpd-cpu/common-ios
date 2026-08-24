@@ -54,6 +54,9 @@ struct ProfileDraft: Equatable, Codable {
     /// istemci kendine rozet veremiyor — buradaki değer yalnızca gösterim için.
     var badge: ProfileBadge = .none
     var discoveryFilters = DiscoveryFilters()
+    /// Sunucudaki `profiles.ghost_mode`. UserDefaults'a yazılmaz; hayalet
+    /// tercihi `AppState.ghostMode` üzerinden gider.
+    var ghostMode: Bool? = nil
 
     private enum CodingKeys: String, CodingKey {
         case name, birthDate, university, department, year, bio, interests, gender, relationshipIntent, badge, discoveryFilters
@@ -94,13 +97,14 @@ struct PersonProfileData {
 /// Hangi sınıra takılındı. Paywall'daki başlık buna göre değişiyor: "beğeni
 /// hakkın bitti" ile "buluşma isteği hakkın bitti" farklı anlar.
 enum QuotaKind {
-    case like, meetingRequest, meetingAccept
+    case like, meetingRequest, meetingAccept, posts
 
     var title: String {
         switch self {
         case .like: L10n.Quota.likeTitle
         case .meetingRequest: L10n.Quota.meetingRequestTitle
         case .meetingAccept: L10n.Quota.meetingAcceptTitle
+        case .posts: L10n.Quota.postTitle
         }
     }
 
@@ -109,6 +113,7 @@ enum QuotaKind {
         case .like: L10n.Quota.likeDetail
         case .meetingRequest: L10n.Quota.meetingRequestDetail
         case .meetingAccept: L10n.Quota.meetingAcceptDetail
+        case .posts: L10n.Quota.postDetail
         }
     }
 }

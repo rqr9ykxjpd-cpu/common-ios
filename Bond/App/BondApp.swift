@@ -4,6 +4,7 @@ import RevenueCat
 
 @main
 struct BondApp: App {
+    @UIApplicationDelegateAdaptor(BondAppDelegate.self) private var appDelegate
     @State private var appState = BondApp.initialState()
 
     /// Normalde gerçek servisle başlar.
@@ -105,6 +106,7 @@ struct BondApp: App {
         WindowGroup {
             RootView()
                 .environment(appState)
+                .onAppear { PushTokenStore.shared.bind(appState) }
                 .onOpenURL { url in
                     // Üniversite e-postasındaki giriş bağlantısı bu şemayla geliyor
                     // (bkz. Info.plist, SupabaseProductService.requestEmailSignInLink).

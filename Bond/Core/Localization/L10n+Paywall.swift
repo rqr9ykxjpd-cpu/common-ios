@@ -31,6 +31,7 @@ extension L10n {
         static var featureEdit: String { String(localized: "paywall.featureEdit") }
         static var featureViewCounts: String { String(localized: "paywall.featureViewCounts") }
         static var featureGhost: String { String(localized: "paywall.featureGhost") }
+        static var featurePosts: String { String(localized: "paywall.featurePosts") }
         static var infinity: String { String(localized: "paywall.infinity") }
         static var yes: String { String(localized: "paywall.yes") }
         static var no: String { String(localized: "paywall.no") }

@@ -27,5 +27,6 @@ extension L10n {
             L10n.format("welcome.linkSent", email)
         }
         static var tryDifferentEmail: String { String(localized: "welcome.tryDifferentEmail") }
+        static var signingIn: String { String(localized: "welcome.signingIn") }
     }
 }

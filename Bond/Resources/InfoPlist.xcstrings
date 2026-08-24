@@ -41,13 +41,30 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "We need camera access so you can take photos for posts and stories."
+            "value": "We need camera access so you can take photos for posts and stories, and record short story videos."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Gönderi ve story paylaşırken fotoğraf çekebilmen için kameraya erişmemiz gerekiyor."
+            "value": "Gönderi ve story paylaşırken fotoğraf çekmek, story için de kısa video kaydetmek için kameraya erişmemiz gerekiyor."
+          }
+        }
+      }
+    },
+    "NSMicrophoneUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We need microphone access so your story videos can include sound."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Story için kısa video kaydederken sesini ekleyebilmen için mikrofona erişmemiz gerekiyor."
           }
         }
       }
@@ -58,30 +75,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "We need photo library access so you can choose a profile photo and posts."
+            "value": "We need photo library access so you can choose a profile photo, posts, and story videos."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Profil fotoğrafını ve paylaşımlarını seçebilmen için galerine erişmemiz gerekiyor."
-          }
-        }
-      }
-    },
-    "NSPhotoLibraryAddUsageDescription": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "We need permission to save the photo you took to your library."
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Çektiğin fotoğrafı galerine kaydedebilmek için izin gerekiyor."
+            "value": "Profil fotoğrafını, gönderilerini ve story videolarını seçebilmen için galerine erişmemiz gerekiyor."
           }
         }
       }

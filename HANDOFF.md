@@ -97,12 +97,14 @@ her işlem "Supabase yapılandırması eksik" hatası verir (`UnconfiguredProduc
 Örnek/sahte veri, demo girişi ve demo yönetici yetkileri tamamen kaldırıldı.
 
 ### Eksik
-- **Push bildirimi** — `device_tokens` tablosu ve `registerDeviceToken` servis
-  metodu hazır. Eksik: iOS izin akışı, token kaydı, APNs'e istek atan Edge
-  Function. Apple Developer hesabı ve APNs `.p8` anahtarı gerekiyor.
-- **Akış performansı** — `fetchFeed` 100 gönderiyi `limit(100)` ile çekiyor ve
-  her görseli **tek tek, sırayla** indiriyor (N+1). Sayfalama yok.
-  Çözüm: `createSignedUrls` toplu çağrısı + `AsyncImage` ile tembel yükleme.
+- **Push bildirimi (kilit ekranı)** — istemci izin + token kaydı hazır
+  (`device_tokens`, `BondAppDelegate`, `send-push` Edge Function). Kilit
+  ekranına düşmesi için hâlâ panel işi: Apple Developer'da Push Notifications
+  capability, APNs `.p8` anahtarı, Edge Function secrets
+  (`APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY`, `APNS_BUNDLE_ID`) ve
+  Database Webhook (notifications INSERT → `send-push`) ya da Vault'ta
+  `project_url` + `service_role_key`. Secrets yoksa function 200 döner;
+  uygulama içi bildirimler çalışmaya devam eder.
 - **Erişilebilirlik** — Dynamic Type desteklenmiyor (~228 sabit punto),
   lokalizasyon altyapısı yok (tüm metinler Türkçe hardcoded), bazı kontrast
   oranları WCAG AA altında. İkon butonlarının etiketleri tamamlandı.

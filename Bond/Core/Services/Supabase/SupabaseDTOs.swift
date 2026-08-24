@@ -78,7 +78,26 @@ struct ClubMemberInsert: Encodable {
 
 struct StoryViewerIDRow: Decodable {
     let viewerID: UUID
-    enum CodingKeys: String, CodingKey { case viewerID = "viewer_id" }
+    let viewCount: Int?
+    let lastViewedAt: Date?
+    enum CodingKeys: String, CodingKey {
+        case viewerID = "viewer_id"
+        case viewCount = "view_count"
+        case lastViewedAt = "last_viewed_at"
+    }
+}
+
+struct StoryViewListRow: Decodable {
+    let storyID: UUID
+    let viewerID: UUID
+    let viewCount: Int
+    let lastViewedAt: Date
+    enum CodingKeys: String, CodingKey {
+        case storyID = "story_id"
+        case viewerID = "viewer_id"
+        case viewCount = "view_count"
+        case lastViewedAt = "last_viewed_at"
+    }
 }
 
 struct StoryRow: Decodable {
@@ -91,6 +110,9 @@ struct StoryRow: Decodable {
     let author: SupabaseProfileRow?
     let place: PlaceRow?
     let storyViews: [StoryViewerIDRow]?
+    let mediaKind: String?
+    let durationMs: Int?
+    let posterPath: String?
 
     enum CodingKeys: String, CodingKey {
         case id, caption, author, place
@@ -99,6 +121,13 @@ struct StoryRow: Decodable {
         case createdAt = "created_at"
         case expiresAt = "expires_at"
         case storyViews = "story_views"
+        case mediaKind = "media_kind"
+        case durationMs = "duration_ms"
+        case posterPath = "poster_path"
+    }
+
+    var kind: StoryMediaKind {
+        StoryMediaKind(rawValue: mediaKind ?? "") ?? .image
     }
 }
 
@@ -110,12 +139,18 @@ struct StoryInsert: Encodable {
     /// Süreyi sunucunun sütun varsayılanına bırakmıyoruz; tek kaynak
     /// `CampusStory.lifetime` olsun ki süre değiştirmek migration gerektirmesin.
     let expiresAt: Date
+    let mediaKind: String
+    let durationMs: Int?
+    let posterPath: String?
     enum CodingKeys: String, CodingKey {
         case authorID = "author_id"
         case mediaPath = "media_path"
         case caption
         case placeID = "place_id"
         case expiresAt = "expires_at"
+        case mediaKind = "media_kind"
+        case durationMs = "duration_ms"
+        case posterPath = "poster_path"
     }
 }
 
@@ -138,6 +173,7 @@ struct StoryViewCountRow: Decodable {
 }
 
 struct StoryViewRow: Decodable {
+    let viewerID: UUID
     let viewCount: Int
     let lastViewedAt: Date
     let viewer: SupabaseProfileRow?
@@ -145,6 +181,7 @@ struct StoryViewRow: Decodable {
         case viewCount = "view_count"
         case lastViewedAt = "last_viewed_at"
         case viewer
+        case viewerID = "viewer_id"
     }
 }
 
@@ -324,10 +361,16 @@ struct DeviceTokenUpsert: Encodable {
     let userID: UUID
     let token: String
     let platform: String
+    let updatedAt: Date
     enum CodingKeys: String, CodingKey {
         case userID = "user_id"
         case token, platform
+        case updatedAt = "updated_at"
     }
+}
+
+struct GhostModeParams: Encodable {
+    let enabled: Bool
 }
 
 struct MyProfileRow: Decodable {
@@ -349,6 +392,7 @@ struct MyProfileRow: Decodable {
     let departments: [String]
     let requireCommonInterest: Bool
     let campusOnly: Bool
+    let ghostMode: Bool?
 
     enum CodingKeys: String, CodingKey {
         case name, gender, university, department, bio, interests, departments
@@ -363,6 +407,7 @@ struct MyProfileRow: Decodable {
         case academicYears = "academic_years"
         case requireCommonInterest = "require_common_interest"
         case campusOnly = "campus_only"
+        case ghostMode = "ghost_mode"
     }
 }
 
@@ -796,7 +841,7 @@ struct PostRow: Decodable {
         case createdAt = "created_at"
     }
 
-    func backendPost(imageData: Data?, authorAvatarURL: URL?, likeCount: Int, liked: Bool, saved: Bool, badge: ProfileBadge = .none, commentAvatarURLs: [String: URL] = [:]) -> BackendPost {
+    func backendPost(imageData: Data?, authorAvatarURL: URL?, likeCount: Int, liked: Bool, saved: Bool, badge: ProfileBadge = .none, commentAvatarURLs: [String: URL] = [:], imageURL: URL? = nil) -> BackendPost {
         BackendPost(
             id: id,
             authorID: authorID,
@@ -812,6 +857,7 @@ struct PostRow: Decodable {
             caption: caption,
             placeName: placeName,
             imageData: imageData,
+            imageURL: imageURL,
             createdAt: createdAt,
             comments: comments.sorted { $0.createdAt < $1.createdAt }
                 .map { $0.backendComment(avatarURL: $0.author.avatarPath.flatMap { commentAvatarURLs[$0] }) },
@@ -904,7 +950,12 @@ struct MediaPathRow: Decodable {
 struct ExpiredStoryRow: Decodable {
     let id: UUID
     let mediaPath: String?
-    enum CodingKeys: String, CodingKey { case id, mediaPath = "media_path" }
+    let posterPath: String?
+    enum CodingKeys: String, CodingKey {
+        case id
+        case mediaPath = "media_path"
+        case posterPath = "poster_path"
+    }
 }
 
 struct AdmirerRow: Decodable {

@@ -36,7 +36,30 @@ struct ProfileDetailSheet: View {
             }
             .padding(.bottom, BondTheme.Space.xl)
         }
-        .task { details = await appState.personDetails(for: profile.id) }
+        .task {
+            // Keşif kartında galeri zaten var; detayda fotoğraflar önce, gönderiler sonra.
+            details = PersonProfileData(
+                interests: profile.interests,
+                galleryURLs: profile.galleryImageURLs,
+                avatarURL: profile.imageURL,
+                badge: profile.badge == .none ? nil : profile.badge,
+                posts: []
+            )
+            if let fast = await appState.personDetails(for: profile.id) {
+                details = PersonProfileData(
+                    interests: fast.interests.isEmpty ? profile.interests : fast.interests,
+                    galleryURLs: fast.galleryURLs.isEmpty ? profile.galleryImageURLs : fast.galleryURLs,
+                    avatarURL: fast.avatarURL ?? profile.imageURL,
+                    badge: fast.badge ?? details?.badge,
+                    posts: []
+                )
+            }
+            let posts = await appState.personPosts(for: profile.id)
+            if var mevcut = details {
+                mevcut.posts = posts
+                details = mevcut
+            }
+        }
         .background(BondTheme.paper.ignoresSafeArea())
         .foregroundStyle(BondTheme.ink)
         .safeAreaInset(edge: .bottom, spacing: 0) { decisionBar }

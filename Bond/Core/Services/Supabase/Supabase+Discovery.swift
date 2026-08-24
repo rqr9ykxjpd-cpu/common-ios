@@ -20,6 +20,9 @@ extension SupabaseProductService {
             .value
         let paths = rows.flatMap { row in (row.avatarPath.map { [$0] } ?? []) + row.galleryPaths }
         let urlMap = await signedURLs(bucket: "profile-photos", paths: paths)
+        #if DEBUG
+        print("Bond discovery: \(rows.count) aday, \(paths.count) path, \(urlMap.count) URL")
+        #endif
         return rows.map { row in
             row.studentProfile(
                 avatarURL: row.avatarPath.flatMap { urlMap[$0] },

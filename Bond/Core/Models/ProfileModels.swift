@@ -143,6 +143,27 @@ struct StudentProfile: Identifiable, Hashable {
         self.relationshipIntent = relationshipIntent
         self.activeLabel = activeLabel
     }
+
+    /// Profil satırı okunamayan izleyici. Sayı yine dursun, isim sonradan dolar.
+    static func anonymousViewer(id: UUID) -> StudentProfile {
+        StudentProfile(
+            id: id, name: L10n.Common.someone, age: 18, university: "", department: "",
+            year: "", bio: "", interests: [], imageURL: nil, compatibility: 0, isVerified: false
+        )
+    }
+
+    /// Aynı profili farklı rozetle kopyalar (akış / story yüklemesinde yerel yedek).
+    func withBadge(_ badge: ProfileBadge) -> StudentProfile {
+        guard badge != self.badge else { return self }
+        return StudentProfile(
+            id: id, name: name, age: age, university: university, department: department,
+            year: year, bio: bio, interests: interests, imageURL: imageURL,
+            imageAssetName: imageAssetName, galleryImageURLs: galleryImageURLs,
+            compatibility: compatibility, isVerified: isVerified, badge: badge,
+            compatibilityReasons: compatibilityReasons,
+            relationshipIntent: relationshipIntent, activeLabel: activeLabel
+        )
+    }
 }
 
 /// Engellenen bir kişi.

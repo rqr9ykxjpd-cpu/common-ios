@@ -55,6 +55,10 @@ struct OwnCardPreviewView: View {
         // çizmek yerine sistemin kendi göstergesi kullanılıyor: kullanıcı bu
         // hareketi zaten başka uygulamalardan tanıyor.
         .presentationDragIndicator(.visible)
+        .task {
+            // Galeri URL'leri oturum başında dolmamışsa kart tek fotoğraf sanılıyordu.
+            _ = await appState.loadMyProfilePhotos()
+        }
         .fullScreenCover(isPresented: $showEditor) {
             NavigationStack { ProfileEditorView() }
         }

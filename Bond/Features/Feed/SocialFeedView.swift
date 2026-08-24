@@ -119,50 +119,27 @@ struct SocialFeedView: View {
             .sheet(isPresented: $showNotifications) {
                 NotificationsView()
             }
+            .onChange(of: appState.opensNotifications) { _, open in
+                guard open else { return }
+                showNotifications = true
+                appState.opensNotifications = false
+            }
+            .onAppear {
+                if appState.opensNotifications {
+                    showNotifications = true
+                    appState.opensNotifications = false
+                }
+            }
             .sheet(isPresented: $showPlacesWall) {
                 PlacesWallView { place in appState.selectedPlaceFilter = place }
             }
             .task { await appState.loadFeed(); await appState.loadStories() }
 #if DEBUG
-            .task(id: appState.stories.count) {
-                guard appState.opensAnyStory, appState.selectedStory == nil,
-                      !appState.stories.isEmpty else { return }
-                if let ad = appState.opensStoryOf {
-                    appState.selectedStory = appState.stories.first {
-                        $0.author.name.localizedCaseInsensitiveCompare(ad) == .orderedSame
-                    }
-                } else {
-                    // Eşleşilmemiş biri: istek alanı yalnızca orada çıkıyor.
-                    let sohbetler = Set(appState.conversations.map(\.profile.id))
-                    appState.selectedStory = appState.stories.first {
-                        !$0.isMine && !sohbetler.contains($0.author.id)
-                    }
-                }
-            }
-            .onAppear {
-                if appState.opensComposer { showPostComposer = true }
-                if appState.opensPlacesWall { showPlacesWall = true }
-            }
-            .fullScreenCover(item: Binding(
-                get: { appState.opensProfileOf.map { DebugProfileRoute(name: $0) } },
-                set: { if $0 == nil { appState.opensProfileOf = nil } }
-            )) { rota in
-                NavigationStack {
-                    let kisi = rota.name.flatMap { ad in
-                        appState.profiles.first { $0.name.localizedCaseInsensitiveCompare(ad) == .orderedSame }
-                    } ?? appState.currentUserProfile
-                    SocialPersonDetailView(profile: kisi, place: nil)
-                }
-            }
-            .task(id: appState.clubs.count) {
-                if appState.opensFirstClub, selectedClub == nil { selectedClub = appState.clubs.first }
-            }
-            .sheet(isPresented: Binding(get: { appState.opensPaywall }, set: { appState.opensPaywall = $0 })) {
-                PaywallView()
-            }
-            .sheet(isPresented: Binding(get: { appState.opensProNote }, set: { appState.opensProNote = $0 })) {
-                ProUpsellSheet().presentationDetents([.height(320)])
-            }
+            .modifier(DebugFeedLaunchHooks(
+                showPostComposer: $showPostComposer,
+                showPlacesWall: $showPlacesWall,
+                selectedClub: $selectedClub
+            ))
 #endif
             .fullScreenCover(item: Binding(get: { appState.selectedStory }, set: { appState.selectedStory = $0 })) { story in
                 StoryViewer(
@@ -199,7 +176,7 @@ struct SocialFeedView: View {
                         }
                     }
                 }
-                ForEach(appState.stories) { story in
+                ForEach(appState.stories.filter { !$0.isMine }) { story in
                     Button {
                         appState.selectedStory = story
                     } label: {
@@ -221,6 +198,15 @@ struct SocialFeedView: View {
                                         style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
                                     )
                                     .frame(width: 55, height: 55)
+                                if story.isVideo {
+                                    Image(systemName: "play.fill")
+                                        .font(.system(size: 8, weight: .bold))
+                                        .foregroundStyle(.white)
+                                        .frame(width: 16, height: 16)
+                                        .background(.black.opacity(0.55), in: Circle())
+                                        .offset(x: -17, y: 17)
+                                        .accessibilityHidden(true)
+                                }
                                 if let place = story.place {
                                     Image(systemName: "mappin.circle.fill")
                                         .font(.system(size: 13))
@@ -469,28 +455,126 @@ struct SocialFeedView: View {
 }
 
 private struct AddStoryBubble: View {
+    @Environment(AppState.self) private var appState
     let action: () -> Void
 
+    private var ownStory: CampusStory? {
+        appState.stories.first(where: \.isMine)
+    }
+
     var body: some View {
-        Button(action: action) {
-            VStack(spacing: 7) {
-                ZStack(alignment: .bottomTrailing) {
-                    Circle().fill(BondTheme.ink.opacity(0.08)).frame(width: 52, height: 52)
-                        .overlay(Image(systemName: "person.fill").foregroundStyle(BondTheme.ink.opacity(0.28)))
-                        .clipShape(Circle())
-                    Image(systemName: "plus")
-                        .font(.system(size: 11, weight: .bold)).foregroundStyle(BondTheme.onAccent)
-                        .frame(width: 19, height: 19).background(BondTheme.acid, in: Circle())
-                        .offset(x: -1, y: -1)
+        VStack(spacing: 6) {
+            ZStack(alignment: .bottomTrailing) {
+                Button {
+                    if let ownStory {
+                        appState.selectedStory = ownStory
+                    } else {
+                        action()
+                    }
+                } label: {
+                    ZStack {
+                        ProfileMedia(url: appState.avatarURL, data: appState.avatarData)
+                            .frame(width: 47, height: 47)
+                            .clipShape(Circle())
+                            .overlay { Circle().stroke(.white, lineWidth: 1) }
+                        Circle()
+                            .stroke(
+                                ownStory == nil ? BondTheme.ink.opacity(0.14) : BondTheme.violet,
+                                style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
+                            )
+                            .frame(width: 55, height: 55)
+                    }
+                    .frame(width: 58, height: 58)
+                    .contentShape(Circle())
                 }
-                Text(L10n.Feed.yourStory).font(.system(size: 11, weight: .semibold)).foregroundStyle(BondTheme.ink)
+                .buttonStyle(PressableStyle())
+                .accessibilityLabel(L10n.Feed.yourStory)
+
+                Button(action: action) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(BondTheme.onAccent)
+                        .frame(width: 19, height: 19)
+                        .background(BondTheme.acid, in: Circle())
+                }
+                .buttonStyle(.plain)
+                .offset(x: -1, y: -1)
+                .accessibilityLabel(L10n.Composer.shareStory)
             }
+            Text(L10n.Feed.yourStory)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(BondTheme.ink)
         }
-        .buttonStyle(PressableStyle())
     }
 }
 
 #if DEBUG
+/// `-sample` lansman bayrakları. `body` içinde durunca derleyici ifade
+/// süresini aşıyordu (type-check timeout).
+private struct DebugFeedLaunchHooks: ViewModifier {
+    @Environment(AppState.self) private var appState
+    @Binding var showPostComposer: Bool
+    @Binding var showPlacesWall: Bool
+    @Binding var selectedClub: CampusClub?
+
+    func body(content: Content) -> some View {
+        content
+            .task(id: appState.stories.count) {
+                guard appState.opensAnyStory, appState.selectedStory == nil,
+                      !appState.stories.isEmpty else { return }
+                if let ad = appState.opensStoryOf {
+                    appState.selectedStory = appState.stories.first {
+                        $0.author.name.localizedCaseInsensitiveCompare(ad) == .orderedSame
+                    }
+                } else {
+                    let sohbetler = Set(appState.conversations.map(\.profile.id))
+                    appState.selectedStory = appState.stories.first {
+                        !$0.isMine && !sohbetler.contains($0.author.id)
+                    }
+                }
+            }
+            .onAppear {
+                if appState.opensComposer { showPostComposer = true }
+                if appState.opensPlacesWall { showPlacesWall = true }
+            }
+            .task {
+                if appState.opensProfileOf != nil, appState.profiles.isEmpty {
+                    await appState.loadDiscovery()
+                }
+            }
+            .fullScreenCover(item: debugProfileBinding) { rota in
+                NavigationStack {
+                    let kisi = rota.name.flatMap { ad in
+                        appState.profiles.first { $0.name.localizedCaseInsensitiveCompare(ad) == .orderedSame }
+                    } ?? appState.currentUserProfile
+                    SocialPersonDetailView(profile: kisi, place: nil)
+                }
+            }
+            .task(id: appState.clubs.count) {
+                if appState.opensFirstClub, selectedClub == nil { selectedClub = appState.clubs.first }
+            }
+            .sheet(isPresented: Binding(get: { appState.opensPaywall }, set: { appState.opensPaywall = $0 })) {
+                PaywallView()
+            }
+            .sheet(isPresented: Binding(get: { appState.opensProNote }, set: { appState.opensProNote = $0 })) {
+                ProUpsellSheet().presentationDetents([.height(320)])
+            }
+    }
+
+    private var debugProfileBinding: Binding<DebugProfileRoute?> {
+        Binding(
+            get: {
+                guard let ad = appState.opensProfileOf else { return nil }
+                if let ad, !appState.profiles.contains(where: {
+                    $0.name.localizedCaseInsensitiveCompare(ad) == .orderedSame
+                }) { return nil }
+                return DebugProfileRoute(name: ad)
+            },
+            set: { if $0 == nil { appState.opensProfileOf = nil } }
+        )
+    }
+}
+
 /// `-profile` bayrağının sunum kimliği.
 struct DebugProfileRoute: Identifiable {
     let name: String?

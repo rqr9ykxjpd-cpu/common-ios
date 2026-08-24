@@ -4,6 +4,7 @@ import SwiftUI
 extension AppState {
     /// Gönderi ve story sorguları yazar için yalnızca temel alanları getiriyor.
     /// Kişinin profiline girildiğinde ilgi alanları ve galerisi bu yüzden boştu.
+    /// Fotoğraflar önce gelir; gönderiler `personPosts` ile ayrı yüklenir.
     func personDetails(for profileID: UUID) async -> PersonProfileData? {
         guard let uzak = try? await service.fetchPersonDetails(profileID) else { return nil }
         return PersonProfileData(
@@ -11,8 +12,12 @@ extension AppState {
             galleryURLs: uzak.galleryURLs,
             avatarURL: uzak.avatarURL,
             badge: uzak.badge,
-            posts: uzak.posts.map(socialPost(from:))
+            posts: []
         )
+    }
+
+    func personPosts(for profileID: UUID) async -> [SocialPost] {
+        await service.fetchPersonPosts(profileID).map { socialPost(from: $0) }
     }
 
     var currentUserPosts: [SocialPost] {

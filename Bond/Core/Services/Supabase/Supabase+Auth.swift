@@ -76,14 +76,14 @@ extension SupabaseProductService {
         guard let userID = currentUserID else { return }
         let rows: [ExpiredStoryRow]? = try? await client
             .from("stories")
-            .select("id,media_path")
+            .select("id,media_path,poster_path")
             .eq("author_id", value: userID)
             .lt("expires_at", value: Date())
             .execute()
             .value
         guard let rows, !rows.isEmpty else { return }
 
-        let paths = rows.compactMap(\.mediaPath)
+        let paths = rows.flatMap { [$0.mediaPath, $0.posterPath].compactMap { $0 } }.filter { !$0.isEmpty }
         if !paths.isEmpty {
             _ = try? await client.storage.from("story-media").remove(paths: paths)
         }

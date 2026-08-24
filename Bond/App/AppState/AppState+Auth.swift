@@ -58,6 +58,7 @@ extension AppState {
     /// birleşiyordu ve profil çözümlenemediğinde kullanıcıya "Google ile giriş
     /// yapılamadı" deniyordu; sebebi bambaşka bir yerdeyken yanlış yere baktırıyordu.
     func completeSocialSignIn() async -> Bool {
+        await BondImageLoader.shared.reset()
         currentUserID = service.currentUserID ?? currentUserID
         if let sessionEmail = service.currentUserEmail {
             email = sessionEmail.lowercased()
@@ -90,6 +91,7 @@ extension AppState {
         try? await service.touchLastActive()
         startMessageListener()
         await refreshSubscriptions()
+        await startPushRegistration()
         if requiresAvatarStep(photosLoaded: fotograflarOkundu) {
             withAnimation(.smooth(duration: 0.55)) { route = .onboarding(.photo) }
             return true
@@ -148,6 +150,7 @@ extension AppState {
             } else if route != .app {
                 withAnimation(.smooth(duration: 0.45)) { route = .app }
             }
+            await startPushRegistration()
         } catch {
             // Ağın kopması oturumun bittiği anlamına gelmiyor. Kampüs wifi'ında bir istek
             // zaman aşımına uğradığında kullanıcıyı karşılama ekranına atmak, girişi
@@ -173,6 +176,46 @@ extension AppState {
 #endif
         discoveryFilters = profile.discoveryFilters
         persistAccount()
+        applyRemoteGhostMode(profile.ghostMode)
+    }
+
+    /// Sunucu hayalet kolonunu gönderdiyse o kaynak. Yerelde açık, sunucuda
+    /// kapalıysa (kolon yeni eklendi) tercihi bir kez yukarı yazarız; aksi
+    /// halde eski cihaz tercihi sessizce kapanırdı.
+    private func applyRemoteGhostMode(_ remote: Bool?) {
+        guard let remote else { return }
+        if remote {
+            ghostMode = true
+            draft.ghostMode = true
+            return
+        }
+        if ghostMode {
+            Task { await persistGhostMode(true) }
+        } else {
+            ghostMode = false
+            draft.ghostMode = false
+        }
+    }
+
+    func setGhostMode(_ enabled: Bool) {
+        guard enabled == false || tier.hasGhostMode else { return }
+        let previous = ghostMode
+        ghostMode = enabled
+        draft.ghostMode = enabled
+        Haptics.impact(.light)
+        Task { await persistGhostMode(enabled, revertingTo: previous) }
+    }
+
+    private func persistGhostMode(_ enabled: Bool, revertingTo previous: Bool? = nil) async {
+        do {
+            try await service.setGhostMode(enabled)
+        } catch {
+            if let previous {
+                ghostMode = previous
+                draft.ghostMode = previous
+                showError(error, fallback: L10n.Profile.ghostSaveFailed)
+            }
+        }
     }
 
     /// Başarılıysa `true`. Çağıran taraf "fotoğrafı yok" ile "fotoğrafını okuyamadım"
@@ -202,6 +245,8 @@ extension AppState {
         defer { isAccountActionInProgress = false }
         persistAccount()
         do {
+            await unregisterPushToken()
+            await BondImageLoader.shared.reset()
             try await service.signOut()
             clearSession(keepAccountData: true)
         } catch {
@@ -214,6 +259,7 @@ extension AppState {
         isAccountActionInProgress = true
         defer { isAccountActionInProgress = false }
         do {
+            await BondImageLoader.shared.reset()
             try await service.deleteAccount()
             clearSession(keepAccountData: false)
         } catch {

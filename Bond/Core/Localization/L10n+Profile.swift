@@ -41,6 +41,7 @@ extension L10n {
         static var ghost: String { String(localized: "profile.ghost") }
         static var ghostOnDetail: String { String(localized: "profile.ghostOnDetail") }
         static var ghostOffDetail: String { String(localized: "profile.ghostOffDetail") }
+        static var ghostSaveFailed: String { String(localized: "profile.ghostSaveFailed") }
         static var signOutHint: String { String(localized: "profile.signOutHint") }
         static var deletePermanent: String { String(localized: "profile.deletePermanent") }
         static var irreversible: String { String(localized: "profile.irreversible") }

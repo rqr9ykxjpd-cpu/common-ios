@@ -63,26 +63,14 @@ struct DiscoveryCard: View {
                         .frame(width: width, height: photoHeight)
                         .clipped()
                         .id(photoIndex)
+                        .allowsHitTesting(false)
 
                     LinearGradient(colors: [.black.opacity(0.38), .clear, .black.opacity(0.75)], startPoint: .top, endPoint: .bottom)
                         .frame(width: width, height: photoHeight)
+                        .allowsHitTesting(false)
 
-                    // Fotoğraf noktaları "sayfa çevirebilirsin" diyordu ama hiçbir şey
-                    // yapmıyordu; diğer fotoğrafları görmek için detay sayfasını açmak
-                    // gerekiyordu. Sağ/sol yarıya dokunmak artık gerçekten sayfa çeviriyor.
+                    // Kaç fotoğraf olduğu ve kaçıncısında olunduğu.
                     if photos.count > 1 {
-                        HStack(spacing: 0) {
-                            Button { step(-1) } label: { Color.clear.contentShape(Rectangle()) }
-                                .accessibilityLabel(L10n.Discovery.prevPhoto)
-                            Button { step(1) } label: { Color.clear.contentShape(Rectangle()) }
-                                .accessibilityLabel(L10n.Discovery.nextPhoto)
-                        }
-                        .buttonStyle(.plain)
-                        .frame(width: width, height: photoHeight)
-
-                        // Kaç fotoğraf olduğu ve kaçıncısında olunduğu hiçbir yerde
-                        // yazmıyordu; kullanıcı sağa dokununca bir şey değişeceğini
-                        // bilmiyordu.
                         HStack(spacing: 4) {
                             ForEach(0..<photos.count, id: \.self) { indeks in
                                 Capsule()
@@ -151,6 +139,21 @@ struct DiscoveryCard: View {
                     .foregroundStyle(.white)
                     .padding(16)
                     .frame(width: width, height: photoHeight)
+                    // İsim/künye katmanı tüm fotoğrafı kaplıyordu; sağ/sol dokunuş
+                    // galeri çevirisine hiç ulaşmıyordu.
+                    .allowsHitTesting(false)
+
+                    // En üstte: sağ/sol yarıya dokununca galeri sayfası.
+                    if photos.count > 1 {
+                        HStack(spacing: 0) {
+                            Button { step(-1) } label: { Color.clear.contentShape(Rectangle()) }
+                                .accessibilityLabel(L10n.Discovery.prevPhoto)
+                            Button { step(1) } label: { Color.clear.contentShape(Rectangle()) }
+                                .accessibilityLabel(L10n.Discovery.nextPhoto)
+                        }
+                        .buttonStyle(.plain)
+                        .frame(width: width, height: photoHeight)
+                    }
                 }
                 .frame(width: width, height: photoHeight)
                 .clipped()
