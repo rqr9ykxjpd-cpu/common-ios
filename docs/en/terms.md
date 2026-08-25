@@ -1,14 +1,14 @@
 # Terms of Use
 
-**Last updated:** 20 August 2026
+**Last updated:** 25 August 2026
 
-By using Bond you accept these terms. If you do not accept them, do not use
+By using Common you accept these terms. If you do not accept them, do not use
 the app. English translation of the Turkish original; the Turkish version
 governs.
 
 ## Who can use it
 
-Bond is for students at Yalova University and you must be **over 18**. You
+Common is for students at Yalova University and you must be **over 18**. You
 open an account in your own name; you may not impersonate anyone or create a
 fake profile. You may not transfer or share your account.
 
@@ -52,7 +52,7 @@ warning. You can delete your own account at any time from inside the app:
 
 ## Subscriptions
 
-Bond's core features are free. Bond Plus and Bond Pro are optional
+Common's core features are free. Common Plus and Common Pro are optional
 weekly subscriptions; you can keep using the app without subscribing.
 
 Purchases are made through the App Store and charged to your App Store
@@ -71,7 +71,7 @@ we will not take away features you have already paid for during that period.
 
 ## Limits of our responsibility
 
-Bond is a tool that makes meeting people easier; it does not guarantee the
+Common is a tool that makes meeting people easier; it does not guarantee the
 identity, honesty or intentions of its users. You are responsible for your own
 safety when meeting people: we recommend meeting first in busy public places
 and telling someone close to you where you are going.

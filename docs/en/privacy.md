@@ -1,8 +1,8 @@
 # Privacy Policy
 
-**Last updated:** 20 August 2026
+**Last updated:** 25 August 2026
 
-Bond is an app that helps students at Yalova University meet each other on
+Common is an app that helps students at Yalova University meet each other on
 campus. This document explains what information the app collects, why it
 collects it, and what we do with it. English translation of the Turkish
 original; the Turkish version governs.
@@ -85,7 +85,7 @@ and matches from our servers. This cannot be undone.
 
 ## Age limit
 
-Bond is not available to anyone under 18. We close accounts we learn belong
+Common is not available to anyone under 18. We close accounts we learn belong
 to someone under 18.
 
 ## Your rights

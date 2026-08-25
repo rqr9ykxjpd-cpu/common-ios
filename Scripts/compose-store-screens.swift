@@ -68,7 +68,7 @@ for slide in slides {
         let subColor = slide.dark ? NSColor.white.withAlphaComponent(0.55) : muted
         let markColor = slide.dark ? NSColor.white.withAlphaComponent(0.4) : muted
 
-        drawText("BOND", font: font(13, weight: .semibold), color: markColor,
+        drawText("COMMON", font: font(13, weight: .semibold), color: markColor,
                  in: CGRect(x: 88, y: 108, width: canvasW - 176, height: 24), tracking: 4.4)
         drawText(slide.title, font: font(68, weight: .semibold), color: titleColor,
                  in: CGRect(x: 80, y: 148, width: canvasW - 160, height: 180), tracking: -1.4)

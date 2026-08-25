@@ -108,7 +108,7 @@ struct SocialProfileView: View {
         }
     }
 
-    /// Kim olduğun. Önceden üç ayrı parçaydı: "Profil / Bond'da nasıl göründüğünü
+    /// Kim olduğun. Önceden üç ayrı parçaydı: "Profil / Common'da nasıl göründüğünü
     /// yönet" başlığı, avatar bloğu ve altta yüzen sayaçlar. Başlık ekranın ne olduğunu
     /// zaten belli olan bir şeyi tekrar ediyordu; sayaçlar ise tek kartsız bölüm olarak
     /// ortada duruyordu. Üçü birleşti.

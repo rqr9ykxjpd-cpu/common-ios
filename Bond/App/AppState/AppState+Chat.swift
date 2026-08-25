@@ -288,25 +288,23 @@ extension AppState {
         }
     }
 
-    /// Kendi mesajını siler. Önce ekrandan kaldırılıyor; sunucu reddederse geri
-    /// geliyor ve sebebi söyleniyor.
+    /// Kendi mesajını siler; silme eşleşmeyi de bitirir. Sohbet iyimser
+    /// kalkıyor; sunucu reddederse geri geliyor.
     func deleteMessage(_ messageID: UUID, in conversationID: UUID) {
         guard let index = conversations.firstIndex(where: { $0.id == conversationID }),
-              let messageIndex = conversations[index].messages.firstIndex(where: { $0.id == messageID }),
-              conversations[index].messages[messageIndex].isMine else { return }
-        let kaldirilan = conversations[index].messages[messageIndex]
-        // `remove(at:)` çıkardığı öğeyi döndürüyor; sonucu kullanmadığımızı
-        // açıkça belirtmezsek derleyici uyarı veriyor.
-        withAnimation(.snappy) { _ = conversations[index].messages.remove(at: messageIndex) }
+              conversations[index].messages.contains(where: { $0.id == messageID && $0.isMine }) else { return }
+        let previous = conversations
+        conversations.removeAll { $0.id == conversationID }
+        if selectedConversation?.id == conversationID { selectedConversation = nil }
         Haptics.impact(.light)
         Task {
-            do { try await service.deleteMessage(messageID) }
-            catch {
-                if let geri = conversations.firstIndex(where: { $0.id == conversationID }) {
-                    withAnimation(.snappy) {
-                        conversations[geri].messages.insert(kaldirilan, at: min(messageIndex, conversations[geri].messages.count))
-                    }
-                }
+            do {
+                try await service.deleteMessage(messageID)
+                try await service.unmatch(conversationID)
+                show(L10n.Chat.matchEnded)
+                Haptics.success()
+            } catch {
+                conversations = previous
                 showError(error, fallback: L10n.Chat.deleteFailed)
             }
         }

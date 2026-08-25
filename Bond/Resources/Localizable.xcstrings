@@ -325,13 +325,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bond founder"
+            "value": "Common founder"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bond kurucusu"
+            "value": "Common kurucusu"
           }
         }
       }
@@ -478,13 +478,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "bond"
+            "value": "common"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "bond"
+            "value": "common"
           }
         }
       }
@@ -563,13 +563,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This person’s profile, posts, and conversation will be removed from your Bond experience. They won’t be notified."
+            "value": "This person’s profile, posts, and conversation will be removed from your Common experience. They won’t be notified."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bu kişinin profili, gönderileri ve sohbeti Bond deneyiminden kaldırılır. Karşı tarafa bildirim gönderilmez."
+            "value": "Bu kişinin profili, gönderileri ve sohbeti Common deneyiminden kaldırılır. Karşı tarafa bildirim gönderilmez."
           }
         }
       }
@@ -733,13 +733,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This message will be permanently removed. This can’t be undone."
+            "value": "Deleting this message also ends the match. This can’t be undone."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bu mesaj kalıcı olarak silinir. Bu işlem geri alınamaz."
+            "value": "Mesaj silinince eşleşme de biter. Bu işlem geri alınamaz."
           }
         }
       }
@@ -2569,13 +2569,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "To take photos, allow Bond camera access in Settings."
+            "value": "To take photos, allow Common camera access in Settings."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Fotoğraf çekmek için Ayarlar’dan Bond’a kamera izni ver."
+            "value": "Fotoğraf çekmek için Ayarlar’dan Common’a kamera izni ver."
           }
         }
       }
@@ -3555,13 +3555,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "bond / new connection"
+            "value": "common / new connection"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "bond / yeni bağlantı"
+            "value": "common / yeni bağlantı"
           }
         }
       }
@@ -7594,13 +7594,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Latest activity on Bond"
+            "value": "Latest activity on Common"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bond'daki son hareketler"
+            "value": "Common'daki son hareketler"
           }
         }
       }
@@ -7849,13 +7849,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bond is only for students 18 and over."
+            "value": "Common is only for students 18 and over."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bond yalnızca 18 yaş ve üzeri öğrenciler içindir."
+            "value": "Common yalnızca 18 yaş ve üzeri öğrenciler içindir."
           }
         }
       }
@@ -7951,13 +7951,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enter Bond"
+            "value": "Enter Common"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bond'a Gir"
+            "value": "Common'a Gir"
           }
         }
       }
@@ -8393,13 +8393,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "BOND"
+            "value": "COMMON"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "BOND"
+            "value": "COMMON"
           }
         }
       }
@@ -8750,13 +8750,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bond %@"
+            "value": "Common %@"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bond %@"
+            "value": "Common %@"
           }
         }
       }
@@ -9600,13 +9600,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "BOND PRO"
+            "value": "COMMON PRO"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "BOND PRO"
+            "value": "COMMON PRO"
           }
         }
       }
@@ -12839,13 +12839,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Welcome to Bond"
+            "value": "Welcome to Common"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bond'a hoş geldin"
+            "value": "Common'a hoş geldin"
           }
         }
       }
@@ -13155,6 +13155,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Giriş yapılıyor…"
+          }
+        }
+      }
+    },
+    "chat.deleteAndEndMatch": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete and end match"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sil ve eşleşmeyi bitir"
           }
         }
       }

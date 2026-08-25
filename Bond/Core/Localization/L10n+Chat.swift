@@ -81,6 +81,7 @@ extension L10n {
         static var sendFailed: String { String(localized: "chat.sendFailed") }
         static var deleteMessageConfirm: String { String(localized: "chat.deleteMessageConfirm") }
         static var deleteMessageBody: String { String(localized: "chat.deleteMessageBody") }
+        static var deleteAndEndMatch: String { String(localized: "chat.deleteAndEndMatch") }
         static var deleteFailed: String { String(localized: "chat.deleteFailed") }
         static var editFailed: String { String(localized: "chat.editFailed") }
         static var reactionFailed: String { String(localized: "chat.reactionFailed") }

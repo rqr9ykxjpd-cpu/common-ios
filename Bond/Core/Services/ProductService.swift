@@ -72,6 +72,7 @@ protocol ProductService: Sendable {
     func setMessageReaction(messageID: UUID, reaction: String?) async throws
 
     /// Kendi mesajını siler. Sunucu yalnızca gönderenin kendi mesajına izin veriyor.
+    /// Silme, istemcide eşleşmeyi de bitirir.
     func deleteMessage(_ messageID: UUID) async throws
     /// Kendi mesajının metnini değiştirir.
     func editMessage(_ messageID: UUID, body: String) async throws

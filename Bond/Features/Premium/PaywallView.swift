@@ -17,11 +17,9 @@ struct PaywallView: View {
     /// Sınıra takılarak açıldıysa başlık ona göre değişiyor.
     var quota: QuotaKind?
 
-    /// Ürün yüklenene kadar gösterilecek fiyatlar. Gerçek fiyat App Store'dan
-    /// geliyor: Apple kullanıcının ülkesine ve para birimine göre biçimlendiriyor,
-    /// ayrıca fiyatı biz değiştirsek bile burası kendiliğinden doğru kalıyor.
-    var plusFiyat = "₺59,99"
-    var proFiyat = "₺299,99"
+    /// Ürün yüklenene kadar yer tutucu. Gerçek fiyat App Store'dan gelir;
+    /// kademeyi Connect'te değiştirmek burayı güncellemeyi gerektirmez.
+    /// Sabit ₺ tutarsak StoreKit susunca eski fiyat yalan söyler.
 
     private var magaza: SubscriptionStore { appState.subscriptions }
 
@@ -180,8 +178,8 @@ struct PaywallView: View {
     /// Plan seçimi. Büyük kartlar yerine iki satır: seçili olan yanıyor.
     private var planSecimi: some View {
         VStack(spacing: 8) {
-            planSatiri(.plus, fiyat: magaza.displayPrice(for: .plus) ?? plusFiyat, not: nil)
-            planSatiri(.pro, fiyat: magaza.displayPrice(for: .pro) ?? proFiyat, not: L10n.Paywall.unlimited)
+            planSatiri(.plus, fiyat: magaza.displayPrice(for: .plus) ?? "—", not: nil)
+            planSatiri(.pro, fiyat: magaza.displayPrice(for: .pro) ?? "—", not: L10n.Paywall.unlimited)
         }
         .padding(.bottom, 10)
     }

@@ -19,7 +19,7 @@ struct ProfileSettingsView: View {
     @State private var showDeleteAccountAlert = false
 
     private static let supportURL = URL(
-        string: "mailto:220207018@yalova.edu.tr?subject=Bond%20destek"
+        string: "mailto:220207018@yalova.edu.tr?subject=Common%20destek"
     )
 
     var body: some View {

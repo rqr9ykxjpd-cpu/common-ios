@@ -127,10 +127,11 @@ struct ConversationView: View {
             ),
             titleVisibility: .visible
         ) {
-            Button(L10n.Common.delete, role: .destructive) {
+            Button(L10n.Chat.deleteAndEndMatch, role: .destructive) {
                 guard let messageID = messagePendingDeletion else { return }
                 appState.deleteMessage(messageID, in: conversationID)
                 messagePendingDeletion = nil
+                dismiss()
             }
             Button(L10n.Common.cancel, role: .cancel) {
                 messagePendingDeletion = nil

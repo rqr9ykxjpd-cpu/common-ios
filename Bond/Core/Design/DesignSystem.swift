@@ -240,7 +240,7 @@ struct Wordmark: View {
         .tracking(-0.6)
         .foregroundStyle(BondTheme.ink)
         .fixedSize()
-        // Harf harf bölündüğü için sesli okuyucu "b-o-n-d" demesin.
+        // Harf harf bölündüğü için sesli okuyucu "c-o-m-m-o-n" demesin.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(L10n.Brand.wordmark)
         .accessibilityAddTraits(.isHeader)

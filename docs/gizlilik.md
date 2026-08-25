@@ -1,8 +1,8 @@
 # Gizlilik Politikası
 
-**Son güncelleme:** 19 Ağustos 2026
+**Son güncelleme:** 25 Ağustos 2026
 
-Bond, Yalova Üniversitesi öğrencilerinin kampüste tanışması için yapılmış bir
+Common, Yalova Üniversitesi öğrencilerinin kampüste tanışması için yapılmış bir
 uygulamadır. Bu metin, uygulamanın hangi bilgileri topladığını, neden
 topladığını ve bu bilgilerle ne yaptığını anlatır. Sade tutmaya çalıştık.
 
@@ -81,7 +81,7 @@ fotoğrafların ve eşleşmelerin sunuculardan kaldırılır. Bu işlem geri al�
 
 ## Yaş sınırı
 
-Bond 18 yaşından küçüklerin kullanımına kapalıdır. 18 yaşından küçük
+Common 18 yaşından küçüklerin kullanımına kapalıdır. 18 yaşından küçük
 olduğunu öğrendiğimiz hesapları kapatırız.
 
 ## Hakların

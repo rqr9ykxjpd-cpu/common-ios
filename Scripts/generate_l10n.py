@@ -52,7 +52,7 @@ PREFIX_ENUM = {
 # (key, tr, en) veya (key, tr, en, [(arg, "String"|"Int")])
 S: list = [
     # Brand
-    ("brand.wordmark", "bond", "bond"),
+    ("brand.wordmark", "common", "common"),
     # Common
     ("common.close", "Kapat", "Close"),
     ("common.done", "Bitti", "Done"),
@@ -86,7 +86,7 @@ S: list = [
     ("tabs.discover", "Tanış", "Meet"),
     ("tabs.profile", "Profil", "Profile"),
     # Welcome
-    ("welcome.headline", "Bond'a hoş geldin", "Welcome to Bond"),
+    ("welcome.headline", "Common'a hoş geldin", "Welcome to Common"),
     ("welcome.featureShareTitle", "Anlarını paylaş", "Share moments"),
     ("welcome.featureShareBody", "Kampüsteki günün akışta görünsün.", "Your campus day belongs in the feed."),
     ("welcome.featureMeetTitle", "Yeni insanlarla tanış", "Meet new people"),
@@ -130,7 +130,7 @@ S: list = [
     ("onboarding.department", "Bölümün", "Your department"),
     ("onboarding.departmentPlaceholder", "örneğin Endüstri Mühendisliği", "e.g. Industrial Engineering"),
     ("onboarding.birthDate", "Doğum tarihin", "Date of birth"),
-    ("onboarding.ageNote", "Bond yalnızca 18 yaş ve üzeri öğrenciler içindir.", "Bond is only for students 18 and over."),
+    ("onboarding.ageNote", "Common yalnızca 18 yaş ve üzeri öğrenciler içindir.", "Common is only for students 18 and over."),
     ("onboarding.preferencesEyebrow", "Tanışma tercihlerin", "Who you want to meet"),
     ("onboarding.preferencesTitle", "Kısaca\nseni tanıyalım.", "Let’s get\nto know you."),
     ("onboarding.preferencesSubtitle", "Kimlerin gösterileceği cinsiyetine göre belirlenir. İkisini de sonradan değiştirebilirsin.", "Who you see is based on your gender. You can change both later."),
@@ -150,7 +150,7 @@ S: list = [
     ("onboarding.welcomePlain", "Hoş geldin.", "Welcome."),
     ("onboarding.welcomeName", "Hoş geldin,\n%@.", "Welcome,\n%@.", [("name", "String")]),
     ("onboarding.readySubtitle", "Kampüsün akışı, yeni insanlar ve yeni sohbetler seni bekliyor.", "The campus feed, new people, and new chats are waiting."),
-    ("onboarding.enter", "Bond'a Gir", "Enter Bond"),
+    ("onboarding.enter", "Common'a Gir", "Enter Common"),
     ("onboarding.saveFailed", "Profilin kaydedilemedi.", "Couldn’t save your profile."),
     ("onboarding.needPhoto", "Devam etmek için bir profil fotoğrafı seçmelisin.", "Choose a profile photo to continue."),
     ("onboarding.photoUploadFailed", "Fotoğrafın yüklenemedi. Tekrar dene.", "Couldn’t upload your photo. Try again."),
@@ -235,7 +235,7 @@ S: list = [
     ("composer.cameraUnavailable", "Kamera kullanılamıyor", "Camera unavailable"),
     ("composer.cameraUnavailableBody", "Bu cihazda kamera bulunamadı. Galeriden bir fotoğraf seçebilirsin.", "No camera was found on this device. You can pick a photo from your library."),
     ("composer.cameraDenied", "Kamera izni kapalı", "Camera access is off"),
-    ("composer.cameraDeniedBody", "Fotoğraf çekmek için Ayarlar’dan Bond’a kamera izni ver.", "To take photos, allow Bond camera access in Settings."),
+    ("composer.cameraDeniedBody", "Fotoğraf çekmek için Ayarlar’dan Common’a kamera izni ver.", "To take photos, allow Common camera access in Settings."),
     ("composer.photoLoadFailed", "Fotoğraf yüklenemedi. Başka bir tane dene.", "Couldn’t load that photo. Try another one."),
     ("composer.pickFromLibrary", "Galeriden fotoğraf seç", "Choose from library"),
     ("composer.changePhoto", "Fotoğrafı değiştir", "Change photo"),
@@ -293,7 +293,7 @@ S: list = [
     ("discovery.safety", "Güvenlik seçenekleri", "Safety options"),
     ("discovery.prevPhoto", "Önceki fotoğraf", "Previous photo"),
     ("discovery.nextPhoto", "Sonraki fotoğraf", "Next photo"),
-    ("discovery.matchEyebrowBrand", "bond / yeni bağlantı", "bond / new connection"),
+    ("discovery.matchEyebrowBrand", "common / yeni bağlantı", "common / new connection"),
     ("discovery.matchEyebrow", "karşılıklı merak", "mutual curiosity"),
     ("discovery.matchTitle", "Sen ve %@\n**denk geldiniz.**", "You and %@\n**just matched.**", [("name", "String")]),
     ("discovery.matchSubtitle", "İlk mesajın mükemmel olması gerekmiyor.\nSadece size ait olsun.", "The first message doesn’t have to be perfect.\nJust make it yours."),
@@ -376,6 +376,9 @@ S: list = [
     ("chat.loadFailed", "Sohbetler yüklenemedi.", "Couldn’t load chats."),
     ("chat.sendFailed", "Mesaj gönderilemedi.", "Couldn’t send the message."),
     ("chat.deleteFailed", "Mesaj silinemedi.", "Couldn’t delete the message."),
+    ("chat.deleteMessageConfirm", "Mesaj silinsin mi?", "Delete message?"),
+    ("chat.deleteMessageBody", "Mesaj silinince eşleşme de biter. Bu işlem geri alınamaz.", "Deleting this message also ends the match. This can’t be undone."),
+    ("chat.deleteAndEndMatch", "Sil ve eşleşmeyi bitir", "Delete and end match"),
     ("chat.editFailed", "Mesaj düzenlenemedi.", "Couldn’t edit the message."),
     ("chat.reactionFailed", "Tepki kaydedilemedi.", "Couldn’t save the reaction."),
     # Profile
@@ -543,17 +546,17 @@ S: list = [
     ("meetings.declined", "Buluşma isteği reddedildi", "Meetup request declined"),
     ("meetings.respondFailed", "Buluşma isteği yanıtlanamadı.", "Couldn’t respond to the meetup request."),
     # Premium / paywall
-    ("premium.proEyebrow", "BOND PRO", "BOND PRO"),
+    ("premium.proEyebrow", "COMMON PRO", "COMMON PRO"),
     ("premium.viewCountsTitle", "Kimin kaç kez\nizlediğini görmek.", "See who viewed,\nand how many times."),
     ("premium.viewCountsBody", "Bunun için daha özel kullanıcılarımızdan olman gerekiyor. Pro yakında.", "That takes a more special plan. Pro is coming soon."),
     ("premium.viewCountsNote", "söz, sana ilk biz haber vereceğiz ☺", "promise, you’ll hear it from us first ☺"),
-    ("paywall.brand", "BOND", "BOND"),
+    ("paywall.brand", "COMMON", "COMMON"),
     ("paywall.headline", "Sınırları kaldır.", "Lift the limits."),
     ("paywall.free", "ÜCRETSİZ", "FREE"),
     ("paywall.plus", "PLUS", "PLUS"),
     ("paywall.pro", "PRO", "PRO"),
     ("paywall.specialNote", "bu verilere erişmek için özel\nkullanıcılarımızdan olmalısın", "to see this you need to be one of\nour special members"),
-    ("paywall.planName", "Bond %@", "Bond %@", [("tier", "String")]),
+    ("paywall.planName", "Common %@", "Common %@", [("tier", "String")]),
     ("paywall.unlimited", "sınırsız", "unlimited"),
     ("paywall.perWeek", "/ hafta", "/ week"),
     ("paywall.handNote", "merak etme, kimse senin Plus olduğunu bilmeyecek ☺", "don’t worry, nobody will know you’re on Plus ☺"),
@@ -617,7 +620,7 @@ S: list = [
     ("error.timeout", "İşlem zaman aşımına uğradı. Tekrar dene.", "That timed out. Try again."),
     ("error.googleNotConfigured", "Google girişi yapılandırılmamış. .env içine GOOGLE_CLIENT_ID ve GOOGLE_SERVER_CLIENT_ID yazıp uygulamayı yeniden derle.", "Google sign-in isn’t configured. Add GOOGLE_CLIENT_ID and GOOGLE_SERVER_CLIENT_ID to .env and rebuild."),
     # Notifications
-    ("notification.intro", "Bond'daki son hareketler", "Latest activity on Bond"),
+    ("notification.intro", "Common'daki son hareketler", "Latest activity on Common"),
     ("notification.empty", "Henüz bildirim yok", "No notifications yet"),
     ("notification.emptyBody", "Yeni etkileşimler burada görünecek.", "New activity will show up here."),
     ("notification.markRead", "Okundu olarak işaretle", "Mark as read"),
@@ -696,7 +699,7 @@ S: list = [
     ("meetingStatus.declined", "Reddedildi", "Declined"),
     ("badge.verified", "Doğrulanmış hesap", "Verified account"),
     ("badge.moderator", "Moderatör", "Moderator"),
-    ("badge.founder", "Bond kurucusu", "Bond founder"),
+    ("badge.founder", "Common kurucusu", "Common founder"),
     ("badge.founderSubtitle", "Girişimci · Startup Developer · Concept Manager", "Founder · Startup Developer · Concept Manager"),
     ("badge.founderCredRoles", "Girişimci · Startup Developer", "Founder · Startup Developer"),
     ("badge.founderCredFocus", "Concept Manager", "Concept Manager"),
@@ -817,8 +820,8 @@ S: list = [
 
 
 INFO_PLIST = {
-    "CFBundleDisplayName": ("Bond", "Bond"),
-    "CFBundleName": ("Bond", "Bond"),
+    "CFBundleDisplayName": ("Common", "Common"),
+    "CFBundleName": ("Common", "Common"),
     "NSCameraUsageDescription": (
         "Gönderi ve story paylaşırken fotoğraf çekmek, story için de kısa video kaydetmek için kameraya erişmemiz gerekiyor.",
         "We need camera access so you can take photos for posts and stories, and record short story videos.",
