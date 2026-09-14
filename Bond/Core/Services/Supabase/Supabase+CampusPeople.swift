@@ -100,7 +100,7 @@ extension SupabaseProductService {
         let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.timeZone = .current
         return rows.compactMap { r in
             guard let d = f.date(from: r.day) else { return nil }
-            return FounderDay(day: d, newUsers: r.newUsers, activeUsers: r.activeUsers, posts: r.posts)
+            return FounderDay(day: d, newUsers: r.newUsers, activeUsers: r.activeUsers, posts: r.posts, matches: r.matches ?? 0)
         }
     }
 

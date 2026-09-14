@@ -211,7 +211,7 @@ struct SampleProductService: ProductService {
     func fetchFounderDaily(days: Int) async throws -> [FounderDay] {
         (0..<days).reversed().map { i in
             FounderDay(day: Calendar.current.startOfDay(for: .now).addingTimeInterval(-Double(i) * 86_400),
-                       newUsers: [3, 5, 2, 9, 4, 7, 6][i % 7], activeUsers: [40, 52, 38, 61, 47, 66, 63][i % 7], posts: [12, 18, 9, 22, 15, 20, 18][i % 7])
+                       newUsers: [3, 5, 2, 9, 4, 7, 6][i % 7], activeUsers: [40, 52, 38, 61, 47, 66, 63][i % 7], posts: [12, 18, 9, 22, 15, 20, 18][i % 7], matches: [2, 4, 1, 6, 3, 5, 4][i % 7])
         }
     }
     func fetchFounderAnnouncements() async throws -> [FounderAnnouncement] {

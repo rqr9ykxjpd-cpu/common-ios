@@ -881,7 +881,8 @@ struct FounderDayRow: Decodable {
     let newUsers: Int
     let activeUsers: Int
     let posts: Int
-    enum CodingKeys: String, CodingKey { case day, posts; case newUsers = "new_users"; case activeUsers = "active_users" }
+    let matches: Int?
+    enum CodingKeys: String, CodingKey { case day, posts, matches; case newUsers = "new_users"; case activeUsers = "active_users" }
 }
 struct FounderDaysParams: Encodable { let days: Int }
 struct FounderAnnouncementRow: Decodable {

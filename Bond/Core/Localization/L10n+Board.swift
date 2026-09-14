@@ -62,7 +62,11 @@ extension L10n {
         static func broadcastConfirm(_ count: Int) -> String { format("founder.broadcastConfirm", count) }
         static func broadcastDone(_ count: Int) -> String { format("founder.broadcastDone", count) }
         static var broadcastTestDone: String { String(localized: "founder.broadcastTestDone", table: "Board") }
+        static func chart(_ key: String) -> String {
+            Bundle.main.localizedString(forKey: "founder.chart.\(key)", value: nil, table: "Board")
+        }
         static var week: String { String(localized: "founder.week", table: "Board") }
+        static var month: String { String(localized: "founder.month", table: "Board") }
         static var weekNew: String { String(localized: "founder.week.newUsers", table: "Board") }
         static var weekActive: String { String(localized: "founder.week.active", table: "Board") }
         static var weekPosts: String { String(localized: "founder.week.posts", table: "Board") }

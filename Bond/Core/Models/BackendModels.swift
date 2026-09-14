@@ -88,6 +88,7 @@ struct FounderDay: Identifiable, Hashable, Sendable {
     let newUsers: Int
     let activeUsers: Int
     let posts: Int
+    var matches: Int = 0
 }
 
 /// Kurucu paneli: gönderilmiş duyuru.

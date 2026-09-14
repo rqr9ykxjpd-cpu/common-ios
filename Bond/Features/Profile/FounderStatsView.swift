@@ -16,6 +16,8 @@ struct FounderStatsView: View {
     @State private var sentMessage: String?
     @State private var sentOK = true
     @State private var days: [FounderDay] = []
+    @State private var metric: ChartMetric = .active
+    @State private var range: Int = 7
     @State private var announcements: [FounderAnnouncement] = []
 
     private let columns = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
@@ -266,54 +268,166 @@ struct FounderStatsView: View {
         }
     }
 
-    /// Son 7 gün: üç seri, tek grafik. Sayı okumak için değil, eğilim için.
+    enum ChartMetric: String, CaseIterable {
+        case active, new, posts, matches
+        func value(_ d: FounderDay) -> Int {
+            switch self {
+            case .active: d.activeUsers
+            case .new: d.newUsers
+            case .posts: d.posts
+            case .matches: d.matches
+            }
+        }
+    }
+
+    /// Tek metrik, tek çubuk/gün, çubuk üstünde sayı; bugün turuncu.
+    /// Başlıkta dönem toplamı ve önceki döneme göre değişim.
     private var weekSection: some View {
-        VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
-            Text(L10n.Board.week.uppercased())
-                .font(.caption.weight(.bold))
-                .foregroundStyle(BondTheme.muted)
-                .tracking(0.6)
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 14) {
-                    legend(L10n.Board.weekActive, BondTheme.burntOrange)
-                    legend(L10n.Board.weekNew, BondTheme.ink)
-                    legend(L10n.Board.weekPosts, BondTheme.muted.opacity(0.5))
-                }
-                let maxV = max(1, days.map { max($0.activeUsers, $0.newUsers, $0.posts) }.max() ?? 1)
-                HStack(alignment: .bottom, spacing: 8) {
-                    ForEach(days) { d in
-                        VStack(spacing: 4) {
-                            HStack(alignment: .bottom, spacing: 3) {
-                                bar(d.activeUsers, maxV, BondTheme.burntOrange)
-                                bar(d.newUsers, maxV, BondTheme.ink)
-                                bar(d.posts, maxV, BondTheme.muted.opacity(0.5))
-                            }
-                            Text(d.day, format: .dateTime.weekday(.narrow))
-                                .font(.system(size: 10, weight: .semibold))
-                                .foregroundStyle(BondTheme.muted)
+        let current = Array(days.suffix(range))
+        let previous = Array(days.dropLast(range).suffix(range))
+        let total = current.reduce(0) { $0 + metric.value($1) }
+        let prevTotal = previous.reduce(0) { $0 + metric.value($1) }
+        let maxV = max(1, current.map(metric.value).max() ?? 1)
+        let peakIndex = current.indices.max { metric.value(current[$0]) < metric.value(current[$1]) }
+        return VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
+            HStack {
+                Text((range == 7 ? L10n.Board.week : L10n.Board.month).uppercased())
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(BondTheme.muted)
+                    .tracking(0.6)
+                    .contentTransition(.opacity)
+                Spacer()
+                rangeToggle
+            }
+            VStack(alignment: .leading, spacing: 12) {
+                // Metrik sekmeleri
+                HStack(spacing: 6) {
+                    ForEach(ChartMetric.allCases, id: \.self) { m in
+                        Button {
+                            withAnimation(.snappy) { metric = m }
+                            Haptics.selection()
+                        } label: {
+                            Text(L10n.Board.chart(m.rawValue))
+                                .font(.caption.weight(.semibold))
+                                .padding(.horizontal, 10)
+                                .frame(height: 28)
+                                .background(metric == m ? BondTheme.ink : BondTheme.paper, in: Capsule())
+                                .foregroundStyle(metric == m ? BondTheme.paper : BondTheme.ink)
                         }
-                        .frame(maxWidth: .infinity)
+                        .buttonStyle(.plain)
                     }
                 }
-                .frame(height: 96)
+                // Özet + eğilim
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(L10n.Board.chart("total"))
+                        .font(.footnote)
+                        .foregroundStyle(BondTheme.muted)
+                    Text(total.formatted())
+                        .font(.system(.title3, design: .rounded).weight(.bold))
+                        .foregroundStyle(BondTheme.ink)
+                        .contentTransition(.numericText())
+                    Text(L10n.Board.chart(metric.rawValue).lowercased())
+                        .font(.footnote)
+                        .foregroundStyle(BondTheme.muted)
+                    Spacer(minLength: 4)
+                    trend(total, prevTotal)
+                }
+                // Çubuklar
+                HStack(alignment: .bottom, spacing: range == 7 ? 8 : 3) {
+                    ForEach(Array(current.enumerated()), id: \.element.id) { i, d in
+                        let v = metric.value(d)
+                        let isToday = i == current.count - 1
+                        let showLabel = range == 7 || isToday || i == peakIndex
+                        VStack(spacing: 4) {
+                            // Etiketler overlay: sütun genişliğini etkilemez, komşuya taşabilir.
+                            Color.clear.frame(height: 12).overlay {
+                                Text(v.formatted())
+                                    .font(.system(size: range == 7 ? 11 : 9, weight: .bold, design: .rounded))
+                                    .foregroundStyle(isToday ? BondTheme.burntOrange : BondTheme.ink)
+                                    .lineLimit(1)
+                                    .fixedSize()
+                                    .opacity(showLabel ? 1 : 0)
+                                    .contentTransition(.numericText())
+                            }
+                            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                .fill(isToday ? BondTheme.burntOrange : BondTheme.ink.opacity(0.78))
+                                .frame(height: max(3, 84 * CGFloat(v) / CGFloat(maxV)))
+                            Color.clear.frame(height: 12).overlay {
+                                Text(dayLabel(d.day, index: i))
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundStyle(isToday ? BondTheme.burntOrange : BondTheme.muted)
+                                    .lineLimit(1)
+                                    .fixedSize()
+                                    .opacity(range == 7 || i % 5 == 0 || isToday ? 1 : 0)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("\(dayLabel(d.day, index: i)): \(v)")
+                    }
+                }
+                .frame(height: 124)
+                .animation(.snappy, value: metric)
+                .animation(.snappy, value: range)
             }
             .padding(14)
             .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
     }
 
-    private func bar(_ value: Int, _ maxV: Int, _ color: Color) -> some View {
-        RoundedRectangle(cornerRadius: 2, style: .continuous)
-            .fill(color)
-            .frame(width: 9, height: max(3, 76 * CGFloat(value) / CGFloat(maxV)))
-            .accessibilityLabel(String(value))
+    private var rangeToggle: some View {
+        HStack(spacing: 2) {
+            ForEach([7, 30], id: \.self) { r in
+                Button {
+                    withAnimation(.snappy) { range = r }
+                    Haptics.selection()
+                } label: {
+                    Text(L10n.Board.chart(r == 7 ? "range7" : "range30"))
+                        .font(.caption2.weight(.bold))
+                        .padding(.horizontal, 8)
+                        .frame(height: 22)
+                        .background(range == r ? BondTheme.surface : Color.clear, in: Capsule())
+                        .foregroundStyle(range == r ? BondTheme.ink : BondTheme.muted)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(2)
+        .background(BondTheme.hairline.opacity(0.6), in: Capsule())
     }
 
-    private func legend(_ title: String, _ color: Color) -> some View {
-        HStack(spacing: 4) {
-            Circle().fill(color).frame(width: 7, height: 7)
-            Text(title).font(.caption2).foregroundStyle(BondTheme.muted)
+    private func trend(_ now: Int, _ before: Int) -> some View {
+        Group {
+            if before == 0 {
+                Text(L10n.Board.chart("noPrev"))
+                    .font(.caption2)
+                    .foregroundStyle(BondTheme.muted)
+            } else {
+                let delta = Int((Double(now - before) / Double(before) * 100).rounded())
+                let tone: Color = delta > 0 ? .green : (delta < 0 ? BondTheme.coral : BondTheme.muted)
+                HStack(spacing: 3) {
+                    if delta != 0 {
+                        Image(systemName: delta > 0 ? "arrow.up.right" : "arrow.down.right")
+                            .font(.system(size: 10, weight: .bold))
+                    }
+                    Text("\(delta > 0 ? "+" : "")\(delta)%")
+                        .font(.caption.weight(.bold))
+                    Text(L10n.Board.chart(range == 7 ? "vsWeek" : "vs30"))
+                        .font(.caption2)
+                        .foregroundStyle(BondTheme.muted)
+                }
+                .foregroundStyle(tone)
+            }
         }
+        .lineLimit(1)
+        .minimumScaleFactor(0.8)
+    }
+
+    private func dayLabel(_ day: Date, index: Int) -> String {
+        if range == 7 {
+            return day.formatted(.dateTime.weekday(.abbreviated).locale(L10n.appLocale))
+        }
+        return day.formatted(.dateTime.day().locale(L10n.appLocale))
     }
 
     private var usersLink: some View {
@@ -386,7 +500,7 @@ struct FounderStatsView: View {
         if stats == nil { isLoading = true }
         do {
             async let a = appState.fetchFounderStats()
-            async let b = appState.fetchFounderDaily(days: 7)
+            async let b = appState.fetchFounderDaily(days: 60)
             async let c = appState.fetchFounderAnnouncements()
             stats = try await a
             days = (try? await b) ?? []
