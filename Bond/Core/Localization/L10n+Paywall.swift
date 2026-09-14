@@ -25,6 +25,8 @@ extension L10n {
         static var problem: String { String(localized: "paywall.problem") }
         static var goPlus: String { String(localized: "paywall.goPlus") }
         static var goPro: String { String(localized: "paywall.goPro") }
+        static var currentPlan: String { String(localized: "paywall.currentPlan") }
+        static var currentBadge: String { String(localized: "paywall.currentBadge") }
         static var pending: String { String(localized: "paywall.pending") }
         static var featureRequests: String { String(localized: "paywall.featureRequests") }
         static var featureConnections: String { String(localized: "paywall.featureConnections") }

@@ -12,6 +12,11 @@ struct PaywallView: View {
     private var store: SubscriptionStore { appState.subscriptions }
     private let tiers = SubscriptionTier.allCases
     @State private var selectedTier: SubscriptionTier = .plus
+    /// Kullanıcının bugünkü kademesi. Plus'taki biri paywall'ı açınca Pro
+    /// ön-seçili gelir; kendi planını yeniden "satın alamaz" (Apple zaten
+    /// reddederdi, kafa karıştırırdı). Aynı abonelik grubundalar: Pro'ya
+    /// geçiş Apple'da anında yükseltme, Plus'ın kalanı iade.
+    private var currentTier: SubscriptionTier { appState.tier }
     @State private var alertMessage: String?
     @State private var legalDocument: LegalDocumentRoute?
 
@@ -53,6 +58,8 @@ struct PaywallView: View {
             NavigationStack { LegalTextView(title: document.title, blocks: document.blocks) }
         }
         .task { await store.loadProducts() }
+        // Plus'taki kullanıcı için tek anlamlı seçenek Pro; Pro'daki için hiçbiri.
+        .onAppear { if currentTier >= selectedTier { selectedTier = .pro } }
         .alert(L10n.Paywall.problem, isPresented: Binding(
             get: { alertMessage != nil },
             set: { if !$0 { alertMessage = nil } }
@@ -172,6 +179,7 @@ struct PaywallView: View {
 
     private func paidPriceCard(_ tier: SubscriptionTier) -> some View {
         let selected = tier == selectedTier
+        let current = tier == currentTier
         return Button {
             withAnimation(reduceMotion ? nil : BondTheme.Motion.snappy) {
                 selectedTier = tier
@@ -182,9 +190,17 @@ struct PaywallView: View {
                 HStack(spacing: 3) {
                     Text(tier.title)
                         .font(.caption.weight(.semibold))
-                    Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                        .font(.caption2)
-                        .accessibilityHidden(true)
+                    if current {
+                        Text(L10n.Paywall.currentBadge.uppercased())
+                            .font(.system(size: 9, weight: .bold))
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(BondTheme.ink.opacity(0.1), in: Capsule())
+                    } else {
+                        Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                            .font(.caption2)
+                            .accessibilityHidden(true)
+                    }
                 }
                 Text(priceText(for: tier))
                     .font(.system(.footnote, design: .rounded).weight(.bold))
@@ -206,7 +222,8 @@ struct PaywallView: View {
             }
         }
         .buttonStyle(.pressable)
-        .disabled(busy)
+        .disabled(busy || current)
+        .opacity(current ? 0.55 : 1)
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier("paywall.plan.\(tier.serverValue)")
     }
@@ -237,10 +254,10 @@ struct PaywallView: View {
                     if store.purchasingTier != nil {
                         ProgressView().tint(BondTheme.onAccent)
                     }
-                    Text(selectedTier == .plus ? L10n.Paywall.goPlus : L10n.Paywall.goPro)
+                    Text(ctaTitle)
                         .fontWeight(.semibold)
                     Spacer(minLength: 8)
-                    if let price = store.displayPrice(for: selectedTier) {
+                    if selectedTier > currentTier, let price = store.displayPrice(for: selectedTier) {
                         Text(price).font(.headline)
                     }
                 }
@@ -271,9 +288,15 @@ struct PaywallView: View {
     }
 
     private var canPurchaseSelectedTier: Bool {
-        store.displayPrice(for: selectedTier) != nil
+        selectedTier > currentTier
+            && store.displayPrice(for: selectedTier) != nil
             && store.canPurchase(selectedTier)
             && !busy
+    }
+
+    private var ctaTitle: String {
+        if selectedTier <= currentTier { return L10n.Paywall.currentPlan }
+        return selectedTier == .plus ? L10n.Paywall.goPlus : L10n.Paywall.goPro
     }
 
     private func priceText(for tier: SubscriptionTier) -> String {
