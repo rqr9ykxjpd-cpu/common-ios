@@ -257,6 +257,7 @@ struct NotificationsView: View {
         case .match: Color.green
         case .club: BondTheme.ink
         case .meetingRequest: BondTheme.coral
+        case .announcement: BondTheme.burntOrange
         }
     }
 }

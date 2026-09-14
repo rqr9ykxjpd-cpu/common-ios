@@ -171,6 +171,8 @@ protocol ProductService: Sendable {
     func fetchProfileSwipers() async throws -> [ProfileSwiper]
     /// Kurucu: sunucudaki anlık sayılar (kullanıcı, Plus/Pro, akış…).
     func fetchFounderStats() async throws -> FounderStats
+    /// Kurucu: herkese (ya da test için yalnız kendine) duyuru bildirimi. Kaç kişiye yazıldığını döner.
+    func sendFounderBroadcast(title: String, body: String, testOnly: Bool) async throws -> Int
     func fetchIntroductionRequests() async throws -> [StudentProfile]
     func fetchMessageRequests() async throws -> [MessageRequest]
     /// Kabul, eşleşmeyi kurup ilk mesajı sohbete yazar ve eşleşmenin kimliğini döner.
@@ -293,6 +295,7 @@ struct UnconfiguredProductService: ProductService {
     func recordLeftSwipe(on profileID: UUID) async throws { try fail() }
     func fetchProfileSwipers() async throws -> [ProfileSwiper] { try fail() }
     func fetchFounderStats() async throws -> FounderStats { try fail() }
+    func sendFounderBroadcast(title: String, body: String, testOnly: Bool) async throws -> Int { try fail() }
     func fetchIntroductionRequests() async throws -> [StudentProfile] { try fail() }
     func fetchMessageRequests() async throws -> [MessageRequest] { try fail() }
     func acceptMessageRequest(_ requestID: UUID) async throws -> UUID { try fail() }

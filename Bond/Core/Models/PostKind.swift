@@ -36,7 +36,6 @@ enum PostKind: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
     case serious
     case flood
     // Topluluk (referans listeden aynen)
-    case ataturk
     case agaBeee = "aga_beee"
     case bele
     case ahraz
@@ -82,7 +81,6 @@ enum PostKind: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
     var imageAssetName: String? {
         switch self {
         case .philosophy: "badge-felsefe"
-        case .ataturk: "badge-ataturk"
         default: nil
         }
     }
@@ -135,7 +133,6 @@ enum PostKind: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
         case .instant: "bolt"
         case .serious: "exclamationmark.triangle"
         case .flood: "text.line.first.and.arrowtriangle.forward"
-        case .ataturk: "flag"
         case .agaBeee: "face.smiling"
         case .bele: "quote.opening"
         case .ahraz: "questionmark.circle"
@@ -171,7 +168,6 @@ enum PostKind: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
         case .instant: BondTheme.badgeTint(light: "9333EA", dark: "C084FC")
         case .serious: BondTheme.badgeTint(light: "B91C1C", dark: "F87171")
         case .flood: BondTheme.badgeTint(light: "D97706", dark: "FBBF24")
-        case .ataturk: BondTheme.badgeTint(light: "1D4ED8", dark: "60A5FA")
         case .agaBeee: BondTheme.badgeTint(light: "DC2626", dark: "F87171")
         case .bele: BondTheme.badgeTint(light: "0891B2", dark: "22D3EE")
         case .ahraz: BondTheme.badgeTint(light: "5F8F8B", dark: "8FBFBB")

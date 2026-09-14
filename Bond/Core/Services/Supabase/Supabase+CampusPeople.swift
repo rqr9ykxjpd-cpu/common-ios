@@ -57,6 +57,10 @@ extension SupabaseProductService {
         try await client.rpc("get_founder_stats").execute().value
     }
 
+    func sendFounderBroadcast(title: String, body: String, testOnly: Bool) async throws -> Int {
+        try await client.rpc("founder_broadcast", params: BroadcastParams(title: title, body: body, testOnly: testOnly)).execute().value
+    }
+
     func sendRightSwipe(to profileID: UUID) async throws -> RightSwipeOutcome {
         let rows: [RightSwipeRow] = try await client
             .rpc("swipe_right_on_profile", params: RightSwipeParams(subject: profileID))

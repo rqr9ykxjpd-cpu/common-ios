@@ -212,6 +212,150 @@
         }
       }
     },
+    "founder.broadcast" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Announcement"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duyuru gönder"
+          }
+        }
+      }
+    },
+    "founder.broadcastBodyField" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Message"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mesaj"
+          }
+        }
+      }
+    },
+    "founder.broadcastConfirm" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send this announcement to %lld people? It can’t be recalled."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu duyuru %lld kişiye gitsin mi? Geri alınamaz."
+          }
+        }
+      }
+    },
+    "founder.broadcastDone" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sent to %lld people."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld kişiye gönderildi."
+          }
+        }
+      }
+    },
+    "founder.broadcastHint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Goes to everyone as a push and in the notifications list."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Herkese push olarak ve bildirim listesine gider."
+          }
+        }
+      }
+    },
+    "founder.broadcastSend" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send to everyone (%lld)"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Herkese gönder (%lld)"
+          }
+        }
+      }
+    },
+    "founder.broadcastTest" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send to me first"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Önce kendime gönder"
+          }
+        }
+      }
+    },
+    "founder.broadcastTestDone" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sent to you. Check your phone."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sana gönderildi; telefonuna bak."
+          }
+        }
+      }
+    },
+    "founder.broadcastTitleField" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Title"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Başlık"
+          }
+        }
+      }
+    },
     "founder.failed" : {
       "localizations" : {
         "en" : {
@@ -276,6 +420,38 @@
         }
       }
     },
+    "founder.pinPlaceholder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "e.g. 3"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Örn. 3"
+          }
+        }
+      }
+    },
+    "founder.pinPrompt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which position? 1 = top."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kaçıncı sırada dursun? 1 = en üst."
+          }
+        }
+      }
+    },
     "founder.pinned" : {
       "localizations" : {
         "en" : {
@@ -305,38 +481,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sabit · %lld. sıra"
-          }
-        }
-      }
-    },
-    "founder.pinPlaceholder" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "e.g. 3"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Örn. 3"
-          }
-        }
-      }
-    },
-    "founder.pinPrompt" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Which position? 1 = top."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kaçıncı sırada dursun? 1 = en üst."
           }
         }
       }
@@ -460,6 +604,22 @@
         }
       }
     },
+    "founder.stat.onlineNow" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Online now"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şu an çevrimiçi"
+          }
+        }
+      }
+    },
     "founder.stat.plus" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -541,6 +701,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pro"
+          }
+        }
+      }
+    },
+    "founder.stat.pushDevices" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Push-enabled"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Push açık"
           }
         }
       }
@@ -686,13 +862,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Data"
+            "value" : "Founder panel"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Veriler"
+            "value" : "Kurucu paneli"
           }
         }
       }
@@ -709,6 +885,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Akış"
+          }
+        }
+      }
+    },
+    "founder.stats.live" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Canlı"
           }
         }
       }
@@ -766,13 +958,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "How many people, Plus, Pro; board and connection numbers"
+            "value" : "Live numbers, plans, board; send an announcement to everyone"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kaç kişi, kaç Plus, kaç Pro; akış ve bağlantı sayıları"
+            "value" : "Canlı sayılar, planlar, akış; herkese duyuru gönder"
           }
         }
       }

@@ -746,23 +746,6 @@
         }
       }
     },
-    "kind.ataturk" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ATATÜRK"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ATATÜRK"
-          }
-        }
-      }
-    },
     "kind.bele" : {
       "extractionState" : "stale",
       "localizations" : {

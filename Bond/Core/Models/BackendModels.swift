@@ -30,7 +30,7 @@ struct BackendComment: Sendable {
 /// uygulama düşmesin.
 struct FounderStats: Decodable, Sendable, Equatable {
     var usersTotal = 0, usersVerified = 0, usersToday = 0, usersWeek = 0
-    var activeToday = 0, activeWeek = 0
+    var onlineNow = 0, activeToday = 0, activeWeek = 0, pushDevices = 0
     var plus = 0, pro = 0
     var postsTotal = 0, postsToday = 0, commentsTotal = 0, votesTotal = 0, storiesActive = 0
     var rightSwipes = 0, leftSwipes = 0, matches = 0, messagesTotal = 0
@@ -40,6 +40,7 @@ struct FounderStats: Decodable, Sendable, Equatable {
         case usersTotal = "users_total", usersVerified = "users_verified"
         case usersToday = "users_today", usersWeek = "users_week"
         case activeToday = "active_today", activeWeek = "active_week"
+        case onlineNow = "online_now", pushDevices = "push_devices"
         case plus, pro
         case postsTotal = "posts_total", postsToday = "posts_today"
         case commentsTotal = "comments_total", votesTotal = "votes_total", storiesActive = "stories_active"
@@ -55,6 +56,7 @@ struct FounderStats: Decodable, Sendable, Equatable {
         usersTotal = n(.usersTotal); usersVerified = n(.usersVerified)
         usersToday = n(.usersToday); usersWeek = n(.usersWeek)
         activeToday = n(.activeToday); activeWeek = n(.activeWeek)
+        onlineNow = n(.onlineNow); pushDevices = n(.pushDevices)
         plus = n(.plus); pro = n(.pro)
         postsTotal = n(.postsTotal); postsToday = n(.postsToday)
         commentsTotal = n(.commentsTotal); votesTotal = n(.votesTotal); storiesActive = n(.storiesActive)

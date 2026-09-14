@@ -85,6 +85,10 @@ extension AppState {
         try await service.fetchFounderStats()
     }
 
+    func sendFounderBroadcast(title: String, body: String, testOnly: Bool) async throws -> Int {
+        try await service.sendFounderBroadcast(title: title, body: body, testOnly: testOnly)
+    }
+
     func sendRightSwipe(to profile: StudentProfile) async -> RightSwipeResult {
         if rightSwipedProfileIDs.contains(profile.id) {
             show(L10n.CampusDesign.alreadySwiped)

@@ -1,13 +1,20 @@
 import SwiftUI
 
-/// Kurucu: "Veriler" — kaç kişi, kaç Plus/Pro, akış ve bağlantı sayıları.
-/// Sunucu rozeti kontrol eder; başka hesap çağırırsa hata alır.
+/// Kurucu paneli — canlı sayılar, planlar, akış, bağlantılar ve herkese
+/// duyuru gönderme. Sunucu rozeti kontrol eder; başka hesap çağırırsa hata alır.
 struct FounderStatsView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
     @State private var stats: FounderStats?
     @State private var isLoading = true
     @State private var failure: String?
+    // Duyuru
+    @State private var broadcastTitle = ""
+    @State private var broadcastBody = ""
+    @State private var isSending = false
+    @State private var confirmSend = false
+    @State private var sentMessage: String?
+    @State private var sentOK = true
 
     private let columns = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
 
@@ -25,11 +32,15 @@ struct FounderStatsView: View {
                 } else if let s = stats {
                     ScrollView {
                         VStack(alignment: .leading, spacing: BondTheme.Space.xl) {
+                            section(L10n.Board.statsLive, [
+                                ("onlineNow", s.onlineNow, true), ("presentNow", s.presentNow, false),
+                                ("activeToday", s.activeToday, false), ("pushDevices", s.pushDevices, false),
+                            ])
+                            broadcastSection
                             section(L10n.Board.statsUsers, [
                                 ("usersTotal", s.usersTotal, true), ("usersVerified", s.usersVerified, false),
                                 ("usersToday", s.usersToday, false), ("usersWeek", s.usersWeek, false),
-                                ("activeToday", s.activeToday, false), ("activeWeek", s.activeWeek, false),
-                                ("presentNow", s.presentNow, false), ("reportsOpen", s.reportsOpen, false),
+                                ("activeWeek", s.activeWeek, false), ("reportsOpen", s.reportsOpen, false),
                             ])
                             section(L10n.Board.statsPlans, [
                                 ("plus", s.plus, true), ("pro", s.pro, true),
@@ -59,7 +70,70 @@ struct FounderStatsView: View {
                     Button(L10n.Common.done) { dismiss() }
                 }
             }
+            .scrollDismissesKeyboard(.interactively)
+            .alert(L10n.Board.broadcastTitle, isPresented: $confirmSend) {
+                Button(L10n.Board.broadcastSend(stats?.usersTotal ?? 0)) { Task { await send(testOnly: false) } }
+                Button(L10n.Common.cancel, role: .cancel) {}
+            } message: {
+                Text(L10n.Board.broadcastConfirm(stats?.usersTotal ?? 0))
+            }
             .task { await load() }
+        }
+    }
+
+    /// Başlık + mesaj; önce kendine test, sonra herkese (onaylı).
+    private var broadcastSection: some View {
+        VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
+            Text(L10n.Board.broadcastTitle.uppercased())
+                .font(.caption.weight(.bold))
+                .foregroundStyle(BondTheme.muted)
+                .tracking(0.6)
+            VStack(alignment: .leading, spacing: 10) {
+                TextField(L10n.Board.broadcastTitleField, text: $broadcastTitle)
+                    .font(.body.weight(.semibold))
+                    .textFieldStyle(.plain)
+                TextField(L10n.Board.broadcastBodyField, text: $broadcastBody, axis: .vertical)
+                    .lineLimit(2...5)
+                    .textFieldStyle(.plain)
+                Text(L10n.Board.broadcastHint)
+                    .font(.caption)
+                    .foregroundStyle(BondTheme.muted)
+                if let sentMessage {
+                    Label(sentMessage, systemImage: sentOK ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(sentOK ? BondTheme.burntOrange : BondTheme.coral)
+                }
+                HStack(spacing: 10) {
+                    Button(L10n.Board.broadcastTest) { Task { await send(testOnly: true) } }
+                        .buttonStyle(.bordered)
+                    Button(L10n.Board.broadcastSend(stats?.usersTotal ?? 0)) { confirmSend = true }
+                        .buttonStyle(.borderedProminent)
+                        .tint(BondTheme.burntOrange)
+                }
+                .disabled(isSending || broadcastTitle.trimmed.isEmpty)
+                .font(.footnote.weight(.semibold))
+            }
+            .padding(14)
+            .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+    }
+
+    private func send(testOnly: Bool) async {
+        isSending = true
+        sentMessage = nil
+        defer { isSending = false }
+        do {
+            let adet = try await appState.sendFounderBroadcast(
+                title: broadcastTitle.trimmed, body: broadcastBody.trimmed, testOnly: testOnly)
+            sentMessage = testOnly ? L10n.Board.broadcastTestDone : L10n.Board.broadcastDone(adet)
+            sentOK = true
+            Haptics.success()
+            if !testOnly { broadcastTitle = ""; broadcastBody = "" }
+        } catch {
+            // Kök alert sheet'i kapatıyor; hata panelin içinde kalsın.
+            sentMessage = UserFacingError.message(error, fallback: L10n.Board.founderActionFailed)
+            sentOK = false
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
         }
     }
 

@@ -49,6 +49,16 @@ extension L10n {
         static var swipersEmpty: String { String(localized: "founder.swipersEmpty", table: "Board") }
         static var statsTitle: String { String(localized: "founder.stats", table: "Board") }
         static var statsHint: String { String(localized: "founder.statsHint", table: "Board") }
+        static var statsLive: String { String(localized: "founder.stats.live", table: "Board") }
+        static var broadcastTitle: String { String(localized: "founder.broadcast", table: "Board") }
+        static var broadcastHint: String { String(localized: "founder.broadcastHint", table: "Board") }
+        static var broadcastTitleField: String { String(localized: "founder.broadcastTitleField", table: "Board") }
+        static var broadcastBodyField: String { String(localized: "founder.broadcastBodyField", table: "Board") }
+        static var broadcastTest: String { String(localized: "founder.broadcastTest", table: "Board") }
+        static func broadcastSend(_ count: Int) -> String { format("founder.broadcastSend", count) }
+        static func broadcastConfirm(_ count: Int) -> String { format("founder.broadcastConfirm", count) }
+        static func broadcastDone(_ count: Int) -> String { format("founder.broadcastDone", count) }
+        static var broadcastTestDone: String { String(localized: "founder.broadcastTestDone", table: "Board") }
         static var statsUsers: String { String(localized: "founder.stats.users", table: "Board") }
         static var statsPlans: String { String(localized: "founder.stats.plans", table: "Board") }
         static var statsBoard: String { String(localized: "founder.stats.board", table: "Board") }

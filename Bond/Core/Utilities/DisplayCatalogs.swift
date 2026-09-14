@@ -143,6 +143,9 @@ enum NotificationCopy {
             return L10n.Notification.meetingTitle(actorName)
         case .club:
             return L10n.Notification.clubTitle
+        case .announcement:
+            // Kurucunun yazdığı başlık olduğu gibi.
+            return serverTitle
         }
     }
 
@@ -172,7 +175,7 @@ enum NotificationCopy {
                 return L10n.Notification.meetingAcceptedBody(place)
             }
             return L10n.Notification.meetingBody(place)
-        case .club:
+        case .club, .announcement:
             return serverBody
         }
     }

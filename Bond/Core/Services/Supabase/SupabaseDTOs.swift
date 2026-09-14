@@ -410,6 +410,7 @@ struct NotificationRow: Decodable {
         case "match": .match
         case "message": .message
         case "club": .club
+        case "announcement": .announcement
         default: .meetingRequest
         }
     }
@@ -846,6 +847,12 @@ struct PostVoterRow: Decodable {
 }
 
 struct PostVoterParams: Encodable { let target: UUID }
+struct BroadcastParams: Encodable {
+    let title: String
+    let body: String
+    let testOnly: Bool
+    enum CodingKeys: String, CodingKey { case title, body; case testOnly = "test_only" }
+}
 struct BoostParams: Encodable { let target: UUID; let extra: Int }
 struct PinParams: Encodable { let target: UUID; let slot: Int? }
 

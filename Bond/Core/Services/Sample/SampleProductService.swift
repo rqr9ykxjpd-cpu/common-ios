@@ -186,13 +186,15 @@ struct SampleProductService: ProductService {
     func fetchFounderStats() async throws -> FounderStats {
         var s = FounderStats()
         s.usersTotal = 184; s.usersVerified = 171; s.usersToday = 9; s.usersWeek = 41
-        s.activeToday = 63; s.activeWeek = 128
+        s.onlineNow = 9; s.activeToday = 63; s.activeWeek = 128; s.pushDevices = 140
         s.plus = 7; s.pro = 3
         s.postsTotal = 412; s.postsToday = 18; s.commentsTotal = 1290; s.votesTotal = 3877; s.storiesActive = 14
         s.rightSwipes = 356; s.leftSwipes = 522; s.matches = 48; s.messagesTotal = 2210
         s.presentNow = 11; s.reportsOpen = 1
         return s
     }
+
+    func sendFounderBroadcast(title: String, body: String, testOnly: Bool) async throws -> Int { testOnly ? 1 : 184 }
 
     func fetchProfileSwipers() async throws -> [ProfileSwiper] {
         // Demo: iki sağa, bir sola, bir de bağlantı kurulmuş.
