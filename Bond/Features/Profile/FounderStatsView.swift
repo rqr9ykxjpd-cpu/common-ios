@@ -205,7 +205,6 @@ struct FounderStatsView: View {
                 Spacer()
             }
             HStack(spacing: 8) {
-                heroChip("presentNow", s.presentNow, "mappin.and.ellipse")
                 heroChip("activeToday", s.activeToday, "sun.max")
                 heroChip("pushDevices", s.pushDevices, "bell.badge")
             }
