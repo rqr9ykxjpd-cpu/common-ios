@@ -9,6 +9,7 @@ struct ProfileSettingsView: View {
     @State private var showBlocked = false
     @State private var showModeration = false
     @State private var showSwipers = false
+    @State private var showStats = false
     @State private var showMeetingRequests = false
     @State private var showTerms = false
     @State private var showPrivacy = false
@@ -38,8 +39,15 @@ struct ProfileSettingsView: View {
                             showModeration = true
                         }
                     }
-                    // Yalnızca kurucu: kartını kim sağa/sola kaydırdı.
+                    // Yalnızca kurucu: sayılar ve kartını kim kaydırdı.
                     if appState.isFounder {
+                        settingsButton(
+                            icon: "chart.bar.xaxis",
+                            title: L10n.Board.statsTitle,
+                            detail: L10n.Board.statsHint
+                        ) {
+                            showStats = true
+                        }
                         settingsButton(
                             icon: "hand.draw",
                             title: L10n.Board.swipersTitle,
@@ -191,6 +199,12 @@ struct ProfileSettingsView: View {
             }
             .sheet(isPresented: $showPaywall) {
                 PaywallView()
+            }
+            .sheet(isPresented: $showStats) {
+                FounderStatsView()
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+                    .presentationCornerRadius(28)
             }
             .sheet(isPresented: $showSwipers) {
                 ProfileSwipersView()

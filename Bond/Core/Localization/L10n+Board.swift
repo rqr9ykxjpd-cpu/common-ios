@@ -47,6 +47,17 @@ extension L10n {
         static var swipersTitle: String { String(localized: "founder.swipers", table: "Board") }
         static var swipersHint: String { String(localized: "founder.swipersHint", table: "Board") }
         static var swipersEmpty: String { String(localized: "founder.swipersEmpty", table: "Board") }
+        static var statsTitle: String { String(localized: "founder.stats", table: "Board") }
+        static var statsHint: String { String(localized: "founder.statsHint", table: "Board") }
+        static var statsUsers: String { String(localized: "founder.stats.users", table: "Board") }
+        static var statsPlans: String { String(localized: "founder.stats.plans", table: "Board") }
+        static var statsBoard: String { String(localized: "founder.stats.board", table: "Board") }
+        static var statsPeople: String { String(localized: "founder.stats.people", table: "Board") }
+        /// Dinamik anahtar: String(localized:) derleme zamanı anahtar istiyor,
+        /// çalışma zamanında üretilen anahtarı bulamayıp anahtarın kendisini basıyordu.
+        static func stat(_ key: String) -> String {
+            Bundle.main.localizedString(forKey: "founder.stat.\(key)", value: nil, table: "Board")
+        }
         static var swipedRight: String { String(localized: "founder.swipedRight", table: "Board") }
         static var swipedLeft: String { String(localized: "founder.swipedLeft", table: "Board") }
         static var swiperMatched: String { String(localized: "founder.swiperMatched", table: "Board") }

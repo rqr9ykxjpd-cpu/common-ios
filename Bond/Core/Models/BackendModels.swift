@@ -25,6 +25,44 @@ struct BackendComment: Sendable {
 }
 
 /// Kurucunun kartını kaydıran (yalnızca kurucu görür).
+/// Kurucunun "Veriler" ekranı: sunucudaki anlık sayılar. Sunucu jsonb
+/// döndürür; eksik anahtar 0 sayılır ki yeni bir sayı eklenince eski
+/// uygulama düşmesin.
+struct FounderStats: Decodable, Sendable, Equatable {
+    var usersTotal = 0, usersVerified = 0, usersToday = 0, usersWeek = 0
+    var activeToday = 0, activeWeek = 0
+    var plus = 0, pro = 0
+    var postsTotal = 0, postsToday = 0, commentsTotal = 0, votesTotal = 0, storiesActive = 0
+    var rightSwipes = 0, leftSwipes = 0, matches = 0, messagesTotal = 0
+    var presentNow = 0, reportsOpen = 0
+
+    enum CodingKeys: String, CodingKey {
+        case usersTotal = "users_total", usersVerified = "users_verified"
+        case usersToday = "users_today", usersWeek = "users_week"
+        case activeToday = "active_today", activeWeek = "active_week"
+        case plus, pro
+        case postsTotal = "posts_total", postsToday = "posts_today"
+        case commentsTotal = "comments_total", votesTotal = "votes_total", storiesActive = "stories_active"
+        case rightSwipes = "right_swipes", leftSwipes = "left_swipes", matches
+        case messagesTotal = "messages_total", presentNow = "present_now", reportsOpen = "reports_open"
+    }
+
+    init() {}
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        func n(_ k: CodingKeys) -> Int { (try? c.decodeIfPresent(Int.self, forKey: k)) ?? 0 }
+        usersTotal = n(.usersTotal); usersVerified = n(.usersVerified)
+        usersToday = n(.usersToday); usersWeek = n(.usersWeek)
+        activeToday = n(.activeToday); activeWeek = n(.activeWeek)
+        plus = n(.plus); pro = n(.pro)
+        postsTotal = n(.postsTotal); postsToday = n(.postsToday)
+        commentsTotal = n(.commentsTotal); votesTotal = n(.votesTotal); storiesActive = n(.storiesActive)
+        rightSwipes = n(.rightSwipes); leftSwipes = n(.leftSwipes); matches = n(.matches)
+        messagesTotal = n(.messagesTotal); presentNow = n(.presentNow); reportsOpen = n(.reportsOpen)
+    }
+}
+
 struct ProfileSwiper: Identifiable, Hashable, Sendable {
     let id: UUID
     let name: String

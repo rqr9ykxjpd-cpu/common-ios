@@ -169,6 +169,8 @@ protocol ProductService: Sendable {
     func recordLeftSwipe(on profileID: UUID) async throws
     /// Kurucu: kartımı kaydıranlar.
     func fetchProfileSwipers() async throws -> [ProfileSwiper]
+    /// Kurucu: sunucudaki anlık sayılar (kullanıcı, Plus/Pro, akış…).
+    func fetchFounderStats() async throws -> FounderStats
     func fetchIntroductionRequests() async throws -> [StudentProfile]
     func fetchMessageRequests() async throws -> [MessageRequest]
     /// Kabul, eşleşmeyi kurup ilk mesajı sohbete yazar ve eşleşmenin kimliğini döner.
@@ -290,6 +292,7 @@ struct UnconfiguredProductService: ProductService {
     func sendRightSwipe(to profileID: UUID) async throws -> RightSwipeOutcome { try fail() }
     func recordLeftSwipe(on profileID: UUID) async throws { try fail() }
     func fetchProfileSwipers() async throws -> [ProfileSwiper] { try fail() }
+    func fetchFounderStats() async throws -> FounderStats { try fail() }
     func fetchIntroductionRequests() async throws -> [StudentProfile] { try fail() }
     func fetchMessageRequests() async throws -> [MessageRequest] { try fail() }
     func acceptMessageRequest(_ requestID: UUID) async throws -> UUID { try fail() }

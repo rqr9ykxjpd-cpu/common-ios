@@ -52,6 +52,11 @@ extension SupabaseProductService {
         }
     }
 
+    /// Kurucu: "Veriler". Sunucu rozeti kontrol eder.
+    func fetchFounderStats() async throws -> FounderStats {
+        try await client.rpc("get_founder_stats").execute().value
+    }
+
     func sendRightSwipe(to profileID: UUID) async throws -> RightSwipeOutcome {
         let rows: [RightSwipeRow] = try await client
             .rpc("swipe_right_on_profile", params: RightSwipeParams(subject: profileID))
