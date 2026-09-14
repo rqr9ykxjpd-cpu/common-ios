@@ -87,7 +87,7 @@ final class SubscriptionStore {
         if Purchases.isConfigured {
             Task { [weak self] in
                 for await info in Purchases.shared.customerInfoStream {
-                    self?.applyRevenueCat(info, sync: false)
+                    await self?.applyRevenueCat(info, sync: false)
                 }
             }
         }
@@ -188,7 +188,7 @@ final class SubscriptionStore {
         do {
             if Purchases.isConfigured {
                 let info = try await Purchases.shared.restorePurchases()
-                applyRevenueCat(info, sync: true)
+                await applyRevenueCat(info, sync: true)
             } else {
                 try await AppStore.sync()
                 await refreshEntitlements()
@@ -207,7 +207,7 @@ final class SubscriptionStore {
                              forceSync: Bool = false) async {
         if Purchases.isConfigured, latest == nil {
             do {
-                applyRevenueCat(try await Purchases.shared.customerInfo(), sync: forceSync)
+                await applyRevenueCat(try await Purchases.shared.customerInfo(), sync: forceSync)
                 return
             } catch {
                 // RevenueCat okunamazsa cihazdaki StoreKit haklarına düş.
@@ -274,7 +274,7 @@ final class SubscriptionStore {
         do {
             let result = try await Purchases.shared.purchase(product: storeProduct)
             if result.userCancelled { return .cancelled }
-            applyRevenueCat(result.customerInfo, sync: true)
+            await applyRevenueCat(result.customerInfo, sync: true)
             return .success(tierFromRevenueCat(result.customerInfo))
         } catch {
             let nsError = error as NSError
@@ -290,13 +290,36 @@ final class SubscriptionStore {
         }
     }
 
-    private func applyRevenueCat(_ info: CustomerInfo, sync: Bool) {
+    /// RevenueCat'in bildirdiği kademeyi uygular. Sunucuya giden belge yine
+    /// StoreKit'in imzalı işlemi: RevenueCat → webhook yolu tek başına
+    /// bırakılmıyor; webhook gecikir ya da kurulu değilse `verify-purchase`
+    /// aynı satın almayı Apple'a doğrulatıp planı yazar. Yoksa parası ödenmiş
+    /// kullanıcı sunucuda 'free' kalır ve sınırda paywall tekrar çıkar.
+    private func applyRevenueCat(_ info: CustomerInfo, sync: Bool) async {
         let kademe = tierFromRevenueCat(info)
         let degisti = kademe != tier
         tier = kademe
         if degisti || sync {
-            onEntitlementChange?(kademe, nil)
+            let belge = kademe == .free ? nil : await currentVerifiedPurchase()
+            onEntitlementChange?(kademe, belge)
         }
+    }
+
+    /// Cihazdaki en yüksek kademeli, süresi geçmemiş, imzası doğrulanmış işlem.
+    private func currentVerifiedPurchase() async -> VerifiedPurchase? {
+        var enYuksek: SubscriptionTier = .free
+        var kaynak: StoreKit.VerificationResult<Transaction>?
+        for await result in Transaction.currentEntitlements {
+            guard let islem = try? checkVerified(result),
+                  let kademe = ProductID.tier(for: islem.productID) else { continue }
+            if let bitis = islem.expirationDate, bitis <= .now { continue }
+            if islem.revocationDate != nil { continue }
+            if kademe > enYuksek {
+                enYuksek = kademe
+                kaynak = result
+            }
+        }
+        return kaynak.flatMap(verifiedPurchase)
     }
 
     private func tierFromRevenueCat(_ info: CustomerInfo) -> SubscriptionTier {

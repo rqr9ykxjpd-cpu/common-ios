@@ -232,6 +232,17 @@ final class AppState {
         // anlatan ekranı açıyoruz. Hata metnine değil koda bakıyoruz; metin
         // değişebilir, kod değişmez.
         if let sinir = quotaKind(error) {
+            // Cihaz bu kademede sınır olmadığını biliyor ama sunucu reddetti:
+            // satın alma sunucuya henüz işlenmemiş. Parası ödenmiş kullanıcıya
+            // paywall açmak yerine planı yeniden eşitliyoruz.
+            if sinir.isUnlimited(for: tier) {
+                toast = AppToastMessage(text: L10n.Paywall.syncing, kind: .info)
+                Task {
+                    await subscriptions.refreshEntitlements(forceSync: true)
+                    await confirmPlanWithServer(expecting: tier)
+                }
+                return
+            }
             quotaHit = sinir
             paywallVisible = true
             return
@@ -381,6 +392,20 @@ final class AppState {
             #if DEBUG
             print("Abonelik sunucuya bildirilemedi: \(error)")
             #endif
+        }
+    }
+
+    /// Satın alma bitti; sunucunun planı yazmasını bekler. Webhook ve
+    /// `verify-purchase` birkaç saniye sürebiliyor; bu arada kullanıcı
+    /// "5. gönderi" gibi sunucu sınırlı bir şeye dokunursa 'free' muamelesi
+    /// görüp paywall'a geri düşerdi. En fazla ~12 saniye, arada sessiz.
+    func confirmPlanWithServer(expecting kademe: SubscriptionTier) async {
+        for _ in 0..<6 {
+            if let sunucu = try? await service.fetchMyPlan(), sunucu >= kademe {
+                tier = max(tier, sunucu)
+                return
+            }
+            try? await Task.sleep(for: .seconds(2))
         }
     }
 

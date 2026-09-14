@@ -44,6 +44,7 @@ extension L10n {
         static var purchaseFailed: String { String(localized: "paywall.purchaseFailed") }
         static var noSubscription: String { String(localized: "paywall.noSubscription") }
         static var restoreFailed: String { String(localized: "paywall.restoreFailed") }
+        static var syncing: String { String(localized: "paywall.syncing") }
         static var unverified: String { String(localized: "paywall.unverified") }
     }
 }

@@ -67,6 +67,17 @@ struct PersonProfileData {
 enum QuotaKind {
     case connectionRequest, meetingRequest, meetingAccept, posts
 
+    /// Bu kademe bu sınırı hiç görmemeli mi? Sunucu yine de reddettiyse
+    /// plan kaydı gecikmiş demektir; paywall değil eşitleme gerekir.
+    func isUnlimited(for tier: SubscriptionTier) -> Bool {
+        switch self {
+        case .connectionRequest: tier.connectionRequestQuota == nil
+        case .meetingRequest: tier.meetingRequestQuota == nil
+        case .meetingAccept: tier.meetingAcceptQuota == nil
+        case .posts: tier.maxPosts == nil
+        }
+    }
+
     var title: String {
         switch self {
         case .connectionRequest: L10n.Quota.connectionRequestTitle

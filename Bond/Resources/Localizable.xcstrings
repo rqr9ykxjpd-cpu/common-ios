@@ -7902,6 +7902,23 @@
         }
       }
     },
+    "paywall.syncing" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verifying your subscription… try again in a few seconds."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aboneliğin doğrulanıyor… birkaç saniye sonra tekrar dene."
+          }
+        }
+      }
+    },
     "paywall.specialNote" : {
       "extractionState" : "manual",
       "localizations" : {

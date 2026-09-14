@@ -319,9 +319,10 @@ struct PaywallView: View {
 
     private func purchase() async {
         switch await store.purchase(selectedTier) {
-        case .success:
+        case .success(let kademe):
             Haptics.success()
             dismiss()
+            Task { await appState.confirmPlanWithServer(expecting: kademe) }
         case .cancelled:
             break
         case .pending:
