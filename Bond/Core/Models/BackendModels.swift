@@ -65,6 +65,40 @@ struct FounderStats: Decodable, Sendable, Equatable {
     }
 }
 
+/// Kurucu paneli: kullanıcı satırı.
+struct FounderUser: Identifiable, Hashable, Sendable {
+    let id: UUID
+    let name: String
+    let department: String
+    let academicYear: String
+    let avatarURL: URL?
+    var badge: ProfileBadge
+    let isVerified: Bool
+    var isActive: Bool
+    var plan: SubscriptionTier
+    let createdAt: Date
+    let lastActiveAt: Date
+    var avatarAssetName: String? = nil
+}
+
+/// Kurucu paneli: bir günün sayıları.
+struct FounderDay: Identifiable, Hashable, Sendable {
+    var id: Date { day }
+    let day: Date
+    let newUsers: Int
+    let activeUsers: Int
+    let posts: Int
+}
+
+/// Kurucu paneli: gönderilmiş duyuru.
+struct FounderAnnouncement: Identifiable, Hashable, Sendable {
+    var id: String { "\(sentAt.timeIntervalSince1970)-\(title)" }
+    let title: String
+    let body: String
+    let sentAt: Date
+    let recipients: Int
+}
+
 struct ProfileSwiper: Identifiable, Hashable, Sendable {
     let id: UUID
     let name: String

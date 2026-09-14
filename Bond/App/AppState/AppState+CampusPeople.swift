@@ -88,6 +88,18 @@ extension AppState {
     func sendFounderBroadcast(title: String, body: String, testOnly: Bool) async throws -> Int {
         try await service.sendFounderBroadcast(title: title, body: body, testOnly: testOnly)
     }
+    func fetchFounderUsers(search: String) async throws -> [FounderUser] { try await service.fetchFounderUsers(search: search) }
+    func founderGrantPlan(_ userID: UUID, plan: SubscriptionTier, days: Int?) async throws -> SubscriptionTier {
+        try await service.founderGrantPlan(userID, plan: plan, days: days)
+    }
+    func founderSetModerator(_ userID: UUID, enabled: Bool) async throws -> ProfileBadge {
+        try await service.founderSetModerator(userID, enabled: enabled)
+    }
+    func founderSetActive(_ userID: UUID, active: Bool) async throws -> Bool {
+        try await service.founderSetActive(userID, active: active)
+    }
+    func fetchFounderDaily(days: Int) async throws -> [FounderDay] { try await service.fetchFounderDaily(days: days) }
+    func fetchFounderAnnouncements() async throws -> [FounderAnnouncement] { try await service.fetchFounderAnnouncements() }
 
     func sendRightSwipe(to profile: StudentProfile) async -> RightSwipeResult {
         if rightSwipedProfileIDs.contains(profile.id) {

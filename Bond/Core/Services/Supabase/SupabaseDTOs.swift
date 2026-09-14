@@ -847,6 +847,51 @@ struct PostVoterRow: Decodable {
 }
 
 struct PostVoterParams: Encodable { let target: UUID }
+struct FounderUserRow: Decodable {
+    let id: UUID
+    let name: String
+    let department: String
+    let academicYear: String
+    let avatarPath: String?
+    let badge: String
+    let isVerified: Bool
+    let isActive: Bool
+    let plan: String
+    let createdAt: Date
+    let lastActiveAt: Date
+    enum CodingKeys: String, CodingKey {
+        case id, name, department, badge, plan
+        case academicYear = "academic_year"
+        case avatarPath = "avatar_path"
+        case isVerified = "is_verified"
+        case isActive = "is_active"
+        case createdAt = "created_at"
+        case lastActiveAt = "last_active_at"
+    }
+}
+struct FounderUsersParams: Encodable { let search: String; let lim: Int }
+struct FounderGrantParams: Encodable {
+    let target: UUID; let newPlan: String; let days: Int?
+    enum CodingKeys: String, CodingKey { case target, days; case newPlan = "new_plan" }
+}
+struct FounderModeratorParams: Encodable { let target: UUID; let enabled: Bool }
+struct FounderActiveParams: Encodable { let target: UUID; let active: Bool }
+struct FounderDayRow: Decodable {
+    let day: String
+    let newUsers: Int
+    let activeUsers: Int
+    let posts: Int
+    enum CodingKeys: String, CodingKey { case day, posts; case newUsers = "new_users"; case activeUsers = "active_users" }
+}
+struct FounderDaysParams: Encodable { let days: Int }
+struct FounderAnnouncementRow: Decodable {
+    let title: String
+    let body: String
+    let sentAt: Date
+    let recipients: Int
+    enum CodingKeys: String, CodingKey { case title, body, recipients; case sentAt = "sent_at" }
+}
+struct FounderAnnouncementsParams: Encodable { let lim: Int }
 struct BroadcastParams: Encodable {
     let title: String
     let body: String

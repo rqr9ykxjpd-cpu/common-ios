@@ -196,6 +196,28 @@ struct SampleProductService: ProductService {
 
     func sendFounderBroadcast(title: String, body: String, testOnly: Bool) async throws -> Int { testOnly ? 1 : 184 }
 
+    func fetchFounderUsers(search: String) async throws -> [FounderUser] {
+        SampleData.profiles.enumerated().map { i, p in
+            FounderUser(id: p.id, name: p.name, department: p.department, academicYear: p.year,
+                        avatarURL: nil, badge: i == 1 ? .moderator : .none, isVerified: true, isActive: i != 4,
+                        plan: i == 0 ? .pro : (i == 2 ? .plus : .free),
+                        createdAt: SampleData.hours(Double(24 * (i + 1))), lastActiveAt: SampleData.hours(Double(i * 3)),
+                        avatarAssetName: p.imageAssetName)
+        }.filter { search.isEmpty || $0.name.localizedCaseInsensitiveContains(search) }
+    }
+    func founderGrantPlan(_ userID: UUID, plan: SubscriptionTier, days: Int?) async throws -> SubscriptionTier { plan }
+    func founderSetModerator(_ userID: UUID, enabled: Bool) async throws -> ProfileBadge { enabled ? .moderator : .none }
+    func founderSetActive(_ userID: UUID, active: Bool) async throws -> Bool { active }
+    func fetchFounderDaily(days: Int) async throws -> [FounderDay] {
+        (0..<days).reversed().map { i in
+            FounderDay(day: Calendar.current.startOfDay(for: .now).addingTimeInterval(-Double(i) * 86_400),
+                       newUsers: [3, 5, 2, 9, 4, 7, 6][i % 7], activeUsers: [40, 52, 38, 61, 47, 66, 63][i % 7], posts: [12, 18, 9, 22, 15, 20, 18][i % 7])
+        }
+    }
+    func fetchFounderAnnouncements() async throws -> [FounderAnnouncement] {
+        [FounderAnnouncement(title: "Hoş geldiniz", body: "Common açıldı, ilk sorunu sor.", sentAt: SampleData.hours(30), recipients: 184)]
+    }
+
     func fetchProfileSwipers() async throws -> [ProfileSwiper] {
         // Demo: iki sağa, bir sola, bir de bağlantı kurulmuş.
         let p = SampleData.profiles

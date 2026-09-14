@@ -61,6 +61,55 @@ extension SupabaseProductService {
         try await client.rpc("founder_broadcast", params: BroadcastParams(title: title, body: body, testOnly: testOnly)).execute().value
     }
 
+    func fetchFounderUsers(search: String) async throws -> [FounderUser] {
+        let rows: [FounderUserRow] = try await client
+            .rpc("get_founder_users", params: FounderUsersParams(search: search, lim: 100))
+            .execute().value
+        let avatars = await signedURLs(bucket: "profile-photos", paths: rows.compactMap(\.avatarPath))
+        return rows.map {
+            FounderUser(id: $0.id, name: $0.name, department: $0.department, academicYear: $0.academicYear,
+                        avatarURL: $0.avatarPath.flatMap { avatars[$0] },
+                        badge: ProfileBadge(rawValue: $0.badge) ?? .none,
+                        isVerified: $0.isVerified, isActive: $0.isActive,
+                        plan: SubscriptionTier(serverValue: $0.plan),
+                        createdAt: $0.createdAt, lastActiveAt: $0.lastActiveAt)
+        }
+    }
+
+    func founderGrantPlan(_ userID: UUID, plan: SubscriptionTier, days: Int?) async throws -> SubscriptionTier {
+        let yeni: String = try await client
+            .rpc("founder_grant_plan", params: FounderGrantParams(target: userID, newPlan: plan.serverValue, days: days))
+            .execute().value
+        return SubscriptionTier(serverValue: yeni)
+    }
+
+    func founderSetModerator(_ userID: UUID, enabled: Bool) async throws -> ProfileBadge {
+        let yeni: String = try await client
+            .rpc("founder_set_moderator", params: FounderModeratorParams(target: userID, enabled: enabled))
+            .execute().value
+        return ProfileBadge(rawValue: yeni) ?? .none
+    }
+
+    func founderSetActive(_ userID: UUID, active: Bool) async throws -> Bool {
+        try await client.rpc("founder_set_active", params: FounderActiveParams(target: userID, active: active)).execute().value
+    }
+
+    func fetchFounderDaily(days: Int) async throws -> [FounderDay] {
+        let rows: [FounderDayRow] = try await client
+            .rpc("get_founder_daily", params: FounderDaysParams(days: days)).execute().value
+        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.timeZone = .current
+        return rows.compactMap { r in
+            guard let d = f.date(from: r.day) else { return nil }
+            return FounderDay(day: d, newUsers: r.newUsers, activeUsers: r.activeUsers, posts: r.posts)
+        }
+    }
+
+    func fetchFounderAnnouncements() async throws -> [FounderAnnouncement] {
+        let rows: [FounderAnnouncementRow] = try await client
+            .rpc("get_founder_announcements", params: FounderAnnouncementsParams(lim: 10)).execute().value
+        return rows.map { FounderAnnouncement(title: $0.title, body: $0.body, sentAt: $0.sentAt, recipients: $0.recipients) }
+    }
+
     func sendRightSwipe(to profileID: UUID) async throws -> RightSwipeOutcome {
         let rows: [RightSwipeRow] = try await client
             .rpc("swipe_right_on_profile", params: RightSwipeParams(subject: profileID))

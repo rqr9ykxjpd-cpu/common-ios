@@ -19,6 +19,9 @@ extension L10n {
         private static func format(_ key: String.LocalizationValue, _ count: Int) -> String {
             String(format: String(localized: key, table: "Board"), locale: L10n.appLocale, Int64(count))
         }
+        private static func format(_ key: String.LocalizationValue, _ text: String) -> String {
+            String(format: String(localized: key, table: "Board"), locale: L10n.appLocale, text)
+        }
         static var answersTitle: String { String(localized: "answers.title", table: "Board") }
         static var answerPlaceholder: String { String(localized: "answers.placeholder", table: "Board") }
         static var answersEmpty: String { String(localized: "answers.empty", table: "Board") }
@@ -59,6 +62,33 @@ extension L10n {
         static func broadcastConfirm(_ count: Int) -> String { format("founder.broadcastConfirm", count) }
         static func broadcastDone(_ count: Int) -> String { format("founder.broadcastDone", count) }
         static var broadcastTestDone: String { String(localized: "founder.broadcastTestDone", table: "Board") }
+        static var week: String { String(localized: "founder.week", table: "Board") }
+        static var weekNew: String { String(localized: "founder.week.newUsers", table: "Board") }
+        static var weekActive: String { String(localized: "founder.week.active", table: "Board") }
+        static var weekPosts: String { String(localized: "founder.week.posts", table: "Board") }
+        static var users: String { String(localized: "founder.users", table: "Board") }
+        static var usersHint: String { String(localized: "founder.usersHint", table: "Board") }
+        static var usersSearch: String { String(localized: "founder.usersSearch", table: "Board") }
+        static var usersEmpty: String { String(localized: "founder.usersEmpty", table: "Board") }
+        static func userJoined(_ when: String) -> String { format("founder.user.joined", when) }
+        static func userActive(_ when: String) -> String { format("founder.user.active", when) }
+        static var userFrozen: String { String(localized: "founder.user.frozen", table: "Board") }
+        static var userActions: String { String(localized: "founder.user.actions", table: "Board") }
+        static var userOpenProfile: String { String(localized: "founder.user.openProfile", table: "Board") }
+        static var giftPlus30: String { String(localized: "founder.user.giftPlus30", table: "Board") }
+        static var giftPro30: String { String(localized: "founder.user.giftPro30", table: "Board") }
+        static var giftProForever: String { String(localized: "founder.user.giftProForever", table: "Board") }
+        static var removeGift: String { String(localized: "founder.user.removeGift", table: "Board") }
+        static var makeModerator: String { String(localized: "founder.user.makeModerator", table: "Board") }
+        static var removeModerator: String { String(localized: "founder.user.removeModerator", table: "Board") }
+        static var freeze: String { String(localized: "founder.user.freeze", table: "Board") }
+        static var unfreeze: String { String(localized: "founder.user.unfreeze", table: "Board") }
+        static func freezeConfirm(_ name: String) -> String { format("founder.user.freezeConfirm", name) }
+        static var paidPlan: String { String(localized: "founder.user.paidPlan", table: "Board") }
+        static var userDone: String { String(localized: "founder.user.done", table: "Board") }
+        static var announcements: String { String(localized: "founder.announcements", table: "Board") }
+        static var announcementsEmpty: String { String(localized: "founder.announcementsEmpty", table: "Board") }
+        static func announcementRecipients(_ n: Int) -> String { format("founder.announcement.recipients", n) }
         static var statsUsers: String { String(localized: "founder.stats.users", table: "Board") }
         static var statsPlans: String { String(localized: "founder.stats.plans", table: "Board") }
         static var statsBoard: String { String(localized: "founder.stats.board", table: "Board") }
@@ -67,6 +97,9 @@ extension L10n {
         /// çalışma zamanında üretilen anahtarı bulamayıp anahtarın kendisini basıyordu.
         static func stat(_ key: String) -> String {
             Bundle.main.localizedString(forKey: "founder.stat.\(key)", value: nil, table: "Board")
+        }
+        static func chip(_ key: String) -> String {
+            Bundle.main.localizedString(forKey: "founder.chip.\(key)", value: nil, table: "Board")
         }
         static var swipedRight: String { String(localized: "founder.swipedRight", table: "Board") }
         static var swipedLeft: String { String(localized: "founder.swipedLeft", table: "Board") }

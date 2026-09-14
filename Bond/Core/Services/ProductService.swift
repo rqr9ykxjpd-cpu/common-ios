@@ -173,6 +173,13 @@ protocol ProductService: Sendable {
     func fetchFounderStats() async throws -> FounderStats
     /// Kurucu: herkese (ya da test için yalnız kendine) duyuru bildirimi. Kaç kişiye yazıldığını döner.
     func sendFounderBroadcast(title: String, body: String, testOnly: Bool) async throws -> Int
+    func fetchFounderUsers(search: String) async throws -> [FounderUser]
+    /// days nil = süresiz; "free" = hediyeyi kaldır. Dönen: yeni plan.
+    func founderGrantPlan(_ userID: UUID, plan: SubscriptionTier, days: Int?) async throws -> SubscriptionTier
+    func founderSetModerator(_ userID: UUID, enabled: Bool) async throws -> ProfileBadge
+    func founderSetActive(_ userID: UUID, active: Bool) async throws -> Bool
+    func fetchFounderDaily(days: Int) async throws -> [FounderDay]
+    func fetchFounderAnnouncements() async throws -> [FounderAnnouncement]
     func fetchIntroductionRequests() async throws -> [StudentProfile]
     func fetchMessageRequests() async throws -> [MessageRequest]
     /// Kabul, eşleşmeyi kurup ilk mesajı sohbete yazar ve eşleşmenin kimliğini döner.
@@ -296,6 +303,12 @@ struct UnconfiguredProductService: ProductService {
     func fetchProfileSwipers() async throws -> [ProfileSwiper] { try fail() }
     func fetchFounderStats() async throws -> FounderStats { try fail() }
     func sendFounderBroadcast(title: String, body: String, testOnly: Bool) async throws -> Int { try fail() }
+    func fetchFounderUsers(search: String) async throws -> [FounderUser] { try fail() }
+    func founderGrantPlan(_ userID: UUID, plan: SubscriptionTier, days: Int?) async throws -> SubscriptionTier { try fail() }
+    func founderSetModerator(_ userID: UUID, enabled: Bool) async throws -> ProfileBadge { try fail() }
+    func founderSetActive(_ userID: UUID, active: Bool) async throws -> Bool { try fail() }
+    func fetchFounderDaily(days: Int) async throws -> [FounderDay] { try fail() }
+    func fetchFounderAnnouncements() async throws -> [FounderAnnouncement] { try fail() }
     func fetchIntroductionRequests() async throws -> [StudentProfile] { try fail() }
     func fetchMessageRequests() async throws -> [MessageRequest] { try fail() }
     func acceptMessageRequest(_ requestID: UUID) async throws -> UUID { try fail() }
