@@ -180,6 +180,8 @@ struct PaywallView: View {
     private func paidPriceCard(_ tier: SubscriptionTier) -> some View {
         let selected = tier == selectedTier
         let current = tier == currentTier
+        // Alt kademe de seçilemez: paywall'dan düşürme yok, Apple aboneliklerde yapılır.
+        let locked = tier <= currentTier
         return Button {
             withAnimation(reduceMotion ? nil : BondTheme.Motion.snappy) {
                 selectedTier = tier
@@ -222,8 +224,8 @@ struct PaywallView: View {
             }
         }
         .buttonStyle(.pressable)
-        .disabled(busy || current)
-        .opacity(current ? 0.55 : 1)
+        .disabled(busy || locked)
+        .opacity(locked ? 0.55 : 1)
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier("paywall.plan.\(tier.serverValue)")
     }
@@ -247,6 +249,13 @@ struct PaywallView: View {
                 }
             }
 
+            if currentTier == .pro {
+                Text(L10n.Paywall.proAlready)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(BondTheme.ink)
+                    .frame(maxWidth: .infinity, minHeight: 54)
+                    .background(BondTheme.surface, in: Capsule())
+            } else {
             Button {
                 Task { await purchase() }
             } label: {
@@ -270,6 +279,7 @@ struct PaywallView: View {
             .disabled(!canPurchaseSelectedTier)
             .opacity(canPurchaseSelectedTier ? 1 : 0.45)
             .accessibilityIdentifier("paywall.purchase")
+            }
 
             Text(L10n.Paywall.legal)
                 .font(.caption2)
@@ -295,7 +305,7 @@ struct PaywallView: View {
     }
 
     private var ctaTitle: String {
-        if selectedTier <= currentTier { return L10n.Paywall.currentPlan }
+        if selectedTier <= currentTier { return L10n.Paywall.onCurrentPlan }
         return selectedTier == .plus ? L10n.Paywall.goPlus : L10n.Paywall.goPro
     }
 
