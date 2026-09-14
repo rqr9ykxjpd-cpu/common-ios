@@ -93,7 +93,7 @@ $$;
 revoke all on function public.get_founder_daily(integer) from public, anon;
 grant execute on function public.get_founder_daily(integer) to authenticated;
 
--- Duyuru geçmişi: aynı başlık+gövde+dakika bir gönderim sayılır.
+-- Duyuru geçmişi: aynı başlık+gövde+dakika bir gönderim sayılır. Panel son 3ü ister.
 create or replace function public.get_founder_announcements(lim integer default 10)
 returns table (title text, body text, sent_at timestamptz, recipients integer)
 language plpgsql stable security definer set search_path = '' as $$

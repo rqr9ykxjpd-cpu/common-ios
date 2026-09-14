@@ -106,7 +106,7 @@ extension SupabaseProductService {
 
     func fetchFounderAnnouncements() async throws -> [FounderAnnouncement] {
         let rows: [FounderAnnouncementRow] = try await client
-            .rpc("get_founder_announcements", params: FounderAnnouncementsParams(lim: 10)).execute().value
+            .rpc("get_founder_announcements", params: FounderAnnouncementsParams(lim: 3)).execute().value
         return rows.map { FounderAnnouncement(title: $0.title, body: $0.body, sentAt: $0.sentAt, recipients: $0.recipients) }
     }
 
