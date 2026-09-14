@@ -202,6 +202,11 @@ struct SocialProfileView: View {
                 .font(.subheadline).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             ProfileBadgeLabel(badge: appState.myBadge, compact: true)
+            // Kurucu künyesi kendi profilinde de görünsün; kartta zaten vardı.
+            if appState.myBadge == .founder {
+                FounderCredLine(size: 15)
+                    .padding(.top, 2)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

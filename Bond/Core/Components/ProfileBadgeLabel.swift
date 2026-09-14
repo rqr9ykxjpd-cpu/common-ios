@@ -29,14 +29,17 @@ struct ProfileBadgeLabel: View {
 /// Basit el yazısı (Noteworthy Bold): Girişimci · Startup Developer / Concept Manager.
 /// Çizgi yok, isimle aynı sola hizalı.
 struct FounderCredLine: View {
+    /// Kartta 17; kendi profilinde ad sütunu dar, 15.
+    var size: CGFloat = 17
+
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(L10n.Badge.founderCredRoles)
-                .font(.custom("Noteworthy-Bold", size: 17))
+                .font(.custom("Noteworthy-Bold", size: size))
                 .foregroundStyle(BondTheme.ember.opacity(0.9))
 
             Text(L10n.Badge.founderCredFocus)
-                .font(.custom("Noteworthy-Bold", size: 17))
+                .font(.custom("Noteworthy-Bold", size: size))
                 .foregroundStyle(BondTheme.ember)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

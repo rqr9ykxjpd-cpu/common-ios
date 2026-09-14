@@ -424,13 +424,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Founder · Startup Developer"
+            "value" : "Entrepreneur · Start‑up Builder"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Girişimci · Startup Developer"
+            "value" : "Girişimci · Start‑up Builder"
           }
         }
       }
@@ -475,13 +475,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Founder · Startup Developer · Concept Manager"
+            "value" : "Entrepreneur · Start‑up Builder · Concept Manager"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Girişimci · Startup Developer · Concept Manager"
+            "value" : "Girişimci · Start‑up Builder · Concept Manager"
           }
         }
       }
