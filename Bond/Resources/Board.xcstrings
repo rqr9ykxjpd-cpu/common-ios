@@ -116,6 +116,7 @@
       }
     },
     "founder.announcement.recipients" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -408,6 +409,7 @@
       }
     },
     "founder.chip.activeToday" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -424,6 +426,7 @@
       }
     },
     "founder.chip.presentNow" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -440,6 +443,7 @@
       }
     },
     "founder.chip.pushDevices" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -519,38 +523,6 @@
         }
       }
     },
-    "founder.pinPlaceholder" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "e.g. 3"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Örn. 3"
-          }
-        }
-      }
-    },
-    "founder.pinPrompt" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Which position? 1 = top."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kaçıncı sırada dursun? 1 = en üst."
-          }
-        }
-      }
-    },
     "founder.pinned" : {
       "localizations" : {
         "en" : {
@@ -580,6 +552,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sabit · %lld. sıra"
+          }
+        }
+      }
+    },
+    "founder.pinPlaceholder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "e.g. 3"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Örn. 3"
+          }
+        }
+      }
+    },
+    "founder.pinPrompt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which position? 1 = top."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kaçıncı sırada dursun? 1 = en üst."
           }
         }
       }
@@ -1199,6 +1203,7 @@
       }
     },
     "founder.user.active" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1247,6 +1252,7 @@
       }
     },
     "founder.user.freezeConfirm" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1327,6 +1333,7 @@
       }
     },
     "founder.user.joined" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

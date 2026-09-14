@@ -4517,6 +4517,9 @@
         }
       }
     },
+    "founder.announcement.recipients" : {
+
+    },
     "founder.boostCurrent" : {
 
     },
@@ -4530,6 +4533,15 @@
 
     },
     "founder.pinnedAt" : {
+
+    },
+    "founder.user.active" : {
+
+    },
+    "founder.user.freezeConfirm" : {
+
+    },
+    "founder.user.joined" : {
 
     },
     "interest.group.arts" : {
@@ -7419,40 +7431,6 @@
         }
       }
     },
-    "paywall.onCurrentPlan" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your current plan"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mevcut planın"
-          }
-        }
-      }
-    },
-    "paywall.proAlready" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You’re on Pro — everything is unlocked."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro’dasın — her şey açık."
-          }
-        }
-      }
-    },
     "paywall.featureAccepts" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7758,6 +7736,23 @@
         }
       }
     },
+    "paywall.onCurrentPlan" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your current plan"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mevcut planın"
+          }
+        }
+      }
+    },
     "paywall.pending" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7856,6 +7851,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "PRO"
+          }
+        }
+      }
+    },
+    "paywall.proAlready" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You’re on Pro — everything is unlocked."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro’dasın — her şey açık."
           }
         }
       }
