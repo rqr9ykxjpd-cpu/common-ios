@@ -171,6 +171,7 @@ extension AppState {
             }
             Haptics.success()
             if announces { show(L10n.Composer.postShared) }
+            promptForPushIfNeeded()
             return true
         } catch {
             showError(error, fallback: L10n.Feed.postFailed)
@@ -256,6 +257,7 @@ extension AppState {
                 guard let refreshedIndex = posts.firstIndex(where: { $0.id == postID }) else { return }
                 posts[refreshedIndex].comments.append(socialComment(from: comment))
                 Haptics.impact(.light)
+                promptForPushIfNeeded()
             } catch {
                 showError(error, fallback: L10n.Feed.commentFailed)
             }

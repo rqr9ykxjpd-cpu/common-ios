@@ -276,38 +276,6 @@
         }
       }
     },
-    "founder.pinPlaceholder" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "e.g. 3"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Örn. 3"
-          }
-        }
-      }
-    },
-    "founder.pinPrompt" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Which position? 1 = top."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kaçıncı sırada dursun? 1 = en üst."
-          }
-        }
-      }
-    },
     "founder.pinned" : {
       "localizations" : {
         "en" : {
@@ -341,7 +309,40 @@
         }
       }
     },
+    "founder.pinPlaceholder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "e.g. 3"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Örn. 3"
+          }
+        }
+      }
+    },
+    "founder.pinPrompt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which position? 1 = top."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kaçıncı sırada dursun? 1 = en üst."
+          }
+        }
+      }
+    },
     "founder.stat.activeToday" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -358,6 +359,7 @@
       }
     },
     "founder.stat.activeWeek" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -374,6 +376,7 @@
       }
     },
     "founder.stat.commentsTotal" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -390,6 +393,7 @@
       }
     },
     "founder.stat.free" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -406,6 +410,7 @@
       }
     },
     "founder.stat.leftSwipes" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -422,6 +427,7 @@
       }
     },
     "founder.stat.matches" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -438,6 +444,7 @@
       }
     },
     "founder.stat.messagesTotal" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -454,6 +461,7 @@
       }
     },
     "founder.stat.plus" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -470,6 +478,7 @@
       }
     },
     "founder.stat.postsToday" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -486,6 +495,7 @@
       }
     },
     "founder.stat.postsTotal" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -502,6 +512,7 @@
       }
     },
     "founder.stat.presentNow" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -518,6 +529,7 @@
       }
     },
     "founder.stat.pro" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -534,6 +546,7 @@
       }
     },
     "founder.stat.reportsOpen" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -550,6 +563,7 @@
       }
     },
     "founder.stat.rightSwipes" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -566,6 +580,7 @@
       }
     },
     "founder.stat.storiesActive" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -582,6 +597,7 @@
       }
     },
     "founder.stat.usersToday" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -598,6 +614,7 @@
       }
     },
     "founder.stat.usersTotal" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -614,6 +631,7 @@
       }
     },
     "founder.stat.usersVerified" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -630,6 +648,7 @@
       }
     },
     "founder.stat.usersWeek" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -646,6 +665,7 @@
       }
     },
     "founder.stat.votesTotal" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

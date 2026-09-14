@@ -288,6 +288,7 @@ extension AppState {
             guard let refreshedIndex = conversations.firstIndex(where: { $0.id == conversationID }),
                   let messageIndex = conversations[refreshedIndex].messages.firstIndex(where: { $0.id == message.id }) else { return }
             conversations[refreshedIndex].messages[messageIndex] = saved
+            promptForPushIfNeeded()
         } catch {
             if let refreshedIndex = conversations.firstIndex(where: { $0.id == conversationID }) {
                 withAnimation(.snappy) {

@@ -1,8 +1,8 @@
 // Kilit ekranı / banner push. Uygulama içi bildirim satırı oluşunca
 // (eşleşme, mesaj, beğeni, yorum…) burası APNs'e gider.
 //
-// JWT doğrulaması AÇIK kalsın: çağıran service_role olmalı
-// (Dashboard Database Webhook ya da vault'taki tetikleyici).
+// JWT doğrulaması KAPALI: tetikleyici Supabase jetonu değil, Vault'taki
+// paylaşılan sırrı gönderir; fonksiyon sırrı kendisi kontrol eder.
 //
 // Gizli değerler (Edge Functions → Secrets). Yoksa 200 döner, bildirim
 // yine de uygulama içinde durur; kilit ekranı sessiz kalır:
@@ -88,8 +88,15 @@ Deno.serve(async (request) => {
 
   const supabaseURL = Deno.env.get("SUPABASE_URL") ?? "";
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-  const webhookSecret = Deno.env.get("PUSH_WEBHOOK_SECRET") ?? "";
   const token = (request.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+  // Paylaşılan sır Vault'ta (push_webhook_secret); env'de varsa o da geçer.
+  // Tetikleyici bu sırla çağırıyor; sırrı elle kopyalamak gerekmiyor.
+  let webhookSecret = Deno.env.get("PUSH_WEBHOOK_SECRET") ?? "";
+  if (!webhookSecret && serviceKey) {
+    const vault = createClient(supabaseURL, serviceKey);
+    const { data } = await vault.rpc("push_webhook_secret");
+    if (typeof data === "string") webhookSecret = data;
+  }
   if (!serviceKey || (token !== serviceKey && !(webhookSecret && token === webhookSecret))) {
     return new Response(JSON.stringify({ error: "unauthorized" }), {
       status: 401,
@@ -164,6 +171,12 @@ Deno.serve(async (request) => {
     const device = String(row.token ?? "");
     if (!device) continue;
     let delivered = false;
+    // Geliştirme build'i sandbox, mağaza build'i production token üretir;
+    // hangisi olduğu satırda yazmıyor. Sırayla dene: bir ortam "bu token
+    // benim değil" (400 BadDeviceToken / 410) derse ötekine geç. Yalnız iki
+    // ortam da reddederse token gerçekten ölüdür ve silinir. Başka bir hata
+    // (403 anahtar, 429…) token'ı silmez; loglanır.
+    let rejectedEverywhere = true;
     for (const host of [PRODUCTION, SANDBOX]) {
       const response = await fetch(`${host}/3/device/${device}`, {
         method: "POST",
@@ -180,21 +193,22 @@ Deno.serve(async (request) => {
         delivered = true;
         break;
       }
-      if (response.status === 410 || response.status === 400) {
-        stale.push(device);
-        break;
-      }
+      const reason = String((await response.json().catch(() => ({})))?.reason ?? "");
+      const wrongEnvironment = response.status === 410 ||
+        (response.status === 400 && reason === "BadDeviceToken");
+      console.error("apns", host === PRODUCTION ? "production" : "sandbox", response.status, reason);
+      if (wrongEnvironment) continue;
+      rejectedEverywhere = false;
+      break;
     }
-    if (!delivered) {
-      // 403 vs. diğerleri: jetonu silme, bir sonraki denemede tekrar dene.
-    }
+    if (!delivered && rejectedEverywhere) stale.push(device);
   }
 
   if (stale.length) {
     await admin.from("device_tokens").delete().in("token", stale).eq("user_id", userID);
   }
 
-  return new Response(JSON.stringify({ ok: true, devices: tokens.length }), {
+  return new Response(JSON.stringify({ ok: true, devices: tokens.length, delivered: tokens.length - stale.length }), {
     headers: { "Content-Type": "application/json" },
   });
 });

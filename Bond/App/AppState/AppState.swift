@@ -6,6 +6,8 @@ import UIKit
 final class AppState {
     enum SessionKey {
         static let isSignedIn = "session.isSignedIn"
+        /// Sistem bildirim izni bir kez, kullanıcı cevap bekleyen bir şey yaptığında soruldu.
+        static let pushPrompted = "push.promptedOnce"
         static let ghostMode = "session.ghostMode"
         static let email = "session.email"
         static let accountEmail = "account.email"
