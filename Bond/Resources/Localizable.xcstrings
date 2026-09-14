@@ -4520,6 +4520,15 @@
     "founder.boostCurrent" : {
 
     },
+    "founder.broadcastConfirm" : {
+
+    },
+    "founder.broadcastDone" : {
+
+    },
+    "founder.broadcastSend" : {
+
+    },
     "founder.pinnedAt" : {
 
     },
@@ -7376,6 +7385,23 @@
         }
       }
     },
+    "paywall.currentBadge" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mevcut"
+          }
+        }
+      }
+    },
     "paywall.currentPlan" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7592,40 +7618,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "PRO'A GEÇ"
-          }
-        }
-      }
-    },
-    "paywall.currentPlan" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your current plan"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mevcut planın"
-          }
-        }
-      }
-    },
-    "paywall.currentBadge" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Current"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mevcut"
           }
         }
       }
@@ -7936,23 +7928,6 @@
         }
       }
     },
-    "paywall.syncing" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verifying your subscription… try again in a few seconds."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aboneliğin doğrulanıyor… birkaç saniye sonra tekrar dene."
-          }
-        }
-      }
-    },
     "paywall.specialNote" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7966,6 +7941,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "bu verilere erişmek için özel\nkullanıcılarımızdan olmalısın"
+          }
+        }
+      }
+    },
+    "paywall.syncing" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verifying your subscription… try again in a few seconds."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aboneliğin doğrulanıyor… birkaç saniye sonra tekrar dene."
           }
         }
       }

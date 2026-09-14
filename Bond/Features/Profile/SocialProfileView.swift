@@ -375,7 +375,7 @@ struct SocialProfileView: View {
                         in: Circle()
                     )
 
-                VStack(alignment: .leading, spacing: pendingRequestCount > 0 ? 3 : 0) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text(
                         pendingRequestCount > 0
                             ? L10n.ProfileHome.pendingRequests(pendingRequestCount)
@@ -384,12 +384,11 @@ struct SocialProfileView: View {
                     .font(.subheadline.weight(.semibold))
                     .contentTransition(.numericText())
 
-                    if pendingRequestCount > 0 {
-                        Text(L10n.ProfileHome.requestsDetail)
-                            .font(.footnote)
-                            .foregroundStyle(BondTheme.muted)
-                            .lineLimit(1)
-                    }
+                    // Boşken de ne olduğu okunsun: buluşma istekleri burada.
+                    Text(L10n.ProfileHome.requestsDetail)
+                        .font(.footnote)
+                        .foregroundStyle(BondTheme.muted)
+                        .lineLimit(1)
                 }
 
                 Spacer(minLength: BondTheme.Space.sm)

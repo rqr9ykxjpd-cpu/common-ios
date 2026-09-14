@@ -10,7 +10,6 @@ struct ProfileSettingsView: View {
     @State private var showModeration = false
     @State private var showSwipers = false
     @State private var showStats = false
-    @State private var showMeetingRequests = false
     @State private var showTerms = false
     @State private var showPrivacy = false
     @State private var showSignOutAlert = false
@@ -57,14 +56,6 @@ struct ProfileSettingsView: View {
                         }
                     }
 
-                    settingsButton(
-                        icon: "cup.and.saucer",
-                        title: L10n.Profile.meetings,
-                        detail: L10n.Profile.meetingsHint,
-                        badge: appState.pendingIncomingMeetingRequestCount
-                    ) {
-                        showMeetingRequests = true
-                    }
                 }
 
                 Section(L10n.Profile.appearanceSection) {
@@ -214,11 +205,6 @@ struct ProfileSettingsView: View {
             }
             .fullScreenCover(isPresented: $showModeration) {
                 ModerationView()
-            }
-            .sheet(isPresented: $showMeetingRequests) {
-                MeetingRequestsView()
-                    .presentationDetents([.large])
-                    .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showTerms) {
                 NavigationStack {

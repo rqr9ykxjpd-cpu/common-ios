@@ -46,11 +46,6 @@ struct FounderStatsView: View {
                                 ("plus", s.plus, true), ("pro", s.pro, true),
                                 ("free", max(0, s.usersTotal - s.plus - s.pro), false),
                             ])
-                            section(L10n.Board.statsBoard, [
-                                ("postsTotal", s.postsTotal, true), ("postsToday", s.postsToday, false),
-                                ("commentsTotal", s.commentsTotal, false), ("votesTotal", s.votesTotal, false),
-                                ("storiesActive", s.storiesActive, false),
-                            ])
                             section(L10n.Board.statsPeople, [
                                 ("matches", s.matches, true), ("messagesTotal", s.messagesTotal, false),
                                 ("rightSwipes", s.rightSwipes, false), ("leftSwipes", s.leftSwipes, false),
@@ -110,7 +105,7 @@ struct FounderStatsView: View {
                         .buttonStyle(.borderedProminent)
                         .tint(BondTheme.burntOrange)
                 }
-                .disabled(isSending || broadcastTitle.trimmed.isEmpty)
+                .disabled(isSending || (broadcastTitle.trimmed.isEmpty && broadcastBody.trimmed.isEmpty))
                 .font(.footnote.weight(.semibold))
             }
             .padding(14)
@@ -123,8 +118,10 @@ struct FounderStatsView: View {
         sentMessage = nil
         defer { isSending = false }
         do {
+            // Başlık boşsa uygulama adı; mesaj tek başına yeter.
+            let baslik = broadcastTitle.trimmed.isEmpty ? "Common" : broadcastTitle.trimmed
             let adet = try await appState.sendFounderBroadcast(
-                title: broadcastTitle.trimmed, body: broadcastBody.trimmed, testOnly: testOnly)
+                title: baslik, body: broadcastBody.trimmed, testOnly: testOnly)
             sentMessage = testOnly ? L10n.Board.broadcastTestDone : L10n.Board.broadcastDone(adet)
             sentOK = true
             Haptics.success()
