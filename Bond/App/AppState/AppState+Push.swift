@@ -2,13 +2,18 @@ import UIKit
 import UserNotifications
 
 extension AppState {
-    /// İzin ister ve cihazı APNs'e kaydeder. Karşılama ekranında sorulmaz.
-    func startPushRegistration() async {
+    /// Cihazı APNs'e kaydeder. Sistem izin penceresi yalnızca kullanıcı
+    /// Bildirimler ekranındaki açıklamalı eyleme dokunduğunda açılır.
+    func startPushRegistration(requestAuthorization: Bool = false) async {
+#if DEBUG
+        guard !(service is SampleProductService) else { return }
+#endif
         guard defaults.bool(forKey: SessionKey.isSignedIn) else { return }
         let center = UNUserNotificationCenter.current()
         let status = await center.notificationSettings().authorizationStatus
         switch status {
         case .notDetermined:
+            guard requestAuthorization else { return }
             let granted = (try? await center.requestAuthorization(options: [.alert, .badge, .sound])) ?? false
             guard granted else { return }
         case .denied:

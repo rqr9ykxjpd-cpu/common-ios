@@ -7,6 +7,8 @@ struct StoryViewer: View {
     let viewRecords: (UUID) -> [StoryViewRecord]
     let onViewed: (CampusStory) -> Void
     let onDelete: (UUID) -> Void
+    /// Kendi story'nde çöpün yanındaki +: izleyiciyi kapatıp yeni story atar.
+    var onAddStory: (() -> Void)? = nil
     let close: () -> Void
     @State private var currentIndex: Int
     @State private var progress: CGFloat = 0
@@ -20,14 +22,16 @@ struct StoryViewer: View {
     @State private var showPaywall = false
     @State private var showDeleteConfirmation = false
     @State private var pendingDeleteID: UUID?
+    @State private var reportTarget: CampusStory?
     @State private var selectedStoryAuthor: StudentProfile?
     @FocusState private var replyFocused: Bool
 
-    init(stories: [CampusStory], initialStoryID: UUID, viewRecords: @escaping (UUID) -> [StoryViewRecord], onViewed: @escaping (CampusStory) -> Void, onDelete: @escaping (UUID) -> Void, close: @escaping () -> Void) {
+    init(stories: [CampusStory], initialStoryID: UUID, viewRecords: @escaping (UUID) -> [StoryViewRecord], onViewed: @escaping (CampusStory) -> Void, onDelete: @escaping (UUID) -> Void, onAddStory: (() -> Void)? = nil, close: @escaping () -> Void) {
         self.stories = stories
         self.viewRecords = viewRecords
         self.onViewed = onViewed
         self.onDelete = onDelete
+        self.onAddStory = onAddStory
         self.close = close
         _currentIndex = State(initialValue: stories.firstIndex(where: { $0.id == initialStoryID }) ?? 0)
     }
@@ -37,7 +41,7 @@ struct StoryViewer: View {
     }
 
     private var isInteractionBlocking: Bool {
-        replyFocused || selectedStoryAuthor != nil || isPaused || showDeleteConfirmation || showViewers
+        replyFocused || selectedStoryAuthor != nil || isPaused || showDeleteConfirmation || showViewers || reportTarget != nil
     }
 
     var body: some View {
@@ -91,7 +95,7 @@ struct StoryViewer: View {
         }
         // Onay diyaloğu açıkken de duraklat: aksi halde altta story ilerleyip
         // silinecek kimlik kayboluyordu.
-        .task(id: "\(currentIndex)-\(replyFocused)-\(selectedStoryAuthor != nil)-\(isPaused)-\(showDeleteConfirmation)-\(showViewers)") {
+        .task(id: "\(currentIndex)-\(replyFocused)-\(selectedStoryAuthor != nil)-\(isPaused)-\(showDeleteConfirmation)-\(showViewers)-\(reportTarget != nil)") {
             await playCurrentStory()
         }
         // Basılı tutunca duraklatma Plus'a özel. Ücretsizde basılı tutmak, bunun
@@ -111,6 +115,20 @@ struct StoryViewer: View {
             withAnimation(.easeOut(duration: 0.15)) { isPaused = basiliyor }
         }
         .sheet(isPresented: $showPaywall) { PaywallView() }
+        .confirmationDialog(L10n.Common.report, isPresented: Binding(
+            get: { reportTarget != nil },
+            set: { if !$0 { reportTarget = nil } }
+        ), titleVisibility: .visible) {
+            ForEach(ReportReason.allCases) { reason in
+                Button(reason.title) {
+                    if let reportTarget {
+                        appState.reportContent(.init(kind: .story, id: reportTarget.id), reason: reason)
+                    }
+                    reportTarget = nil
+                }
+            }
+            Button(L10n.Common.cancel, role: .cancel) { reportTarget = nil }
+        }
         .task(id: pauseHintVisible) {
             guard pauseHintVisible else { return }
             try? await Task.sleep(for: .seconds(2.5))
@@ -118,8 +136,11 @@ struct StoryViewer: View {
         }
         .sheet(item: $selectedStoryAuthor) { profile in
             NavigationStack {
-                SocialPersonDetailView(profile: profile, place: nil, showsClose: true)
+                ProfilePhotoStackView(profile: profile)
             }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(28)
         }
         .sheet(isPresented: $showViewers) {
             if let story {
@@ -163,7 +184,7 @@ struct StoryViewer: View {
             if story.isVideo, let url = story.videoURL {
                 StoryVideoCanvas(url: url, isPaused: isInteractionBlocking)
             } else {
-                ProfileMedia(url: story.imageURL, data: story.localImageData, assetName: story.imageAssetName)
+                ProfileMedia(url: story.imageURL, data: story.localImageData, assetName: story.imageAssetName, kind: .content)
             }
         }
         .frame(width: size.width, height: size.height)
@@ -221,6 +242,12 @@ struct StoryViewer: View {
             .buttonStyle(PressableStyle())
             .accessibilityLabel(L10n.Feed.openProfile(story.author.name))
             Spacer()
+            if !story.isMine {
+                Button { reportTarget = story } label: {
+                    Image(systemName: "flag").frame(width: 44, height: 44)
+                }
+                .accessibilityLabel(L10n.Common.report)
+            }
             if story.isMine {
                 Button { showViewers = true } label: {
                     // Göz işareti kaç *kişi* izlediğini gösteriyor: aynı kişinin tekrar
@@ -236,6 +263,14 @@ struct StoryViewer: View {
                         .background(.black.opacity(0.28), in: Capsule())
                 }
                 .accessibilityLabel("\(L10n.Story.viewersTitle), \(appState.stories.first(where: { $0.id == story.id })?.viewRecords.count ?? viewRecords(story.id).count)")
+            }
+            if story.isMine, let onAddStory {
+                Button(action: onAddStory) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 16, weight: .bold))
+                        .frame(width: 44, height: 44)
+                }
+                .accessibilityLabel(L10n.Composer.shareStory)
             }
             // Menü + confirmationDialog fullScreenCover içinde çoğu zaman
             // açılmıyordu. Tek eylem için doğrudan çöp + alert daha güvenilir.

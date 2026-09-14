@@ -97,7 +97,7 @@ struct ProfileEducationLine: View {
     var university: String? = nil
     var year: String? = nil
     var font: Font = .system(size: 15, weight: .semibold)
-    /// `true` iken YÜ → Yalova Üniversitesi ve üniversite adı ink + bold.
+    /// `true` iken üniversite adı ink + bold. (Açık ad artık gösterilmiyor; kısa kod kalıyor.)
     var highlightUniversity = false
 
     private var departmentParts: [String] {

@@ -14,6 +14,11 @@ final class AppState {
         static let avatar = "account.avatar"
         static let gallery = "account.gallery"
         static let appearance = "settings.appearance"
+        /// Kaydırma destesi kalktıktan sonra eski keşif/cinsiyet kayıtlarını
+        /// bir kez temizlemek için. Sayıyı artırmak bir sonraki açılışta
+        /// görsel ve HTTP önbelleğini de boşaltır; oturumu silmez.
+        static let productCacheEpoch = "cache.productEpoch"
+        static let currentProductCacheEpoch = 3
 
         static func account(_ key: String, userID: UUID) -> String {
             "account.\(userID.uuidString.lowercased()).\(key)"
@@ -59,29 +64,40 @@ final class AppState {
     }
 
     enum OnboardingStep: Int, Equatable, CaseIterable {
-        case identity, preferences, interests, photo, ready
+        case identity, interests, photo, ready
     }
 
     var route: Route
     var email: String
     var currentUserID: UUID
     var draft = ProfileDraft()
-    var profiles: [StudentProfile] = []
-    var discoveryFilters = DiscoveryFilters()
-    var isLoadingDiscovery = false
-    /// Keşif yükleme nesli: Yenile eski isteğin boş sonucunun desteyi ezmesini engeller.
-    var discoveryLoadGeneration: UInt = 0
     /// Akış ve story'ler ilk kez yüklenirken. Boş liste ile "henüz yüklenmedi"
     /// ayırt edilemiyordu: akış yüklenirken ekranda "Akış henüz boş" yazıyordu,
     /// yani kullanıcıya yanlış bilgi veriliyordu.
     var isLoadingFeed = false
+    var feedError: String?
+    var feedLoadGeneration: UInt = 0
+    var isLoadingClubs = false
+    var clubsError: String?
+    var clubsLoadGeneration: UInt = 0
+    var campusPeople: [StudentProfile] = []
+    var isLoadingCampusPeople = false
+    var campusPeopleError: String?
+    var campusPeopleLoadGeneration: UInt = 0
+    var campusPeopleHasMore = true
+    /// Bu oturumda sağa kaydırılan profiller. Aynı kişiye tekrar bildirim gitmesin.
+    var rightSwipedProfileIDs: Set<UUID> = []
+    var introductionRequests: [StudentProfile] = []
+    var introductionRequestsError: String?
+    var isLoadingIntroductions = false
+    var presenceUpdateID: UUID?
+    var presenceUpdatingPlaceID: UUID?
+    var presenceError: String?
     var isLoadingStories = false
     var isLoadingConversations = false
     var isLoadingNotifications = false
     var isLoadingMessageRequests = false
     var isLoadingPlaces = false
-    var isReactingToProfile = false
-    var discoveryError: String?
     var conversationsError: String?
     var notificationsError: String?
     var messageRequestsError: String?
@@ -108,16 +124,7 @@ final class AppState {
     /// veriyor (bkz. `set_badge`), istemci kendine veremiyor; buradaki kontrol
     /// yalnızca arayüzü gizlemek için — asıl kapı sunucudaki izin kuralları.
     var isModerator: Bool { myBadge == .founder || myBadge == .moderator }
-
-    /// "Seni beğenenler" yalnızca kurucuya açık. Bilerek `isModerator` değil:
-    /// moderatör rozeti ileride başkasına verilirse o kişi bu listeyi görmesin.
-    /// Buradaki kontrol yalnızca arayüzü gizliyor; asıl kapı `who_liked_me`
-    /// fonksiyonunun içindeki rozet kontrolü.
     var isFounder: Bool { myBadge == .founder }
-
-    /// Hesabımı sağa kaydıranlar. Yalnızca kurucu doldurabiliyor.
-    var admirers: [Admirer] = []
-    var isLoadingAdmirers = false
 
     /// Cevap bekleyen şikayetler.
     var pendingReports: [ModerationReport] { reports.filter { $0.handledAt == nil } }
@@ -136,10 +143,29 @@ final class AppState {
     var profileGalleryData: [Data] = []
     var avatarURL: URL?
     var galleryURLs: [URL] = []
-    var currentMatch: StudentProfile?
     var selectedConversation: Conversation?
     var selectedStory: CampusStory?
     var selectedPlaceFilter: CampusPlace?
+    /// Yer başına kaç kişi görünüyor; "Kim nerede" satırlarında.
+    var placePresence: [UUID: PlacePresenceSummary] = [:]
+    /// Akıştaki tür çipi; nil = tümü. Yer filtresiyle birlikte uygulanır.
+    var selectedKindFilter: PostKind?
+    /// Akış sırası: Popüler (oy + cevap, zamanla söner) ya da Yeni.
+    var feedSort: FeedSort = .popular
+    /// Sabitleme/öne çıkarma sonrası akış yeniden sıralansın diye artar.
+    var feedRankVersion = 0
+    /// Kurucu "oy ekle" ve "oy verenler" sunumları akış kökünden açılır: kart
+    /// içinden açılan alert, kaydırılmış LazyVStack hücresinde bazen hiç çıkmıyordu.
+    var boostPromptPostID: UUID?
+    var pinPromptPostID: UUID?
+    var votersPostID: UUID?
+    /// Az önce paylaşılanlar: Popüler sırada sıfır oyla dibe düşmesin, bir sonraki
+    /// yüklemeye kadar tepede dursun. Kullanıcı paylaştığını görmeli.
+    var justPublishedPostIDs: Set<UUID> = []
+    /// Akış yüklenirken alınan "kaç kez gördü" fotoğrafı; sıralama buna bakar.
+    /// Oturum içindeki görüntülemeler bir sonraki yüklemede devreye girer ki
+    /// kaydırırken kartlar yer değiştirmesin.
+    var seenCounts: [UUID: Int] = [:]
     var currentVisiblePlace: CampusPlace?
     var joinedClubIDs: Set<UUID> = []
     /// Kendi rozetim. Sunucudan gelir; istemci kendine rozet veremez.
@@ -173,6 +199,17 @@ final class AppState {
     /// çalışmadığını sanıyordu; bu ekranda kalıcı olarak gösteriliyor.
     var onboardingFailure: String?
     var isAccountActionInProgress = false
+    /// Keep the account in the deletion-only UI after Apple revocation if the
+    /// server deletion fails. This observable marker contains no provider token.
+    var appleRevokedPendingDeletionUserID: UUID? {
+        didSet {
+            if let userID = appleRevokedPendingDeletionUserID {
+                defaults.set(userID.uuidString, forKey: AppleAccountDeletionNotice.revokedDeletionUserKey)
+            } else {
+                defaults.removeObject(forKey: AppleAccountDeletionNotice.revokedDeletionUserKey)
+            }
+        }
+    }
     var toast: AppToastMessage?
     /// Kilit ekranındaki bildirime basınca bildirim listesini açmak için.
     var opensNotifications = false
@@ -250,7 +287,7 @@ final class AppState {
     /// Sunucudaki sınır tetikleyicilerinin fırlattığı kodlar.
     func quotaKind(_ error: Error) -> QuotaKind? {
         let metin = String(describing: error)
-        if metin.contains("QUOTA_LIKE") { return .like }
+        if metin.contains("QUOTA_CONNECTION_REQUEST") { return .connectionRequest }
         if metin.contains("QUOTA_MEETING_REQUEST") { return .meetingRequest }
         if metin.contains("QUOTA_MEETING_ACCEPT") { return .meetingAccept }
         if metin.contains("QUOTA_POST") || metin.contains("POST_LIMIT") { return .posts }
@@ -300,8 +337,6 @@ final class AppState {
     /// Yalnızca geliştirme derlemesinde: Plus ekranını açar (tasarım kontrolü).
     var opensPaywall = false
     var opensProNote = false
-    /// Yalnızca geliştirme derlemesinde: kendi kart önizlemesini açar.
-    var opensCardPreview = false
     /// `-onboarding <adım>` ile açıldığında oturum geri yüklemesi rotayı ezmesin diye.
     /// Yalnızca geliştirme derlemesinde var.
     var skipsSessionRestore = false
@@ -312,6 +347,8 @@ final class AppState {
     init(service: (any ProductService)? = nil, defaults: UserDefaults = .standard) {
         self.service = service ?? ProductServiceFactory.make()
         self.defaults = defaults
+        appleRevokedPendingDeletionUserID = defaults.string(forKey: AppleAccountDeletionNotice.revokedDeletionUserKey)
+            .flatMap(UUID.init(uuidString:))
         let hasSession = defaults.bool(forKey: SessionKey.isSignedIn)
         ghostMode = defaults.bool(forKey: SessionKey.ghostMode)
         route = hasSession ? .app : .welcome
@@ -319,6 +356,7 @@ final class AppState {
         currentUserID = defaults.string(forKey: SessionKey.userID).flatMap(UUID.init(uuidString:)) ?? UUID()
         appearance = defaults.string(forKey: SessionKey.appearance).flatMap(Appearance.init(rawValue:)) ?? .system
         loadAccountData(migratingLegacy: true)
+        purgeLegacyProductCacheIfNeeded()
 
         // Cihaz bir hak gördüğünde arayüzü açıyoruz ve doğrulanmış işlemi
         // sunucuya bildiriyoruz. Sunucu Apple'a sormadan kademeyi değiştirmiyor;
@@ -395,9 +433,9 @@ final class AppState {
     }
 
     /// Profil/gönderi görseli. İmzalı URL GET başarısız olursa Storage indirmesi dener.
-    func remoteImage(for url: URL) async -> UIImage? {
+    func remoteImage(for url: URL, maxDimension: CGFloat = ImageCompression.maxDimension) async -> UIImage? {
         let service = service
-        return await BondImageLoader.shared.image(for: url) { target in
+        return await BondImageLoader.shared.image(for: url, maxDimension: maxDimension) { target in
             await Self.fetchMediaData(target, service: service)
         }
     }

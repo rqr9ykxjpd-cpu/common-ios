@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Common — afiş</title>
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #ddd; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+  .sheet { width: 210mm; min-height: 297mm; margin: 12px auto; padding: 18mm 18mm 20mm;
+           background: #fff; color: #1d1d1f; border-top: 8px solid #1d1d1f; }
+  .uni { font-size: 12px; letter-spacing: .14em; color: #6e6e73; margin: 8mm 0 4mm; }
+  h1 { font: 700 22mm/1 "Times New Roman", Times, serif; margin: 0 0 10mm; }
+  .lines { font: 400 8mm/1.35 "Times New Roman", Times, serif; margin: 0 0 8mm; }
+  .soon { font-size: 15px; color: #6e6e73; }
+  hr { border: 0; border-top: 1px solid #d2d2d7; margin: 12mm 0; }
+  .foot { display: flex; gap: 16mm; align-items: center; margin-top: 28mm; }
+  img { width: 42mm; height: 42mm; }
+  .cap { font-size: 14px; }
+  .sticker { width: 70mm; height: 70mm; border: 1px dashed #c7c7cc; padding: 8mm;
+             display: flex; flex-direction: column; justify-content: space-between; }
+  .sticker b { font: 700 9mm/1 "Times New Roman", Times, serif; }
+  .sticker img { width: 28mm; height: 28mm; }
+  @media print { body { background: #fff; } .sheet { margin: 0; } }
+</style>
+</head>
+<body>
+  <section class="sheet">
+    <div class="uni">YALOVA ÜNİVERSİTESİ</div>
+    <h1>Common</h1>
+    <p class="lines">YÜ’ye özel.<br>Arkadaşların, kulüplerin, sohbetin.<br>Başka üniversite yok.</p>
+    <p class="soon">App Store ve Google Play’de yakında.</p>
+    <hr>
+    <div class="foot">
+      <div>
+        <img src="qr-print.png" alt="Common karekod">
+        <p class="cap">Sayfayı aç</p>
+      </div>
+      <div class="sticker">
+        <div>
+          <div class="uni">YÜ’YE ÖZEL</div>
+          <b>common</b>
+        </div>
+        <img src="qr-print.png" alt="">
+        <span class="soon">Yakında</span>
+      </div>
+    </div>
+  </section>
+</body>
+</html>

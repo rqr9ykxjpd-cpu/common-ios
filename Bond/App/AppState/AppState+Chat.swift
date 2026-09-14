@@ -84,8 +84,7 @@ extension AppState {
         do {
             try await service.unblockUser(profileID)
             Haptics.success()
-            // Engeli kalkan kişi keşifte ve akışta tekrar görünebilmeli.
-            await loadDiscovery()
+            await loadFeed()
         } catch {
             blockedProfiles = onceki
             showError(error, fallback: L10n.Profile.unblockFailed)
@@ -96,7 +95,7 @@ extension AppState {
         Task {
             do {
                 try await service.blockUser(profile.id)
-                profiles.removeAll { $0.id == profile.id }
+                campusPeople.removeAll { $0.id == profile.id }
                 conversations.removeAll { $0.profile.id == profile.id }
                 posts.removeAll { $0.author.id == profile.id }
                 notifications.removeAll { $0.actor?.id == profile.id }
@@ -139,6 +138,18 @@ extension AppState {
         Task {
             do {
                 try await service.reportUser(profile.id, reason: reason, details: nil)
+                show(L10n.Chat.reportReceived)
+                Haptics.success()
+            } catch {
+                showError(error, fallback: L10n.Chat.reportFailed)
+            }
+        }
+    }
+
+    func reportContent(_ target: ReportTarget, reason: ReportReason) {
+        Task {
+            do {
+                try await service.reportContent(target, reason: reason, details: nil)
                 show(L10n.Chat.reportReceived)
                 Haptics.success()
             } catch {
@@ -260,8 +271,7 @@ extension AppState {
         Task {
             do { try await service.markConversationRead(matchID: conversationID) }
             // Kullanıcının başlatmadığı arka plan işi: başarısız olursa okunmadı rozeti
-            // kalır, başka bir sonucu yok. Hata göstermek gürültü olurdu; Tanış ekranına
-            // yazmak ise büsbütün yanlıştı — orası keşif hataları için.
+            // kalır, başka bir sonucu yok. Hata göstermek gürültü olurdu.
             catch { }
         }
     }

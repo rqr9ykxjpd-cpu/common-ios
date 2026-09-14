@@ -28,3 +28,8 @@ Bond/Configuration.local.xcconfig
 
 # Cursor'ın kendi ayarları; projeye ait değil.
 .cursor/
+
+# Local simulator build output
+.derived-sim/
+.derived-welcome/
+supabase/.temp/

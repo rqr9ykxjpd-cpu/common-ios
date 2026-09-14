@@ -28,9 +28,7 @@ struct PlacePersonRow: Decodable {
     /// Sunucuda `badge` kolonu yoksa (migration henüz çalıştırılmadıysa) nil gelir.
     /// Zorunlu tutmak, tek bir eksik kolon yüzünden girişi tamamen kırıyordu.
     let badge: ProfileBadge?
-    let relationshipIntent: RelationshipIntent
     let interests: [String]
-    let activeLabel: String
 
     enum CodingKeys: String, CodingKey {
         case id, name, university, department, bio, interests
@@ -39,8 +37,41 @@ struct PlacePersonRow: Decodable {
         case avatarPath = "avatar_path"
         case isVerified = "is_verified"
         case badge
-        case relationshipIntent = "relationship_intent"
-        case activeLabel = "active_label"
+    }
+}
+
+struct CampusPeoplePageParams: Encodable {
+    let pageLimit: Int
+    let pageOffset: Int
+    enum CodingKeys: String, CodingKey {
+        case pageLimit = "page_limit"
+        case pageOffset = "page_offset"
+    }
+}
+
+struct CampusPersonRow: Decodable {
+    let id: UUID
+    let name: String
+    let birthDate: Date
+    let university: String
+    let department: String
+    let academicYear: String
+    let bio: String
+    let avatarPath: String?
+    let isVerified: Bool
+    let badge: ProfileBadge?
+    let interests: [String]
+    let visiblePlaceID: UUID?
+    let visiblePlaceName: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, university, department, bio, interests, badge
+        case birthDate = "birth_date"
+        case academicYear = "academic_year"
+        case avatarPath = "avatar_path"
+        case isVerified = "is_verified"
+        case visiblePlaceID = "visible_place_id"
+        case visiblePlaceName = "visible_place_name"
     }
 }
 
@@ -191,6 +222,17 @@ struct PlaceRow: Decodable {
     let area: String
 }
 
+struct PlacePresenceRow: Decodable {
+    let placeID: UUID
+    let peopleCount: Int
+    let avatarPaths: [String]?
+    enum CodingKeys: String, CodingKey {
+        case placeID = "place_id"
+        case peopleCount = "people_count"
+        case avatarPaths = "avatar_paths"
+    }
+}
+
 struct MeetingRequestRow: Decodable {
     let id: UUID
     let requesterID: UUID
@@ -226,22 +268,43 @@ struct ReportRow: Decodable {
     let resolution: String?
     let reporter: SupabaseProfileRow?
     let reported: SupabaseProfileRow?
+    let targetKind: ReportTarget.Kind?
+    let targetID: UUID?
+    let contentText: String?
+    let contentMediaPath: String?
+    let contentMediaBucket: String?
 
     enum CodingKeys: String, CodingKey {
         case id, reason, details, resolution, reporter, reported
         case createdAt = "created_at"
         case handledAt = "handled_at"
+        case targetKind = "target_kind"
+        case targetID = "target_id"
+        case contentText = "content_text"
+        case contentMediaPath = "content_media_path"
+        case contentMediaBucket = "content_media_bucket"
     }
 }
 
-struct ReportResolutionUpdate: Encodable {
-    let handledAt: Date
-    let handledBy: UUID
+struct ContentReportParams: Encodable {
+    let kind: String
+    let contentID: UUID
+    let reason: String
+    let details: String?
+    enum CodingKeys: String, CodingKey {
+        case kind = "content_kind"
+        case contentID = "content_id"
+        case reason = "report_reason"
+        case details = "report_details"
+    }
+}
+
+struct ResolveReportParams: Encodable {
+    let reportID: UUID
     let resolution: String
     enum CodingKeys: String, CodingKey {
-        case resolution
-        case handledAt = "handled_at"
-        case handledBy = "handled_by"
+        case reportID = "report_id"
+        case resolution = "report_resolution"
     }
 }
 
@@ -376,37 +439,17 @@ struct GhostModeParams: Encodable {
 struct MyProfileRow: Decodable {
     let name: String
     let birthDate: Date
-    let gender: String
-    let datingPreference: String
-    let relationshipIntent: String
     let university: String
     let department: String
     let academicYear: String
     let bio: String
     let interests: [String]
-    let promptKeys: [String]
-    let promptAnswers: [String]
-    let minAge: Int
-    let maxAge: Int
-    let academicYears: [String]
-    let departments: [String]
-    let requireCommonInterest: Bool
-    let campusOnly: Bool
     let ghostMode: Bool?
 
     enum CodingKeys: String, CodingKey {
-        case name, gender, university, department, bio, interests, departments
+        case name, university, department, bio, interests
         case birthDate = "birth_date"
-        case datingPreference = "dating_preference"
-        case relationshipIntent = "relationship_intent"
         case academicYear = "academic_year"
-        case promptKeys = "prompt_keys"
-        case promptAnswers = "prompt_answers"
-        case minAge = "min_age"
-        case maxAge = "max_age"
-        case academicYears = "academic_years"
-        case requireCommonInterest = "require_common_interest"
-        case campusOnly = "campus_only"
         case ghostMode = "ghost_mode"
     }
 }
@@ -437,6 +480,14 @@ struct ProfilePhotoInsert: Encodable {
         case profileID = "profile_id"
         case storagePath = "storage_path"
         case position
+    }
+}
+
+/// Composer "Kartlara ekle": sunucu sıradaki slotu verir ve 5 sınırını uygular.
+struct AppendGalleryPhotoParams: Encodable {
+    let storagePath: String
+    enum CodingKeys: String, CodingKey {
+        case storagePath = "p_storage_path"
     }
 }
 
@@ -562,12 +613,9 @@ struct MessageReadUpdate: Encodable {
     enum CodingKeys: String, CodingKey { case readAt = "read_at" }
 }
 
-struct SaveProfileParams: Encodable {
+struct SaveCampusProfileParams: Encodable {
     let profileName: String
     let profileBirthDate: String
-    let profileGender: String
-    let profileDatingPreference: String
-    let profileRelationshipIntent: String
     let profileUniversity: String
     let profileDepartment: String
     let profileAcademicYear: String
@@ -577,9 +625,6 @@ struct SaveProfileParams: Encodable {
     enum CodingKeys: String, CodingKey {
         case profileName = "profile_name"
         case profileBirthDate = "profile_birth_date"
-        case profileGender = "profile_gender"
-        case profileDatingPreference = "profile_dating_preference"
-        case profileRelationshipIntent = "profile_relationship_intent"
         case profileUniversity = "profile_university"
         case profileDepartment = "profile_department"
         case profileAcademicYear = "profile_academic_year"
@@ -598,35 +643,6 @@ struct MessageReactionParams: Encodable {
     }
 }
 
-struct DiscoveryPreferencesUpsert: Encodable {
-    let userID: UUID
-    let minAge: Int
-    let maxAge: Int
-    let academicYears: [String]
-    let departments: [String]
-    let requireCommonInterest: Bool
-    let campusOnly: Bool
-
-    enum CodingKeys: String, CodingKey {
-        case userID = "user_id"
-        case minAge = "min_age"
-        case maxAge = "max_age"
-        case academicYears = "academic_years"
-        case departments
-        case requireCommonInterest = "require_common_interest"
-        case campusOnly = "campus_only"
-    }
-}
-
-struct DiscoveryPageParams: Encodable {
-    let pageLimit: Int
-    let pageOffset: Int
-    enum CodingKeys: String, CodingKey {
-        case pageLimit = "page_limit"
-        case pageOffset = "page_offset"
-    }
-}
-
 struct PurchasePayload: Encodable {
     let jws: String
     let productID: String
@@ -636,101 +652,16 @@ struct PurchasePayload: Encodable {
     }
 }
 
-struct ReactionParams: Encodable {
-    let subject: UUID
-    let reaction: String
-}
-
-struct ReactionResultRow: Decodable {
-    let matched: Bool
-    let matchID: UUID?
-    enum CodingKeys: String, CodingKey {
-        case matched
-        case matchID = "match_id"
-    }
-}
-
-struct DiscoveryCandidateRow: Decodable {
-    let id: UUID
-    let name: String
-    let birthDate: Date
-    let university: String
-    let department: String
-    let academicYear: String
-    let bio: String
-    let avatarPath: String?
-    let galleryPaths: [String]
-    let isVerified: Bool
-    /// Sunucuda `badge` kolonu yoksa (migration henüz çalıştırılmadıysa) nil gelir.
-    /// Zorunlu tutmak, tek bir eksik kolon yüzünden girişi tamamen kırıyordu.
-    let badge: ProfileBadge?
-    let relationshipIntent: RelationshipIntent
-    let interests: [String]
-    let promptKeys: [String]
-    let promptAnswers: [String]
-    let compatibility: Int
-    let compatibilityReasons: [String]
-    let activeLabel: String
-
-    enum CodingKeys: String, CodingKey {
-        case id, name, university, department, bio, interests, compatibility
-        case birthDate = "birth_date"
-        case avatarPath = "avatar_path"
-        case galleryPaths = "gallery_paths"
-        case academicYear = "academic_year"
-        case isVerified = "is_verified"
-        case badge
-        case relationshipIntent = "relationship_intent"
-        case promptKeys = "prompt_keys"
-        case promptAnswers = "prompt_answers"
-        case compatibilityReasons = "compatibility_reasons"
-        case activeLabel = "active_label"
-    }
-
-    func studentProfile(avatarURL: URL?, galleryURLs: [URL]) -> StudentProfile {
-        let age = max(18, Calendar.current.dateComponents([.year], from: birthDate, to: .now).year ?? 18)
-        return StudentProfile(
-            id: id, name: name, age: age, university: university, department: department,
-            year: academicYear, bio: bio, interests: interests, imageURL: avatarURL,
-            galleryImageURLs: galleryURLs,
-            compatibility: compatibility, isVerified: isVerified, badge: badge ?? .none,
-            compatibilityReasons: compatibilityReasons.map(CompatibilityCopy.localize),
-            relationshipIntent: relationshipIntent, activeLabel: activeLabel
-        )
-    }
-}
-
-struct PromptInsert: Encodable {
-    let profileID: UUID
-    let promptKey: String
-    let answer: String
-    let position: Int
-    enum CodingKeys: String, CodingKey {
-        case profileID = "profile_id"
-        case promptKey = "prompt_key"
-        case answer, position
-    }
-}
-
-struct InterestInsert: Encodable {
-    let profileID: UUID
-    let interest: String
-
-    enum CodingKeys: String, CodingKey {
-        case profileID = "profile_id"
-        case interest
-    }
-}
-
 struct PostInsert: Encodable {
     let authorID: UUID
     let caption: String
     let placeName: String?
     let mediaPath: String?
+    let kind: PostKind
 
     enum CodingKeys: String, CodingKey {
         case authorID = "author_id"
-        case caption
+        case caption, kind
         case placeName = "place_name"
         case mediaPath = "media_path"
     }
@@ -769,7 +700,7 @@ struct SupabaseProfileRow: Decodable {
         return StudentProfile(
             id: id, name: name, age: age, university: university, department: department,
             year: academicYear, bio: bio, interests: [], imageURL: avatarURL,
-            compatibility: 0, isVerified: isVerified, badge: badge ?? .none, activeLabel: L10n.Profile.matchLabel
+            isVerified: isVerified, badge: badge ?? .none
         )
     }
 
@@ -798,11 +729,15 @@ struct CommentRow: Decodable {
     let postID: UUID
     let authorID: UUID
     let body: String
+    /// Sunucunun tuttuğu net puan; oy satırları artık herkese açık değil.
+    /// `boost` kurucunun eklediği oy; görünen puan ikisinin toplamı.
+    let score: Int?
+    let boost: Int?
     let createdAt: Date
     let author: CommentAuthorRow
 
     enum CodingKeys: String, CodingKey {
-        case id, body, author
+        case id, body, author, score, boost
         case postID = "post_id"
         case authorID = "author_id"
         case createdAt = "created_at"
@@ -810,7 +745,7 @@ struct CommentRow: Decodable {
 
     /// Avatar adresi imzalı olarak dışarıdan veriliyor: imzalama toplu
     /// yapıldığı için satır başına ayrı istek atılmıyor.
-    func backendComment(avatarURL: URL?) -> BackendComment {
+    func backendComment(avatarURL: URL?, voteCount: Int = 0, voted: Bool = false, downvoted: Bool = false, boost: Int = 0) -> BackendComment {
         BackendComment(
             id: id,
             postID: postID,
@@ -818,7 +753,11 @@ struct CommentRow: Decodable {
             authorName: author.name,
             authorAvatarURL: avatarURL,
             body: body,
-            createdAt: createdAt
+            createdAt: createdAt,
+            voteCount: voteCount,
+            voted: voted,
+            downvoted: downvoted,
+            boost: boost
         )
     }
 }
@@ -829,19 +768,30 @@ struct PostRow: Decodable {
     let caption: String
     let placeName: String?
     let mediaPath: String?
+    /// Ham metin: ileride eklenen bir tür bu sürümde düz paylaşım gibi çizilir,
+    /// enum'a çözülemedi diye bütün akış düşmez.
+    let kind: String?
+    /// Sunucunun tuttuğu net oy; `boost` kurucunun eklediği oy; `pinnedAt` sabit.
+    let score: Int?
+    let boost: Int?
+    let pinnedAt: Date?
+    let pinnedSlot: Int?
     let createdAt: Date
     let author: SupabaseProfileRow
     let comments: [CommentRow]
 
     enum CodingKeys: String, CodingKey {
-        case id, caption, author, comments
+        case id, caption, author, comments, kind, score, boost
         case authorID = "author_id"
         case placeName = "place_name"
         case mediaPath = "media_path"
+        case pinnedAt = "pinned_at"
+        case pinnedSlot = "pinned_slot"
         case createdAt = "created_at"
     }
 
-    func backendPost(imageData: Data?, authorAvatarURL: URL?, likeCount: Int, liked: Bool, saved: Bool, badge: ProfileBadge = .none, commentAvatarURLs: [String: URL] = [:], imageURL: URL? = nil) -> BackendPost {
+    /// Puan sunucudan (`score + boost`); oy satırları yalnızca kişinin kendi oyunu söyler.
+    func backendPost(imageData: Data?, authorAvatarURL: URL?, liked: Bool, downvoted: Bool = false, saved: Bool, badge: ProfileBadge = .none, commentAvatarURLs: [String: URL] = [:], imageURL: URL? = nil, commentVotes: [CommentVoteRow] = [], userID: UUID? = nil) -> BackendPost {
         BackendPost(
             id: id,
             authorID: authorID,
@@ -856,16 +806,81 @@ struct PostRow: Decodable {
             authorAvatarURL: authorAvatarURL,
             caption: caption,
             placeName: placeName,
+            kind: kind.flatMap(PostKind.init(rawValue:)) ?? .moment,
             imageData: imageData,
             imageURL: imageURL,
             createdAt: createdAt,
             comments: comments.sorted { $0.createdAt < $1.createdAt }
-                .map { $0.backendComment(avatarURL: $0.author.avatarPath.flatMap { commentAvatarURLs[$0] }) },
-            likeCount: likeCount,
+                .map { comment in
+                    let oylar = commentVotes.filter { $0.commentID == comment.id }
+                    let benim = userID.flatMap { id in oylar.first { $0.userID == id }?.value } ?? 0
+                    return comment.backendComment(
+                        avatarURL: comment.author.avatarPath.flatMap { commentAvatarURLs[$0] },
+                        voteCount: (comment.score ?? 0) + (comment.boost ?? 0),
+                        voted: benim == 1,
+                        downvoted: benim == -1,
+                        boost: comment.boost ?? 0
+                    )
+                },
+            likeCount: (score ?? 0) + (boost ?? 0),
             liked: liked,
-            saved: saved
+            downvoted: downvoted,
+            saved: saved,
+            boost: boost ?? 0,
+            pinnedAt: pinnedAt,
+            pinnedSlot: pinnedSlot
         )
     }
+}
+
+/// Kurucu/moderatörün gördüğü oy veren listesi.
+struct PostVoterRow: Decodable {
+    let id: UUID
+    let name: String
+    let avatarPath: String?
+    let value: Int
+    enum CodingKeys: String, CodingKey {
+        case id, name, value
+        case avatarPath = "avatar_path"
+    }
+}
+
+struct PostVoterParams: Encodable { let target: UUID }
+struct BoostParams: Encodable { let target: UUID; let extra: Int }
+struct PinParams: Encodable { let target: UUID; let slot: Int? }
+
+struct RightSwipeParams: Encodable {
+    let subject: UUID
+}
+
+struct ProfileSwiperRow: Decodable {
+    let id: UUID
+    let name: String
+    let avatarPath: String?
+    let direction: String
+    let swipedAt: Date
+    let isMatched: Bool
+    enum CodingKeys: String, CodingKey {
+        case id, name, direction
+        case avatarPath = "avatar_path"
+        case swipedAt = "swiped_at"
+        case isMatched = "is_matched"
+    }
+}
+
+struct RightSwipeRow: Decodable {
+    let matched: Bool
+    let matchID: UUID?
+
+    enum CodingKeys: String, CodingKey {
+        case matched
+        case matchID = "match_id"
+    }
+}
+
+struct RightSwipeOutcome: Sendable {
+    let matched: Bool
+    let matchID: UUID?
 }
 
 struct UnmatchParams: Encodable {
@@ -921,18 +936,45 @@ struct SavedPostInsert: Encodable {
 struct PostLikeRow: Decodable {
     let postID: UUID
     let userID: UUID
+    /// +1 yukarı, -1 aşağı.
+    let value: Int
     enum CodingKeys: String, CodingKey {
         case postID = "post_id"
         case userID = "user_id"
+        case value
+    }
+}
+
+struct CommentVoteRow: Decodable {
+    let commentID: UUID
+    let userID: UUID
+    let value: Int
+    enum CodingKeys: String, CodingKey {
+        case commentID = "comment_id"
+        case userID = "user_id"
+        case value
+    }
+}
+
+struct CommentVoteInsert: Encodable {
+    let commentID: UUID
+    let userID: UUID
+    let value: Int
+    enum CodingKeys: String, CodingKey {
+        case commentID = "comment_id"
+        case userID = "user_id"
+        case value
     }
 }
 
 struct PostLikeInsert: Encodable {
     let postID: UUID
     let userID: UUID
+    let value: Int
     enum CodingKeys: String, CodingKey {
         case postID = "post_id"
         case userID = "user_id"
+        case value
     }
 }
 
@@ -958,41 +1000,3 @@ struct ExpiredStoryRow: Decodable {
     }
 }
 
-struct AdmirerRow: Decodable {
-    let id: UUID
-    let name: String
-    let birthDate: Date
-    let university: String
-    let department: String
-    let academicYear: String
-    let bio: String
-    let avatarPath: String?
-    let isVerified: Bool
-    let badge: ProfileBadge?
-    let likedAt: Date
-    let isMatched: Bool
-
-    func admirer(avatarURL: URL?) -> Admirer {
-        let age = max(18, Calendar.current.dateComponents([.year], from: birthDate, to: .now).year ?? 18)
-        return Admirer(
-            profile: StudentProfile(
-                id: id, name: name, age: age, university: university, department: department,
-                year: academicYear, bio: bio, interests: [], imageURL: avatarURL,
-                compatibility: 0, isVerified: isVerified, badge: badge ?? .none,
-                activeLabel: L10n.Profile.matchLabel
-            ),
-            likedAt: likedAt,
-            isMatched: isMatched
-        )
-    }
-
-    enum CodingKeys: String, CodingKey {
-        case id, name, university, department, bio, badge
-        case birthDate = "birth_date"
-        case academicYear = "academic_year"
-        case avatarPath = "avatar_path"
-        case isVerified = "is_verified"
-        case likedAt = "liked_at"
-        case isMatched = "is_matched"
-    }
-}

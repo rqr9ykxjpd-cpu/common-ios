@@ -1,0 +1,210 @@
+{
+  "sourceLanguage": "tr",
+  "strings": {
+    "reauthorizeBody": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Common hesabını ve Apple ile giriş iznini birlikte kaldırmak için Apple ile kimliğini doğrula. Doğrulama başarılı olunca hesabın kalıcı olarak silinecek."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify with Apple to remove your Common account and its Sign in with Apple permission together. Your account will be permanently deleted after successful verification."
+          }
+        }
+      }
+    },
+    "subscriptionReminder": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hesap silmek App Store aboneliğini otomatik olarak iptal etmez. Aktif aboneliğini Ayarlar > Apple Hesabı > Abonelikler bölümünden yönetebilirsin."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deleting your account does not automatically cancel an App Store subscription. Manage active subscriptions in Settings > Apple Account > Subscriptions."
+          }
+        }
+      }
+    },
+    "manualBody": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple ile doğrulama yapamıyorsan hesabını yine silebilirsin. Bu durumda Apple ile giriş iznini ayrıca kaldırman gerekir: Ayarlar > adın > Apple ile Giriş Yap > Common (eski adı Bond) > Sil. Apple'ın güncel adımları aşağıdaki bağlantıda."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If you cannot verify with Apple, you can still delete your account. You must then remove its Apple permission yourself: Settings > your name > Sign in with Apple > Common (formerly Bond) > Delete. Apple's current instructions are linked below."
+          }
+        }
+      }
+    },
+    "manualDelete": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple iznini kendim kaldırarak hesabı sil"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete account; I'll remove Apple permission"
+          }
+        }
+      }
+    },
+    "manualConfirmBody": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Common hesabın ve verilerin kalıcı olarak silinecek. Apple ile giriş izni otomatik kaldırılmayacak; bunu Apple hesabı ayarlarından ayrıca yapman gerekecek."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Common account and data will be permanently deleted. Sign in with Apple permission will not be removed automatically; you will need to remove it in your Apple Account settings."
+          }
+        }
+      }
+    },
+    "appleInstructions": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple iznini kaldırma adımları"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple permission removal instructions"
+          }
+        }
+      }
+    },
+    "deletedTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Common hesabın silindi"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Common account was deleted"
+          }
+        }
+      }
+    },
+    "deletedManualBody": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Common hesabın silindi. Apple ile giriş izni otomatik kaldırılmadı. Ayarlar > adın > Apple ile Giriş Yap > Common (eski adı Bond) > Sil yolundan bu izni kaldır. Hesap silmek aktif App Store aboneliğini iptal etmez."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Common account was deleted. Sign in with Apple permission was not removed automatically. Go to Settings > your name > Sign in with Apple > Common (formerly Bond) > Delete to remove it. Account deletion does not cancel an active App Store subscription."
+          }
+        }
+      }
+    },
+    "revokeFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple izni otomatik kaldırılamadı; hesabın henüz silinmedi. Yeniden deneyebilir veya aşağıdaki ayrı onayla hesabını silip Apple iznini kendin kaldırabilirsin."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple permission could not be removed automatically; your account has not been deleted. Try again, or use the separate confirmation below to delete your account and remove Apple permission yourself."
+          }
+        }
+      }
+    },
+    "wrongAppleAccount": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu Apple hesabı açık olan Common hesabına bağlı değil. Doğru Apple hesabıyla yeniden dene. Hiçbir hesap silinmedi."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This Apple Account is not linked to the signed-in Common account. Try again with the correct Apple Account. No account was deleted."
+          }
+        }
+      }
+    },
+    "cancelled": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple doğrulaması iptal edildi. Hesabın silinmedi."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple verification was canceled. Your account was not deleted."
+          }
+        }
+      }
+    },
+    "revokedRetryBody": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple ile giriş izni kaldırıldı ancak Common hesabının silinmesi tamamlanmadı. Hesap silme işlemini yeniden dene."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with Apple permission was removed, but deletion of your Common account did not finish. Retry account deletion."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

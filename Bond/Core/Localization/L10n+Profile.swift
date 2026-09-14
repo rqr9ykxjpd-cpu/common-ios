@@ -13,14 +13,18 @@ extension L10n {
         static var zoomPhoto: String { String(localized: "profile.zoomPhoto") }
         static var statPosts: String { String(localized: "profile.statPosts") }
         static var statVisitors: String { String(localized: "profile.statVisitors") }
+        static var statSaved: String { String(localized: "profile.statSaved") }
         static var edit: String { String(localized: "profile.edit") }
         static var editA11y: String { String(localized: "profile.editA11y") }
+        static var viewCard: String { String(localized: "profile.viewCard") }
         static func completion(_ percent: Int) -> String {
             L10n.format("profile.completion", Int64(percent))
         }
         static var completionHint: String { String(localized: "profile.completionHint") }
         static var about: String { String(localized: "profile.about") }
         static var aboutPlaceholder: String { String(localized: "profile.aboutPlaceholder") }
+        static var aboutOptional: String { String(localized: "profile.aboutOptional") }
+        static var writeAbout: String { String(localized: "profile.writeAbout") }
         static var yourAccount: String { String(localized: "profile.yourAccount") }
         static var cardHow: String { String(localized: "profile.cardHow") }
         static var cardHowHint: String { String(localized: "profile.cardHowHint") }
@@ -35,6 +39,7 @@ extension L10n {
         static var visitorsHint: String { String(localized: "profile.visitorsHint") }
         static var meetings: String { String(localized: "profile.meetings") }
         static var meetingsHint: String { String(localized: "profile.meetingsHint") }
+        static var plusHint: String { String(localized: "profile.plusHint") }
         static var appearanceSection: String { String(localized: "profile.appearanceSection") }
         static var appearance: String { String(localized: "profile.appearance") }
         static var privacy: String { String(localized: "profile.privacy") }
@@ -72,8 +77,6 @@ extension L10n {
         static var firstPostBody: String { String(localized: "profile.firstPostBody") }
         static var shareCta: String { String(localized: "profile.shareCta") }
         static var visibleNowCaps: String { String(localized: "profile.visibleNowCaps") }
-        static var likeSent: String { String(localized: "profile.likeSent") }
-        static var likeHint: String { String(localized: "profile.likeHint") }
         static var sendMessage: String { String(localized: "profile.sendMessage") }
         static var meetHere: String { String(localized: "profile.meetHere") }
         static var requestSent: String { String(localized: "profile.requestSent") }
@@ -95,7 +98,6 @@ extension L10n {
         static var savedButton: String { String(localized: "profile.savedButton") }
         static var needName: String { String(localized: "profile.needName") }
         static var needDepartment: String { String(localized: "profile.needDepartment") }
-        static var needGender: String { String(localized: "profile.needGender") }
         static func needMoreInterests(_ count: Int) -> String {
             L10n.format("profile.needMoreInterests", Int64(count))
         }
@@ -104,6 +106,8 @@ extension L10n {
         static var addGallery: String { String(localized: "profile.addGallery") }
         static var changeGallery: String { String(localized: "profile.changeGallery") }
         static var galleryHint: String { String(localized: "profile.galleryHint") }
+        static var photoOnProfileOnly: String { String(localized: "profile.photoOnProfileOnly") }
+        static var photoAlsoFeed: String { String(localized: "profile.photoAlsoFeed") }
         static var mainPhoto: String { String(localized: "profile.mainPhoto") }
         static var mainPhotoHint: String { String(localized: "profile.mainPhotoHint") }
         static var removePhoto: String { String(localized: "profile.removePhoto") }
@@ -114,8 +118,6 @@ extension L10n {
         static func interestCount(_ count: Int, _ max: Int, _ min: Int) -> String {
             L10n.format("profile.interestCount", Int64(count), Int64(max), Int64(min))
         }
-        static var meetPrefs: String { String(localized: "profile.meetPrefs") }
-        static var genderRequired: String { String(localized: "profile.genderRequired") }
         static var hideLocation: String { String(localized: "profile.hideLocation") }
         static var visiblePlace: String { String(localized: "profile.visiblePlace") }
         static var accountSection: String { String(localized: "profile.accountSection") }
@@ -126,7 +128,6 @@ extension L10n {
         static var lockedFields: String { String(localized: "profile.lockedFields") }
         static var speaksFirst: String { String(localized: "profile.speaksFirst") }
         static var editStory: String { String(localized: "profile.editStory") }
-        static var whoToMeet: String { String(localized: "profile.whoToMeet") }
         static var safety: String { String(localized: "profile.safety") }
         static var signOutCaps: String { String(localized: "profile.signOutCaps") }
         static var premiumEyebrow: String { String(localized: "profile.premiumEyebrow") }
@@ -137,15 +138,5 @@ extension L10n {
         static var photosPartialFail: String { String(localized: "profile.photosPartialFail") }
         static var updated: String { String(localized: "profile.updated") }
         static var visitorsLoadFailed: String { String(localized: "profile.visitorsLoadFailed") }
-        static var matchLabel: String { String(localized: "profile.matchLabel") }
-        static var admirers: String { String(localized: "profile.admirers") }
-        static var admirersHint: String { String(localized: "profile.admirersHint") }
-        static var admirersEmpty: String { String(localized: "profile.admirersEmpty") }
-        static var admirersEmptyHint: String { String(localized: "profile.admirersEmptyHint") }
-        static var admirersLoadFailed: String { String(localized: "profile.admirersLoadFailed") }
-        static var admirersMatched: String { String(localized: "profile.admirersMatched") }
-        static func admirersCount(_ count: Int) -> String {
-            L10n.format("profile.admirersCount", Int64(count))
-        }
     }
 }

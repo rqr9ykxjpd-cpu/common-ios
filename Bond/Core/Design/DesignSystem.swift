@@ -40,7 +40,7 @@ enum BondTheme {
     /// (`violet`); bağlantı rengi değil, dekoratif kullanılıyor.
     static let violet = adaptive(light: "1D1D1F", dark: "F5F5F7")
 
-    /// Her zaman koyu kalan yüzeylerde (Tanış kartı, story, eşleşme anı) vurgu.
+    /// Her zaman koyu kalan yüzeylerde (story, koyu kaplamalar) vurgu.
     ///
     /// O ekranlar sistem renk şemasını zorlamıyor ama zeminleri siyah. `acid`
     /// oralarda açık mod değerine düşüp siyah üstünde siyah kalıyordu.
@@ -51,6 +51,20 @@ enum BondTheme {
     /// rengi gören kurucu profiline baktığını bilir. Eskiden terracotta/turuncuydu;
     /// kuruculuk daha keskin dursun diye net kırmızıya alındı.
     static let ember = adaptive(light: "D70015", dark: "FF453A")
+    /// Seyrek, editoryal vurgu. Ana CTA veya durum rengi değil; el yazısı gibi
+    /// karakter anlarında kullanılır. Siyah-beyaz kimliği bozmayan koyu turuncu.
+    static let burntOrange = adaptive(light: "C45A18", dark: "E47A32")
+
+    /// Gönderi türü renkleri — anlam taşıyan tek renk kullanımı. Rozette %12
+    /// zemin + tam ton yazı; başka yerde kullanılmaz ki siyah-beyaz kimlik kalsın.
+    static let tintQuestion = adaptive(light: "2563EB", dark: "60A5FA")
+    static let tintAnnouncement = burntOrange
+    static let tintNotes = adaptive(light: "15803D", dark: "4ADE80")
+    /// ▲ etkin oy: Reddit'in turuncusuna selam; sistemdeki editoryal vurguyla aynı ton.
+    static let upvote = burntOrange
+    /// Rozet kataloğunun renkleri `PostKind` içinde tanımlı; oradan bu köprüyle
+    /// açık/koyu çifti üretilir. Başka yerde kullanılmaz.
+    static func badgeTint(light: String, dark: String) -> Color { adaptive(light: light, dark: dark) }
 
     static let line = Color.white.opacity(0.18)
     /// Liste ayırıcı. Kart ve yüzeylerde kullanılmaz; secondary düğme ve List için.
@@ -76,6 +90,15 @@ enum BondTheme {
     enum Motion {
         static let duration: Double = 0.2
         static var easing: Animation { .easeOut(duration: duration) }
+
+        /// Hızlı, neredeyse sekmesiz: düğme basma, durum değişimi, seçim.
+        static var snappy: Animation { .snappy(duration: 0.22, extraBounce: 0) }
+        /// Belirgin sekmeli: onay anı, başarı, bir şeyin belirmesi.
+        static var bouncy: Animation { .bouncy(duration: 0.42, extraBounce: 0.1) }
+        /// Sekmesiz ve yumuşak: solma, kayma, içerik değişimi.
+        static var smooth: Animation { .smooth(duration: 0.3) }
+        /// Sürükle-bırak ve sheet kapatma gibi parmağı takip eden hareketler.
+        static var interactive: Animation { .interactiveSpring(response: 0.3, dampingFraction: 0.9) }
     }
 
     /// Sabit punto; sistem metin boyutu ayarıyla büyümez.
@@ -217,6 +240,7 @@ enum NavigationBarStyle {
 /// akış günde onlarca kez açılan bir ekran, sürekli dönen bir şey orada
 /// gürültü olurdu.
 struct Wordmark: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var compact = false
 
     @State private var belirdi = false
@@ -229,10 +253,10 @@ struct Wordmark: View {
         HStack(spacing: 0) {
             ForEach(harfler, id: \.index) { harf in
                 Text(String(harf.karakter))
-                    .opacity(belirdi ? 1 : 0)
-                    .offset(y: belirdi ? 0 : 7)
-                    .blur(radius: belirdi ? 0 : 3)
-                    .animation(.smooth(duration: 0.42).delay(Double(harf.index) * 0.055),
+                    .opacity(belirdi || reduceMotion ? 1 : 0)
+                    .offset(y: belirdi || reduceMotion ? 0 : 7)
+                    .blur(radius: belirdi || reduceMotion ? 0 : 3)
+                    .animation(reduceMotion ? nil : .smooth(duration: 0.42).delay(Double(harf.index) * 0.055),
                                value: belirdi)
             }
         }
@@ -266,11 +290,15 @@ struct GrainOverlay: View {
     }
 }
 
+/// Eski basma stili; 25 yerde kullanılıyor. Gövdesi artık `PressableButtonStyle`
+/// ile aynı — tek yerden aynı his. Yeni kodda `.pressable` yaz.
 struct PressableStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .opacity(configuration.isPressed ? 0.55 : 1)
-            .animation(BondTheme.Motion.easing, value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.98 : 1)
+            .opacity(configuration.isPressed ? 0.82 : 1)
+            .animation(reduceMotion ? nil : BondTheme.Motion.snappy, value: configuration.isPressed)
     }
 }
 
@@ -429,6 +457,104 @@ struct AppEmptyState: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, BondTheme.Space.xxl)
         .padding(.horizontal, BondTheme.Space.lg)
+    }
+}
+
+/// Basınca hafifçe küçülüp solar, bırakınca spring ile geri gelir.
+///
+/// Uygulamadaki dokunulabilir kartlar ve düğmeler için tek basma tepkisi.
+/// `.plain` düğmelerde hiç tepki yoktu; `.bordered` olanlarda sistemin
+/// gri vurgusu vardı ve karta oturmuyordu. Reduce Motion açıkken ölçek
+/// değişmez, yalnızca solma kalır.
+struct PressableButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var scale: CGFloat = 0.98
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed && !reduceMotion ? scale : 1)
+            .opacity(configuration.isPressed ? 0.82 : 1)
+            .animation(reduceMotion ? nil : BondTheme.Motion.snappy, value: configuration.isPressed)
+    }
+}
+
+extension ButtonStyle where Self == PressableButtonStyle {
+    /// `Button { } label: { }.buttonStyle(.pressable)`
+    static var pressable: PressableButtonStyle { PressableButtonStyle() }
+    /// Büyük kartlar için daha az ölçek; 0.97 tam ekran bir kartta fazla oynuyor.
+    static var pressableCard: PressableButtonStyle { PressableButtonStyle(scale: 0.99) }
+}
+
+/// İçerik gelene kadar onun şeklini gösteren, üstünden ışık geçen yer tutucu.
+///
+/// Dönen `ProgressView` ekranın ne olacağını söylemiyordu; iskelet, satırların
+/// nerede belireceğini önceden gösterir ve yükleme kısa hissettirir.
+struct Skeleton: View {
+    var height: CGFloat = 16
+    var cornerRadius: CGFloat = 8
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var sweeping = false
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(BondTheme.surface)
+            .frame(height: height)
+            .overlay {
+                GeometryReader { geo in
+                    LinearGradient(
+                        colors: [.clear, BondTheme.paper.opacity(0.55), .clear],
+                        startPoint: .leading, endPoint: .trailing
+                    )
+                    .frame(width: geo.size.width * 0.6)
+                    .offset(x: sweeping ? geo.size.width : -geo.size.width * 0.6)
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .onAppear {
+                guard !reduceMotion else { return }
+                withAnimation(.linear(duration: 1.1).repeatForever(autoreverses: false)) {
+                    sweeping = true
+                }
+            }
+            .accessibilityHidden(true)
+    }
+}
+
+/// Bir satır kartın iskeleti: soldaki daire avatar, sağda iki satır metin.
+struct SkeletonRow: View {
+    var body: some View {
+        HStack(spacing: BondTheme.Space.md) {
+            Skeleton(height: 44, cornerRadius: 22).frame(width: 44)
+            VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
+                Skeleton(height: 14).frame(maxWidth: 160)
+                Skeleton(height: 12).frame(maxWidth: 100)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, BondTheme.Space.sm)
+    }
+}
+
+/// `matchedTransitionSource`, ad alanı olmayan çağrı yerlerinde de derlensin diye.
+///
+/// Akıştaki avatar zoom kaynağı; aynı kart bildirimden ya da sohbetten açılınca
+/// kaynak yok. Ad alanı `nil` ise hiçbir şey eklenmez, sheet normal açılır.
+struct ZoomSourceIfAvailable: ViewModifier {
+    let id: AnyHashable
+    let namespace: Namespace.ID?
+
+    func body(content: Content) -> some View {
+        if let namespace {
+            content.matchedTransitionSource(id: id, in: namespace)
+        } else {
+            content
+        }
+    }
+}
+
+extension View {
+    func zoomSource(id: some Hashable, in namespace: Namespace.ID?) -> some View {
+        modifier(ZoomSourceIfAvailable(id: AnyHashable(id), namespace: namespace))
     }
 }
 

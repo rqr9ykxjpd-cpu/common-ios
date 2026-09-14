@@ -3,6 +3,7 @@ import Foundation
 /// Kampüs paylaşım tavanları. Sunucu da aynı sayıyı keser.
 enum CampusLimits {
     static let maxPostsPerUser = 5
+    static let maxGalleryPhotos = 5
 }
 
 struct BackendComment: Sendable {
@@ -15,6 +16,35 @@ struct BackendComment: Sendable {
     let authorAvatarURL: URL?
     let body: String
     let createdAt: Date
+    /// Cevap oyları (comment_votes). Sıralama ve "en iyi cevap" buna bakar.
+    var voteCount: Int = 0
+    var voted: Bool = false
+    var downvoted: Bool = false
+    /// Kurucunun eklediği oy; `voteCount` içinde sayılır, "geri al" için ayrı tutulur.
+    var boost: Int = 0
+}
+
+/// Kurucunun kartını kaydıran (yalnızca kurucu görür).
+struct ProfileSwiper: Identifiable, Hashable, Sendable {
+    let id: UUID
+    let name: String
+    let avatarURL: URL?
+    /// true = sağa (bağlanmak istedi), false = sola (geçti).
+    let swipedRight: Bool
+    let swipedAt: Date
+    let isMatched: Bool
+    var avatarAssetName: String? = nil
+}
+
+/// Oy veren (yalnızca kurucu/moderatör görür).
+struct PostVoter: Identifiable, Hashable, Sendable {
+    let id: UUID
+    let name: String
+    let avatarURL: URL?
+    /// +1 / -1
+    let value: Int
+    /// Örnek veri için paket içi görsel.
+    var avatarAssetName: String? = nil
 }
 
 struct BackendPost: Sendable {
@@ -31,14 +61,23 @@ struct BackendPost: Sendable {
     let authorAvatarURL: URL?
     let caption: String
     let placeName: String?
+    /// Gönderi türü; sunucu 'moment' varsayar.
+    let kind: PostKind
     let imageData: Data?
     /// İmzalı storage URL. Profil grid'inde indirme beklemeden göstermek için.
     let imageURL: URL?
     let createdAt: Date
     let comments: [BackendComment]
+    /// Net puan: yukarı oylar eksi aşağı oylar.
     let likeCount: Int
     let liked: Bool
+    let downvoted: Bool
     let saved: Bool
+    /// Kurucunun eklediği oy (puana dahil) ve sabitlenme zamanı.
+    let boost: Int
+    let pinnedAt: Date?
+    /// Sabit sırası (1 = en üst); nil = sabit değil.
+    let pinnedSlot: Int?
 
     init(
         id: UUID,
@@ -54,13 +93,18 @@ struct BackendPost: Sendable {
         authorAvatarURL: URL?,
         caption: String,
         placeName: String?,
+        kind: PostKind = .moment,
         imageData: Data?,
         imageURL: URL? = nil,
         createdAt: Date,
         comments: [BackendComment],
         likeCount: Int,
         liked: Bool,
-        saved: Bool
+        downvoted: Bool = false,
+        saved: Bool,
+        boost: Int = 0,
+        pinnedAt: Date? = nil,
+        pinnedSlot: Int? = nil
     ) {
         self.id = id
         self.authorID = authorID
@@ -75,21 +119,26 @@ struct BackendPost: Sendable {
         self.authorAvatarURL = authorAvatarURL
         self.caption = caption
         self.placeName = placeName
+        self.kind = kind
         self.imageData = imageData
         self.imageURL = imageURL
         self.createdAt = createdAt
         self.comments = comments
         self.likeCount = likeCount
         self.liked = liked
+        self.downvoted = downvoted
         self.saved = saved
+        self.boost = boost
+        self.pinnedAt = pinnedAt
+        self.pinnedSlot = pinnedSlot
     }
 }
 
 enum BackendServiceError: LocalizedError {
     case missingConfiguration
     case missingSession
-    case incompleteProfile
     case postLimit
+    case galleryFull
 
     var errorDescription: String? {
         switch self {
@@ -97,10 +146,10 @@ enum BackendServiceError: LocalizedError {
             L10n.Errors.configMissing
         case .missingSession:
             L10n.Errors.missingSession
-        case .incompleteProfile:
-            L10n.Errors.incompleteProfile
         case .postLimit:
             L10n.Composer.postLimit(CampusLimits.maxPostsPerUser)
+        case .galleryFull:
+            L10n.Composer.galleryFull
         }
     }
 }

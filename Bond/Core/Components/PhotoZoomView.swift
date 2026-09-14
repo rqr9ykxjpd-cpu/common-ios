@@ -3,8 +3,7 @@ import SwiftUI
 /// Profil fotoğrafının tam ekran hali.
 ///
 /// Küçük yuvarlak avatardan fotoğrafın gerçekte nasıl göründüğü anlaşılmıyordu.
-/// Koyu zemin ve tek dokunuşla kapanma: bir fotoğrafa bakmak için ayrı bir
-/// gezinme yapısına gerek yok.
+/// Kapatma düğmesi ayrı tutulur; tekrar deneme fotoğrafı kapatmamalı.
 struct PhotoZoomView: View {
     let url: URL?
     let data: Data?
@@ -14,7 +13,7 @@ struct PhotoZoomView: View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            ProfileMedia(url: url, data: data)
+            ProfileMedia(url: url, data: data, kind: .content, showsRetry: true, contentMode: .fit)
                 .aspectRatio(contentMode: .fit)
                 .padding(.horizontal, 8)
 
@@ -36,7 +35,6 @@ struct PhotoZoomView: View {
             .padding(20)
         }
         .contentShape(Rectangle())
-        .onTapGesture { dismiss() }
         .preferredColorScheme(.dark)
     }
 }

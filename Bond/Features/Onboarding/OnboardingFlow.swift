@@ -23,7 +23,6 @@ struct OnboardingFlow: View {
                 Group {
                     switch step {
                     case .identity: IdentityStep(draft: $appState.draft) { appState.advance(from: step) }
-                    case .preferences: PreferencesStep(draft: $appState.draft) { appState.advance(from: step) }
                     case .interests: InterestsStep(draft: $appState.draft) { appState.advance(from: step) }
                     case .photo: PhotoStep(avatarData: $appState.avatarData) { appState.advance(from: step) }
                     case .ready:
@@ -148,54 +147,6 @@ private struct IdentityStep: View {
             },
             footer: PrimaryEditorialButton(title: L10n.Common.continue_, enabled: valid, action: submit)
         )
-    }
-}
-
-private struct PreferencesStep: View {
-    @Binding var draft: ProfileDraft
-    let submit: () -> Void
-
-    private var valid: Bool { draft.gender != nil }
-
-    var body: some View {
-        StepScaffold(
-            eyebrow: L10n.Onboarding.preferencesEyebrow,
-            title: L10n.Onboarding.preferencesTitle,
-            subtitle: L10n.Onboarding.preferencesSubtitle,
-            content: VStack(alignment: .leading, spacing: BondTheme.Space.xxl) {
-                choiceSection(title: L10n.Onboarding.yourGender) {
-                    ForEach(ProfileGender.allCases) { option in
-                        choiceButton(option.title, selected: draft.gender == option) {
-                            draft.gender = option
-                        }
-                    }
-                }
-            },
-            footer: PrimaryEditorialButton(title: L10n.Common.continue_, enabled: valid, action: submit)
-        )
-    }
-
-    private func choiceSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
-            Eyebrow(text: title)
-            HStack(spacing: BondTheme.Space.sm) { content() }
-        }
-    }
-
-    private func choiceButton(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
-        Button {
-            Haptics.selection()
-            action()
-        } label: {
-            Text(title)
-                .font(BondTheme.Typography.callout.weight(.semibold))
-                .foregroundStyle(selected ? BondTheme.onAccent : BondTheme.ink)
-                .frame(maxWidth: .infinity)
-                .frame(minHeight: 48)
-                .background(selected ? BondTheme.acid : BondTheme.surface, in: Capsule())
-        }
-        .buttonStyle(PressableStyle())
-        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 
@@ -331,7 +282,7 @@ private struct OnboardingField: View {
 }
 
 /// Kayıt akışında fotoğraf adımı. Bu adım yokken kullanıcı kaydını fotoğrafsız
-/// tamamlayabiliyordu; Tanış'ta gri bir kartla görünüyor, kimse beğenmiyor ve
+/// tamamlayabiliyordu; İnsanlar listesinde gri bir kartla görünüyor ve
 /// uygulamanın boş olduğunu düşünüyordu.
 private struct PhotoStep: View {
     @Environment(AppState.self) private var appState

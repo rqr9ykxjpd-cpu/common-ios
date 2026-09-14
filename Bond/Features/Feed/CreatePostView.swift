@@ -18,6 +18,11 @@ struct CreatePostView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
     @State private var contentType: ComposerContentType
+    /// Gönderi türü (rozet); story'de anlamı yok.
+    @State private var kind: PostKind
+    @State private var showBadgeCatalog = false
+    /// Rozetsiz "Paylaş"a basılınca çıkan el yazısı not.
+    @State private var showBadgeHint = false
     @State private var selectedItem: PhotosPickerItem?
     @State private var imageData: Data?
     @State private var videoClip: VideoCompression.PreparedClip?
@@ -29,9 +34,11 @@ struct CreatePostView: View {
     @State private var isPublishing = false
     @State private var isPreparingMedia = false
     @State private var myPostCount = 0
+    @State private var addToProfile = false
 
-    init(initialContentType: Int = 0) {
+    init(initialContentType: Int = 0, initialKind: PostKind = .moment) {
         _contentType = State(initialValue: ComposerContentType(rawValue: initialContentType) ?? .post)
+        _kind = State(initialValue: initialKind)
     }
 
     private var isStory: Bool { contentType == .story }
@@ -48,45 +55,30 @@ struct CreatePostView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                (isStory ? Color.black : BondTheme.paper).ignoresSafeArea()
-                ScrollView {
-                    // Önceden beş bölüm vardı ve dördü (Kamera, Galeri, açıklama, yer)
-                    // birebir aynı yuvarlak kutuydu — hiçbiri öne çıkmıyordu. Ayrıca
-                    // tür seçici en alttaydı: ne paylaştığını yazdıktan SONRA seçiyordun,
-                    // oysa tür ekranın tamamını değiştiriyor.
-                    VStack(alignment: .leading, spacing: BondTheme.Space.lg) {
-                        turSecici       // ne paylaştığın: ekranın tamamını değiştiriyor
-                        preview         // fotoğraf / story videosu: ekranın kahramanı
-                        captionField    // kutusuz, doğrudan sayfada
-                        placeChip       // küçük bir ayrıntı, tam genişlik kutu değil
-                        if atPostLimit {
-                            Text(L10n.Composer.postLimit(CampusLimits.maxPostsPerUser))
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundStyle(BondTheme.muted)
-                        }
-                    }
-                    .padding(.horizontal, BondTheme.Space.lg)
-                    .padding(.top, BondTheme.Space.sm)
-                    .padding(.bottom, 120)
-                }
-            }
-            .foregroundStyle(isStory ? .white : BondTheme.ink)
+            composerForm
             .scrollDismissesKeyboard(.interactively)
             .dismissesKeyboardOnTap()
             .keyboardDoneButton()
             .navigationTitle(isStory ? L10n.Composer.shareStory : L10n.Composer.sharePost)
             .navigationBarTitleDisplayMode(.inline)
-            // Story modunda zemin siyah; bar'ı elle boyamak yerine sisteme
-            // hangi şemada olduğunu söylüyoruz, materyalini ona göre seçiyor.
-            .toolbarColorScheme(isStory ? .dark : .light, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(L10n.Common.close) { dismiss() }
                         .disabled(isPublishing || isPreparingMedia)
                 }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(atPostLimit ? L10n.Paywall.goPlus : (isStory ? L10n.Composer.publishStory : L10n.Composer.publishPost)) {
+                        publish()
+                    }
+                    .disabled(!canPublish || isPublishing)
+                }
             }
-            .safeAreaInset(edge: .bottom, spacing: 0) { bottomControls }
+            .sheet(isPresented: $showBadgeCatalog) {
+                BadgeCatalogSheet(selection: kindSelection)
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+                    .presentationCornerRadius(28)
+            }
             .sheet(isPresented: $showCamera) {
                 CameraPicker(allowsVideo: isStory, onImage: consumeCameraPhoto, onVideo: consumeCameraVideo)
                     .ignoresSafeArea()
@@ -117,13 +109,23 @@ struct CreatePostView: View {
                     imageData = nil
                     selectedItem = nil
                 }
+                if type == .story {
+                    addToProfile = false
+                } else if imageData != nil {
+                    addToProfile = !appState.isGalleryFull
+                }
+            }
+            .onChange(of: imageData) { _, data in
+                if data == nil || isStory {
+                    addToProfile = false
+                } else {
+                    addToProfile = !appState.isGalleryFull
+                }
             }
             .task {
                 myPostCount = await appState.countMyPosts()
             }
         }
-        // Story her zaman koyu zeminde; normal gönderi ekranı kullanıcının seçtiği görünümü izler.
-        .preferredColorScheme(isStory ? .dark : nil)
     }
 
     /// Kamerayı açmadan önce izin durumuna bakıyoruz: redde boş picker
@@ -167,157 +169,142 @@ struct CreatePostView: View {
         }
     }
 
-    /// Kapatma ve tür seçimi. Tür yukarıda, çünkü ekranın tamamını o belirliyor:
-    /// story koyu zeminde ve fotoğraf zorunlu, gönderi açık zeminde ve metin yeterli.
-    /// Kapat düğmesi native bar'a taşındı; burada yalnızca tür seçici kaldı.
-    private var turSecici: some View {
-        HStack(spacing: BondTheme.Space.md) {
-            HStack(spacing: 4) {
-                ForEach(ComposerContentType.allCases) { type in
-                    Button {
-                        withAnimation(.snappy) { contentType = type }
-                        Haptics.selection()
-                    } label: {
-                        Text(type.title)
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(contentType == type ? BondTheme.ink : (isStory ? .white.opacity(0.65) : BondTheme.muted))
-                            .frame(maxWidth: .infinity).frame(height: 36)
-                            .background(contentType == type ? BondTheme.paper : .clear, in: Capsule())
+    /// Tür seçici Form'un dışında: Form bölümü çipleri kendi yuvarlak kutusuna
+    /// kırpıyor, sıra kenardan kenara kayamıyordu.
+    private var composerForm: some View {
+        VStack(spacing: 0) {
+            if !isStory {
+                VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
+                    Text(L10n.PostKind.pickerTitle)
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(BondTheme.muted)
+                        .padding(.horizontal, BondTheme.Space.lg)
+                    PostKindChipRow(selection: kindSelection, kinds: PostKind.featured) {
+                        MoreBadgesChip { showBadgeCatalog = true }
                     }
-                    .buttonStyle(PressableStyle())
+                    if showBadgeHint {
+                        PickBadgeHint()
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+                }
+                .animation(BondTheme.Motion.bouncy, value: showBadgeHint)
+                .sensoryFeedback(.warning, trigger: showBadgeHint) { _, yeni in yeni }
+                .padding(.top, BondTheme.Space.md)
+                .padding(.bottom, BondTheme.Space.xs)
+            }
+            composerFields
+        }
+        .background(Color(uiColor: .systemGroupedBackground))
+    }
+
+    private var composerFields: some View {
+        Form {
+            // Reddit modeli: yazı önde, fotoğraf yanında — her türde. Story'de
+            // fotoğraf zorunlu olduğu için orada önce fotoğraf.
+            if !isStory {
+                captionSection
+            }
+            Section {
+                preview
+                Button(action: openCamera) {
+                    Label(L10n.Composer.takePhoto, systemImage: "camera")
+                }
+                .disabled(isPreparingMedia || isPublishing)
+            }
+            if !isStory, imageData != nil {
+                Section {
+                    Button {
+                        addToProfile.toggle()
+                    } label: {
+                        Label(
+                            addToProfile ? L10n.Composer.addedToProfile : L10n.Composer.addToProfile,
+                            systemImage: addToProfile ? "checkmark.circle.fill" : "plus.circle"
+                        )
+                    }
+                    .disabled(appState.isGalleryFull || isPublishing || isPreparingMedia)
+                    .accessibilityIdentifier("composer.addToProfile")
+                    .accessibilityValue(addToProfile ? L10n.Common.on : L10n.Common.off)
+                } footer: {
+                    Text(appState.isGalleryFull ? L10n.Composer.galleryFull : L10n.Composer.addToProfileFooter)
                 }
             }
-            .padding(3)
-            .background(controlBackground, in: Capsule())
-            .overlay(Capsule().stroke(controlStroke))
-            .frame(maxWidth: 220)
-
-            Spacer(minLength: 0)
+            if isStory {
+                captionSection
+            }
+            Section {
+                Picker(L10n.Composer.addPlace, selection: $selectedPlace) {
+                    Text(L10n.Composer.noPlace).tag(CampusPlace?.none)
+                    ForEach(appState.places) { place in
+                        Text(L10n.Composer.placeOption(place.name, place.area)).tag(Optional(place))
+                    }
+                }
+            }
+            if atPostLimit {
+                Section {
+                    Text(L10n.Composer.postLimit(CampusLimits.maxPostsPerUser))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
     }
 
-    /// Fotoğraf ekranın kahramanı: dokununca galeri açılıyor, köşedeki küçük düğme
-    /// kamerayı açıyor. Önceden altta iki ayrı tam genişlik düğme vardı ("Kamera",
-    /// "Galeri") ve fotoğraf seçildikten sonra da yer kaplamaya devam ediyorlardı.
+    private var captionSection: some View {
+        Section {
+            TextField(isStory ? L10n.Composer.storyPlaceholder : kind.placeholder, text: $caption, axis: .vertical)
+                .lineLimit(3...8)
+        }
+    }
+
+    /// Çip sırası `PostKind?` ister; composer'da nil = rozet seçilmemiş (`.moment`).
+    private var kindSelection: Binding<PostKind?> {
+        Binding(
+            get: { kind == .moment ? nil : kind },
+            set: { yeni in
+                kind = yeni ?? .moment
+                if kind != .moment { showBadgeHint = false }
+            }
+        )
+    }
+
+    /// Fotoğrafa dokununca galeri açılıyor; kamera Form satırında.
     private var preview: some View {
         // Değerler kapanışa girmeden önce yerel değişkene alınıyor: `PhotosPicker`'ın
         // etiketi Sendable bir kapanış ve oradan doğrudan özellik okumak uyarı üretiyor.
         let currentImage = imageData
         let story = isStory
-        let background = controlBackground
         let video = videoClip != nil
         let preparing = isPreparingMedia
         let filter: PHPickerFilter = story ? .any(of: [.images, .videos]) : .images
 
-        return ZStack(alignment: .bottomTrailing) {
-            PhotosPicker(selection: $selectedItem, matching: filter) {
-                ComposerPreview(
-                    imageData: currentImage,
-                    isStory: story,
-                    background: background,
-                    isVideo: video,
-                    isPreparing: preparing
-                )
-            }
-            .buttonStyle(PressableStyle())
-            .disabled(isPreparingMedia || isPublishing)
-            .accessibilityLabel(
-                imageData == nil
-                    ? (story ? L10n.Composer.pickStoryPhoto : L10n.Composer.pickFromLibrary)
-                    : L10n.Composer.changePhoto
+        return PhotosPicker(selection: $selectedItem, matching: filter) {
+            ComposerPreview(
+                imageData: currentImage,
+                isStory: story,
+                isVideo: video,
+                isPreparing: preparing
             )
-
-            Button(action: openCamera) {
-                Image(systemName: "camera.fill")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(BondTheme.ink)
-                    .frame(width: 44, height: 44)
-                    .background(BondTheme.paper, in: Circle())
-                    .overlay(Circle().stroke(BondTheme.ink.opacity(0.12)))
-                    .shadow(color: .black.opacity(0.15), radius: 8, y: 3)
-            }
-            .buttonStyle(PressableStyle())
-            .disabled(isPreparingMedia || isPublishing)
-            .padding(14)
-            .accessibilityLabel(L10n.Composer.takePhoto)
         }
+        .buttonStyle(PressableStyle())
+        .disabled(isPreparingMedia || isPublishing)
+        .accessibilityLabel(
+            imageData == nil
+                ? (story ? L10n.Composer.pickStoryPhoto : L10n.Composer.pickFromLibrary)
+                : L10n.Composer.changePhoto
+        )
         .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous).stroke(controlStroke))
-        .animation(.snappy, value: contentType)
+        .overlay(RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous).stroke(BondTheme.hairline))
     }
-
-
-    /// Kutusuz. Önceden çerçeveli bir kutuydu ve altındaki "yer" kutusuyla,
-    /// üstündeki kaynak düğmeleriyle aynı görünüyordu; hangisinin asıl alan olduğu
-    /// anlaşılmıyordu. Yazı doğrudan sayfada.
-    private var captionField: some View {
-        // İpucu metnini sistemin varsayılanına bırakmıyoruz: story modunda zemin
-        // siyah ve varsayılan gri neredeyse okunmuyordu.
-        TextField("", text: $caption, axis: .vertical)
-            .font(.system(size: 17))
-            .lineSpacing(3)
-            .lineLimit(3...8)
-            .textFieldStyle(.plain)
-            .padding(.horizontal, 2)
-            .overlay(alignment: .topLeading) {
-                if caption.isEmpty {
-                    Text(isStory ? L10n.Composer.storyPlaceholder : L10n.Composer.postPlaceholder)
-                        .font(.system(size: 17))
-                        .foregroundStyle(isStory ? .white.opacity(0.55) : BondTheme.muted)
-                        .padding(.horizontal, 2)
-                        .allowsHitTesting(false)
-                }
-            }
-    }
-
-    /// Küçük bir çip. Yer isteğe bağlı bir ayrıntı; tam genişlik bir kutuyu hak etmiyor.
-    private var placeChip: some View {
-        Menu {
-            Button(L10n.Composer.noPlace) { selectedPlace = nil }
-            ForEach(appState.places) { place in
-                Button(L10n.Composer.placeOption(place.name, place.area)) { selectedPlace = place }
-            }
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: selectedPlace == nil ? "mappin" : "mappin.circle.fill")
-                    .font(.system(size: 13, weight: .semibold))
-                Text(selectedPlace?.name ?? L10n.Composer.addPlace)
-                    .font(.system(size: 13, weight: .semibold))
-                    .lineLimit(1)
-            }
-            .foregroundStyle(selectedPlace == nil ? (isStory ? .white.opacity(0.7) : BondTheme.muted) : BondTheme.violet)
-            .padding(.horizontal, 13)
-            .frame(height: 38)
-            .background(controlBackground, in: Capsule())
-            .overlay(Capsule().stroke(controlStroke))
-        }
-    }
-
-    private var bottomControls: some View {
-        // Tür seçici yukarı taşındı; burada yalnızca asıl eylem kalıyor.
-        AppButton(
-            title: isPublishing
-                ? L10n.Common.sending
-                : (atPostLimit
-                   ? L10n.Paywall.goPlus
-                   : (isStory ? L10n.Composer.publishStory : L10n.Composer.publishPost)),
-            systemName: isPublishing ? nil : (atPostLimit ? "lock.fill" : "arrow.up"),
-            role: isStory ? .accent : .primary,
-            enabled: canPublish && !isPublishing
-        ) { publish() }
-        .padding(.horizontal, BondTheme.Space.lg)
-        .padding(.top, BondTheme.Space.md)
-        .padding(.bottom, BondTheme.Space.sm)
-        .background(.ultraThinMaterial)
-    }
-
-    private var controlBackground: Color { isStory ? .white.opacity(0.11) : BondTheme.surface }
-    private var controlStroke: Color { isStory ? .white.opacity(0.18) : BondTheme.hairline }
 
     /// Başarı toast'ı yükleme bitmeden çıkıyordu; kullanıcı kapatınca hata
     /// arkada kalıyordu. Önce sunucuya yazıyoruz, sonra kapatıyoruz.
     private func publish() {
         guard canPublish, !isPublishing else { return }
+        // Rozet zorunlu: seçilmemişse gönderme, çiplerin altında el yazısıyla göster.
+        if !isStory, kind == .moment {
+            showBadgeHint = true
+            return
+        }
         if atPostLimit {
             appState.quotaHit = .posts
             appState.paywallVisible = true
@@ -343,7 +330,10 @@ struct CreatePostView: View {
                 }
                 ok = await appState.publishStory(upload, caption: cleanCaption, place: selectedPlace)
             } else {
-                ok = await appState.publishPost(imageData: imageData, caption: cleanCaption, place: selectedPlace)
+                ok = await appState.publishPost(imageData: imageData, caption: cleanCaption, place: selectedPlace, kind: kind)
+                if ok, addToProfile, let imageData {
+                    _ = await appState.appendGalleryPhoto(imageData)
+                }
             }
             isPublishing = false
             if ok || appState.paywallVisible { dismiss() }
@@ -515,9 +505,9 @@ private struct CameraPicker: UIViewControllerRepresentable {
 private struct ComposerPreview: View {
     let imageData: Data?
     let isStory: Bool
-    let background: Color
     var isVideo: Bool = false
     var isPreparing: Bool = false
+    @State private var preview: UIImage?
 
     /// Uç oranlar sınırlanıyor: panorama şeride, çok uzun ekran görüntüsü de bütün
     /// ekranı kaplayan bir sütuna dönüşmesin. Üst sınır 1.34, çünkü telefonun kendi
@@ -528,14 +518,19 @@ private struct ComposerPreview: View {
         return width * min(max(size.height / size.width, 0.524), 1.34)
     }
 
+    private var previewID: String {
+        guard let imageData else { return "empty" }
+        return "\(imageData.count)-\(imageData.first ?? 0)-\(imageData.last ?? 0)"
+    }
+
     var body: some View {
         ZStack {
-            if let imageData, let image = UIImage(data: imageData) {
-                Image(uiImage: image)
+            if let preview {
+                Image(uiImage: preview)
                     .resizable()
                     .scaledToFill()
                     .frame(maxWidth: .infinity)
-                    .frame(height: height(for: image.size))
+                    .frame(height: height(for: preview.size))
                     .clipped()
                     .overlay {
                         if isVideo {
@@ -548,17 +543,18 @@ private struct ComposerPreview: View {
                     }
             } else {
                 RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous)
-                    .fill(background)
-                    .frame(height: isStory ? 420 : 260)
+                    .fill(BondTheme.surface)
+                    .frame(height: 260)
                     .overlay {
                         VStack(spacing: BondTheme.Space.sm) {
-                            Image(systemName: isStory ? "photo.badge.plus" : "photo.badge.plus").font(.system(size: 32, weight: .light))
+                            Image(systemName: "photo.badge.plus").font(.system(size: 32, weight: .light))
                             Text(isStory ? L10n.Composer.pickStoryPhoto : L10n.Composer.addPhoto)
                                 .font(.system(size: 16, weight: .semibold))
                             Text(isStory ? L10n.Composer.storyNeedsPhoto : L10n.Composer.textOnlyOk)
-                                .font(.system(size: 12)).opacity(0.55)
+                                .font(.system(size: 12))
+                                .foregroundStyle(.secondary)
                         }
-                        .foregroundStyle(isStory ? .white : BondTheme.ink)
+                        .foregroundStyle(BondTheme.ink)
                     }
             }
 
@@ -567,6 +563,13 @@ private struct ComposerPreview: View {
                 ProgressView()
                     .tint(.white)
                     .scaleEffect(1.15)
+            }
+        }
+        .onChange(of: previewID, initial: true) { _, id in
+            if let imageData, id != "empty" {
+                preview = ImageCompression.imageForDisplay(imageData)
+            } else {
+                preview = nil
             }
         }
     }

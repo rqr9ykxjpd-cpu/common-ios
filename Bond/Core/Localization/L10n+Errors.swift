@@ -5,7 +5,6 @@ extension L10n {
         static var title: String { String(localized: "error.title") }
         static var configMissing: String { String(localized: "error.configMissing") }
         static var missingSession: String { String(localized: "error.missingSession") }
-        static var incompleteProfile: String { String(localized: "error.incompleteProfile") }
         static var offline: String { String(localized: "error.offline") }
         static var timedOut: String { String(localized: "error.timedOut") }
         static var connectionLost: String { String(localized: "error.connectionLost") }
@@ -19,6 +18,7 @@ extension L10n {
         static var invalidToken: String { String(localized: "error.invalidToken") }
         static var emailTaken: String { String(localized: "error.emailTaken") }
         static var banned: String { String(localized: "error.banned") }
+        static var connectionBlocked: String { String(localized: "errors.connectionBlocked") }
         static var signupDisabled: String { String(localized: "error.signupDisabled") }
         static var rateLimit: String { String(localized: "error.rateLimit") }
         static var sessionExpired: String { String(localized: "error.sessionExpired") }

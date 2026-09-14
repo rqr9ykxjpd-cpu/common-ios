@@ -22,11 +22,11 @@ struct Slide {
 }
 
 let slides: [Slide] = [
-    .init(file: "01-feed", title: "Kampüsün hali.", subtitle: "Story, gönderi, kim nerede.", dark: false),
-    .init(file: "02-discover", title: "Tanış.", subtitle: "YÜ’den biriyle denk gel.", dark: true),
-    .init(file: "03-story", title: "O an.", subtitle: "Fotoğraf veya 15 saniyelik video.", dark: true),
-    .init(file: "04-places", title: "Kim nerede?", subtitle: "Kafede kim var, bir bak.", dark: false),
-    .init(file: "05-chats", title: "Yazış.", subtitle: "Eşleşince sohbet açılır.", dark: false),
+    .init(file: "01-feed", title: "Kampüsün hali.", subtitle: "Akış, kulüp, kim nerede.", dark: false),
+    .init(file: "04-places", title: "Kim nerede?", subtitle: "Kampüs noktasını sen seçersin.", dark: false),
+    .init(file: "03-story", title: "Kampüs anı.", subtitle: "Fotoğraf veya 15 saniyelik video.", dark: true),
+    .init(file: "05-chats", title: "Kampüste yazış.", subtitle: "Aynı okul, aynı sohbet.", dark: false),
+    .init(file: "02-clubs", title: "Kulübünü bul.", subtitle: "Kampüsteki topluluklara katıl.", dark: false),
 ]
 
 let root = URL(fileURLWithPath: CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : ".")

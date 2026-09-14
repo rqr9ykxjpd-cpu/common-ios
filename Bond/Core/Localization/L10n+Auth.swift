@@ -5,6 +5,7 @@ extension L10n {
         static var appleFailed: String { String(localized: "auth.appleFailed") }
         static var googleFailed: String { String(localized: "auth.googleFailed") }
         static var linkFailed: String { String(localized: "auth.linkFailed") }
+        static var passwordFailed: String { String(localized: "auth.passwordFailed") }
         static var signInIncomplete: String { String(localized: "auth.signInIncomplete") }
         static var profileLoadFailed: String { String(localized: "auth.profileLoadFailed") }
         static var welcome: String { String(localized: "auth.welcome") }

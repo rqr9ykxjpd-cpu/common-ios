@@ -4,36 +4,33 @@ struct PremiumMatchesView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
     var close: (() -> Void)?
+    var showsCloseButton: Bool
+    @State private var acceptingIntroduction: UUID?
+    @State private var introductionConversation: UUID?
 
-    init(close: (() -> Void)? = nil) {
+    init(showsCloseButton: Bool = true, close: (() -> Void)? = nil) {
         self.close = close
+        self.showsCloseButton = showsCloseButton
     }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: BondTheme.Space.xl) {
+                    introductions
+                    acceptedIntroductions
                     yanitIstekleriSatiri
-                    newConnections
-                    meetSuggestions
                     AppSectionHeader(title: L10n.Chat.messages)
+                    if let error = appState.conversationsError {
+                        ScreenFailureView(message: error, compact: !appState.conversations.isEmpty) {
+                            Task { await appState.loadConversations() }
+                        }
+                    }
                     if appState.conversations.isEmpty, appState.isLoadingConversations {
                         // Yüklenirken "henüz sohbetin yok" yazıyordu.
-                        AppLoadingView(message: L10n.Chat.loading)
-                    } else if appState.conversations.isEmpty,
-                              let error = appState.conversationsError {
-                        ContentUnavailableView {
-                            Label(L10n.Errors.title, systemImage: "wifi.exclamationmark")
-                        } description: {
-                            Text(error)
-                        } actions: {
-                            Button(L10n.Common.retry) {
-                                Task { await appState.loadConversations() }
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(BondTheme.acid)
-                        }
-                    } else if appState.conversations.isEmpty {
+                        VStack(spacing: 0) { ForEach(0..<4, id: \.self) { _ in SkeletonRow() } }
+                            .padding(.horizontal, BondTheme.Space.lg)
+                    } else if appState.conversations.isEmpty && appState.conversationsError == nil {
                         emptyConversations
                     } else {
                         LazyVStack(spacing: 0) {
@@ -56,21 +53,107 @@ struct PremiumMatchesView: View {
             .refreshable {
                 await appState.loadConversations()
                 await appState.loadMessageRequests(silently: true)
+                await appState.loadNotifications()
             }
             .task {
-                // Kullanıcı Tanış sekmesine hiç uğramadan buraya gelebilir; o durumda
-                // aday listesi boş olur ve öneri şeridi hiç görünmezdi.
+                // Sohbet ve mesaj istekleri kişi listesinden bağımsız yüklenir.
                 async let conversations: Void = appState.loadConversations()
                 async let requests: Void = appState.loadMessageRequests(silently: true)
-                if appState.profiles.isEmpty { await appState.loadDiscovery() }
                 _ = await (conversations, requests)
+                await appState.loadNotifications()
             }
             .background(BondTheme.paper.ignoresSafeArea())
             .navigationTitle(L10n.Chat.title)
+            .navigationDestination(item: $introductionConversation) { id in
+                ConversationView(conversationID: id)
+            }
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(L10n.Common.close) { close?() ?? dismiss() }
+                if showsCloseButton {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(L10n.Common.close) { close?() ?? dismiss() }
+                    }
                 }
+            }
+        }
+    }
+
+    /// Kaydırmalar görünmez: tek yönlü sağa kaydırma artık adlı istek olarak
+    /// listelenmez; yalnızca karşılıklı olunca bağlantı + sohbet oluşur.
+    /// Sunucu da boş döndürüyor; bu bölüm güvenlik payı olarak kapalı.
+    @ViewBuilder private var introductions: some View {
+        if false, let error = appState.introductionRequestsError {
+            ScreenFailureView(message: error, compact: true) {
+                Task { await appState.loadIntroductionRequests() }
+            }
+        }
+        if false, !appState.introductionRequests.isEmpty {
+            VStack(alignment: .leading, spacing: 16) {
+                Text(L10n.Introduction.requests).font(.headline)
+                ForEach(appState.introductionRequests) { person in
+                    VStack(alignment: .leading, spacing: 8) {
+                        NavigationLink {
+                            SocialPersonDetailView(profile: person, place: nil)
+                        } label: {
+                            HStack(spacing: 12) {
+                                ProfileMedia(url: person.imageURL, data: nil, assetName: person.imageAssetName)
+                                    .frame(width: 44, height: 44).clipShape(Circle())
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(person.name).font(.headline)
+                                    Text(L10n.Introduction.incoming).font(.subheadline).foregroundStyle(.secondary)
+                                }
+                            }
+                            .foregroundStyle(BondTheme.ink)
+                        }
+                        Button {
+                            acceptingIntroduction = person.id
+                            Task {
+                                let result = await appState.sendRightSwipe(to: person)
+                                if case .matched(let id) = result {
+                                    introductionConversation = id
+                                } else if case .sent = result {
+                                    // A stale request must not look like an accepted connection.
+                                    await appState.loadIntroductionRequests()
+                                }
+                                acceptingIntroduction = nil
+                            }
+                        } label: {
+                            HStack {
+                                if acceptingIntroduction == person.id { ProgressView() }
+                                Text(L10n.Chat.accept)
+                            }.frame(minHeight: 44)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(BondTheme.ink)
+                        .disabled(acceptingIntroduction != nil)
+                        .accessibilityIdentifier("chat.acceptIntroduction.\(person.id)")
+                        Divider()
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var acceptedIntroductions: some View {
+        ForEach(appState.unreadConnectionNotifications) { notification in
+            if let id = notification.conversationID {
+                Button {
+                    appState.markNotificationRead(notification.id)
+                    introductionConversation = id
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "person.crop.circle.badge.checkmark")
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(notification.actor?.name ?? L10n.Common.someone).font(.headline)
+                            Text(L10n.Introduction.accepted).font(.subheadline)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right").font(.caption)
+                    }
+                    .foregroundStyle(BondTheme.ink)
+                    .frame(minHeight: 44)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("chat.acceptedIntroduction")
             }
         }
     }
@@ -80,6 +163,16 @@ struct PremiumMatchesView: View {
     /// Bildirimi kaçıran kişi kendisine yazıldığını başka türlü öğrenemiyordu.
     @ViewBuilder private var yanitIstekleriSatiri: some View {
         let bekleyen = appState.pendingMessageRequests
+        if let error = appState.messageRequestsError {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(L10n.ScreenStates.requests).font(.headline)
+                ScreenFailureView(message: error, compact: true) {
+                    Task { await appState.loadMessageRequests(silently: true) }
+                }
+            }
+        } else if appState.isLoadingMessageRequests && bekleyen.isEmpty {
+            ProgressView(L10n.ScreenStates.requests).font(.subheadline)
+        }
         if !bekleyen.isEmpty {
             NavigationLink {
                 MessageRequestsView()
@@ -92,10 +185,10 @@ struct PremiumMatchesView: View {
                         .background(BondTheme.violet.opacity(0.12), in: Circle())
                     VStack(alignment: .leading, spacing: 2) {
                         Text(bekleyen.count == 1 ? L10n.Chat.oneRequest : L10n.Chat.requestCount(bekleyen.count))
-                            .font(.system(size: 15, weight: .bold))
+                            .font(.headline)
                             .foregroundStyle(BondTheme.ink)
                         Text(L10n.Chat.fromUnmatched)
-                            .font(.system(size: 12))
+                            .font(.footnote)
                             .foregroundStyle(BondTheme.muted)
                     }
                     Spacer()
@@ -113,55 +206,6 @@ struct PremiumMatchesView: View {
     }
 
 
-    /// Sohbeti olan kişiler. Hiç yoksa bölüm tamamen gizleniyor: eskiden boş bir
-    /// başlık ve altında bomboş bir şerit kalıyordu.
-    @ViewBuilder private var newConnections: some View {
-        if !appState.conversations.isEmpty {
-            VStack(alignment: .leading, spacing: BondTheme.Space.md) {
-                AppSectionHeader(title: L10n.Chat.newConnections)
-                circleStrip(appState.conversations.map(\.profile))
-            }
-        }
-    }
-
-    /// Henüz sohbet etmediğin, tanışabileceğin kişiler. Uygulamaya yeni katılanlar
-    /// da buraya düşüyor: gizlilik kuralı gereği bir hesap gönderi paylaşana kadar
-    /// doğrudan okunamıyor, tanışma adayları ise sunucudaki
-    /// `get_discovery_candidates` üzerinden geldiği için yeni hesaplar görünebiliyor.
-    @ViewBuilder private var meetSuggestions: some View {
-        let sohbetEdilenler = Set(appState.conversations.map(\.profile.id))
-        let oneriler = appState.profiles.filter { !sohbetEdilenler.contains($0.id) }
-        if !oneriler.isEmpty {
-            VStack(alignment: .leading, spacing: BondTheme.Space.md) {
-                AppSectionHeader(title: L10n.Chat.peopleToMeet)
-                circleStrip(Array(oneriler.prefix(12)))
-            }
-        }
-    }
-
-    private func circleStrip(_ profiles: [StudentProfile]) -> some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: BondTheme.Space.md) {
-                ForEach(profiles) { profile in
-                    NavigationLink {
-                        SocialPersonDetailView(profile: profile, place: nil)
-                    } label: {
-                        VStack(spacing: 7) {
-                            ProfileMedia(url: profile.imageURL, data: nil, assetName: profile.imageAssetName)
-                                .frame(width: 68, height: 68)
-                                .clipShape(Circle())
-                                .overlay(Circle().stroke(BondTheme.violet, lineWidth: 2))
-                            Text(profile.name)
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(BondTheme.ink)
-                        }
-                    }
-                    .buttonStyle(PressableStyle())
-                }
-            }
-        }
-    }
-
     private func conversationRow(_ conversation: Conversation) -> some View {
         HStack(spacing: BondTheme.Space.md) {
             ProfileMedia(url: conversation.profile.imageURL, data: nil, assetName: conversation.profile.imageAssetName)
@@ -170,24 +214,26 @@ struct PremiumMatchesView: View {
             VStack(alignment: .leading, spacing: 5) {
                 HStack {
                     Text(conversation.profile.name)
-                        .font(.system(size: 15, weight: conversation.unreadCount > 0 ? .bold : .semibold))
+                        .font(.headline.weight(conversation.unreadCount > 0 ? .bold : .regular))
                     Spacer()
                     Text(conversation.updatedAt.shortTimeTurkish)
-                        .font(.system(size: 11))
+                        .font(.caption)
                         .foregroundStyle(BondTheme.muted)
                 }
                 HStack {
                     Text(conversation.lastMessage)
-                        .font(.system(size: 13, weight: conversation.unreadCount > 0 ? .semibold : .regular))
+                        .font(.subheadline.weight(conversation.unreadCount > 0 ? .semibold : .regular))
                         .foregroundStyle(conversation.unreadCount > 0 ? BondTheme.ink : BondTheme.muted)
-                        .lineLimit(1)
+                        .lineLimit(2)
                     Spacer()
                     if conversation.unreadCount > 0 {
                         Text("\(conversation.unreadCount)")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(.white)
+                            .font(.caption2.bold())
+                            .foregroundStyle(BondTheme.paper)
+                            .padding(.horizontal, 6)
                             .frame(minWidth: 22, minHeight: 22)
-                            .background(BondTheme.violet, in: Circle())
+                            .background(BondTheme.ink, in: Capsule())
+                            .accessibilityLabel(L10n.ScreenStates.unread(conversation.unreadCount))
                     }
                 }
             }
@@ -212,4 +258,3 @@ struct PremiumMatchesView: View {
         .padding(.vertical, BondTheme.Space.xxl)
     }
 }
-

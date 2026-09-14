@@ -1,95 +1,105 @@
 import SwiftUI
 
+/// The owner's home, not the public profile card: identity, usable membership
+/// features and posts. Gallery management stays in the existing editor.
 struct SocialProfileView: View {
     @Environment(AppState.self) private var appState
-    @State private var showVisits = false
-    @State private var showPaywall = false
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var showPhoto = false
-    @State private var enUstte = true
     @State private var showComposer = false
     @State private var showEditor = false
+    @State private var showMyCard = false
     @State private var showSettings = false
-    /// Izgaradan açılan gönderi. Gönderiler tıklanabilir değildi: kendi
-    /// paylaşımını açıp yorumlarını okumanın ya da silmenin yolu yoktu.
+    @State private var showSaved = false
+    @State private var showVisits = false
+    @State private var showRequests = false
+    @State private var showPaywall = false
     @State private var selectedPost: SocialPost?
+    @State private var profilePosts: [SocialPost] = []
+    @State private var loadingPosts = true
+    @State private var loadID = UUID()
 
     private var displayName: String { appState.draft.name.isEmpty ? L10n.Common.you : appState.draft.name }
+    private var hasAvatar: Bool { appState.avatarURL != nil || appState.avatarData != nil }
+    private var pendingRequestCount: Int {
+        appState.introductionRequests.count
+            + appState.pendingMessageRequests.count
+            + appState.pendingIncomingMeetingRequestCount
+    }
+    private var featuredInterests: [String] {
+        Array(appState.draft.interests).sorted().prefix(3).map { $0 }
+    }
+
+    private var galleryPhotos: [ProfileGalleryPhoto] {
+        if !appState.galleryURLs.isEmpty {
+            return ProfileGalleryPhoto.remote(appState.galleryURLs)
+        }
+        return appState.profileGalleryData.enumerated().map { index, data in
+            ProfileGalleryPhoto(id: "local-gallery-\(index)", url: nil, data: data, assetName: nil)
+        }
+    }
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                // Profil içeriği ayarlardan ayrıldı. Kimlik ve üretimler bu sayfada,
-                // hesap işlemleri native ayar sheet'inde yaşıyor.
-                VStack(alignment: .leading, spacing: BondTheme.Space.xl) {
-                    identityHeader
-                    completion
-                    about
+                VStack(alignment: .leading, spacing: 28) {
+                    identity
+                    tools
+                    gallery
                     posts
                 }
-                .padding(.horizontal, BondTheme.Space.lg)
-                .padding(.top, BondTheme.Space.sm)
-                .padding(.bottom, BondTheme.Space.xxl)
-            }
-            // Sayfanın burada bittiği sanılıyordu: gönderi yokken boş kart ekranı
-            // dolduruyor ve altındaki bölümlerden hiçbiri görünmüyordu.
-            .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, yeni in
-                let ustte = yeni < 40
-                if ustte != enUstte { withAnimation(.easeOut(duration: 0.2)) { enUstte = ustte } }
-            }
-            .overlay(alignment: .bottom) {
-                if enUstte {
-                    Button {
-                        showSettings = true
-                    } label: {
-                        Label(L10n.Profile.moreSettings, systemImage: "gearshape")
-                            .font(BondTheme.Typography.footnote.weight(.semibold))
-                            .foregroundStyle(BondTheme.paper)
-                            .padding(.horizontal, 14).frame(height: 38)
-                            .background(BondTheme.ink, in: Capsule())
-                            .shadow(color: .black.opacity(0.22), radius: 12, y: 5)
-                    }
-                    .buttonStyle(PressableStyle())
-                    // Sekme çubuğu kaydırma alanının üstüne çiziliyor; ipucu
-                    // onun arkasında kalmasın diye yukarıda duruyor.
-                    .padding(.bottom, 96)
-                    .transition(.opacity)
-                }
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
+                .padding(.bottom, 32)
             }
             .background(BondTheme.paper.ignoresSafeArea())
+            .foregroundStyle(BondTheme.ink)
+            .tint(BondTheme.ink)
             .navigationTitle(L10n.Tabs.profile)
             .navigationBarTitleDisplayMode(.inline)
-            // Tam ekran: sekme çubuğu düzenleme ekranının üstüne binip alttaki
-            // "Değişiklikleri kaydet" butonunu tıklanamaz hale getiriyordu.
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showSettings = true } label: { Image(systemName: "gearshape") }
+                        .accessibilityLabel(L10n.Profile.moreSettings)
+                        .accessibilityIdentifier("profile.settings")
+                }
+            }
+            .task(id: appState.currentUserID) { await reload() }
+            .refreshable { await reload() }
             .fullScreenCover(isPresented: $showEditor) {
                 NavigationStack { ProfileEditorView() }
             }
-            .sheet(isPresented: $showSettings) {
-                ProfileSettingsView()
-            }
-#if DEBUG
-            .onAppear {
-                if appState.opensCardPreview || appState.opensModeration {
-                    showSettings = true
+            .fullScreenCover(isPresented: $showMyCard) {
+                NavigationStack {
+                    ProfilePhotoStackView(profile: appState.currentUserProfile, showsClose: true)
                 }
             }
-#endif
-            .sheet(item: $selectedPost) { secili in
-                // Kartın beğeni/kaydetme sonrası güncel kalması için gönderiyi anlık
-                // listeden okuyoruz; `item` yalnızca hangisi olduğunu taşıyor.
-                let guncel = appState.currentUserPosts.first(where: { $0.id == secili.id }) ?? secili
+            .sheet(isPresented: $showSettings) { ProfileSettingsView() }
+            .sheet(isPresented: $showSaved) { ProfileSavedPostsView() }
+            .sheet(isPresented: $showVisits) { ProfileVisitorsView() }
+            .sheet(isPresented: $showRequests) { ProfileRequestsHubView() }
+            .sheet(isPresented: $showPaywall) { PaywallView() }
+            .fullScreenCover(isPresented: $showPhoto) {
+                PhotoZoomView(url: appState.avatarURL, data: appState.avatarData)
+            }
+            .sheet(isPresented: $showComposer) { CreatePostView() }
+            .onChange(of: showComposer) { _, open in
+                if !open { Task { await reload() } }
+            }
+            .sheet(item: $selectedPost) { post in
                 NavigationStack {
                     ScrollView {
-                        PostCard(
-                            post: guncel,
-                            toggleLike: { appState.toggleLike(postID: guncel.id) },
-                            toggleSaved: { appState.toggleSaved(postID: guncel.id) },
-                            openProfile: {},
-                            delete: {
-                                appState.deletePost(guncel.id)
-                                selectedPost = nil
-                            }
-                        )
-                        .padding(.vertical, BondTheme.Space.md)
+                        let current = displayedPosts.first { $0.id == post.id } ?? post
+                        PostCard(post: current,
+                                 toggleLike: { appState.toggleLike(postID: post.id) },
+                                 toggleSaved: { appState.toggleSaved(postID: post.id) },
+                                 openProfile: {},
+                                 delete: {
+                                     appState.deletePost(post.id)
+                                     profilePosts.removeAll { $0.id == post.id }
+                                     selectedPost = nil
+                                 })
+                            .padding(.vertical, 16)
                     }
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
@@ -99,259 +109,525 @@ struct SocialProfileView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showVisits) { ProfileVisitorsView() }
-            .sheet(isPresented: $showPaywall) { PaywallView() }
-            .fullScreenCover(isPresented: $showPhoto) {
-                PhotoZoomView(url: appState.avatarURL, data: appState.avatarData)
-            }
-            .sheet(isPresented: $showComposer) { CreatePostView() }
+#if DEBUG
+            .onAppear { if appState.opensModeration { showSettings = true } }
+#endif
         }
     }
 
-    /// Kim olduğun. Önceden üç ayrı parçaydı: "Profil / Common'da nasıl göründüğünü
-    /// yönet" başlığı, avatar bloğu ve altta yüzen sayaçlar. Başlık ekranın ne olduğunu
-    /// zaten belli olan bir şeyi tekrar ediyordu; sayaçlar ise tek kartsız bölüm olarak
-    /// ortada duruyordu. Üçü birleşti.
-    private var identityHeader: some View {
-        VStack(alignment: .leading, spacing: BondTheme.Space.lg) {
-            HStack(alignment: .top, spacing: BondTheme.Space.lg) {
-                // Fotoğrafa dokununca tam ekran açılıyor: 88 puntoluk bir daireden
-                // fotoğrafın gerçekte nasıl göründüğü anlaşılmıyordu.
-                Button { showPhoto = true } label: {
-                    ProfileMedia(url: appState.avatarURL, data: appState.avatarData)
-                        .frame(width: 88, height: 88)
-                        .clipShape(Circle())
-                        .overlay(Circle().stroke(BondTheme.hairline))
+    private var identity: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            if typeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 16) {
+                    avatar
+                    nameAndEducation
+                    editProfileButton
                 }
-                .buttonStyle(PressableStyle())
-                .disabled(appState.avatarURL == nil && appState.avatarData == nil)
-                .accessibilityLabel(L10n.Profile.zoomPhoto)
+            } else {
+                HStack(alignment: .center, spacing: 20) {
+                    avatar
+                    nameAndEducation
+                    editProfileButton
+                }
+            }
+            if !appState.draft.bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Text(appState.draft.bio)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("profile.about")
+            } else {
+                Button { showEditor = true } label: {
+                    Label(L10n.Profile.writeAbout, systemImage: "plus")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(BondTheme.muted)
+                        .frame(minHeight: 44)
+                }
+                .buttonStyle(.plain)
+            }
 
-                VStack(alignment: .leading, spacing: BondTheme.Space.xs) {
-                    Text(displayName)
-                        .font(BondTheme.Typography.title2.weight(.bold))
-                        .lineLimit(2)
-                    ProfileEducationLine(
-                        department: appState.draft.department.isEmpty ? L10n.Profile.addDepartment : appState.draft.department,
-                        university: appState.myBadge == .founder ? (appState.draft.university.isEmpty ? "YÜ" : appState.draft.university) : nil,
-                        year: appState.draft.year,
-                        font: BondTheme.Typography.subheadline,
-                        highlightUniversity: appState.myBadge == .founder
-                    )
-                    .padding(.top, 6)
-                    .lineLimit(2)
-                    // Önceden herkeste "Doğrulanmış YÜ öğrencisi" yazıyordu; üniversite
-                    // doğrulaması diye bir şey yok, yani herkes için yanlıştı.
-                    ProfileBadgeLabel(badge: appState.myBadge)
-                        .padding(.top, 2)
-                    if appState.myBadge == .founder {
-                        FounderCredLine()
-                            .padding(.top, 4)
-                    } else if let altSatir = appState.myBadge.subtitle {
-                        Text(altSatir)
-                            .font(BondTheme.Typography.footnote)
-                            .italic()
-                            .foregroundStyle(appState.myBadge.accent)
-                            .padding(.top, 1)
+            if !featuredInterests.isEmpty {
+                FlowLayout(spacing: BondTheme.Space.sm) {
+                    ForEach(featuredInterests, id: \.self) { interest in
+                        Text(interest)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(BondTheme.ink)
+                            .padding(.horizontal, 12)
+                            .frame(minHeight: 34)
+                            .background(BondTheme.surface, in: Capsule())
                     }
                 }
-                Spacer(minLength: 0)
+                .accessibilityIdentifier("profile.interests")
             }
 
-            if appState.myBadge == .founder {
-                FounderContactCard()
-            }
-
-            profileActions
-        }
-        .foregroundStyle(BondTheme.ink)
-    }
-
-    private var profileActions: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: BondTheme.Space.sm) {
-                postsStat
-                visitorsStat
-                Spacer(minLength: 0)
-                editProfileButton
-            }
-            VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
-                postsStat
-                visitorsStat
-                editProfileButton
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: BondTheme.Space.sm) { shareButton; previewButton }
+                VStack(spacing: BondTheme.Space.sm) { shareButton; previewButton }
             }
         }
     }
 
-    private var postsStat: some View {
-        statPill(value: appState.currentUserPosts.count, label: L10n.Profile.statPosts)
+    private var avatar: some View {
+        ZStack(alignment: .bottomTrailing) {
+            Button {
+                if hasAvatar { showPhoto = true } else { showEditor = true }
+            } label: {
+                ProfileMedia(url: appState.avatarURL, data: appState.avatarData)
+                    .frame(width: 96, height: 116)
+                    .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(hasAvatar ? L10n.Profile.zoomPhoto : L10n.ScreenStates.addPhoto)
+
+            Button { showEditor = true } label: {
+                Image(systemName: "camera.fill")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(BondTheme.onAccent)
+                    .frame(width: 34, height: 34)
+                    .background(BondTheme.acid, in: Circle())
+                    .overlay(Circle().stroke(BondTheme.paper, lineWidth: 3))
+            }
+            .buttonStyle(PressableStyle())
+            .accessibilityLabel(L10n.Profile.editA11y)
+        }
+        .accessibilityIdentifier("profile.avatar")
     }
 
-    private var visitorsStat: some View {
-        // Üstteki rozet de aynı kilide tabi olmalı: ayarlardaki satırı
-        // kilitleyip burayı açık bırakmak, kısıtı anlamsız kılıyordu.
-        Button {
-            if appState.tier.canSeeProfileVisitors { showVisits = true } else { showPaywall = true }
-        } label: {
-            statPill(value: appState.profileVisits.count, label: L10n.Profile.statVisitors)
+    private var nameAndEducation: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(displayName).font(.title2.bold())
+                .fixedSize(horizontal: false, vertical: true)
+            Text([appState.draft.department, AcademicYear.display(appState.draft.year)]
+                .filter { !$0.isEmpty }.joined(separator: " · "))
+                .font(.subheadline).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            ProfileBadgeLabel(badge: appState.myBadge, compact: true)
         }
-        .buttonStyle(PressableStyle())
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var editProfileButton: some View {
         Button { showEditor = true } label: {
-            Text(L10n.Profile.edit)
-                .font(BondTheme.Typography.footnote.weight(.semibold))
-                .foregroundStyle(BondTheme.paper)
-                .padding(.horizontal, 18)
-                .frame(minHeight: 38)
-                .background(BondTheme.ink, in: Capsule())
+            Image(systemName: "pencil")
+                .font(.subheadline.weight(.semibold))
+                .frame(width: 44, height: 44)
+                .background(BondTheme.surface, in: Circle())
         }
         .buttonStyle(PressableStyle())
         .accessibilityLabel(L10n.Profile.editA11y)
+        .accessibilityIdentifier("profile.edit")
     }
 
-    /// Sayaçlar artık ayrı bir bölüm değil, adın hemen altında küçük etiketler.
-    private func statPill(value: Int, label: String) -> some View {
-        HStack(spacing: BondTheme.Space.xs) {
-            Text("\(value)")
-                .font(BondTheme.Typography.subheadline.weight(.bold))
-                .monospacedDigit()
-            Text(label)
-                .font(BondTheme.Typography.caption)
-                .foregroundStyle(BondTheme.muted)
+    private var previewButton: some View {
+        compactAction(title: L10n.ProfileHome.publicPreview, icon: "eye", primary: false) { showMyCard = true }
+            .accessibilityIdentifier("profile.viewCard")
+    }
+
+    private var shareButton: some View {
+        compactAction(title: L10n.ProfileHome.share, icon: "plus", primary: true) { showComposer = true }
+            .accessibilityIdentifier("profile.compose")
+    }
+
+    private func compactAction(
+        title: String,
+        icon: String,
+        primary: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: icon)
+                .font(.footnote.weight(.semibold))
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .foregroundStyle(primary ? BondTheme.onAccent : BondTheme.ink)
+                .background(primary ? BondTheme.acid : BondTheme.surface, in: Capsule())
         }
-        .foregroundStyle(BondTheme.ink)
-        .padding(.horizontal, 12)
-        .frame(minHeight: 38)
-        .background(BondTheme.ink.opacity(0.05), in: Capsule())
-        .fixedSize(horizontal: true, vertical: false)
+        .buttonStyle(PressableStyle())
     }
 
-    /// Yalnızca eksikse ve tek satır. Önceden ekranın beşte birini kaplayan bir kart
-    /// halinde her zaman duruyordu: yüzde, ilerleme çubuğu, iki satır açıklama ve bir
-    /// bağlantı. Bu bir dürtme, ekranın kahramanı değil.
-    @ViewBuilder
-    private var completion: some View {
-        if appState.profileCompletion < 100 {
-            Button { showEditor = true } label: {
-                HStack(spacing: BondTheme.Space.md) {
-                    ZStack {
-                        Circle().stroke(BondTheme.ink.opacity(0.1), lineWidth: 3)
-                        Circle()
-                            .trim(from: 0, to: Double(appState.profileCompletion) / 100)
-                            .stroke(BondTheme.violet, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                            .rotationEffect(.degrees(-90))
-                    }
-                    .frame(width: 28, height: 28)
+    private var gallery: some View {
+        VStack(alignment: .leading, spacing: BondTheme.Space.md) {
+            AppSectionHeader(
+                title: L10n.ProfileHome.photos,
+                actionTitle: L10n.ProfileHome.manage
+            ) { showEditor = true }
 
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(L10n.Profile.completion(appState.profileCompletion))
-                            .font(BondTheme.Typography.subheadline.weight(.semibold))
-                        Text(L10n.Profile.completionHint)
-                            .font(BondTheme.Typography.caption)
+            if galleryPhotos.isEmpty {
+                Button { showEditor = true } label: {
+                    HStack(spacing: BondTheme.Space.md) {
+                        Image(systemName: "photo.stack")
+                            .font(.title2)
+                            .frame(width: 48, height: 48)
+                            .background(BondTheme.paper, in: Circle())
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(L10n.ProfileHome.addPhotos)
+                                .font(.subheadline.weight(.semibold))
+                            Text(L10n.ProfileDesign.galleryOwnEmpty)
+                                .font(.footnote)
+                                .foregroundStyle(BondTheme.muted)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
                             .foregroundStyle(BondTheme.muted)
                     }
-                    Spacer(minLength: 0)
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(BondTheme.muted)
+                    .foregroundStyle(BondTheme.ink)
+                    .padding(BondTheme.Space.md)
+                    .frame(maxWidth: .infinity, minHeight: 112, alignment: .leading)
+                    .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous))
                 }
-                .foregroundStyle(BondTheme.ink)
-                .padding(.horizontal, BondTheme.Space.md)
-                .frame(minHeight: 58)
-                .background(BondTheme.violet.opacity(0.07), in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
-                .contentShape(Rectangle())
+                .buttonStyle(PressableStyle())
+                .accessibilityIdentifier("profile.gallery.empty")
+            } else {
+                ProfileGalleryStack(photos: galleryPhotos, height: 264)
             }
-            .buttonStyle(PressableStyle())
         }
     }
 
-    /// Kartsız. Bio senin kendi anlatın; sayfanın üstünde yüzen bir kutuya değil,
-    /// doğrudan sayfaya ait. Kart sayısını azaltmak hiyerarşiyi geri getiriyor.
-    private var about: some View {
+    private var tools: some View {
         VStack(alignment: .leading, spacing: BondTheme.Space.md) {
-            Text(L10n.Profile.about)
-                .font(BondTheme.Typography.headline)
-                .foregroundStyle(BondTheme.ink)
-            if appState.draft.bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                Text(L10n.Profile.aboutPlaceholder)
+            AppSectionHeader(title: L10n.ProfileHome.tools)
+
+            requestSummaryCard
+
+            if typeSize.isAccessibilitySize {
+                VStack(spacing: BondTheme.Space.sm) {
+                    membershipTool(
+                        icon: "eye",
+                        title: L10n.Profile.visitors,
+                        value: appState.tier.canSeeProfileVisitors ? L10n.ProfileHome.on : L10n.Tier.plus
+                    ) {
+                        if appState.tier.canSeeProfileVisitors { showVisits = true }
+                        else { showPaywall = true }
+                    }
+                    .accessibilityIdentifier("profile.visitors")
+
+                    membershipTool(
+                        icon: "eye.slash",
+                        title: L10n.Profile.ghost,
+                        value: appState.tier.hasGhostMode
+                            ? (appState.ghostMode ? L10n.ProfileHome.on : L10n.Common.off)
+                            : L10n.Tier.pro
+                    ) { toggleGhostMode() }
+                    .accessibilityIdentifier("profile.ghost")
+
+                    membershipTool(
+                        icon: "sparkles",
+                        title: L10n.ProfileHome.myPlan,
+                        value: appState.tier.title,
+                        accent: true
+                    ) { showPaywall = true }
+                    .accessibilityIdentifier("profile.plus")
+                }
+            } else {
+                HStack(spacing: BondTheme.Space.sm) {
+                    membershipTool(
+                        icon: "eye",
+                        title: L10n.Profile.visitors,
+                        value: appState.tier.canSeeProfileVisitors ? L10n.ProfileHome.on : L10n.Tier.plus
+                    ) {
+                        if appState.tier.canSeeProfileVisitors { showVisits = true }
+                        else { showPaywall = true }
+                    }
+                    .accessibilityIdentifier("profile.visitors")
+
+                    membershipTool(
+                        icon: "eye.slash",
+                        title: L10n.Profile.ghost,
+                        value: appState.tier.hasGhostMode
+                            ? (appState.ghostMode ? L10n.ProfileHome.on : L10n.Common.off)
+                            : L10n.Tier.pro
+                    ) { toggleGhostMode() }
+                    .accessibilityIdentifier("profile.ghost")
+
+                    membershipTool(
+                        icon: "sparkles",
+                        title: L10n.ProfileHome.myPlan,
+                        value: appState.tier.title,
+                        accent: true
+                    ) { showPaywall = true }
+                    .accessibilityIdentifier("profile.plus")
+                }
+            }
+
+            Text(L10n.ProfileHome.planPrivate)
+                .font(.custom("BradleyHandITCTT-Bold", size: 15, relativeTo: .footnote))
+                .foregroundStyle(BondTheme.burntOrange)
+                .rotationEffect(.degrees(-0.5))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var requestSummaryCard: some View {
+        Button { showRequests = true } label: {
+            HStack(spacing: BondTheme.Space.compact) {
+                Image(systemName: pendingRequestCount > 0 ? "tray.full.fill" : "tray")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(pendingRequestCount > 0 ? BondTheme.onAccent : BondTheme.ink)
+                    .frame(width: 40, height: 40)
+                    .background(
+                        pendingRequestCount > 0 ? BondTheme.burntOrange : BondTheme.paper,
+                        in: Circle()
+                    )
+
+                VStack(alignment: .leading, spacing: pendingRequestCount > 0 ? 3 : 0) {
+                    Text(
+                        pendingRequestCount > 0
+                            ? L10n.ProfileHome.pendingRequests(pendingRequestCount)
+                            : L10n.ProfileHome.noPendingRequests
+                    )
+                    .font(.subheadline.weight(.semibold))
+                    .contentTransition(.numericText())
+
+                    if pendingRequestCount > 0 {
+                        Text(L10n.ProfileHome.requestsDetail)
+                            .font(.footnote)
+                            .foregroundStyle(BondTheme.muted)
+                            .lineLimit(1)
+                    }
+                }
+
+                Spacer(minLength: BondTheme.Space.sm)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(BondTheme.muted)
-            } else {
-                Text(appState.draft.bio)
-                    .foregroundStyle(BondTheme.ink.opacity(0.82))
+                    .accessibilityHidden(true)
             }
-            if !appState.draft.interests.isEmpty {
-                FlowLayout(spacing: BondTheme.Space.sm) {
-                    ForEach(appState.draft.interests.sorted(), id: \.self) { interest in
-                        Text(InterestCatalog.displayName(interest))
-                            .font(BondTheme.Typography.footnote.weight(.medium))
-                            .foregroundStyle(BondTheme.ink)
-                            .padding(.horizontal, 11)
-                            .frame(height: 30)
-                            .background(BondTheme.ink.opacity(0.055), in: Capsule())
-                    }
-                }
-                .padding(.top, 2)
-            }
+            .foregroundStyle(BondTheme.ink)
+            .padding(.horizontal, BondTheme.Space.md)
+            .frame(maxWidth: .infinity, minHeight: pendingRequestCount > 0 ? 76 : 64, alignment: .leading)
+            .background(
+                pendingRequestCount > 0 ? BondTheme.burntOrange.opacity(0.10) : BondTheme.surface,
+                in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
         }
-        .font(BondTheme.Typography.body)
-        .lineSpacing(4)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .buttonStyle(PressableStyle())
+        .animation(BondTheme.Motion.smooth, value: pendingRequestCount)
+        .accessibilityIdentifier("profile.requests")
     }
 
-    @ViewBuilder
+    private func membershipTool(
+        icon: String,
+        title: String,
+        value: String,
+        accent: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
+                Image(systemName: icon)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(accent ? BondTheme.burntOrange : BondTheme.ink)
+                    .frame(width: 34, height: 34)
+                    .background(BondTheme.paper, in: Circle())
+
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+
+                Text(value)
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(accent ? BondTheme.burntOrange : BondTheme.muted)
+                    .lineLimit(1)
+                    .contentTransition(.numericText())
+            }
+            .foregroundStyle(BondTheme.ink)
+            .padding(BondTheme.Space.compact)
+            .frame(maxWidth: .infinity, minHeight: typeSize.isAccessibilitySize ? 98 : 108, alignment: .leading)
+            .background(
+                accent ? BondTheme.burntOrange.opacity(0.08) : BondTheme.surface,
+                in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
+        }
+        .buttonStyle(PressableStyle())
+    }
+
+    private func toggleGhostMode() {
+        if appState.tier.hasGhostMode {
+            withAnimation(BondTheme.Motion.snappy) {
+                appState.setGhostMode(!appState.ghostMode)
+            }
+            Haptics.selection()
+        } else {
+            showPaywall = true
+        }
+    }
+
     private var posts: some View {
-        VStack(alignment: .leading, spacing: BondTheme.Space.md) {
-            AppSectionHeader(title: L10n.Profile.myPosts)
-            if appState.currentUserPosts.isEmpty {
-                ContentUnavailableView {
-                    Label(L10n.Profile.firstPostHint, systemImage: "photo.on.rectangle.angled")
-                } description: {
-                    Text(L10n.Profile.firstPostBody)
-                } actions: {
-                    Button(L10n.Profile.shareCta) {
-                        Haptics.impact(.light)
-                        showComposer = true
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(BondTheme.acid)
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text(L10n.Profile.myPosts).font(.title3.weight(.semibold))
+                Spacer()
+                Button { showSaved = true } label: {
+                    Label(L10n.Profile.saved, systemImage: "bookmark")
+                        .font(.footnote.weight(.semibold))
+                        .padding(.horizontal, 12)
+                        .frame(minHeight: 44)
+                        .background(BondTheme.surface, in: Capsule())
                 }
-                .frame(maxWidth: .infinity)
+                .buttonStyle(PressableStyle())
+                .accessibilityLabel(L10n.Profile.saved)
+                .accessibilityIdentifier("profile.saved")
+            }
+            if loadingPosts && displayedPosts.isEmpty {
+                VStack(spacing: 8) {
+                    ForEach(0..<3, id: \.self) { _ in Skeleton(height: 76, cornerRadius: 12) }
+                }
+            } else if displayedPosts.isEmpty {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(L10n.Profile.firstPostBody).font(.subheadline).foregroundStyle(.secondary)
+                    Button(L10n.Profile.shareCta) { showComposer = true }
+                        .font(.subheadline.weight(.semibold)).frame(minHeight: 44)
+                }
             } else {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 3), count: 3), spacing: 3) {
-                    ForEach(appState.currentUserPosts) { post in
-                        Button {
-                            Haptics.impact(.light)
-                            selectedPost = post
-                        } label: {
-                            // Hücre kare: yükseklik `aspectRatio(.fit)` ile hücrenin kendi
-                            // genişliğinden türüyor. Eskiden `contentMode: .fill` vardı; o,
-                            // görseli hücreden taşırıyor ve `clipped()` hücreye değil taşmış
-                            // çerçeveye göre kestiği için gönderiler birbirinin üstüne
-                            // biniyordu.
-                            Color.clear
-                                .aspectRatio(1, contentMode: .fit)
-                                .overlay {
-                                    if post.imageURL != nil || post.imageAssetName != nil || post.localImageData != nil {
-                                        ProfileMedia(url: post.imageURL, data: post.localImageData, assetName: post.imageAssetName)
-                                    } else {
-                                        Text(post.caption)
-                                            .font(.system(size: 12, weight: .bold))
-                                            .foregroundStyle(BondTheme.ink)
-                                            .lineLimit(5)
-                                            .padding(10)
-                                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                                            .background(BondTheme.acid.opacity(0.35))
-                                    }
-                                }
-                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                .contentShape(Rectangle())
+                LazyVStack(spacing: 20) {
+                    ForEach(displayedPosts) { post in
+                        Button { selectedPost = post } label: {
+                            ProfilePostRow(post: post).contentShape(Rectangle())
                         }
-                        .buttonStyle(PressableStyle())
+                        .buttonStyle(.plain)
+                        Divider()
                     }
                 }
             }
         }
+    }
+
+    private func reload() async {
+        let operation = UUID()
+        let account = appState.currentUserID
+        loadID = operation
+        loadingPosts = true
+        defer { if loadID == operation { loadingPosts = false } }
+
+        async let fetchedPosts = appState.personPosts(for: account)
+        async let introductions: Void = appState.loadIntroductionRequests()
+        async let meetings: Void = appState.loadMeetingRequests(silently: true)
+        async let messages: Void = appState.loadMessageRequests(silently: true)
+        let fetched = await fetchedPosts
+        _ = await (introductions, meetings, messages)
+
+        guard loadID == operation, account == appState.currentUserID, !Task.isCancelled else { return }
+        profilePosts = fetched
+        if appState.tier.canSeeProfileVisitors { await appState.loadProfileVisits(silently: true) }
+    }
+
+    private var displayedPosts: [SocialPost] {
+        var byID: [UUID: SocialPost] = [:]
+        for post in profilePosts { byID[post.id] = post }
+        for post in appState.currentUserPosts { byID[post.id] = post }
+        return byID.values.sorted { $0.createdAt > $1.createdAt }
+    }
+}
+
+/// Requests were split between Chat and Settings, so users had to know the
+/// implementation detail to find them. This is a lightweight directory: the
+/// existing request screens still own the actions and server communication.
+private struct ProfileRequestsHubView: View {
+    @Environment(AppState.self) private var appState
+    @Environment(\.dismiss) private var dismiss
+    @State private var showConnectionRequests = false
+    @State private var showMeetingRequests = false
+
+    private var connectionRequestCount: Int {
+        appState.introductionRequests.count + appState.pendingMessageRequests.count
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: BondTheme.Space.md) {
+                    Text(L10n.ProfileHome.requestsIntro)
+                        .font(.subheadline)
+                        .foregroundStyle(BondTheme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    requestRow(
+                        icon: "person.crop.circle.badge.plus",
+                        title: L10n.ProfileHome.connectionRequests,
+                        detail: L10n.ProfileHome.connectionRequestsDetail,
+                        count: connectionRequestCount
+                    ) { showConnectionRequests = true }
+
+                    requestRow(
+                        icon: "cup.and.saucer",
+                        title: L10n.ProfileHome.meetingRequests,
+                        detail: L10n.ProfileHome.meetingRequestsDetail,
+                        count: appState.pendingIncomingMeetingRequestCount
+                    ) { showMeetingRequests = true }
+                }
+                .padding(BondTheme.Space.lg)
+            }
+            .background(BondTheme.paper.ignoresSafeArea())
+            .navigationTitle(L10n.ProfileHome.requests)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(L10n.Common.done) { dismiss() }
+                }
+            }
+            .task {
+                async let introductions: Void = appState.loadIntroductionRequests()
+                async let meetings: Void = appState.loadMeetingRequests(silently: true)
+                async let messages: Void = appState.loadMessageRequests(silently: true)
+                _ = await (introductions, meetings, messages)
+            }
+            .sheet(isPresented: $showConnectionRequests) {
+                PremiumMatchesView()
+            }
+            .sheet(isPresented: $showMeetingRequests) {
+                MeetingRequestsView()
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+            }
+        }
+    }
+
+    private func requestRow(
+        icon: String,
+        title: String,
+        detail: String,
+        count: Int,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: BondTheme.Space.md) {
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .semibold))
+                    .frame(width: 46, height: 46)
+                    .background(BondTheme.paper, in: Circle())
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title).font(.headline)
+                    Text(detail)
+                        .font(.footnote)
+                        .foregroundStyle(BondTheme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 8)
+                if count > 0 {
+                    Text("\(count)")
+                        .font(.caption.bold())
+                        .foregroundStyle(BondTheme.onAccent)
+                        .frame(minWidth: 28, minHeight: 28)
+                        .background(BondTheme.acid, in: Capsule())
+                        .accessibilityLabel(L10n.ScreenStates.unread(count))
+                } else {
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(BondTheme.muted)
+                        .accessibilityHidden(true)
+                }
+            }
+            .foregroundStyle(BondTheme.ink)
+            .padding(BondTheme.Space.md)
+            .frame(maxWidth: .infinity, minHeight: 92, alignment: .leading)
+            .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
+        }
+        .buttonStyle(PressableStyle())
     }
 }

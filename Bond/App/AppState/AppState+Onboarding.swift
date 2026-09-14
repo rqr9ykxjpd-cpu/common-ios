@@ -11,8 +11,8 @@ extension AppState {
     }
 
     /// Onboarding'in son adımı. Profili sunucuya kaydeder ve **yalnızca kayıt başarılıysa**
-    /// uygulamaya geçer. Aksi halde kullanıcı profilsiz şekilde içeri girer, keşif sebepsiz
-    /// boş gelir ve durumun neden böyle olduğu anlaşılmaz.
+    /// uygulamaya geçer. Aksi halde kullanıcı profilsiz şekilde içeri girer, İnsanlar
+    /// listesi sebepsiz boş gelir ve durumun neden böyle olduğu anlaşılmaz.
     func finishOnboarding() async {
         guard !isFinishingOnboarding else { return }
         isFinishingOnboarding = true

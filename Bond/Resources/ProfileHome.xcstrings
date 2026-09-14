@@ -1,0 +1,174 @@
+{
+  "sourceLanguage": "en",
+  "version": "1.0",
+  "strings": {
+    "features": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sana özel"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your features"
+          }
+        }
+      }
+    },
+    "explorePlans": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus ve Pro’yu keşfet"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explore Plus and Pro"
+          }
+        }
+      }
+    },
+    "planDetails": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paketimin özellikleri"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My plan’s features"
+          }
+        }
+      }
+    },
+    "photos": {
+      "localizations": {
+        "tr": { "stringUnit": { "state": "translated", "value": "Profil fotoğraflarım" } },
+        "en": { "stringUnit": { "state": "translated", "value": "My profile photos" } }
+      }
+    },
+    "manage": {
+      "localizations": {
+        "tr": { "stringUnit": { "state": "translated", "value": "Düzenle" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Manage" } }
+      }
+    },
+    "addPhotos": {
+      "localizations": {
+        "tr": { "stringUnit": { "state": "translated", "value": "Fotoğraf ekle" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Add photos" } }
+      }
+    },
+    "publicPreview": {
+      "localizations": {
+        "tr": { "stringUnit": { "state": "translated", "value": "Dışarıdan gör" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Public preview" } }
+      }
+    },
+    "share": {
+      "localizations": {
+        "tr": { "stringUnit": { "state": "translated", "value": "Paylaşım yap" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Create a post" } }
+      }
+    },
+    "tools": {
+      "localizations": {
+        "tr": { "stringUnit": { "state": "translated", "value": "Araçlarım" } },
+        "en": { "stringUnit": { "state": "translated", "value": "My tools" } }
+      }
+    },
+    "requests": {
+      "localizations": {
+        "tr": { "stringUnit": { "state": "translated", "value": "İstekler" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Requests" } }
+      }
+    },
+    "noPendingRequests": {
+      "localizations": {
+        "tr": { "stringUnit": { "state": "translated", "value": "Bekleyen isteğin yok" } },
+        "en": { "stringUnit": { "state": "translated", "value": "No pending requests" } }
+      }
+    },
+    "pendingRequests": {
+      "localizations": {
+        "tr": { "stringUnit": { "state": "translated", "value": "%lld bekleyen isteğin var" } },
+        "en": { "stringUnit": { "state": "translated", "value": "You have %lld pending requests" } }
+      }
+    },
+    "requestsDetail": {
+      "localizations": {
+        "tr": { "stringUnit": { "state": "translated", "value": "Bağlantı, mesaj ve buluşma" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Connections, messages and meetups" } }
+      }
+    },
+    "requiresPlus": {
+      "localizations": {
+        "tr": { "stringUnit": { "state": "translated", "value": "Plus ile görüntüle" } },
+        "en": { "stringUnit": { "state": "translated", "value": "View with Plus" } }
+      }
+    },
+    "requiresPro": {
+      "localizations": {
+        "tr": { "stringUnit": { "state": "translated", "value": "Pro ile kullan" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Use with Pro" } }
+      }
+    },
+    "on": {
+      "localizations": {
+        "tr": { "stringUnit": { "state": "translated", "value": "Açık" } },
+        "en": { "stringUnit": { "state": "translated", "value": "On" } }
+      }
+    },
+    "myPlan": {
+      "localizations": {
+        "tr": { "stringUnit": { "state": "translated", "value": "Planım" } },
+        "en": { "stringUnit": { "state": "translated", "value": "My plan" } }
+      }
+    },
+    "planPrivate": {
+      "localizations": {
+        "tr": { "stringUnit": { "state": "translated", "value": "merak etme, planını yalnızca sen görürsün" } },
+        "en": { "stringUnit": { "state": "translated", "value": "don't worry, only you can see your plan" } }
+      }
+    },
+    "requestsIntro": {
+      "localizations": {
+        "tr": { "stringUnit": { "state": "translated", "value": "Sana gelen istekleri tek yerden aç. Yanıtlar mevcut güvenli ekranlarda verilir." } },
+        "en": { "stringUnit": { "state": "translated", "value": "Open incoming requests in one place. Respond from the existing secure screens." } }
+      }
+    },
+    "connectionRequests": {
+      "localizations": {
+        "tr": { "stringUnit": { "state": "translated", "value": "Bağlantı ve mesaj" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Connections and messages" } }
+      }
+    },
+    "connectionRequestsDetail": {
+      "localizations": {
+        "tr": { "stringUnit": { "state": "translated", "value": "Profil ve mesaj isteklerini görüntüle" } },
+        "en": { "stringUnit": { "state": "translated", "value": "View profile and message requests" } }
+      }
+    },
+    "meetingRequests": {
+      "localizations": {
+        "tr": { "stringUnit": { "state": "translated", "value": "Buluşma istekleri" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Meetup requests" } }
+      }
+    },
+    "meetingRequestsDetail": {
+      "localizations": {
+        "tr": { "stringUnit": { "state": "translated", "value": "Gelen ve gönderilen istekleri yönet" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Manage incoming and outgoing requests" } }
+      }
+    }
+  }
+}

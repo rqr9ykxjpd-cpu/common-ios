@@ -9,12 +9,19 @@ struct MainTabView: View {
             SocialFeedView()
                 .tabItem { Label(L10n.Tabs.feed, systemImage: "house") }
                 .tag(0)
-            PremiumDiscoverView()
-                .tabItem { Label(L10n.Tabs.discover, systemImage: "heart") }
+            PlacesWallView(showsCloseButton: false) { place in
+                appState.selectedPlaceFilter = place
+                selection = 0
+            }
+                .tabItem { Label(L10n.CampusNavigation.places, systemImage: "mappin.and.ellipse") }
                 .tag(1)
+            PremiumMatchesView(showsCloseButton: false)
+                .tabItem { Label(L10n.CampusNavigation.chats, systemImage: "bubble.left.and.bubble.right") }
+                .badge(appState.chatActivityCount)
+                .tag(2)
             SocialProfileView()
                 .tabItem { Label(L10n.Tabs.profile, systemImage: "person") }
-                .tag(2)
+                .tag(3)
         }
         .tint(BondTheme.acid)
 #if DEBUG

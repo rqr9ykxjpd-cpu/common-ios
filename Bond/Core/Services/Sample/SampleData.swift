@@ -1,10 +1,19 @@
 #if DEBUG
+import CryptoKit
 import Foundation
 import UIKit
 
 // MARK: - Örnek içerik
 
 enum SampleData {
+    /// Aynı tohum her açılışta aynı kimliği verir.
+    static func stableID(_ seed: String) -> UUID {
+        let digest = SHA256.hash(data: Data(seed.utf8))
+        let bytes = Array(digest.prefix(16))
+        return UUID(uuid: (bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
+                           bytes[8], bytes[9], bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15]))
+    }
+
     /// Örnek kayıtların kimlikleri sabit. Her açılışta yeni UUID üretilseydi
     /// `UserDefaults` her denemede bir hesap anahtarı daha biriktirirdi.
     static func id(_ number: Int) -> UUID {
@@ -36,10 +45,8 @@ enum SampleData {
         interests: ["Kahve", "Fotoğraf", "Yürüyüş", "Podcast", "Basketbol"],
         imageURL: nil,
         imageAssetName: "profile-berk",
-        compatibility: 100,
         isVerified: true,
-        badge: .founder,
-        relationshipIntent: .both
+        badge: .founder
     )
 
     static var myDraft: ProfileDraft {
@@ -51,8 +58,6 @@ enum SampleData {
         draft.year = me.year
         draft.bio = me.bio
         draft.interests = Set(me.interests)
-        draft.gender = .male
-        draft.relationshipIntent = .both
         // Örnek verideki "ben" kurucu hesabı temsil ediyor; rozet aktarılmayınca
         // kurucuya özel kart görünümü geliştirirken hiç görünmüyordu.
         draft.badge = me.badge
@@ -66,9 +71,11 @@ enum SampleData {
             bio: "Analog fotoğraf çekiyorum, kampüsün her köşesinde bir kare arıyorum.",
             interests: ["Fotoğraf", "Sinema", "Kahve", "Sergi"],
             imageURL: nil, imageAssetName: "profile-ece",
-            compatibility: 92, isVerified: true, badge: .moderator,
-            compatibilityReasons: ["3 ortak ilgi alanı", "İkiniz de kahve düşkünü"],
-            relationshipIntent: .both, activeLabel: "Bugün aktif"
+            galleryImageURLs: [
+                UIImageAsset.fileURL(named: "post-cafe"),
+                UIImageAsset.fileURL(named: "post-quiet")
+            ].compactMap { $0 },
+            isVerified: true, badge: .moderator
         ),
         StudentProfile(
             id: id(11),
@@ -76,9 +83,11 @@ enum SampleData {
             bio: "Kitap kulübünün en gürültücü üyesi. İyi bir tartışmaya hayır demem.",
             interests: ["Kitap", "Yürüyüş", "Podcast", "Kahve"],
             imageURL: nil, imageAssetName: "profile-defne",
-            compatibility: 87, isVerified: true,
-            compatibilityReasons: ["3 ortak ilgi alanı", "Aynı fakülte bahçesinde takılıyorsunuz"],
-            relationshipIntent: .friendship, activeLabel: "2 saat önce aktif"
+            galleryImageURLs: [
+                UIImageAsset.fileURL(named: "post-club"),
+                UIImageAsset.fileURL(named: "post-friends")
+            ].compactMap { $0 },
+            isVerified: true
         ),
         StudentProfile(
             id: id(12),
@@ -86,9 +95,11 @@ enum SampleData {
             bio: "Maket bıçağıyla aram iyi. Sahil yürüyüşü teklif edene hayır demiyorum.",
             interests: ["Tasarım", "Yürüyüş", "Müzik", "Fotoğraf"],
             imageURL: nil, imageAssetName: "profile-duru",
-            compatibility: 84, isVerified: false,
-            compatibilityReasons: ["2 ortak ilgi alanı"],
-            relationshipIntent: .both, activeLabel: "Bu hafta aktif"
+            galleryImageURLs: [
+                UIImageAsset.fileURL(named: "post-campus"),
+                UIImageAsset.fileURL(named: "post-study")
+            ].compactMap { $0 },
+            isVerified: false
         ),
         StudentProfile(
             id: id(13),
@@ -96,8 +107,11 @@ enum SampleData {
             bio: "Sabah 7 antrenmanı, akşam 7 duruşma provası. Aramda kahve var.",
             interests: ["Koşu", "Kahve", "Münazara"],
             imageURL: nil, imageAssetName: "profile-selin",
-            compatibility: 76, isVerified: true,
-            compatibilityReasons: ["1 ortak ilgi alanı"],
+            galleryImageURLs: [
+                UIImageAsset.fileURL(named: "post-quiet"),
+                UIImageAsset.fileURL(named: "post-friends"),
+            ].compactMap { $0 },
+            isVerified: true
         ),
         StudentProfile(
             id: id(14),
@@ -105,9 +119,11 @@ enum SampleData {
             bio: "Gece kodlayan, gündüz uyuyan biri. Bana iyi bir bug getir, arkadaş olalım.",
             interests: ["Yazılım", "Oyun", "Podcast", "Kahve"],
             imageURL: nil, imageAssetName: "profile-mina",
-            compatibility: 81, isVerified: false,
-            compatibilityReasons: ["2 ortak ilgi alanı", "Aynı kampüsteki geç saatçiler"],
-            relationshipIntent: .friendship, activeLabel: "Bugün aktif"
+            galleryImageURLs: [
+                UIImageAsset.fileURL(named: "post-study"),
+                UIImageAsset.fileURL(named: "post-cafe"),
+            ].compactMap { $0 },
+            isVerified: false
         ),
         StudentProfile(
             id: id(15),
@@ -115,8 +131,11 @@ enum SampleData {
             bio: "Bisikletle kampüs turu atarım. Motor sesinden anlarım.",
             interests: ["Bisiklet", "Müzik", "Yürüyüş"],
             imageURL: nil, imageAssetName: "profile-arda",
-            compatibility: 68, isVerified: false,
-            compatibilityReasons: ["1 ortak ilgi alanı"],
+            galleryImageURLs: [
+                UIImageAsset.fileURL(named: "post-friends"),
+                UIImageAsset.fileURL(named: "post-campus"),
+            ].compactMap { $0 },
+            isVerified: false
         )
     ]
 
@@ -154,23 +173,36 @@ enum SampleData {
         [
             post(author: profiles[0], caption: "Ders sonrası planı: kendimizi dışarı atmak.",
                  place: "Hazırlık Kantini", asset: "post-cafe", createdAt: hours(2), likes: 34, liked: true, comments: [
-                    ("Defne", "Ben de geliyorum!"),
-                    ("Mina", "Işık gerçekten güzel olmuş")
+                    ("Defne", "Ben de geliyorum!", 2),
+                    ("Mina", "Işık gerçekten güzel olmuş", 5)
+                 ]),
+            post(author: profiles[4], caption: "Veri Yapıları vizesinde geçen yılki sorular çıkıyor mu? Elinde eski soru olan var mı?",
+                 place: nil, asset: nil, createdAt: hours(3.5), likes: 6, liked: false, kind: .question, comments: [
+                    ("Arda", "Geçen yıl ağaçlar ve hash ağırlıklıydı, notlarımı atarım", 9),
+                    ("Selin", "Hoca bu yıl soruları değiştirdi diye duydum", 3)
+                 ]),
+            post(author: profiles[5], caption: "Termodinamik ders notlarım (1-8. hafta) PDF olarak hazır. İsteyene DM.",
+                 place: nil, asset: nil, createdAt: hours(5), likes: 18, liked: true, kind: .notes, comments: [
+                    ("Mina", "Süpersin, mühendislik grubuna da at", 4)
+                 ]),
+            post(author: profiles[3], caption: "Yarın 09.00'da Hazırlık binasına masa taşıyoruz, iki kişi lazım. Kahve benden.",
+                 place: nil, asset: nil, createdAt: hours(6), likes: 8, liked: false, kind: .help, comments: [
+                    ("Arda", "Ben varım, 8.45'te oradayım", 3)
                  ]),
             post(author: profiles[4], caption: "Vize haftası kütüphane kampı başladı. İkinci kahve gidiyor.",
                  place: "Merkez Kütüphane", asset: "post-study", createdAt: hours(7), likes: 21, liked: false, comments: [
-                    ("Arda", "Dayan, iki gün kaldı")
+                    ("Arda", "Dayan, iki gün kaldı", 1)
                  ]),
             post(author: me, caption: "Sahil yürüyüşü her şeye iyi geliyor.",
                  place: "Şamdan Kafe", asset: "post-campus", createdAt: hours(20), likes: 47, liked: false, mine: true, comments: [
-                    ("Ece", "Kare çok iyi olmuş"),
-                    ("Selin", "Yarın da gidelim mi?")
+                    ("Ece", "Kare çok iyi olmuş", 3),
+                    ("Selin", "Yarın da gidelim mi?", 1)
                  ]),
             post(author: profiles[2], caption: "Maket teslimine 6 saat kala bahçede mola.",
                  place: "Otağ", asset: "post-quiet", createdAt: date(1.4), likes: 15, liked: false, comments: []),
             post(author: profiles[1], caption: "Kitap kulübü bu akşam toplanıyor, gelen gelsin.",
-                 place: nil, asset: "post-club", createdAt: date(2.1), likes: 29, liked: true, comments: [
-                    ("Duru", "Saat kaçta?")
+                 place: nil, asset: "post-club", createdAt: date(2.1), likes: 29, liked: true, kind: .announcement, comments: [
+                    ("Duru", "Saat kaçta?", 2)
                  ]),
             post(author: profiles[3], caption: "Sabah koşusu bitti, güne 1-0 öndeyim.",
                  place: nil, asset: "post-friends", createdAt: date(3), likes: 38, liked: false, comments: [])
@@ -178,11 +210,13 @@ enum SampleData {
     }
 
     private static func post(
-        author: StudentProfile, caption: String, place: String?, asset: String,
-        createdAt: Date, likes: Int, liked: Bool, mine: Bool = false,
-        comments: [(String, String)]
+        author: StudentProfile, caption: String, place: String?, asset: String?,
+        createdAt: Date, likes: Int, liked: Bool, mine: Bool = false, kind: PostKind = .moment,
+        comments: [(String, String, Int)]
     ) -> BackendPost {
-        let postID = UUID()
+        // Kimlik açılışlar arasında sabit: "görüldü" sayacı ve kaydedilenler
+        // örnek modda da çalışsın.
+        let postID = stableID("post:" + caption)
         return BackendPost(
             id: postID,
             authorID: author.id,
@@ -197,10 +231,11 @@ enum SampleData {
             authorAvatarURL: author.imageAssetName.flatMap(UIImageAsset.fileURL(named:)),
             caption: caption,
             placeName: place,
-            imageData: UIImageAsset.data(named: asset),
+            kind: kind,
+            imageData: asset.flatMap(UIImageAsset.data(named:)),
             createdAt: createdAt,
-            comments: comments.map { name, body in
-                BackendComment(id: UUID(), postID: postID, authorID: UUID(), authorName: name, authorAvatarURL: nil, body: body, createdAt: createdAt)
+            comments: comments.map { name, body, votes in
+                BackendComment(id: UUID(), postID: postID, authorID: UUID(), authorName: name, authorAvatarURL: nil, body: body, createdAt: createdAt, voteCount: votes)
             },
             likeCount: likes,
             liked: liked,
@@ -208,14 +243,14 @@ enum SampleData {
         )
     }
 
-    static func newPost(caption: String, placeName: String?, imageData: Data?) -> BackendPost {
+    static func newPost(caption: String, placeName: String?, imageData: Data?, kind: PostKind = .moment) -> BackendPost {
         BackendPost(
             id: UUID(), authorID: me.id, authorName: me.name,
             authorBirthDate: Calendar.current.date(byAdding: .year, value: -me.age, to: .now) ?? .now,
             authorUniversity: me.university, authorDepartment: me.department, authorYear: me.year,
             authorBio: me.bio, authorVerified: me.isVerified, authorBadge: me.badge,
             authorAvatarURL: me.imageAssetName.flatMap(UIImageAsset.fileURL(named:)),
-            caption: caption, placeName: placeName, imageData: imageData, createdAt: .now,
+            caption: caption, placeName: placeName, kind: kind, imageData: imageData, createdAt: .now,
             comments: [], likeCount: 0, liked: false, saved: false
         )
     }
@@ -228,6 +263,9 @@ enum SampleData {
             BackendNotification(id: UUID(), kind: .message, title: "Yeni mesaj",
                                 body: "Defne: Seni de bekleriz!", actorID: profiles[1].id, actorName: "Defne",
                                 actorAvatarURL: UIImageAsset.fileURL(named: "profile-defne"), matchID: nil, isRead: false, createdAt: hours(3)),
+            BackendNotification(id: UUID(), kind: .like, title: "Sizi biri sağa kaydırdı",
+                                body: "Duru kartını sağa kaydırdı.", actorID: profiles[2].id, actorName: "Duru",
+                                actorAvatarURL: UIImageAsset.fileURL(named: "profile-duru"), matchID: nil, isRead: false, createdAt: hours(1.2)),
             BackendNotification(id: UUID(), kind: .like, title: "Gönderini beğendi",
                                 body: "Selin sahil paylaşımını beğendi.", actorID: profiles[3].id, actorName: "Selin",
                                 actorAvatarURL: UIImageAsset.fileURL(named: "profile-selin"), matchID: nil, isRead: true, createdAt: hours(19)),

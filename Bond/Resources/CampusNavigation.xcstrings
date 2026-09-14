@@ -1,0 +1,38 @@
+{
+  "sourceLanguage": "tr",
+  "strings": {
+    "campus.clubs": { "localizations": {
+      "tr": { "stringUnit": { "state": "translated", "value": "Kulüpler" } },
+      "en": { "stringUnit": { "state": "translated", "value": "Clubs" } }
+    } },
+    "campus.people": { "localizations": {
+      "tr": { "stringUnit": { "state": "translated", "value": "İnsanlar" } },
+      "en": { "stringUnit": { "state": "translated", "value": "People" } }
+    } },
+    "campus.places": { "localizations": {
+      "tr": { "stringUnit": { "state": "translated", "value": "Kim nerede" } },
+      "en": { "stringUnit": { "state": "translated", "value": "On Campus" } }
+    } },
+    "campus.chats": { "localizations": {
+      "tr": { "stringUnit": { "state": "translated", "value": "Sohbet" } },
+      "en": { "stringUnit": { "state": "translated", "value": "Chats" } }
+    } },
+    "campus.emptyClubs": { "localizations": {
+      "tr": { "stringUnit": { "state": "translated", "value": "Henüz kulüp bulunmuyor" } },
+      "en": { "stringUnit": { "state": "translated", "value": "No clubs yet" } }
+    } },
+    "campus.emptyPeople": { "localizations": {
+      "tr": { "stringUnit": { "state": "translated", "value": "Henüz kimse yok" } },
+      "en": { "stringUnit": { "state": "translated", "value": "No one to show yet" } }
+    } },
+    "campus.emptyPeopleHint": { "localizations": {
+      "tr": { "stringUnit": { "state": "translated", "value": "Kampüsteki öğrenciler burada görünür." } },
+      "en": { "stringUnit": { "state": "translated", "value": "Students on campus appear here." } }
+    } },
+    "campus.peopleFailed": { "localizations": {
+      "tr": { "stringUnit": { "state": "translated", "value": "İnsanlar yüklenemedi" } },
+      "en": { "stringUnit": { "state": "translated", "value": "Couldn’t load people" } }
+    } }
+  },
+  "version": "1.0"
+}

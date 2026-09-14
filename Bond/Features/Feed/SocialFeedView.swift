@@ -2,14 +2,21 @@ import SwiftUI
 
 struct SocialFeedView: View {
     @Environment(AppState.self) private var appState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showStoryComposer = false
     @State private var showPostComposer = false
-    @State private var selectedPeoplePlace: CampusPlace?
+    /// Boş durumdan "ilk soruyu sen sor" ile açılınca composer o türle başlar.
+    @State private var composerKind: PostKind = .moment
+    /// Kurucu "oy ekle" alert'inin metni.
+    @State private var boostInput = ""
+    @State private var pinInput = ""
+    @State private var showBadgeCatalog = false
     @State private var selectedClub: CampusClub?
-    @State private var showChats = false
     @State private var showNotifications = false
     @State private var showPlacesWall = false
     @State private var selectedPostAuthor: StudentProfile?
+    /// Avatar → kişi kartı zoom geçişinin ad alanı.
+    @Namespace private var profileZoom
 
     /// Akış boşken iki ayrı durum var ve bunlar karıştırılmamalı: bir yer filtresi
     /// seçiliyken o noktada paylaşım olmaması, ile akışta gerçekten hiç gönderi olmaması.
@@ -18,7 +25,19 @@ struct SocialFeedView: View {
     /// yapmıyordu. İlk kullanıcının gördüğü ilk ekran da burası.
     @ViewBuilder
     private var feedEmptyState: some View {
-        if let place = appState.selectedPlaceFilter {
+        if let kind = appState.selectedKindFilter {
+            // Tür seçiliyken boşluk bir davet: "Henüz soru yok — ilk soruyu sen sor".
+            AppEmptyState(
+                systemImage: kind.systemImage,
+                title: kind.emptyTitle,
+                actionTitle: kind.emptyAction,
+                action: {
+                    Haptics.impact(.light)
+                    composerKind = kind
+                    showPostComposer = true
+                }
+            )
+        } else if let place = appState.selectedPlaceFilter {
             AppEmptyState(
                 systemImage: "mappin.slash",
                 title: L10n.Feed.emptyPlace(place.name),
@@ -39,10 +58,68 @@ struct SocialFeedView: View {
         }
     }
 
-    private var visiblePosts: [SocialPost] {
-        guard let place = appState.selectedPlaceFilter else { return appState.posts }
-        return appState.posts.filter { $0.place?.id == place.id }
+    /// Sıra dondurulmuş: oy verince kart yerinden zıplamasın. Yeniden sıralama
+    /// yalnızca gönderi kümesi, filtre ya da sıralama değişince (`rankKey`).
+    @State private var rankedIDs: [UUID] = []
+
+    private struct RankKey: Hashable {
+        let ids: [UUID]
+        let sort: FeedSort
+        let kind: PostKind?
+        let place: UUID?
+        let version: Int
     }
+
+    private var rankKey: RankKey {
+        RankKey(ids: appState.posts.map(\.id), sort: appState.feedSort,
+                kind: appState.selectedKindFilter, place: appState.selectedPlaceFilter?.id,
+                version: appState.feedRankVersion)
+    }
+
+    private var visiblePosts: [SocialPost] {
+        // Yükleme bitti ama `rerank` henüz koşmadıysa bir kare boş durum
+        // görünmesin; o karede sıralamayı yerinde hesapla.
+        guard !rankedIDs.isEmpty else { return filteredSorted() }
+        let byID = Dictionary(appState.posts.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        return rankedIDs.compactMap { byID[$0] }
+    }
+
+    private func filteredSorted() -> [SocialPost] {
+        let place = appState.selectedPlaceFilter
+        let kind = appState.selectedKindFilter
+        let suzulmus = appState.posts.filter { post in
+            (place == nil || post.place?.id == place?.id) && (kind == nil || post.kind == kind)
+        }
+        // Önce sabitsiz sıra: az önce paylaşılanlar (yenileyene kadar), sonra sıralama.
+        let taze = suzulmus.filter { !$0.isPinned && appState.justPublishedPostIDs.contains($0.id) }
+            .sorted { $0.createdAt > $1.createdAt }
+        let digerleri = suzulmus.filter { !$0.isPinned && !appState.justPublishedPostIDs.contains($0.id) }
+        var sira: [SocialPost]
+        switch appState.feedSort {
+        case .newest:
+            sira = taze + digerleri.sorted { $0.createdAt > $1.createdAt }
+        case .popular:
+            // İki oturumda görülen gönderi ne kadar oy alırsa alsın görülmemişlerin altına.
+            let seen = appState.seenCounts
+            let puan = { (p: SocialPost) in p.popularityScore(seenCount: seen[p.id] ?? 0) }
+            let (bikkin, canli) = digerleri.reduce(into: ([SocialPost](), [SocialPost]())) { acc, p in
+                if (seen[p.id] ?? 0) >= 2 { acc.0.append(p) } else { acc.1.append(p) }
+            }
+            sira = taze + canli.sorted { puan($0) > puan($1) } + bikkin.sorted { puan($0) > puan($1) }
+        }
+        // Sabitler kendi sırasına oturur (1 = en üst); aynı sıradakiler arasında
+        // son sabitlenen önce. Sıra listeden uzunsa sona eklenir.
+        let sabitler = suzulmus.filter(\.isPinned).sorted {
+            if $0.pinSlot != $1.pinSlot { return $0.pinSlot < $1.pinSlot }
+            return ($0.pinnedAt ?? .distantPast) > ($1.pinnedAt ?? .distantPast)
+        }
+        for sabit in sabitler {
+            sira.insert(sabit, at: min(sabit.pinSlot - 1, sira.count))
+        }
+        return sira
+    }
+
+    private func rerank() { rankedIDs = filteredSorted().map(\.id) }
 
     var body: some View {
         NavigationStack {
@@ -52,15 +129,20 @@ struct SocialFeedView: View {
                         LazyVStack(spacing: 0) {
                             Color.clear.frame(height: 1).id("feed-top")
                             storyRail
-                            meetingPlaces
-                            placeStrip
-                            clubsSection
-                            Divider().opacity(0.35).padding(.vertical, 14)
+                            Divider().opacity(0.35).padding(.vertical, BondTheme.Space.md)
+                            kindFilterRow
+                            sortRow
+                            if let error = appState.feedError {
+                                ScreenFailureView(message: error, compact: !visiblePosts.isEmpty) {
+                                    Task { await appState.loadFeed() }
+                                }
+                                .padding(.horizontal, 20)
+                            }
                             if visiblePosts.isEmpty, appState.isLoadingFeed {
                                 // Yüklenirken "Akış henüz boş" yazıyordu; kullanıcı
                                 // gönderisinin silindiğini sanabiliyordu.
                                 AppLoadingView(message: L10n.Feed.loading)
-                            } else if visiblePosts.isEmpty {
+                            } else if visiblePosts.isEmpty && appState.feedError == nil {
                                 feedEmptyState
                             } else {
                                 ForEach(visiblePosts) { post in
@@ -69,9 +151,11 @@ struct SocialFeedView: View {
                                         toggleLike: { appState.toggleLike(postID: post.id) },
                                         toggleSaved: { appState.toggleSaved(postID: post.id) },
                                         openProfile: { selectedPostAuthor = post.author },
-                                        delete: { appState.deletePost(post.id) }
+                                        delete: { appState.deletePost(post.id) },
+                                        zoomNamespace: profileZoom
                                     )
-                                    Divider().opacity(0.35).padding(.vertical, 20)
+                                    .onAppear { appState.markPostSeen(post.id) }
+                                    Divider().opacity(0.35).padding(.vertical, 14)
                                 }
                             }
                         }
@@ -90,31 +174,20 @@ struct SocialFeedView: View {
             // elle çizilmiş daireler kaldırıldı — sistem kendi zeminini veriyor.
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { akisAracCubugu }
-            .fullScreenCover(isPresented: $showStoryComposer) {
+            .sheet(isPresented: $showStoryComposer) {
                 CreatePostView(initialContentType: 1)
             }
-            .sheet(isPresented: $showPostComposer) {
-                CreatePostView()
-                    .presentationDetents([.large])
-                    .presentationDragIndicator(.visible)
-                    .presentationCornerRadius(28)
-            }
-            .sheet(item: $selectedPeoplePlace) { place in
-                PlacePeopleView(place: place)
+            .sheet(isPresented: $showPostComposer, onDismiss: { composerKind = .moment }) {
+                CreatePostView(initialKind: composerKind)
             }
             .sheet(item: $selectedPostAuthor) { profile in
                 NavigationStack {
-                    SocialPersonDetailView(profile: profile, place: nil, showsClose: true)
+                    ProfilePhotoStackView(profile: profile)
                 }
+                .navigationTransition(.zoom(sourceID: profile.id, in: profileZoom))
             }
             .sheet(item: $selectedClub) { club in
                 ClubDetailView(club: club)
-                    .presentationDetents([.large])
-                    .presentationDragIndicator(.visible)
-                    .presentationCornerRadius(28)
-            }
-            .fullScreenCover(isPresented: $showChats) {
-                PremiumMatchesView()
             }
             .sheet(isPresented: $showNotifications) {
                 NotificationsView()
@@ -134,6 +207,8 @@ struct SocialFeedView: View {
                 PlacesWallView { place in appState.selectedPlaceFilter = place }
             }
             .task { await appState.loadFeed(); await appState.loadStories() }
+            .task(id: rankKey) { rerank() }
+            .modifier(FounderPresentations(boostInput: $boostInput, pinInput: $pinInput))
 #if DEBUG
             .modifier(DebugFeedLaunchHooks(
                 showPostComposer: $showPostComposer,
@@ -150,12 +225,78 @@ struct SocialFeedView: View {
                     },
                     onViewed: { viewedStory in appState.markStoryViewed(viewedStory) },
                     onDelete: { storyID in appState.deleteStory(storyID) },
+                    onAddStory: {
+                        // Tam ekran kapanmadan sheet açılırsa sunum çakışıyor;
+                        // önce izleyici kapanır, sonra composer.
+                        appState.selectedStory = nil
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { showStoryComposer = true }
+                    },
                     close: { appState.selectedStory = nil }
                 )
             }
         }
     }
 
+
+    /// "Tümü · Soru · Duyuru · …" — akışı kampüs panosuna çeviren filtre.
+    private var kindFilterRow: some View {
+        @Bindable var appState = appState
+        return PostKindChipRow(
+            selection: $appState.selectedKindFilter,
+            allTitle: L10n.PostKind.all,
+            kinds: PostKind.featured
+        ) {
+            MoreBadgesChip { showBadgeCatalog = true }
+        }
+        .padding(.bottom, BondTheme.Space.sm)
+        .accessibilityLabel(L10n.PostKind.filterA11y)
+        .sheet(isPresented: $showBadgeCatalog) {
+            BadgeCatalogSheet(selection: $appState.selectedKindFilter, allowsClear: true)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+                .presentationCornerRadius(28)
+        }
+    }
+
+    /// "Popüler ⌄" çiplerin altında, sola yaslı — kullanıcı tercihi.
+    private var sortRow: some View {
+        HStack {
+            sortChip
+            Spacer()
+        }
+        .padding(.horizontal, 20)
+        .padding(.bottom, BondTheme.Space.xs)
+    }
+
+    /// "Popüler ⌄" — Reddit'teki sıralama menüsü.
+    private var sortChip: some View {
+        @Bindable var appState = appState
+        return Menu {
+            Picker(L10n.Board.sortA11y, selection: $appState.feedSort) {
+                ForEach(FeedSort.allCases) { sort in
+                    Label(sort.title, systemImage: sort.systemImage).tag(sort)
+                }
+            }
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: appState.feedSort.systemImage)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(appState.feedSort == .popular ? BondTheme.burntOrange : BondTheme.muted)
+                Text(appState.feedSort.title)
+                    .font(.footnote.weight(.semibold))
+                    .contentTransition(.numericText())
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 9, weight: .bold))
+            }
+            .padding(.horizontal, 4)
+            .frame(height: 34)
+            .foregroundStyle(BondTheme.muted)
+            .contentShape(Rectangle())
+        }
+        .accessibilityLabel(L10n.Board.sortA11y)
+        .accessibilityValue(appState.feedSort.title)
+        .animation(reduceMotion ? nil : BondTheme.Motion.snappy, value: appState.feedSort)
+    }
 
     private var storyRail: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -194,7 +335,7 @@ struct SocialFeedView: View {
                                     }
                                 Circle()
                                     .stroke(
-                                        story.viewed ? BondTheme.ink.opacity(0.14) : BondTheme.violet,
+                                        story.viewed ? BondTheme.ink.opacity(0.14) : BondTheme.burntOrange,
                                         style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
                                     )
                                     .frame(width: 55, height: 55)
@@ -229,156 +370,9 @@ struct SocialFeedView: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 10)
+            .padding(.bottom, 4)
         }
     }
-
-    /// Akışta tek satır. Önceden başlık, "YER SEÇ" yazısı ve yatay kaydırılan
-    /// çiplerden oluşan bir kart vardı: yerlerin çoğu ekrana sığmıyor, hangisinde
-    /// kim olduğu görünmüyor ve kart akışta yer kaplıyordu. Artık dokununca yerlerin
-    /// tamamının listelendiği duvar açılıyor.
-    private var meetingPlaces: some View {
-        Button {
-            Haptics.impact(.light)
-            showPlacesWall = true
-        } label: {
-            HStack(spacing: BondTheme.Space.md) {
-                Image(systemName: "mappin.and.ellipse")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(BondTheme.violet)
-                    .frame(width: 26)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(L10n.Feed.whereToMeet)
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(BondTheme.ink)
-                    Text(subtitleForPlaces)
-                        .font(.system(size: 12))
-                        .foregroundStyle(appState.currentVisiblePlace == nil ? BondTheme.muted : BondTheme.violet)
-                        .lineLimit(1)
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(BondTheme.muted)
-            }
-            .padding(.horizontal, BondTheme.Space.md)
-            .frame(minHeight: 62)
-            .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous).stroke(BondTheme.hairline))
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(PressableStyle())
-        .padding(.horizontal, 16)
-        .padding(.top, 12)
-    }
-
-    /// Yerlerin kısa şeridi. Duvarı açmak her seferinde iki dokunuş demek; en çok
-    /// yapılan şey "şurada kim var?" diye bakmak, o yüzden buradan tek dokunuşla
-    /// doğrudan o yerdeki kişiler açılıyor. Tamamı için sağdaki "Tümü".
-    @ViewBuilder
-    private var placeStrip: some View {
-        if !appState.places.isEmpty {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(appState.places.prefix(8)) { place in
-                        Button {
-                            Haptics.impact(.light)
-                            selectedPeoplePlace = place
-                        } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: appState.currentVisiblePlace?.id == place.id ? "mappin.circle.fill" : "mappin")
-                                    .font(.system(size: 12, weight: .semibold))
-                                Text(place.name)
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .lineLimit(1)
-                            }
-                            .foregroundStyle(appState.currentVisiblePlace?.id == place.id ? BondTheme.paper : BondTheme.ink)
-                            .padding(.horizontal, 13)
-                            .frame(height: 38)
-                            .background(
-                                appState.currentVisiblePlace?.id == place.id ? BondTheme.violet : BondTheme.ink.opacity(0.055),
-                                in: Capsule()
-                            )
-                        }
-                        .buttonStyle(PressableStyle())
-                    }
-
-                    Button {
-                        Haptics.impact(.light)
-                        showPlacesWall = true
-                    } label: {
-                        Text(L10n.Feed.allPlaces)
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(BondTheme.violet)
-                            .padding(.horizontal, 14)
-                            .frame(height: 38)
-                            .overlay(Capsule().stroke(BondTheme.violet.opacity(0.35)))
-                    }
-                    .buttonStyle(PressableStyle())
-                }
-                .padding(.horizontal, 16)
-            }
-            .mask(
-                LinearGradient(
-                    stops: [
-                        .init(color: .black, location: 0),
-                        .init(color: .black, location: 0.93),
-                        .init(color: .black.opacity(0), location: 1)
-                    ],
-                    startPoint: .leading, endPoint: .trailing
-                )
-            )
-            .padding(.top, 8)
-        }
-    }
-
-    private var subtitleForPlaces: String {
-        if let active = appState.currentVisiblePlace { return L10n.Feed.visibleAt(active.name) }
-        if let filter = appState.selectedPlaceFilter { return L10n.Feed.filteredBy(filter.name) }
-        return L10n.Feed.placeCount(appState.places.count)
-    }
-
-    private var clubsSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            // "KATIL · TANIŞ · ÜRET" kaldırıldı: bir şey anlatmıyordu, yalnızca
-            // başlığın yanını dolduruyordu.
-            Text(L10n.Feed.clubsHeader)
-                .font(.system(size: 11, weight: .bold))
-                .tracking(1)
-                .foregroundStyle(BondTheme.muted)
-                .padding(.horizontal, 16)
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(appState.clubs) { club in
-                        Button { selectedClub = club } label: {
-                            clubCard(club)
-                        }
-                        .buttonStyle(PressableStyle())
-                    }
-                }
-                .padding(.horizontal, 16)
-            }
-            // Sağdaki kart ekran kenarında sertçe kesiliyordu; yatay kaydırıldığı
-            // anlaşılmıyor, bozuk sanılıyordu. İnce bir solma "devamı var" diyor.
-            .mask(
-                LinearGradient(
-                    stops: [
-                        .init(color: .black, location: 0),
-                        .init(color: .black, location: 0.92),
-                        .init(color: .black.opacity(0), location: 1)
-                    ],
-                    startPoint: .leading, endPoint: .trailing
-                )
-            )
-        }
-        .padding(.top, 14)
-    }
-
-    /// Daraltılmış kart. Önceden 210×166'lık, içinde ikon rozeti, kulüp adı, sonraki
-    /// etkinlik, üye sayısı ve "Katıl" bağlantısı olan bir kutuydu; iki tanesi bile
-    /// ekranı dolduruyordu. Artık ad, üye sayısı ve üyelik durumu — gerisi kulübe
-    /// dokununca zaten açılıyor.
 
     /// Marka başlığı ve eylemler. Ayrı bir `ToolbarContentBuilder` olarak
     /// duruyor: gövdenin içine gömülünce derleyici tek ifadeyi makul sürede
@@ -411,45 +405,22 @@ struct SocialFeedView: View {
             .accessibilityLabel(L10n.Feed.notificationsA11y(appState.unreadNotificationCount))
         }
         ToolbarItem(placement: .topBarTrailing) {
-            Button { showChats = true } label: {
-                Image(systemName: "message.fill")
-            }
-            .accessibilityLabel(L10n.Feed.chatsA11y)
-        }
-        ToolbarItem(placement: .topBarTrailing) {
-            Button { showPostComposer = true } label: {
+            Menu {
+                Button {
+                    showPostComposer = true
+                } label: {
+                    Label(L10n.Composer.post, systemImage: "square.and.pencil")
+                }
+                Button {
+                    showStoryComposer = true
+                } label: {
+                    Label(L10n.Composer.story, systemImage: "circle.dashed")
+                }
+            } label: {
                 Label(L10n.Feed.share, systemImage: "plus")
             }
             .accessibilityLabel(L10n.Feed.share)
         }
-    }
-
-    private func clubCard(_ club: CampusClub) -> some View {
-        let joined = appState.isJoined(to: club)
-        let accent = Color(hex: club.accentHex)
-        return HStack(spacing: 9) {
-            Image(systemName: club.icon)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(.white)
-                .frame(width: 30, height: 30)
-                .background(accent, in: Circle())
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text(club.name)
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(BondTheme.ink)
-                    .lineLimit(1)
-                Text(joined ? L10n.Feed.member : L10n.Feed.memberCount(club.memberCount))
-                    .font(.system(size: 11))
-                    .foregroundStyle(joined ? accent : BondTheme.muted)
-                    .lineLimit(1)
-            }
-        }
-        .padding(.horizontal, 11)
-        .frame(height: 52)
-        .background(BondTheme.surface, in: Capsule())
-        .overlay(Capsule().stroke(joined ? accent.opacity(0.5) : BondTheme.hairline))
-        .contentShape(Capsule())
     }
 
 }
@@ -479,7 +450,7 @@ private struct AddStoryBubble: View {
                             .overlay { Circle().stroke(.white, lineWidth: 1) }
                         Circle()
                             .stroke(
-                                ownStory == nil ? BondTheme.ink.opacity(0.14) : BondTheme.violet,
+                                ownStory == nil ? BondTheme.ink.opacity(0.14) : BondTheme.burntOrange,
                                 style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
                             )
                             .frame(width: 55, height: 55)
@@ -495,7 +466,7 @@ private struct AddStoryBubble: View {
                         .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(BondTheme.onAccent)
                         .frame(width: 19, height: 19)
-                        .background(BondTheme.acid, in: Circle())
+                        .background(BondTheme.burntOrange, in: Circle())
                 }
                 .buttonStyle(.plain)
                 .offset(x: -1, y: -1)
@@ -507,6 +478,74 @@ private struct AddStoryBubble: View {
         }
     }
 }
+
+/// Kurucu sunumları tek yerden: kartın içindeki alert kaydırılmış hücrede
+/// güvenilir açılmıyordu. AppState'teki hedef ID'yi izler.
+private struct FounderPresentations: ViewModifier {
+    @Environment(AppState.self) private var appState
+    @Binding var boostInput: String
+    @Binding var pinInput: String
+
+    private var boostTarget: SocialPost? {
+        appState.boostPromptPostID.flatMap { id in appState.posts.first { $0.id == id } }
+    }
+    private var pinTarget: SocialPost? {
+        appState.pinPromptPostID.flatMap { id in appState.posts.first { $0.id == id } }
+    }
+
+    func body(content: Content) -> some View {
+        @Bindable var appState = appState
+        content
+            .alert(
+                L10n.Board.boostTitle,
+                isPresented: Binding(
+                    get: { appState.boostPromptPostID != nil },
+                    set: { if !$0 { appState.boostPromptPostID = nil } }
+                ),
+                presenting: boostTarget
+            ) { post in
+                TextField(L10n.Board.boostPlaceholder, text: $boostInput)
+                    .keyboardType(.numbersAndPunctuation)
+                Button(L10n.Board.boostApply) {
+                    if let n = Int(boostInput.trimmed), n != 0 { appState.boostPost(post.id, extra: n) }
+                    boostInput = ""
+                }
+                Button(L10n.Common.cancel, role: .cancel) { boostInput = "" }
+            } message: { post in
+                Text(post.boost > 0 ? "\(L10n.Board.boostPrompt)\n\(L10n.Board.boostCurrent(post.boost))" : L10n.Board.boostPrompt)
+            }
+            .alert(
+                L10n.Board.pin,
+                isPresented: Binding(
+                    get: { appState.pinPromptPostID != nil },
+                    set: { if !$0 { appState.pinPromptPostID = nil } }
+                ),
+                presenting: pinTarget
+            ) { post in
+                TextField(L10n.Board.pinPlaceholder, text: $pinInput)
+                    .keyboardType(.numberPad)
+                Button(L10n.Board.pinApply) {
+                    let slot = Int(pinInput.trimmed) ?? 1
+                    appState.setPostPin(post.id, slot: slot)
+                    pinInput = ""
+                }
+                Button(L10n.Common.cancel, role: .cancel) { pinInput = "" }
+            } message: { post in
+                Text(post.isPinned ? "\(L10n.Board.pinPrompt)\n\(L10n.Board.pinnedAt(post.pinSlot))" : L10n.Board.pinPrompt)
+            }
+            .sheet(item: Binding(
+                get: { appState.votersPostID.map(VotersRoute.init) },
+                set: { if $0 == nil { appState.votersPostID = nil } }
+            )) { route in
+                PostVotersView(postID: route.id)
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+                    .presentationCornerRadius(28)
+            }
+    }
+}
+
+private struct VotersRoute: Identifiable { let id: UUID }
 
 #if DEBUG
 /// `-sample` lansman bayrakları. `body` içinde durunca derleyici ifade
@@ -537,18 +576,16 @@ private struct DebugFeedLaunchHooks: ViewModifier {
                 if appState.opensComposer { showPostComposer = true }
                 if appState.opensPlacesWall { showPlacesWall = true }
             }
-            .task {
-                if appState.opensProfileOf != nil, appState.profiles.isEmpty {
-                    await appState.loadDiscovery()
-                }
-            }
-            .fullScreenCover(item: debugProfileBinding) { rota in
+            .sheet(item: debugProfileBinding) { rota in
                 NavigationStack {
                     let kisi = rota.name.flatMap { ad in
-                        appState.profiles.first { $0.name.localizedCaseInsensitiveCompare(ad) == .orderedSame }
+                        SampleData.profiles.first { $0.name.localizedCaseInsensitiveCompare(ad) == .orderedSame }
                     } ?? appState.currentUserProfile
-                    SocialPersonDetailView(profile: kisi, place: nil)
+                    ProfilePhotoStackView(profile: kisi)
                 }
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+                .presentationCornerRadius(28)
             }
             .task(id: appState.clubs.count) {
                 if appState.opensFirstClub, selectedClub == nil { selectedClub = appState.clubs.first }
@@ -565,7 +602,7 @@ private struct DebugFeedLaunchHooks: ViewModifier {
         Binding(
             get: {
                 guard let ad = appState.opensProfileOf else { return nil }
-                if let ad, !appState.profiles.contains(where: {
+                if let ad, !SampleData.profiles.contains(where: {
                     $0.name.localizedCaseInsensitiveCompare(ad) == .orderedSame
                 }) { return nil }
                 return DebugProfileRoute(name: ad)

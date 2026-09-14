@@ -32,10 +32,10 @@ final class SupabaseProductService: ProductService, @unchecked Sendable {
     /// Postgres'te `date` tipinde ve saatsiz geliyor ("2003-10-18"), bu yüzden
     /// çözümleme "Invalid date format" ile patlıyordu.
     ///
-    /// Bu tek alan beş ayrı yapıda okunuyor — kendi profilim, keşif adayları,
+    /// Bu tek alan beş ayrı yapıda okunuyor — kendi profilim, kampüs listesi,
     /// yerdeki kişiler, ziyaretçiler, sohbet ve gönderi yazarları. Yani hata
-    /// girişten Tanış'a kadar her şeyi kırıyordu; gerçek veri olmadığı için
-    /// bugüne kadar ortaya çıkmamıştı.
+    /// girişten İnsanlar sekmesine kadar her şeyi kırıyordu; gerçek veri
+    /// olmadığı için bugüne kadar ortaya çıkmamıştı.
     /// `ISO8601DateFormatter` Sendable değil; okuma amaçlı paylaşımı güvenli olduğu
     /// için tip düzeyinde tutuluyor. Her tarih için yeniden kurmak yüz gönderilik bir
     /// akışta gereksiz maliyet olurdu.

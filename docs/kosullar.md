@@ -1,15 +1,19 @@
 # Kullanım Koşulları
 
-**Son güncelleme:** 25 Ağustos 2026
+**Son güncelleme:** 11 Eylül 2026
 
 Common'u kullanarak bu koşulları kabul etmiş olursun. Kabul etmiyorsan
 uygulamayı kullanma.
 
 ## Kimler kullanabilir
 
-Common, Yalova Üniversitesi öğrencileri içindir ve **18 yaşından büyük**
+Common, üniversite öğrencilerine yöneliktir ve **18 yaşını doldurmuş**
 olman gerekir. Hesabını kendi adına açarsın; başkasının kimliğine bürünemez,
 sahte profil oluşturamazsın. Hesabını başkasına devredemez, paylaşamazsın.
+
+Google veya Apple ile giriş yapabilirsin. Giriş için .edu.tr adresi şartı
+aranmaz; giriş yapmış olmak üniversite öğrencisi olduğunun doğrulandığı
+anlamına gelmez.
 
 ## Paylaştığın içerikten sen sorumlusun
 
@@ -35,8 +39,15 @@ Aşağıdakilere **sıfır tolerans** uygulanır:
 
 ## Şikayet, engelleme ve moderasyon
 
-Uygulamadaki her profil ve gönderi için **şikayet et** ve **engelle**
-seçenekleri vardır. Engellediğin kişi seninle iletişim kuramaz.
+Profilleri, gönderileri, yorumları, story'leri ve aldığın mesajları uygulama
+içinden **şikayet edebilirsin**. Bir içeriği şikayet ettiğinde ilgili içerik ve
+gerekçen moderatörlere iletilir. Profiller ve sohbetler üzerinden kişileri
+**engelleyebilirsin**; engellediğin kişi seninle iletişim kuramaz.
+
+Belirli açık hakaret ve müstehcen ifadeler paylaşılmadan önce metin
+kontrolünden geçirilir. Bu kontrol her ihlali tespit edemez; fotoğraf ve
+videoların otomatik olarak tamamen denetlendiği anlamına gelmez. Kontrolden
+kaçan veya başka şekilde kuralları ihlal eden içerikleri şikayet edebilirsin.
 
 Bize ulaşan şikayetleri **24 saat içinde** inceler; kuralları ihlal eden
 içeriği kaldırır ve gerekirse hesabı kalıcı olarak kapatırız. Ciddi
@@ -48,6 +59,11 @@ ayrıca bildirimde bulunmak zorunda değiliz.
 Kuralları ihlal ettiğini tespit edersek hesabını uyarı yapmadan
 kapatabiliriz. Sen de hesabını dilediğin zaman uygulama içinden
 **Profil → Hesabı kalıcı olarak sil** yolundan silebilirsin.
+
+Hesap silmek App Store aboneliğini otomatik iptal etmez. Aboneliğini Apple
+hesap ayarlarından ayrıca yönetmelisin. Apple ile giriş izni otomatik
+kaldırılamadığında uygulama, bu izni Apple hesabından kaldırman için
+yönergeleri gösterir.
 
 ## Abonelikler
 
@@ -71,11 +87,11 @@ devredilemez. Hangi özelliklerin ücretli olduğunu zamanla değiştirebiliriz;
 
 ## Sorumluluk sınırı
 
-Common tanışmayı kolaylaştıran bir araçtır; kullanıcıların kimliğini,
-söylediklerinin doğruluğunu veya niyetlerini garanti etmez. Tanıştığın
-kişilerle buluşurken kendi güvenliğinden sen sorumlusun: ilk buluşmaları
-kalabalık ve açık yerlerde yapmanı, yakınlarından birine haber vermeni
-öneririz.
+Common kampüs içi iletişimi ve buluşmaları kolaylaştıran bir sosyal araçtır;
+kullanıcıların kimliğini, söylediklerinin doğruluğunu veya niyetlerini garanti
+etmez. Uygulamadan tanıdığın kişilerle buluşurken kendi güvenliğinden sen
+sorumlusun: ilk buluşmaları kalabalık ve açık yerlerde yapmanı, yakınlarından
+birine haber vermeni öneririz.
 
 Uygulama "olduğu gibi" sunulur. Kesintisiz veya hatasız çalışacağını taahhüt
 etmiyoruz. Yasaların izin verdiği ölçüde, uygulamanın kullanımından doğan

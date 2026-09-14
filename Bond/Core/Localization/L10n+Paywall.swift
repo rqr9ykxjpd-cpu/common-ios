@@ -11,6 +11,9 @@ extension L10n {
         static func planName(_ tier: String) -> String {
             L10n.format("paywall.planName", tier)
         }
+        static func currentPlan(_ tier: String) -> String {
+            L10n.format("paywall.currentPlan", planName(tier))
+        }
         static var unlimited: String { String(localized: "paywall.unlimited") }
         static var perWeek: String { String(localized: "paywall.perWeek") }
         static var handNote: String { String(localized: "paywall.handNote") }
@@ -23,8 +26,8 @@ extension L10n {
         static var goPlus: String { String(localized: "paywall.goPlus") }
         static var goPro: String { String(localized: "paywall.goPro") }
         static var pending: String { String(localized: "paywall.pending") }
-        static var featureLikes: String { String(localized: "paywall.featureLikes") }
         static var featureRequests: String { String(localized: "paywall.featureRequests") }
+        static var featureConnections: String { String(localized: "paywall.featureConnections") }
         static var featureAccepts: String { String(localized: "paywall.featureAccepts") }
         static var featureVisitors: String { String(localized: "paywall.featureVisitors") }
         static var featurePause: String { String(localized: "paywall.featurePause") }

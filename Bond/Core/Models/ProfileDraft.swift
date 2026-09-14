@@ -1,42 +1,5 @@
 import Foundation
 
-enum ProfileGender: String, Codable, CaseIterable, Identifiable {
-    case female
-    case male
-
-    /// Kimlerin gösterileceği artık ayrı bir soru değil, cinsiyetten türetiliyor.
-    /// Kadın seçen erkekleri, erkek seçen kadınları görüyor.
-    var impliedDatingPreference: DatingPreference {
-        switch self {
-        case .female: .men
-        case .male: .women
-        }
-    }
-
-    var id: Self { self }
-    var title: String {
-        switch self {
-        case .female: L10n.Gender.female
-        case .male: L10n.Gender.male
-        }
-    }
-}
-
-enum DatingPreference: String, Codable, CaseIterable, Identifiable {
-    case women
-    case men
-    case everyone
-
-    var id: Self { self }
-    var title: String {
-        switch self {
-        case .women: L10n.Dating.women
-        case .men: L10n.Dating.men
-        case .everyone: L10n.Dating.everyone
-        }
-    }
-}
-
 struct ProfileDraft: Equatable, Codable {
     var name = ""
     var birthDate = Calendar.current.date(byAdding: .year, value: -21, to: .now) ?? .now
@@ -45,21 +8,15 @@ struct ProfileDraft: Equatable, Codable {
     var year = "3. sınıf"
     var bio = ""
     var interests: Set<String> = []
-    var gender: ProfileGender?
-    /// Ayrı bir soru olarak sorulmuyor; cinsiyetten türetiliyor. Hesaplanan olması,
-    /// ikisinin birbirinden ayrı düşüp tutarsız kalmasını da imkânsız kılıyor.
-    var datingPreference: DatingPreference? { gender?.impliedDatingPreference }
-    var relationshipIntent: RelationshipIntent = .both
     /// Sunucudan gelir. `save_my_profile` bunu parametre olarak almıyor, yani
     /// istemci kendine rozet veremiyor — buradaki değer yalnızca gösterim için.
     var badge: ProfileBadge = .none
-    var discoveryFilters = DiscoveryFilters()
     /// Sunucudaki `profiles.ghost_mode`. UserDefaults'a yazılmaz; hayalet
     /// tercihi `AppState.ghostMode` üzerinden gider.
     var ghostMode: Bool? = nil
 
     private enum CodingKeys: String, CodingKey {
-        case name, birthDate, university, department, year, bio, interests, gender, relationshipIntent, badge, discoveryFilters
+        case name, birthDate, university, department, year, bio, interests, badge
     }
 
     init() {}
@@ -73,14 +30,25 @@ struct ProfileDraft: Equatable, Codable {
         year = try container.decodeIfPresent(String.self, forKey: .year) ?? "3. sınıf"
         bio = try container.decodeIfPresent(String.self, forKey: .bio) ?? ""
         interests = try container.decodeIfPresent(Set<String>.self, forKey: .interests) ?? []
-        gender = try container.decodeIfPresent(ProfileGender.self, forKey: .gender)
-        relationshipIntent = try container.decodeIfPresent(RelationshipIntent.self, forKey: .relationshipIntent) ?? .both
         badge = try container.decodeIfPresent(ProfileBadge.self, forKey: .badge) ?? .none
-        discoveryFilters = try container.decodeIfPresent(DiscoveryFilters.self, forKey: .discoveryFilters) ?? DiscoveryFilters()
     }
 
     var age: Int {
         max(18, Calendar.current.dateComponents([.year], from: birthDate, to: .now).year ?? 18)
+    }
+
+    /// Hakkında isteğe bağlı: zorunlu alanlar doluysa %90, bio da varsa %100.
+    func completionPercent(hasAvatar: Bool) -> Int {
+        let required = [
+            hasAvatar,
+            !name.trimmed.isEmpty,
+            !department.trimmed.isEmpty,
+            interests.count >= InterestCatalog.minimumSelection
+        ]
+        let filled = required.filter { $0 }.count
+        let base = Int((Double(filled) / Double(required.count) * 90).rounded())
+        let about = bio.trimmed.isEmpty ? 0 : 10
+        return min(100, base + about)
     }
 }
 
@@ -94,14 +62,14 @@ struct PersonProfileData {
     var posts: [SocialPost]
 }
 
-/// Hangi sınıra takılındı. Paywall'daki başlık buna göre değişiyor: "beğeni
-/// hakkın bitti" ile "buluşma isteği hakkın bitti" farklı anlar.
+/// Hangi sınıra takılındı. Paywall'daki başlık buna göre değişiyor:
+/// gönderi tavanı ile buluşma isteği tavanı farklı anlar.
 enum QuotaKind {
-    case like, meetingRequest, meetingAccept, posts
+    case connectionRequest, meetingRequest, meetingAccept, posts
 
     var title: String {
         switch self {
-        case .like: L10n.Quota.likeTitle
+        case .connectionRequest: L10n.Quota.connectionRequestTitle
         case .meetingRequest: L10n.Quota.meetingRequestTitle
         case .meetingAccept: L10n.Quota.meetingAcceptTitle
         case .posts: L10n.Quota.postTitle
@@ -110,7 +78,7 @@ enum QuotaKind {
 
     var detail: String {
         switch self {
-        case .like: L10n.Quota.likeDetail
+        case .connectionRequest: L10n.Quota.connectionRequestDetail
         case .meetingRequest: L10n.Quota.meetingRequestDetail
         case .meetingAccept: L10n.Quota.meetingAcceptDetail
         case .posts: L10n.Quota.postDetail

@@ -1,4 +1,5 @@
 import SwiftUI
+import AuthenticationServices
 
 // MARK: - AppState+Auth
 extension AppState {
@@ -8,6 +9,12 @@ extension AppState {
     func signInWithApple(idToken: String, nonce: String) async -> Bool {
         do {
             try await service.signInWithApple(idToken: idToken, nonce: nonce)
+            // A new Apple authorization grants permission again, so an old
+            // partial-deletion marker must not skip revocation on the next try.
+            if let userID = service.currentUserID,
+               appleRevokedPendingDeletionUserID == userID {
+                appleRevokedPendingDeletionUserID = nil
+            }
         } catch {
             showError(error, fallback: L10n.Auth.appleFailed)
             return false
@@ -37,6 +44,19 @@ extension AppState {
             return false
         }
         return true
+    }
+
+    /// E-posta ve şifre. Debug derlemesindeki demo hesaplar için.
+    @discardableResult
+    func signInWithEmail(_ rawEmail: String, password: String) async -> Bool {
+        let normalized = rawEmail.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        do {
+            try await service.signInWithEmail(email: normalized, password: password)
+        } catch {
+            showError(error, fallback: L10n.Auth.passwordFailed)
+            return false
+        }
+        return await completeSocialSignIn()
     }
 
     /// `.onOpenURL` ile yakalanan giriş bağlantısını tamamlar. Apple/Google'la aynı
@@ -174,7 +194,6 @@ extension AppState {
 #else
         myBadge = profile.badge
 #endif
-        discoveryFilters = profile.discoveryFilters
         persistAccount()
         applyRemoteGhostMode(profile.ghostMode)
     }
@@ -254,16 +273,75 @@ extension AppState {
         }
     }
 
-    func deleteAccount() async {
-        guard !isAccountActionInProgress else { return }
+    var hasAppleIdentity: Bool {
+        hasPendingAppleRevokedDeletion || ((service as? any AppleAccountRevocationService)?.hasAppleIdentity ?? false)
+    }
+
+    var hasPendingAppleRevokedDeletion: Bool {
+        route != .welcome && appleRevokedPendingDeletionUserID == currentUserID
+    }
+
+    func revokeAppleAuthorization(_ request: AppleAccountRevocationRequest) async throws {
+        guard let appleService = service as? any AppleAccountRevocationService else {
+            throw AppleAccountRevocationError.unavailable
+        }
+        guard !isAccountActionInProgress else { throw AppleAccountRevocationError.unavailable }
+        let accountID = service.currentUserID
+        isAccountActionInProgress = true
+        defer { isAccountActionInProgress = false }
+        try await appleService.revokeAppleAuthorization(request)
+        if let accountID, service.currentUserID == accountID {
+            // No provider token is stored. Keep only the deletion intent so a
+            // failed RPC can be retried after closing the sheet or restarting.
+            appleRevokedPendingDeletionUserID = accountID
+        }
+    }
+
+    /// A notification during our deletion flow must not clear the Supabase
+    /// session before delete_my_account executes. Outside that flow, revoked
+    /// Apple credentials invalidate the local authenticated UI.
+    func handleAppleCredentialRevocation() async {
+        guard !isAccountActionInProgress, !hasPendingAppleRevokedDeletion,
+              let apple = service as? any AppleAccountRevocationService,
+              let subject = apple.appleSubject else { return }
+        let accountID = service.currentUserID
+        let state: ASAuthorizationAppleIDProvider.CredentialState? = await withCheckedContinuation { continuation in
+            ASAuthorizationAppleIDProvider().getCredentialState(forUserID: subject) { state, error in
+                continuation.resume(returning: error == nil ? state : nil)
+            }
+        }
+        guard !isAccountActionInProgress, !hasPendingAppleRevokedDeletion, service.currentUserID == accountID,
+              state == .revoked || state == .notFound else { return }
+        isAccountActionInProgress = true
+        defer { isAccountActionInProgress = false }
+        await BondImageLoader.shared.reset()
+        try? await service.signOut()
+        clearSession(keepAccountData: false)
+    }
+
+    @discardableResult
+    func deleteAccount(manualAppleRevocation: Bool = false) async -> Bool {
+        guard !isAccountActionInProgress else { return false }
         isAccountActionInProgress = true
         defer { isAccountActionInProgress = false }
         do {
+            let accountID = service.currentUserID
             await BondImageLoader.shared.reset()
             try await service.deleteAccount()
+            if let accountID,
+               appleRevokedPendingDeletionUserID == accountID {
+                appleRevokedPendingDeletionUserID = nil
+            }
             clearSession(keepAccountData: false)
+            // Only claim success after the actual account deletion. The manual
+            // path never claims that the Apple permission was revoked as well.
+            if manualAppleRevocation {
+                UserDefaults.standard.set(true, forKey: AppleAccountDeletionNotice.defaultsKey)
+            }
+            return true
         } catch {
             showError(error, fallback: L10n.Auth.deleteFailed)
+            return false
         }
     }
 
@@ -285,35 +363,39 @@ extension AppState {
         email = ""
         currentUserID = UUID()
         draft = ProfileDraft()
-        discoveryFilters = DiscoveryFilters()
         avatarData = nil
         profileGalleryData = []
         avatarURL = nil
         galleryURLs = []
-        profiles = []
         conversations = []
         posts = []
         stories = []
         notifications = []
         pendingNotificationReadIDs = []
+        rightSwipedProfileIDs = []
+        introductionRequests = []
+        introductionRequestsError = nil
+        isLoadingIntroductions = false
         meetingRequests = []
         profileVisits = []
-        currentMatch = nil
         selectedConversation = nil
         selectedStory = nil
         selectedPlaceFilter = nil
         currentVisiblePlace = nil
+        presenceUpdateID = nil
+        presenceUpdatingPlaceID = nil
+        presenceError = nil
+        feedLoadGeneration += 1
+        clubsLoadGeneration += 1
+        isLoadingFeed = false
+        isLoadingClubs = false
+        feedError = nil
+        clubsError = nil
         joinedClubIDs = []
         myBadge = .none
 
-        // Geçici bayraklar da sıfırlanmalı. Çıkış bir yükleme sürerken yapılırsa
-        // `isLoadingDiscovery` true kalıyor ve sonraki girişte `loadDiscovery`
-        // başındaki guard yüzünden keşif hiç yüklenmiyordu.
-        isLoadingDiscovery = false
-        isReactingToProfile = false
         isFinishingOnboarding = false
         onboardingFailure = nil
-        discoveryError = nil
         toast = nil
 
         // `places`, `clubs` herkese açık referans verisi; `appearance` kullanıcının
@@ -338,7 +420,6 @@ extension AppState {
         let canMigrateLegacy = migratingLegacy && legacyUserID == currentUserID
         let storedDraft = defaults.data(forKey: draftKey) ?? (canMigrateLegacy ? defaults.data(forKey: SessionKey.profileDraft) : nil)
         if let storedDraft, let savedDraft = try? JSONDecoder().decode(ProfileDraft.self, from: storedDraft) { draft = savedDraft }
-        discoveryFilters = draft.discoveryFilters
         // Avatar/galeri artık Supabase Storage'da yaşıyor (bkz. loadMyProfilePhotos), UserDefaults
         // ham görsel verisi için tasarlanmadığından burada yalnızca eski kayıtları temizliyoruz.
         defaults.removeObject(forKey: avatarKey)
@@ -351,6 +432,27 @@ extension AppState {
         defaults.set(currentUserID.uuidString, forKey: SessionKey.userID)
         defaults.set(email.lowercased(), forKey: SessionKey.account("email", userID: currentUserID))
         defaults.set(try? JSONEncoder().encode(draft), forKey: SessionKey.account("profileDraft", userID: currentUserID))
+    }
+
+    /// Eski kaydırma/cinsiyet/keşif kayıtlarını ve görsel önbelleği bir kez siler.
+    /// Giriş oturumuna dokunmaz; profil taslağını yeni şemayla yeniden yazar.
+    func purgeLegacyProductCacheIfNeeded() {
+        let stored = defaults.integer(forKey: SessionKey.productCacheEpoch)
+        guard stored < SessionKey.currentProductCacheEpoch else { return }
+
+        URLCache.shared.removeAllCachedResponses()
+        Task { await BondImageLoader.shared.reset() }
+
+        let leftoverFragments = ["discovery", "dating", "admirer"]
+        for key in defaults.dictionaryRepresentation().keys {
+            let lower = key.lowercased()
+            if leftoverFragments.contains(where: { lower.contains($0) }) {
+                defaults.removeObject(forKey: key)
+            }
+        }
+
+        persistAccount()
+        defaults.set(SessionKey.currentProductCacheEpoch, forKey: SessionKey.productCacheEpoch)
     }
     func persistSession() {
         defaults.set(true, forKey: SessionKey.isSignedIn)

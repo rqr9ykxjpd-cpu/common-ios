@@ -27,6 +27,7 @@ actor SampleStore {
     var places: [CampusPlace]
     var visiblePlaceID: UUID?
     var draft: ProfileDraft
+    var galleryPhotoCount: Int
 
     let me: StudentProfile
 
@@ -45,39 +46,18 @@ actor SampleStore {
         self.meetingRequests = SampleData.meetingRequests(places: places)
         self.visits = SampleData.visits
         self.visiblePlaceID = nil
+        self.galleryPhotoCount = SampleData.profiles[0].galleryImageURLs.count
     }
 
-    // MARK: Keşif
+    // MARK: Kampüs insanları
 
-    func takeCandidates(offset: Int, limit: Int) -> [StudentProfile] {
-        guard offset < profiles.count else { return [] }
-        return Array(profiles[offset..<min(offset + limit, profiles.count)])
-    }
-
-    /// "Yenile": desteden çıkanları geri koy (örnek modda eşleşmiş sohbetler hariç).
-    func resetDiscoveryDeck() {
-        let matchedIDs = Set(conversations.map(\.profile.id))
-        let remaining = Set(profiles.map(\.id))
-        let restored = SampleData.profiles.filter { !matchedIDs.contains($0.id) && !remaining.contains($0.id) }
-        profiles.append(contentsOf: restored)
-    }
-
-    /// Örnek veride her üçüncü beğeni eşleşmeye dönüyor; eşleşme anı ekranı ve
-    /// oradan açılan sohbet böylece denenebiliyor.
-    func react(to profileID: UUID, liked: Bool) -> DiscoveryReactionResult {
-        guard let index = profiles.firstIndex(where: { $0.id == profileID }) else {
-            return DiscoveryReactionResult(matched: false, matchID: nil)
+    func campusPeople(offset: Int, limit: Int) -> [StudentProfile] {
+        let visible = profiles.filter { person in
+            !blocked.contains(where: { $0.id == person.id })
+            && !suspended.contains(person.id)
         }
-        let profile = profiles.remove(at: index)
-        guard liked, profile.compatibility >= 80 else {
-            return DiscoveryReactionResult(matched: false, matchID: nil)
-        }
-        let matchID = UUID()
-        conversations.insert(
-            Conversation(id: matchID, profile: profile, messages: [], updatedAt: .now, unreadCount: 0),
-            at: 0
-        )
-        return DiscoveryReactionResult(matched: true, matchID: matchID)
+        guard offset < visible.count else { return [] }
+        return Array(visible[offset..<min(offset + limit, visible.count)])
     }
 
     // MARK: Sohbet
@@ -116,14 +96,55 @@ actor SampleStore {
 
     func removePost(_ postID: UUID) { posts.removeAll { $0.id == postID } }
 
-    func setLiked(_ postID: UUID, liked: Bool) {
+    /// value: +1 / -1 / 0. Puan, eski oy düşülüp yenisi eklenerek güncellenir.
+    func setPostVote(_ postID: UUID, value: Int) {
         guard let index = posts.firstIndex(where: { $0.id == postID }) else { return }
-        posts[index] = posts[index].copy(liked: liked, likeCount: max(0, posts[index].likeCount + (liked ? 1 : -1)))
+        let p = posts[index]
+        let eski = p.liked ? 1 : (p.downvoted ? -1 : 0)
+        posts[index] = p.copy(liked: value == 1, downvoted: value == -1, likeCount: p.likeCount - eski + value)
     }
 
     func setSaved(_ postID: UUID, saved: Bool) {
         guard let index = posts.firstIndex(where: { $0.id == postID }) else { return }
         posts[index] = posts[index].copy(saved: saved)
+    }
+
+    func boost(_ postID: UUID, extra: Int) -> Int {
+        guard let index = posts.firstIndex(where: { $0.id == postID }) else { return 0 }
+        let p = posts[index]
+        let yeni = max(0, p.boost + extra)
+        posts[index] = p.copy(likeCount: p.likeCount - p.boost + yeni, boost: yeni)
+        return yeni
+    }
+
+    func boostComment(_ commentID: UUID, extra: Int) -> Int {
+        for index in posts.indices {
+            guard let ci = posts[index].comments.firstIndex(where: { $0.id == commentID }) else { continue }
+            var comments = posts[index].comments
+            let yeni = max(0, comments[ci].boost + extra)
+            comments[ci].voteCount += yeni - comments[ci].boost
+            comments[ci].boost = yeni
+            posts[index] = posts[index].copy(comments: comments)
+            return yeni
+        }
+        return 0
+    }
+
+    func setPin(_ postID: UUID, slot: Int?) {
+        guard let index = posts.firstIndex(where: { $0.id == postID }) else { return }
+        posts[index] = posts[index].copy(pinnedAt: .some(slot == nil ? nil : Date()), pinnedSlot: .some(slot))
+    }
+
+    func setCommentVote(_ commentID: UUID, value: Int) {
+        for index in posts.indices {
+            guard let ci = posts[index].comments.firstIndex(where: { $0.id == commentID }) else { continue }
+            var comments = posts[index].comments
+            let eski = comments[ci].voted ? 1 : (comments[ci].downvoted ? -1 : 0)
+            comments[ci].voted = value == 1
+            comments[ci].downvoted = value == -1
+            comments[ci].voteCount += value - eski
+            posts[index] = posts[index].copy(comments: comments)
+        }
     }
 
     func addComment(_ comment: BackendComment) {
@@ -185,6 +206,21 @@ actor SampleStore {
         Array(SampleData.profiles.prefix(3))
     }
 
+    /// Demo: ilk yer kalabalık, sonrakiler seyrek, gerisi boş.
+    func placePresence() -> [PlacePresenceSummary] {
+        let profiles = SampleData.profiles
+        let sirali = CampusPlaceOrder.sorted(places)
+        var out: [PlacePresenceSummary] = []
+        for (i, place) in sirali.enumerated() {
+            let n = [4, 2, 1, 0, 3, 0, 1][i % 7]
+            guard n > 0 else { continue }
+            let kisiler = profiles.prefix(min(n, 3))
+            out.append(PlacePresenceSummary(placeID: place.id, count: n, avatarURLs: [],
+                                            avatarAssetNames: kisiler.compactMap(\.imageAssetName)))
+        }
+        return out
+    }
+
     func allMeetingRequests() -> [MeetingRequest] { meetingRequests }
 
     // MARK: Moderasyon
@@ -195,6 +231,7 @@ actor SampleStore {
     // MARK: Engellenenler
 
     private var blocked: [BlockedProfile] = SampleData.blockedProfiles
+    private var rightSwipedIDs: Set<UUID> = []
 
     func allBlocked() -> [BlockedProfile] { blocked }
 
@@ -217,8 +254,66 @@ actor SampleStore {
         }
     }
 
-    func resolveReport(_ id: UUID, resolution: String) {
-        guard let index = reports.firstIndex(where: { $0.id == id }) else { return }
+    func addReport(profileID: UUID, reason: ReportReason, details: String?, target: ReportTarget? = nil,
+                   contentText: String? = nil, mediaURL: URL? = nil) {
+        guard profileID != me.id, let reported = profile(id: profileID) else { return }
+        reports.insert(ModerationReport(
+            id: UUID(), reporter: me, reported: reported, reason: reason, details: details,
+            createdAt: .now, handledAt: nil, resolution: nil, reportedActive: true,
+            target: target, contentText: contentText, contentMediaURL: mediaURL
+        ), at: 0)
+    }
+
+    func addContentReport(_ target: ReportTarget, reason: ReportReason, details: String?) throws {
+        switch target.kind {
+        case .post:
+            guard let post = posts.first(where: { $0.id == target.id }), post.authorID != me.id else {
+                throw SampleReportError.unavailable
+            }
+            addReport(profileID: post.authorID, reason: reason, details: details, target: target,
+                      contentText: post.caption, mediaURL: post.imageURL)
+        case .story:
+            guard let story = stories.first(where: { $0.id == target.id }), !story.isMine else {
+                throw SampleReportError.unavailable
+            }
+            addReport(profileID: story.author.id, reason: reason, details: details, target: target,
+                      contentText: story.caption)
+        case .comment:
+            guard let comment = posts.flatMap(\.comments).first(where: { $0.id == target.id }), comment.authorID != me.id else {
+                throw SampleReportError.unavailable
+            }
+            addReport(profileID: comment.authorID, reason: reason, details: details, target: target,
+                      contentText: comment.body)
+        case .message:
+            guard let conversation = conversations.first(where: { $0.messages.contains { $0.id == target.id && !$0.isMine } }),
+                  let message = conversation.messages.first(where: { $0.id == target.id }) else {
+                throw SampleReportError.unavailable
+            }
+            addReport(profileID: conversation.profile.id, reason: reason, details: details, target: target,
+                      contentText: message.body)
+        }
+    }
+
+    private enum SampleReportError: Error { case unavailable, missingTarget, alreadyResolved }
+
+    func resolveReport(_ id: UUID, resolution: String) throws {
+        guard let index = reports.firstIndex(where: { $0.id == id }) else { throw SampleReportError.unavailable }
+        if reports[index].handledAt != nil {
+            guard reports[index].resolution == resolution else { throw SampleReportError.alreadyResolved }
+            return
+        }
+        if resolution == ModerationReport.Resolution.contentRemoved.rawValue {
+            guard let target = reports[index].target else { throw SampleReportError.missingTarget }
+            switch target.kind {
+            case .post: removePost(target.id)
+            case .story: removeStory(target.id)
+            case .comment: removeComment(target.id)
+            case .message:
+                for index in conversations.indices { conversations[index].messages.removeAll { $0.id == target.id } }
+            }
+        } else if resolution == ModerationReport.Resolution.accountSuspended.rawValue {
+            setAccountActive(reports[index].reported.id, active: false)
+        }
         reports[index].handledAt = .now
         reports[index].resolution = resolution
     }
@@ -288,6 +383,34 @@ actor SampleStore {
         return conversations.first(where: { $0.profile.id == messageRequests[index].profile.id })?.id
     }
 
+    func addRightSwipe(to profileID: UUID) throws -> RightSwipeOutcome {
+        if profileID == me.id {
+            throw NSError(domain: "Campus", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid swipe"])
+        }
+        if blocked.contains(where: { $0.id == profileID }) {
+            throw NSError(domain: "Campus", code: 403, userInfo: [NSLocalizedDescriptionKey: "RIGHT_SWIPE_BLOCKED"])
+        }
+        // Ücretsiz plan: 2 günde 5 istek. Sunucudaki trigger ile aynı sayı.
+        if rightSwipedIDs.count >= 5 {
+            throw NSError(domain: "Campus", code: 429, userInfo: [NSLocalizedDescriptionKey: "QUOTA_CONNECTION_REQUEST"])
+        }
+        if !rightSwipedIDs.insert(profileID).inserted {
+            throw NSError(domain: "Campus", code: 409, userInfo: [NSLocalizedDescriptionKey: "RIGHT_SWIPE_EXISTS"])
+        }
+        // Örnek veride Duru bize zaten istek göndermiş: sağa kaydırınca
+        // karşılıklı olur ve "Bağlantı kuruldu" anı görülebilir. Gerçek akışta
+        // bunu sunucu belirliyor.
+        if let profile = profile(id: profileID), profile.name == "Duru" {
+            let conversation = conversations.first(where: { $0.profile.id == profileID }) ?? {
+                let yeni = Conversation(id: UUID(), profile: profile, messages: [], updatedAt: .now, unreadCount: 0)
+                conversations.insert(yeni, at: 0)
+                return yeni
+            }()
+            return RightSwipeOutcome(matched: true, matchID: conversation.id)
+        }
+        return RightSwipeOutcome(matched: false, matchID: nil)
+    }
+
     // MARK: Profil
 
     func allVisits() -> [ProfileVisit] { visits }
@@ -295,6 +418,18 @@ actor SampleStore {
     func myDraft() -> ProfileDraft { draft }
 
     func save(_ newDraft: ProfileDraft) { draft = newDraft }
+
+    func replaceGalleryCount(_ count: Int) {
+        galleryPhotoCount = min(count, CampusLimits.maxGalleryPhotos)
+    }
+
+    func appendGalleryPhoto() throws -> URL {
+        guard galleryPhotoCount < CampusLimits.maxGalleryPhotos else {
+            throw BackendServiceError.galleryFull
+        }
+        galleryPhotoCount += 1
+        return URL(string: "https://sample.local/gallery/\(UUID().uuidString).jpg")!
+    }
 }
 
 #endif

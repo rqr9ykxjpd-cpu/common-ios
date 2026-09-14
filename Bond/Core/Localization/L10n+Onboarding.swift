@@ -11,10 +11,6 @@ extension L10n {
         static var departmentPlaceholder: String { String(localized: "onboarding.departmentPlaceholder") }
         static var birthDate: String { String(localized: "onboarding.birthDate") }
         static var ageNote: String { String(localized: "onboarding.ageNote") }
-        static var preferencesEyebrow: String { String(localized: "onboarding.preferencesEyebrow") }
-        static var preferencesTitle: String { String(localized: "onboarding.preferencesTitle") }
-        static var preferencesSubtitle: String { String(localized: "onboarding.preferencesSubtitle") }
-        static var yourGender: String { String(localized: "onboarding.yourGender") }
         static var interestsEyebrow: String { String(localized: "onboarding.interestsEyebrow") }
         static var interestsTitle: String { String(localized: "onboarding.interestsTitle") }
         static func interestsSubtitle(_ min: Int, _ max: Int) -> String {

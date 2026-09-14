@@ -49,7 +49,8 @@ struct MessageRequestsView: View {
     @ViewBuilder
     private var requestState: some View {
         if appState.isLoadingMessageRequests {
-            AppLoadingView()
+            VStack(spacing: 0) { ForEach(0..<3, id: \.self) { _ in SkeletonRow() } }
+                .padding(.horizontal, BondTheme.Space.lg)
         } else if let error = appState.messageRequestsError {
             ContentUnavailableView {
                 Label(L10n.Errors.title, systemImage: "wifi.exclamationmark")

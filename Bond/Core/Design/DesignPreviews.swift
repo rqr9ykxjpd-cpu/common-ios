@@ -34,11 +34,21 @@ import SwiftUI
         .environment(AppState())
 }
 
-#Preview("Keşfet — Dating") {
-    PremiumDiscoverView()
+#Preview("Kampüste") {
+    PlacesWallView(showsCloseButton: false) { _ in }
         .environment(AppState())
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(.light)
 }
+
+#if DEBUG
+#Preview("Profil fotoğraf yığını") {
+    NavigationStack {
+        ProfilePhotoStackView(profile: SampleData.profiles[0])
+    }
+    .environment(AppState())
+    .preferredColorScheme(.light)
+}
+#endif
 
 #Preview("Bağlantılar — Premium") {
     PremiumMatchesView()

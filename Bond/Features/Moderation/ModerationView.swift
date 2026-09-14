@@ -14,6 +14,7 @@ struct ModerationView: View {
     @State private var islemdeki: UUID?
     @State private var geriAcilacak: ModerationReport?
     @State private var askiyaAlinacak: ModerationReport?
+    @State private var contentToRemove: ModerationReport?
 
     var body: some View {
         NavigationStack {
@@ -45,6 +46,18 @@ struct ModerationView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(L10n.Common.close) { dismiss() }
                 }
+            }
+            .confirmationDialog(L10n.ContentReport.removeConfirm, isPresented: Binding(
+                get: { contentToRemove != nil },
+                set: { if !$0 { contentToRemove = nil } }
+            ), titleVisibility: .visible) {
+                Button(L10n.ContentReport.remove, role: .destructive) {
+                    if let report = contentToRemove { resolve(report, as: .contentRemoved) }
+                    contentToRemove = nil
+                }
+                Button(L10n.Common.cancel, role: .cancel) { contentToRemove = nil }
+            } message: {
+                Text(L10n.ContentReport.removeBody)
             }
             .confirmationDialog(
                 L10n.Moderation.reopenTitle,
@@ -155,6 +168,19 @@ struct ModerationView: View {
                 }
             }
 
+            VStack(alignment: .leading, spacing: 8) {
+                Text(kayit.target?.kind.title ?? L10n.ContentReport.profile)
+                    .font(.subheadline.weight(.semibold))
+                if let text = kayit.contentText, !text.isEmpty {
+                    Text(text)
+                        .font(.body)
+                        .textSelection(.enabled)
+                }
+                if let mediaURL = kayit.contentMediaURL {
+                    Link(L10n.ContentReport.openMedia, destination: mediaURL)
+                }
+            }
+
             if let aciklama = kayit.details, !aciklama.isEmpty {
                 Text(aciklama)
                     .font(.system(size: 14))
@@ -193,14 +219,21 @@ struct ModerationView: View {
                     HStack(spacing: 10) {
                         eylem(L10n.Moderation.noIssue, .dismissed, kayit, zemin: BondTheme.ink.opacity(0.06),
                               yazi: BondTheme.ink)
-                        eylem(L10n.Moderation.removedContent, .contentRemoved, kayit,
-                              zemin: BondTheme.ink.opacity(0.06), yazi: BondTheme.ink)
+                        if kayit.target != nil {
+                            eylem(L10n.ContentReport.remove, .contentRemoved, kayit,
+                                  zemin: BondTheme.ink.opacity(0.06), yazi: BondTheme.ink)
+                        }
                     }
                     eylem(L10n.Moderation.suspend, .accountSuspended, kayit,
                           zemin: BondTheme.coral, yazi: .white)
                 }
                 .disabled(calisiyor)
                 .opacity(calisiyor ? 0.5 : 1)
+                if kayit.target == nil {
+                    Text(L10n.ContentReport.noTarget)
+                        .font(.footnote)
+                        .foregroundStyle(BondTheme.muted)
+                }
 
                 // Askıya almanın ne yaptığını önden söylüyoruz: geri
                 // alınabilir ama etkisi geniş.
@@ -219,6 +252,8 @@ struct ModerationView: View {
         Button {
             if sonuc == .accountSuspended {
                 askiyaAlinacak = kayit
+            } else if sonuc == .contentRemoved {
+                contentToRemove = kayit
             } else {
                 resolve(kayit, as: sonuc)
             }

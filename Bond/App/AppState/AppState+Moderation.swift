@@ -13,28 +13,32 @@ extension AppState {
         }
     }
 
-    func loadAdmirers() async {
-        guard isFounder else { return }
-        isLoadingAdmirers = true
-        defer { isLoadingAdmirers = false }
-        do {
-            admirers = try await service.fetchAdmirers()
-        } catch {
-            showError(error, fallback: L10n.Profile.admirersLoadFailed)
-        }
-    }
-
     /// Şikayeti kapatır; istenirse önce içeriği kaldırır ya da hesabı askıya alır.
     func resolveReport(_ report: ModerationReport, resolution: ModerationReport.Resolution) async {
         do {
-            if resolution == .accountSuspended {
-                try await service.setAccountActive(report.reported.id, active: false)
-            }
             try await service.resolveReport(report.id, resolution: resolution.rawValue)
+            if resolution == .contentRemoved, let target = report.target {
+                removeReportedContentLocally(target)
+            }
             await loadReports()
             Haptics.success()
         } catch {
             showError(error, fallback: L10n.Moderation.closeFailed)
+        }
+    }
+
+    private func removeReportedContentLocally(_ target: ReportTarget) {
+        switch target.kind {
+        case .post:
+            posts.removeAll { $0.id == target.id }
+        case .story:
+            stories.removeAll { $0.id == target.id }
+        case .comment:
+            for index in posts.indices { posts[index].comments.removeAll { $0.id == target.id } }
+        case .message:
+            for index in conversations.indices {
+                conversations[index].messages.removeAll { $0.id == target.id }
+            }
         }
     }
 
@@ -57,8 +61,8 @@ extension AppState {
     func suspendAccount(_ profileID: UUID) async {
         do {
             try await service.setAccountActive(profileID, active: false)
-            // Askıya alınan kişi keşiften ve akıştan hemen kalksın.
-            profiles.removeAll { $0.id == profileID }
+            // Askıya alınan kişi İnsanlar listesinden ve akıştan hemen kalksın.
+            campusPeople.removeAll { $0.id == profileID }
             posts.removeAll { $0.author.id == profileID }
             show(L10n.Moderation.suspended)
             Haptics.success()

@@ -17,6 +17,7 @@ struct ConversationView: View {
     @State private var showUnmatchAlert = false
     @State private var showBlockConfirmation = false
     @State private var messagePendingDeletion: UUID?
+    @State private var messagePendingReport: UUID?
     @FocusState private var focused: Bool
 
     private var conversation: Conversation? { appState.conversations.first { $0.id == conversationID } }
@@ -41,6 +42,10 @@ struct ConversationView: View {
                                     delete: {
                                         activeMessageActions = nil
                                         messagePendingDeletion = message.id
+                                    },
+                                    report: {
+                                        activeMessageActions = nil
+                                        messagePendingReport = message.id
                                     },
                                     canEdit: appState.tier.canEditMessages,
                                     showPaywall: {
@@ -96,6 +101,22 @@ struct ConversationView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { sohbetAracCubugu }
         .onAppear { appState.markConversationRead(conversationID) }
+        .confirmationDialog(L10n.Common.report, isPresented: Binding(
+            get: { messagePendingReport != nil },
+            set: { if !$0 { messagePendingReport = nil } }
+        ), titleVisibility: .visible) {
+            ForEach(ReportReason.allCases) { reason in
+                Button(reason.title) {
+                    if let messageID = messagePendingReport {
+                        appState.reportContent(.init(kind: .message, id: messageID), reason: reason)
+                    }
+                    messagePendingReport = nil
+                }
+            }
+            Button(L10n.Common.cancel, role: .cancel) { messagePendingReport = nil }
+        } message: {
+            Text(L10n.ContentReport.shareMessage)
+        }
         .alert(L10n.Chat.unmatchConfirm, isPresented: $showUnmatchAlert) {
             Button(L10n.Common.cancel, role: .cancel) {}
             Button(L10n.Chat.endMatch, role: .destructive) {
@@ -374,6 +395,7 @@ private struct MessageBubble: View {
     let reply: () -> Void
     let edit: () -> Void
     let delete: () -> Void
+    let report: () -> Void
     /// Silme ve düzenleme Plus'a özel. Kilitliyken düğmeler gizlenmiyor, tek bir
     /// kilit düğmesine dönüşüyor: özelliğin var olduğunu görmeden kimse
     /// yükseltmeyi düşünmez.
@@ -451,6 +473,11 @@ private struct MessageBubble: View {
                 }
                 .accessibilityAction(named: L10n.Chat.reply, reply)
                 .accessibilityAction(named: L10n.Chat.sendHeart) { react("❤️") }
+                .accessibilityActions {
+                    if !message.isMine {
+                        Button(L10n.Common.report, action: report)
+                    }
+                }
 
                 if let reaction = message.reaction {
                     Button { react(reaction) } label: {
@@ -489,6 +516,16 @@ private struct MessageBubble: View {
             }
             .buttonStyle(PressableStyle())
             .accessibilityLabel(L10n.Chat.reply)
+
+            if !message.isMine {
+                Button(action: report) {
+                    Image(systemName: "flag")
+                        .font(.system(size: 15, weight: .semibold))
+                        .frame(width: 38, height: 38)
+                }
+                .buttonStyle(PressableStyle())
+                .accessibilityLabel(L10n.Common.report)
+            }
 
             // Silme ve düzenleme yalnızca kendi mesajında; sunucu da aynı
             // koşulu uyguluyor, arayüz onu yansıtıyor.

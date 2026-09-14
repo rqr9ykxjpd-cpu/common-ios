@@ -4,23 +4,21 @@ import Supabase
 extension SupabaseProductService {
     func saveProfile(_ draft: ProfileDraft) async throws {
         guard currentUserID != nil else { throw BackendServiceError.missingSession }
-        guard let gender = draft.gender,
-              let datingPreference = draft.datingPreference else {
-            throw BackendServiceError.incompleteProfile
+        // Validate each field separately: joining them can create a phrase that
+        // the user never wrote (e.g. the end of a name plus the start of a bio).
+        for text in [draft.name, draft.university, draft.department, draft.year, draft.bio] + draft.interests.sorted() {
+            try ContentSafety.validate(text)
         }
-        let params = SaveProfileParams(
+        let params = SaveCampusProfileParams(
             profileName: draft.name.trimmingCharacters(in: .whitespacesAndNewlines),
             profileBirthDate: Self.postgresDateFormatter.string(from: draft.birthDate),
-            profileGender: gender.rawValue,
-            profileDatingPreference: datingPreference.rawValue,
-            profileRelationshipIntent: draft.relationshipIntent.rawValue,
             profileUniversity: draft.university,
             profileDepartment: draft.department.trimmingCharacters(in: .whitespacesAndNewlines),
             profileAcademicYear: draft.year,
             profileBio: draft.bio.trimmingCharacters(in: .whitespacesAndNewlines),
             profileInterests: draft.interests.sorted()
         )
-        try await client.rpc("save_my_profile", params: params).execute()
+        try await client.rpc("save_my_campus_profile", params: params).execute()
     }
     func submitPurchase(jws: String, productID: String) async throws {
         guard currentUserID != nil else { throw BackendServiceError.missingSession }
@@ -43,22 +41,12 @@ extension SupabaseProductService {
         var draft = ProfileDraft()
         draft.name = row.name
         draft.birthDate = row.birthDate
-        draft.gender = ProfileGender(rawValue: row.gender)
-        draft.relationshipIntent = RelationshipIntent(rawValue: row.relationshipIntent) ?? .both
         draft.university = row.university
         draft.department = row.department
         draft.year = row.academicYear
         draft.bio = row.bio
         draft.badge = await myBadge()
         draft.interests = Set(row.interests)
-        var filters = DiscoveryFilters()
-        filters.minimumAge = row.minAge
-        filters.maximumAge = row.maxAge
-        filters.academicYears = Set(row.academicYears)
-        filters.departments = Set(row.departments)
-        filters.requiresCommonInterest = row.requireCommonInterest
-        filters.campusOnly = row.campusOnly
-        draft.discoveryFilters = filters
         draft.ghostMode = row.ghostMode
         return draft
     }
@@ -115,12 +103,12 @@ extension SupabaseProductService {
         if let oldPath = profile.avatarPath, oldPath != path {
             _ = try? await client.storage.from("profile-photos").remove(paths: [oldPath])
         }
-        return publicProfilePhotoURL(path)
+        return await profilePhotoURL(path)
     }
 
     func updateGallery(_ images: [Data]) async throws -> [URL] {
         guard let userID = currentUserID else { throw BackendServiceError.missingSession }
-        let limitedImages = Array(images.prefix(6))
+        let limitedImages = Array(images.prefix(CampusLimits.maxGalleryPhotos))
         let oldPhotos: [ProfilePhotoRow] = try await client
             .from("profile_photos")
             .select("storage_path,position")
@@ -147,9 +135,26 @@ extension SupabaseProductService {
         if !obsoletePaths.isEmpty { _ = try? await client.storage.from("profile-photos").remove(paths: obsoletePaths) }
         var urls: [URL] = []
         for path in newPaths {
-            if let url = publicProfilePhotoURL(path) { urls.append(url) }
+            if let url = await profilePhotoURL(path) { urls.append(url) }
         }
         return urls
+    }
+
+    func appendGalleryPhoto(_ image: Data) async throws -> URL {
+        guard let userID = currentUserID else { throw BackendServiceError.missingSession }
+        let path = "\(userID.uuidString.lowercased())/gallery-\(UUID().uuidString.lowercased()).jpg"
+        try await client.storage.from("profile-photos").upload(path, data: image, options: FileOptions(contentType: "image/jpeg"))
+        do {
+            // Slot ve 5 sınırı SQL'de: yarışta çift satır / 6. kart oluşmasın.
+            try await client
+                .rpc("append_gallery_photo", params: AppendGalleryPhotoParams(storagePath: path))
+                .execute()
+        } catch {
+            _ = try? await client.storage.from("profile-photos").remove(paths: [path])
+            throw error
+        }
+        if let url = await profilePhotoURL(path) { return url }
+        return URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("gallery-\(UUID().uuidString).jpg")
     }
 
     func blockUser(_ profileID: UUID) async throws {
@@ -216,6 +221,17 @@ extension SupabaseProductService {
         )).execute()
     }
 
+    func reportContent(_ target: ReportTarget, reason: ReportReason, details: String?) async throws {
+        guard currentUserID != nil else { throw BackendServiceError.missingSession }
+        let cleanDetails = details?.trimmingCharacters(in: .whitespacesAndNewlines)
+        try await client.rpc("report_content", params: ContentReportParams(
+            kind: target.kind.rawValue,
+            contentID: target.id,
+            reason: reason.rawValue,
+            details: cleanDetails?.isEmpty == true ? nil : cleanDetails
+        )).execute()
+    }
+
     // RLS on `messages` (is_match_member) already limits Postgres Changes delivery to rows
     // this user could SELECT, so subscribing to every insert on the table without a match_id
     // filter still only ever streams this user's own conversations.
@@ -245,7 +261,7 @@ extension SupabaseProductService {
                 id: row.visitorID, name: row.name, age: age, university: row.university,
                 department: row.department, year: row.academicYear, bio: row.bio,
                 interests: [], imageURL: row.avatarPath.flatMap { avatarURLs[$0] },
-                compatibility: 0, isVerified: row.isVerified, badge: row.badge ?? .none
+                isVerified: row.isVerified, badge: row.badge ?? .none
             )
             return ProfileVisit(profile: profile, visitedAt: row.lastVisitedAt)
         }
@@ -304,7 +320,7 @@ extension SupabaseProductService {
     func posts(byAuthor profileID: UUID) async -> [BackendPost] {
         let rows: [PostRow] = (try? await client
             .from("posts")
-            .select("id,author_id,caption,media_path,place_name,created_at,author:profiles!posts_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),comments(id,post_id,author_id,body,created_at,author:profiles!comments_author_id_fkey(name,avatar_path))")
+            .select("id,author_id,caption,media_path,place_name,kind,score,boost,pinned_at,pinned_slot,created_at,author:profiles!posts_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),comments(id,post_id,author_id,body,score,boost,created_at,author:profiles!comments_author_id_fkey(name,avatar_path))")
             .eq("author_id", value: profileID)
             .order("created_at", ascending: false)
             .limit(30)
@@ -324,7 +340,7 @@ extension SupabaseProductService {
         )
         let likeRows: [PostLikeRow] = ((try? await client
             .from("post_likes")
-            .select("post_id,user_id")
+            .select("post_id,user_id,value")
             .`in`("post_id", values: rows.map(\.id))
             .execute()
             .value) ?? [])
@@ -338,11 +354,12 @@ extension SupabaseProductService {
         let userID = currentUserID
         return rows.map { row in
             let postLikes = likeRows.filter { $0.postID == row.id }
+            let benim = userID.flatMap { id in postLikes.first { $0.userID == id }?.value } ?? 0
             return row.backendPost(
                 imageData: nil,
                 authorAvatarURL: row.author.avatarPath.flatMap { avatarURLs[$0] },
-                likeCount: postLikes.count,
-                liked: userID.map { id in postLikes.contains { $0.userID == id } } ?? false,
+                liked: benim == 1,
+                downvoted: benim == -1,
                 saved: savedIDs.contains(row.id),
                 badge: authorBadge,
                 commentAvatarURLs: avatarURLs,

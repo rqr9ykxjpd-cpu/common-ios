@@ -9,25 +9,52 @@ extension AppState {
         do {
             places = try await service.fetchPlaces()
             placesError = nil
+            await loadPlacePresence()
         } catch {
-            guard !isCancellation(error), !silently else { return }
+            guard !isCancellation(error) else { return }
             let message = UserFacingError.message(error, fallback: L10n.Places.loadFailed)
             placesError = message
-            if !places.isEmpty { showError(message) }
+            if !silently && !places.isEmpty { showError(message) }
         }
     }
+    /// Sayılar ayrı yüklenir ve hata vermez: sayı gelmezse satır sadece adsız kalır.
+    func loadPlacePresence() async {
+        guard let ozetler = try? await service.fetchPlacePresence() else { return }
+        placePresence = Dictionary(ozetler.map { ($0.placeID, $0) }, uniquingKeysWith: { a, _ in a })
+    }
+
     func togglePresence(at place: CampusPlace) {
-        let previous = currentVisiblePlace
+        guard presenceUpdateID == nil else { return }
+        let operationID = UUID()
+        let accountID = currentUserID
         let turningOff = currentVisiblePlace?.id == place.id
-        currentVisiblePlace = turningOff ? nil : place
-        show(turningOff ? L10n.Places.hidden : L10n.Places.nowVisible(place.name))
-        Haptics.success()
-        Task {
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            presenceUpdateID = operationID
+            presenceUpdatingPlaceID = place.id
+            presenceError = nil
+        }
+        Task { @MainActor in
             do {
                 try await service.setVisiblePlace(turningOff ? nil : place.id)
+                guard presenceUpdateID == operationID, accountID == currentUserID else { return }
+                withTransaction(transaction) {
+                    currentVisiblePlace = turningOff ? nil : place
+                    presenceUpdateID = nil
+                    presenceUpdatingPlaceID = nil
+                }
+                Haptics.success()
+                await loadPlacePresence()
             } catch {
-                currentVisiblePlace = previous
-                showError(error, fallback: L10n.Places.toggleFailed)
+                guard presenceUpdateID == operationID, accountID == currentUserID else { return }
+                withTransaction(transaction) {
+                    presenceUpdateID = nil
+                    presenceUpdatingPlaceID = nil
+                    if !isCancellation(error) {
+                        presenceError = UserFacingError.message(error, fallback: L10n.Places.toggleFailed)
+                    }
+                }
             }
         }
     }
@@ -51,12 +78,20 @@ extension AppState {
     /// katılma bilgisi yalnızca bellekte tutulduğu için uygulama kapanınca kayboluyordu.
     /// - Parameter silently: bkz. `loadProfileVisits(silently:)`.
     func loadClubs(silently: Bool = false) async {
+        clubsLoadGeneration += 1
+        let generation = clubsLoadGeneration
+        let accountID = currentUserID
+        isLoadingClubs = true
+        defer { if generation == clubsLoadGeneration { isLoadingClubs = false } }
         do {
             let result = try await service.fetchClubs()
+            guard generation == clubsLoadGeneration, accountID == currentUserID, !Task.isCancelled else { return }
             clubs = result.clubs
             joinedClubIDs = result.joinedIDs
+            clubsError = nil
         } catch {
-            if !silently { showError(error, fallback: L10n.Places.clubsFailed) }
+            guard generation == clubsLoadGeneration, accountID == currentUserID, !isCancellation(error) else { return }
+            clubsError = UserFacingError.message(error, fallback: L10n.Places.clubsFailed)
         }
     }
 

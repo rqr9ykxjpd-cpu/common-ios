@@ -14,6 +14,11 @@ struct BondApp: App {
     /// olmadan ekranları gezmek ve geliştirirken doğrulama yapmak için. Arayüzde
     /// bunu tetikleyen bir düğme yok — kullanıcıya hiçbir yerde görünmez.
     private static func configureRevenueCat() {
+#if DEBUG
+        // Offline design fixtures must not create RevenueCat customers.
+        let arguments = ProcessInfo.processInfo.arguments
+        guard !arguments.contains("-sample"), !arguments.contains("-welcome") else { return }
+#endif
         let key = AppSecrets.revenueCatAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !key.isEmpty, Purchases.isConfigured == false else { return }
         Purchases.logLevel = .warn
@@ -24,6 +29,14 @@ struct BondApp: App {
         configureRevenueCat()
 #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
+        // Karşılama ekranını gerçek Supabase/Apple oturumunu ve sistem izinlerini
+        // tetiklemeden görsel olarak doğrulamak için yalnızca Debug rotası.
+        if arguments.contains("-welcome") {
+            let state = AppState(service: SampleProductService())
+            state.route = .welcome
+            state.skipsSessionRestore = true
+            return state
+        }
         if arguments.contains("-sample") {
             // `-onboarding` kayıt akışını baştan açar: örnek servis "sunucuda profil
             // yok" der, uygulama da gerçek yeni kullanıcıdaki gibi kayıt akışına
@@ -31,10 +44,14 @@ struct BondApp: App {
             // İsteğe bağlı olarak adım adı verilebilir: `-onboarding ready`
             let onboarding = arguments.contains("-onboarding")
             let state = AppState(service: SampleProductService(hasProfile: !onboarding))
-            // `-tab profile|discover|feed` doğrudan o sekmeyi açar. Ekranı görmeden
+            if !onboarding, let asset = SampleData.me.imageAssetName {
+                state.avatarData = UIImage(named: asset)?.jpegData(compressionQuality: 0.85)
+            }
+            // `-tab profile|people|feed` doğrudan o sekmeyi açar. Ekranı görmeden
             // tasarım değiştirmek körlemesine çalışmak olurdu.
             if let index = arguments.firstIndex(of: "-tab"), index + 1 < arguments.count {
-                state.initialTab = ["feed": 0, "discover": 1, "profile": 2][arguments[index + 1]] ?? 0
+                // İnsanlar / discovery sekmesi kaldırıldı (App Store 4.3(b)).
+                state.initialTab = ["feed": 0, "places": 1, "chats": 2, "profile": 3][arguments[index + 1]] ?? 0
             }
             if arguments.contains("-compose") { state.opensComposer = true }
             if arguments.contains("-club") { state.opensFirstClub = true }
@@ -54,7 +71,6 @@ struct BondApp: App {
             }
             if arguments.contains("-paywall") { state.opensPaywall = true }
             if arguments.contains("-pronote") { state.opensProNote = true }
-            if arguments.contains("-cardpreview") { state.opensCardPreview = true }
             // `-badge founder`: kurucuya özel ekranları görmek için.
             if let i = arguments.firstIndex(of: "-badge"), i + 1 < arguments.count {
                 let rozetler: [String: ProfileBadge] = ["founder": .founder, "moderator": .moderator]
@@ -75,8 +91,8 @@ struct BondApp: App {
             if !onboarding { state.route = .app }
             if onboarding {
                 let adlar: [String: AppState.OnboardingStep] = [
-                    "identity": .identity, "preferences": .preferences,
-                    "interests": .interests, "photo": .photo, "ready": .ready
+                    "identity": .identity, "interests": .interests,
+                    "photo": .photo, "ready": .ready
                 ]
                 let istenen = arguments.firstIndex(of: "-onboarding")
                     .map { $0 + 1 }

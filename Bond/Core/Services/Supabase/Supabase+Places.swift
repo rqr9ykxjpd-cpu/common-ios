@@ -13,6 +13,17 @@ extension SupabaseProductService {
         return CampusPlaceOrder.sorted(places)
     }
 
+    /// Yer başına görünen kişi sayısı + ilk üç avatar; tek RPC.
+    func fetchPlacePresence() async throws -> [PlacePresenceSummary] {
+        let rows: [PlacePresenceRow] = try await client.rpc("get_place_presence").execute().value
+        let paths = rows.flatMap { $0.avatarPaths ?? [] }
+        let urls = await signedURLs(bucket: "profile-photos", paths: paths)
+        return rows.map { row in
+            PlacePresenceSummary(placeID: row.placeID, count: row.peopleCount,
+                                 avatarURLs: (row.avatarPaths ?? []).compactMap { urls[$0] })
+        }
+    }
+
     func fetchMeetingRequests() async throws -> [MeetingRequest] {
         guard let userID = currentUserID else { throw BackendServiceError.missingSession }
         let rows: [MeetingRequestRow] = try await client
@@ -87,8 +98,7 @@ extension SupabaseProductService {
                 department: row.department, year: row.academicYear, bio: row.bio,
                 interests: row.interests,
                 imageURL: row.avatarPath.flatMap { avatarURLs[$0] },
-                compatibility: 0, isVerified: row.isVerified, badge: row.badge ?? .none,
-                relationshipIntent: row.relationshipIntent, activeLabel: row.activeLabel
+                isVerified: row.isVerified, badge: row.badge ?? .none
             )
         }
     }

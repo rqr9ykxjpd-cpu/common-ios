@@ -1,3 +1,4 @@
+import AuthenticationServices
 import SwiftUI
 
 struct RootView: View {
@@ -18,13 +19,19 @@ struct RootView: View {
 
     var body: some View {
         Group {
-            switch appState.route {
-            case .welcome:
-                WelcomeView()
-            case .onboarding(let step):
-                OnboardingFlow(step: step)
-            case .app:
-                MainTabView()
+            if appState.hasPendingAppleRevokedDeletion {
+                // Keep a partially completed deletion recoverable after relaunch,
+                // without reopening normal app use with revoked Apple permission.
+                AppleAccountDeletionView()
+            } else {
+                switch appState.route {
+                case .welcome:
+                    WelcomeView()
+                case .onboarding(let step):
+                    OnboardingFlow(step: step)
+                case .app:
+                    MainTabView()
+                }
             }
         }
         .preferredColorScheme(resolvedColorScheme)
@@ -42,7 +49,10 @@ struct RootView: View {
         )) {
             PaywallView(quota: appState.quotaHit)
         }
-        .task { await appState.restoreBackendSession() }
+        .task {
+            await appState.restoreBackendSession()
+            await appState.handleAppleCredentialRevocation()
+        }
         // Ürünler ve haklar açılışta okunuyor: aboneliği başka cihazda alan ya
         // da uygulamayı silip kuran kullanıcı, paywall'a hiç uğramadan
         // hakkına kavuşmalı.
@@ -50,7 +60,16 @@ struct RootView: View {
         .onChange(of: scenePhase) { previous, phase in
             // Arka planda anlık kanal kopuyor; dönüşte kaçan mesajları getiriyoruz.
             guard phase == .active, previous != .active else { return }
-            Task { await appState.refreshAfterForeground() }
+            Task {
+                await appState.handleAppleCredentialRevocation()
+                guard !appState.hasPendingAppleRevokedDeletion else { return }
+                await appState.refreshAfterForeground()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(
+            for: ASAuthorizationAppleIDProvider.credentialRevokedNotification
+        )) { _ in
+            Task { await appState.handleAppleCredentialRevocation() }
         }
         .alert(
             L10n.Errors.title,

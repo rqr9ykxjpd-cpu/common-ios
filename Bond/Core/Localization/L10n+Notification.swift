@@ -3,6 +3,9 @@ import Foundation
 extension L10n {
     enum Notification {
         static var intro: String { String(localized: "notification.intro") }
+        static var permissionTitle: String { String(localized: "notification.permissionTitle") }
+        static var permissionBody: String { String(localized: "notification.permissionBody") }
+        static var permissionAction: String { String(localized: "notification.permissionAction") }
         static var empty: String { String(localized: "notification.empty") }
         static var emptyBody: String { String(localized: "notification.emptyBody") }
         static var markRead: String { String(localized: "notification.markRead") }
@@ -26,6 +29,11 @@ extension L10n {
         static func storyLikeTitle(_ name: String) -> String {
             L10n.format("notification.storyLikeTitle", name)
         }
+        static var rightSwipeTitle: String { String(localized: "notification.rightSwipeTitle") }
+        static func rightSwipeBody(_ name: String) -> String {
+            L10n.format("notification.rightSwipeBody", name)
+        }
+        static var rightSwipeBodyAnonymous: String { String(localized: "notification.rightSwipeBodyAnonymous") }
         static func meetingTitle(_ name: String) -> String {
             L10n.format("notification.meetingTitle", name)
         }

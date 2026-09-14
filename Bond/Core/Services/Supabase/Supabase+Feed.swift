@@ -1,7 +1,7 @@
 import Foundation
 import Supabase
 
-private let postListSelect = "id,author_id,caption,media_path,place_name,created_at,author:profiles!posts_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),comments(id,post_id,author_id,body,created_at,author:profiles!comments_author_id_fkey(name,avatar_path))"
+private let postListSelect = "id,author_id,caption,media_path,place_name,kind,score,boost,pinned_at,pinned_slot,created_at,author:profiles!posts_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),comments(id,post_id,author_id,body,score,boost,created_at,author:profiles!comments_author_id_fkey(name,avatar_path))"
 
 extension SupabaseProductService {
     func fetchFeed() async throws -> [BackendPost] {
@@ -70,11 +70,19 @@ extension SupabaseProductService {
         )
         async let likeRows: [PostLikeRow] = (try? await client
             .from("post_likes")
-            .select("post_id,user_id")
+            .select("post_id,user_id,value")
             .`in`("post_id", values: ids)
             .execute()
             .value) ?? []
         async let authorBadges = badges(for: rows.map(\.authorID))
+        // Cevap oyları tek sorguda; kartta "en iyi cevap" ve sıralama buna bakar.
+        let commentIDs = rows.flatMap { $0.comments }.map(\.id)
+        async let voteRows: [CommentVoteRow] = commentIDs.isEmpty ? [] : ((try? await client
+            .from("comment_votes")
+            .select("comment_id,user_id,value")
+            .`in`("comment_id", values: commentIDs)
+            .execute()
+            .value) ?? [])
         let resolvedSaved: Set<UUID>
         if let savedIDs {
             resolvedSaved = savedIDs
@@ -90,18 +98,39 @@ extension SupabaseProductService {
         let media = await mediaURLs
         let likes = await likeRows
         let badgeMap = await authorBadges
+        let votes = await voteRows
         return rows.map { row in
             let postLikes = likes.filter { $0.postID == row.id }
+            let benim = userID.flatMap { id in postLikes.first { $0.userID == id }?.value } ?? 0
             return row.backendPost(
                 imageData: nil,
                 authorAvatarURL: row.author.avatarPath.flatMap { avatars[$0] },
-                likeCount: postLikes.count,
-                liked: userID.map { id in postLikes.contains { $0.userID == id } } ?? false,
+                liked: benim == 1,
+                downvoted: benim == -1,
                 saved: resolvedSaved.contains(row.id),
                 badge: badgeMap[row.authorID] ?? .none,
                 commentAvatarURLs: avatars,
-                imageURL: row.mediaPath.flatMap { media[$0] }
+                imageURL: row.mediaPath.flatMap { media[$0] },
+                commentVotes: votes,
+                userID: userID
             )
+        }
+    }
+
+    /// Cevaba oy: +1, -1 ya da 0 (geri al). Kendi cevabına oy sunucuda reddedilir.
+    func setCommentVote(_ commentID: UUID, value: Int) async throws {
+        guard let userID = currentUserID else { throw BackendServiceError.missingSession }
+        if value != 0 {
+            // Yön değişince aynı satır güncellenir (upsert), ikinci satır açılmaz.
+            try await client.from("comment_votes")
+                .upsert(CommentVoteInsert(commentID: commentID, userID: userID, value: value), returning: .minimal)
+                .execute()
+        } else {
+            try await client.from("comment_votes")
+                .delete(returning: .minimal)
+                .eq("comment_id", value: commentID)
+                .eq("user_id", value: userID)
+                .execute()
         }
     }
 
@@ -111,8 +140,10 @@ extension SupabaseProductService {
     /// çalıştırılmadıysa) tüm sorguyu hataya düşürüyordu — akış ve sohbetler komple
     /// kırılıyordu. Ayrı ve `try?` ile: kolon varsa rozet gelir, yoksa uygulama
     /// hiçbir şey kaybetmeden çalışmaya devam eder.
-    func createPost(caption: String, placeName: String?, imageData: Data?) async throws -> BackendPost {
+    func createPost(caption: String, placeName: String?, imageData: Data?, kind: PostKind) async throws -> BackendPost {
         guard let userID = currentUserID else { throw BackendServiceError.missingSession }
+        try ContentSafety.validate(caption)
+        try ContentSafety.validate(placeName ?? "")
         if try await countMyPosts() >= CampusLimits.maxPostsPerUser {
             let plan = try await fetchMyPlan()
             if plan.maxPosts != nil { throw BackendServiceError.postLimit }
@@ -129,7 +160,8 @@ extension SupabaseProductService {
             authorID: userID,
             caption: caption.trimmingCharacters(in: .whitespacesAndNewlines),
             placeName: placeName,
-            mediaPath: mediaPath
+            mediaPath: mediaPath,
+            kind: kind
         )
         let row: PostRow
         do {
@@ -152,7 +184,7 @@ extension SupabaseProductService {
         }
         var authorAvatarURL: URL?
         if let path = row.author.avatarPath {
-            authorAvatarURL = publicProfilePhotoURL(path)
+            authorAvatarURL = await profilePhotoURL(path)
         }
         // Az önce çekilen fotoğraf zaten elde; imzalı URL yenilemede yedek.
         var imageURL: URL?
@@ -165,7 +197,6 @@ extension SupabaseProductService {
         return row.backendPost(
             imageData: imageData,
             authorAvatarURL: authorAvatarURL,
-            likeCount: 0,
             liked: false,
             saved: false,
             badge: badge,
@@ -175,17 +206,18 @@ extension SupabaseProductService {
 
     func addComment(_ body: String, to postID: UUID) async throws -> BackendComment {
         guard let userID = currentUserID else { throw BackendServiceError.missingSession }
+        try ContentSafety.validate(body)
         let payload = CommentInsert(postID: postID, authorID: userID, body: body)
         let row: CommentRow = try await client
             .from("comments")
             .insert(payload)
-            .select("id,post_id,author_id,body,created_at,author:profiles!comments_author_id_fkey(name,avatar_path)")
+            .select("id,post_id,author_id,body,score,boost,created_at,author:profiles!comments_author_id_fkey(name,avatar_path)")
             .single()
             .execute()
             .value
         var avatarURL: URL?
         if let path = row.author.avatarPath {
-            avatarURL = publicProfilePhotoURL(path)
+            avatarURL = await profilePhotoURL(path)
         }
         return row.backendComment(avatarURL: avatarURL)
     }
@@ -212,12 +244,48 @@ extension SupabaseProductService {
     /// Satın almayı sunucudaki Edge Function'a iletir. Doğrulama orada:
     /// fonksiyon JWS'i Apple'ın App Store Server API'siyle kontrol edip
     /// `subscriptions` tablosunu kendisi yazıyor. İstemcinin bu tabloya yazma
-    func setPostLiked(_ postID: UUID, liked: Bool) async throws {
+    /// Kurucu: gönderiye oy ekler; yeni boost değerini döndürür. Sunucu rozeti kontrol eder.
+    func boostPost(_ postID: UUID, extra: Int) async throws -> Int {
+        try await client.rpc("boost_post", params: BoostParams(target: postID, extra: extra)).execute().value
+    }
+
+    func boostComment(_ commentID: UUID, extra: Int) async throws -> Int {
+        try await client.rpc("boost_comment", params: BoostParams(target: commentID, extra: extra)).execute().value
+    }
+
+    /// Kurucu: gönderiyi `slot`. sıraya sabitler; nil kaldırır.
+    func setPostPin(_ postID: UUID, slot: Int?) async throws {
+        try await client.rpc("set_post_pin_slot", params: PinParams(target: postID, slot: slot)).execute()
+    }
+
+    /// Kurucu/moderatör: bu gönderiye kim ne oy vermiş.
+    func fetchPostVoters(_ postID: UUID) async throws -> [PostVoter] {
+        let rows: [PostVoterRow] = try await client
+            .rpc("get_post_voters", params: PostVoterParams(target: postID))
+            .execute()
+            .value
+        return await voters(from: rows)
+    }
+
+    func fetchCommentVoters(_ commentID: UUID) async throws -> [PostVoter] {
+        let rows: [PostVoterRow] = try await client
+            .rpc("get_comment_voters", params: PostVoterParams(target: commentID))
+            .execute()
+            .value
+        return await voters(from: rows)
+    }
+
+    private func voters(from rows: [PostVoterRow]) async -> [PostVoter] {
+        let avatars = await signedURLs(bucket: "profile-photos", paths: rows.compactMap(\.avatarPath))
+        return rows.map { PostVoter(id: $0.id, name: $0.name, avatarURL: $0.avatarPath.flatMap { avatars[$0] }, value: $0.value) }
+    }
+
+    /// Gönderiye oy: +1, -1 ya da 0 (geri al).
+    func setPostVote(_ postID: UUID, value: Int) async throws {
         guard let userID = currentUserID else { throw BackendServiceError.missingSession }
-        if liked {
+        if value != 0 {
             try await client.from("post_likes")
-                .upsert(PostLikeInsert(postID: postID, userID: userID), returning: .minimal,
-                        ignoreDuplicates: true)
+                .upsert(PostLikeInsert(postID: postID, userID: userID, value: value), returning: .minimal)
                 .execute()
         } else {
             try await client.from("post_likes")
@@ -311,6 +379,7 @@ extension SupabaseProductService {
 
     func publishStory(_ upload: StoryUpload, caption: String, placeID: UUID?) async throws {
         guard let userID = currentUserID else { throw BackendServiceError.missingSession }
+        try ContentSafety.validate(caption)
         let folder = userID.uuidString.lowercased()
         let captionText = caption.trimmingCharacters(in: .whitespacesAndNewlines)
         let expires = Date().addingTimeInterval(CampusStory.lifetime)

@@ -6,13 +6,13 @@ import Foundation
 /// yazılıydı; birinde değişiklik yapmak diğerini sessizce geride bırakıyordu. Artık
 /// tek kaynak.
 ///
-/// Liste bilerek geniş: ortak ilgi hem eşleşme puanını hem "şunu da seviyorsunuz"
-/// satırlarını besliyor. On iki seçenekle çoğu kişi aynı üç dört şeyi seçiyor ve
-/// herkes birbirine benziyordu.
+    /// Liste bilerek geniş: ortak ilgi "şunu da seviyorsunuz" satırlarını besliyor.
+    /// On iki seçenekle çoğu kişi aynı üç dört şeyi seçiyor ve herkes birbirine
+    /// benziyordu.
 enum InterestCatalog {
     /// Aynı anda seçilebilecek en fazla ilgi alanı.
     static let maximumSelection = 10
-    /// Profilin keşifte görünmesi için gereken en az sayı.
+    /// Profilin tamamlanmış sayılması için gereken en az sayı.
     static let minimumSelection = 3
 
     static let grouped: [(baslik: String, secenekler: [String])] = [

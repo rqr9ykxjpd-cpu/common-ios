@@ -23,6 +23,7 @@ extension AppState {
             }
             notificationsError = nil
             syncApplicationBadge()
+            await loadIntroductionRequests()
         } catch {
             guard !isCancellation(error) else { return }
             let message = UserFacingError.message(error, fallback: L10n.Notification.loadFailed)
@@ -95,7 +96,6 @@ extension AppState {
                 bio: "",
                 interests: [],
                 imageURL: backend.actorAvatarURL,
-                compatibility: 0,
                 isVerified: true
             )
         }
@@ -103,7 +103,7 @@ extension AppState {
             id: backend.id,
             kind: backend.kind,
             title: NotificationCopy.title(kind: backend.kind, actorName: actor?.name ?? L10n.Common.someone, serverTitle: backend.title),
-            body: NotificationCopy.body(kind: backend.kind, actorName: actor?.name ?? L10n.Common.someone, serverTitle: backend.title, serverBody: backend.body),
+            body: NotificationCopy.body(kind: backend.kind, actorName: actor?.name, serverTitle: backend.title, serverBody: backend.body),
             actor: actor,
             conversationID: backend.matchID,
             createdAt: backend.createdAt,

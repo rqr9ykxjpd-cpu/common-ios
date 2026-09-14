@@ -1,333 +1,339 @@
 import SwiftUI
 
-/// Bond Plus ekranı.
-///
-/// Tasarım kasıtlı olarak uygulamanın karşılama ekranıyla aynı dilde: editoryal
-/// serif başlık, bol boşluk, kart yığını yok. Paywall'lar genelde üst üste
-/// yuvarlak kutular, degrade balonlar ve büyük harf pazarlama diliyle yapılıyor;
-/// burada bilerek hiçbiri yok.
-///
-/// Zemin her iki modda da koyu: sınıra Tanış ekranında çarpılıyor ve orası da
-/// koyu. Renkler sabit, çünkü uyum sağlayan renkler koyu zeminde okunmaz hale
-/// geliyordu (bkz. `BondTheme.onAccent`).
+/// Free, Plus ve Pro'yu tek bakışta karşılaştıran abonelik ekranı.
+/// Fiyatlar sabit yazılmaz; her zaman StoreKit'in yerelleştirilmiş değeridir.
 struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppState.self) private var appState
-
-    /// Sınıra takılarak açıldıysa başlık ona göre değişiyor.
+    @Environment(\.dynamicTypeSize) private var textSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var quota: QuotaKind?
 
-    /// Ürün yüklenene kadar yer tutucu. Gerçek fiyat App Store'dan gelir;
-    /// kademeyi Connect'te değiştirmek burayı güncellemeyi gerektirmez.
-    /// Sabit ₺ tutarsak StoreKit susunca eski fiyat yalan söyler.
-
-    private var magaza: SubscriptionStore { appState.subscriptions }
-
-    /// Satın alma sonucuna göre kullanıcıya söylenecek söz.
-    @State private var uyari: String?
-
-    /// Hakkı biten ücretsiz kullanıcıya iki seçenek birden sunuluyor; birini
-    /// gizlemek "acaba diğeri daha mı iyiydi" sorusunu askıda bırakırdı.
-    @State private var secili: SubscriptionTier = .plus
-
-    /// Dipnottaki koşullar/gizlilik bağlantıları için. Apple abonelik
-    /// ekranında bu iki metnin okunabilir olmasını şart koşuyor.
+    private var store: SubscriptionStore { appState.subscriptions }
+    private let tiers = SubscriptionTier.allCases
+    @State private var selectedTier: SubscriptionTier = .plus
+    @State private var alertMessage: String?
     @State private var legalDocument: LegalDocumentRoute?
 
+    private var busy: Bool { store.purchasingTier != nil || store.isRestoring }
+    private var tierColumnWidth: CGFloat { textSize.isAccessibilitySize ? 64 : 56 }
+
     var body: some View {
-        ZStack {
-            BondTheme.canvasDark.ignoresSafeArea()
-            GrainOverlay().ignoresSafeArea()
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    kapat
-                    baslik
-                    karsilastirma
-                    ozelKullaniciNotu
-                    planSecimi
-                    elYazisiNot
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: BondTheme.Space.md) {
+                    header
+                    comparison
+                    pricePicker
+                    checkout
                 }
-                .padding(.horizontal, 26)
-                // Alttaki eylem düğmesi `safeAreaInset` ile duruyor; yasal dipnot
-                // ona yapışmasın diye fazladan boşluk.
-                .padding(.bottom, 28)
+                .padding(.horizontal, BondTheme.Space.md)
+                .padding(.top, BondTheme.Space.sm)
+                .padding(.bottom, BondTheme.Space.lg)
             }
-            .safeAreaInset(edge: .bottom) { eylem }
-        }
-        .preferredColorScheme(.dark)
-        .sheet(item: $legalDocument) { belge in
-            NavigationStack {
-                LegalTextView(title: belge.title, blocks: belge.blocks)
+            .scrollBounceBehavior(.basedOnSize)
+            .background(BondTheme.paper)
+            .foregroundStyle(BondTheme.ink)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(L10n.Common.close) { dismiss() }
+                        .disabled(busy)
+                        .accessibilityIdentifier("paywall.close")
+                }
+                ToolbarItem(placement: .principal) {
+                    Text(L10n.Brand.wordmark)
+                        .font(.system(.headline, design: .serif).weight(.bold))
+                        .accessibilityAddTraits(.isHeader)
+                }
             }
         }
-        .task { await magaza.loadProducts() }
-        .alert(L10n.Paywall.problem, isPresented: Binding(get: { uyari != nil }, set: { if !$0 { uyari = nil } })) {
-            Button(L10n.Common.ok, role: .cancel) { uyari = nil }
+        .interactiveDismissDisabled(busy)
+        .sheet(item: $legalDocument) { document in
+            NavigationStack { LegalTextView(title: document.title, blocks: document.blocks) }
+        }
+        .task { await store.loadProducts() }
+        .alert(L10n.Paywall.problem, isPresented: Binding(
+            get: { alertMessage != nil },
+            set: { if !$0 { alertMessage = nil } }
+        )) {
+            Button(L10n.Common.ok, role: .cancel) { alertMessage = nil }
         } message: {
-            Text(uyari ?? "")
+            Text(alertMessage ?? "")
         }
     }
 
-    private var kapat: some View {
-        HStack {
-            Spacer()
-            Button { dismiss() } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.7))
-                    .frame(width: 44, height: 44)
-                    .background(.white.opacity(0.08), in: Circle())
-            }
-            .buttonStyle(PressableStyle())
-            .accessibilityLabel(L10n.Common.close)
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text(quota?.title ?? L10n.Paywall.headline)
+                .font(.system(.largeTitle, design: .serif).weight(.bold))
+                .tracking(-0.7)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(quota?.detail ?? L10n.PaywallDesign.subtitle)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(L10n.Paywall.specialNote.replacingOccurrences(of: "\n", with: " "))
+                .font(.custom("BradleyHandITCTT-Bold", size: 16, relativeTo: .callout))
+                .foregroundStyle(BondTheme.burntOrange)
+                .rotationEffect(.degrees(-0.7))
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 2)
         }
-        .padding(.top, 8)
     }
 
-    private var baslik: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(L10n.Paywall.brand)
-                .font(.system(size: 11, weight: .black))
-                .tracking(2)
-                .foregroundStyle(BondTheme.acid)
-
-            // Tek satır ve alt açıklama yok: her şeyin tek ekrana sığması için
-            // en pahalı yer başlıktı.
-            Text(quota?.title.replacingOccurrences(of: "\n", with: " ") ?? L10n.Paywall.headline)
-                .font(.system(size: 32, weight: .bold))
-                .foregroundStyle(.white)
-                .lineLimit(2)
-                .minimumScaleFactor(0.8)
-        }
-        .padding(.bottom, 10)
-    }
-
-    /// Üç kademeyi yan yana gösteren tablo. Kart yığını değil, gazete tablosu
-    /// gibi: ince ayraçlar, sakin tipografi. Satırlar `PlanFeature.all`'dan
-    /// geliyor — kuralı değiştirince tablo kendiliğinden güncelleniyor.
-    private var karsilastirma: some View {
+    private var comparison: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 0) {
-                Text("").frame(maxWidth: .infinity, alignment: .leading)
-                ForEach(SubscriptionTier.allCases, id: \.self) { kademe in
-                    Text(paywallColumnTitle(kademe))
-                        .font(.system(size: 9, weight: .black))
-                        .tracking(0.6)
-                        .foregroundStyle(kademe == .free ? .white.opacity(0.4) : BondTheme.acid)
-                        .frame(width: sutunGenisligi)
-                }
-            }
-            .padding(.bottom, 8)
+            comparisonHeader
+                .padding(.bottom, BondTheme.Space.sm)
 
-            ForEach(Array(PlanFeature.all.enumerated()), id: \.element.id) { indeks, ozellik in
-                if indeks > 0 {
-                    Rectangle().fill(.white.opacity(0.09)).frame(height: 1)
+            ForEach(Array(PlanFeature.all.enumerated()), id: \.element.id) { index, feature in
+                if index > 0 {
+                    Divider().overlay(BondTheme.hairline.opacity(0.65))
                 }
-                HStack(spacing: 0) {
-                    Text(ozellik.label.replacingOccurrences(of: "\n", with: " "))
-                        .font(.system(size: 12.5))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.85)
-                        .foregroundStyle(.white.opacity(0.75))
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    ForEach(SubscriptionTier.allCases, id: \.self) { kademe in
-                        hucre(ozellik.value(kademe), kademe: kademe)
-                    }
-                }
-                .padding(.vertical, 5)
+                featureRow(feature)
             }
         }
-        .padding(.bottom, 4)
+        .padding(.horizontal, BondTheme.Space.compact)
+        .padding(.vertical, BondTheme.Space.compact)
+        .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(L10n.PaywallDesign.included)
     }
 
-    private var sutunGenisligi: CGFloat { 62 }
+    private var comparisonHeader: some View {
+        HStack(spacing: 4) {
+            Text(L10n.PaywallDesign.included)
+                .font(.caption2.weight(.bold))
+                .tracking(0.6)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-    private func paywallColumnTitle(_ kademe: SubscriptionTier) -> String {
-        switch kademe {
-        case .free: L10n.Paywall.free
-        case .plus: L10n.Paywall.plus
-        case .pro: L10n.Paywall.pro
+            ForEach(tiers, id: \.self) { tier in
+                Text(tier.title.uppercased())
+                    .font(.caption2.weight(.bold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+                    .frame(width: tierColumnWidth)
+                    .frame(minHeight: 28)
+                    .foregroundStyle(tier == selectedTier ? BondTheme.onAccent : .secondary)
+                    .background(
+                        tier == selectedTier ? BondTheme.acid : Color.clear,
+                        in: Capsule()
+                    )
+            }
         }
     }
 
-    private func hucre(_ metin: String, kademe: SubscriptionTier) -> some View {
-        let bos = metin == "—"
-        return Text(metin)
-            .font(.system(size: metin == "∞" ? 20 : 15,
-                          weight: .bold,
-                          design: metin == "✓" || metin == "—" ? .rounded : .serif))
-            .foregroundStyle(bos ? .white.opacity(0.22)
-                             : (kademe == .free ? .white.opacity(0.62) : BondTheme.acid))
-            .frame(width: sutunGenisligi)
-    }
+    private func featureRow(_ feature: PlanFeature) -> some View {
+        HStack(spacing: 4) {
+            Label {
+                Text(feature.label.replacingOccurrences(of: "\n", with: " "))
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.82)
+            } icon: {
+                Image(systemName: featureSymbol(feature.id))
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .font(.footnote)
+            .frame(maxWidth: .infinity, minHeight: 43, alignment: .leading)
 
-    /// Kullanıcının istediği not: veriye erişimin bir karşılığı olduğunu
-    /// söylüyor. Turuncu, sayfadaki tek sıcak renk — göz doğrudan buraya gidiyor.
-    private var ozelKullaniciNotu: some View {
-        Text(L10n.Paywall.specialNote)
-            .font(.custom("BradleyHandITCTT-Bold", size: 16))
-            .foregroundStyle(BondTheme.coral)
-            .lineSpacing(2)
-            .rotationEffect(.degrees(-1.2))
-            .padding(.top, 6)
-            .padding(.bottom, 10)
-    }
-
-    /// Plan seçimi. Büyük kartlar yerine iki satır: seçili olan yanıyor.
-    private var planSecimi: some View {
-        VStack(spacing: 8) {
-            planSatiri(.plus, fiyat: magaza.displayPrice(for: .plus) ?? "—", not: nil)
-            planSatiri(.pro, fiyat: magaza.displayPrice(for: .pro) ?? "—", not: L10n.Paywall.unlimited)
+            ForEach(tiers, id: \.self) { tier in
+                featureValue(feature.value(tier), tier: tier)
+            }
         }
-        .padding(.bottom, 10)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityComparison(for: feature))
     }
 
-    private func planSatiri(_ kademe: SubscriptionTier, fiyat: String, not: String?) -> some View {
-        let aktif = secili == kademe
+    private func featureValue(_ value: String, tier: SubscriptionTier) -> some View {
+        Text(value)
+            .font(.system(.subheadline, design: .rounded).weight(.bold))
+            .foregroundStyle(value == L10n.Paywall.no ? BondTheme.muted : BondTheme.ink)
+            .frame(width: tierColumnWidth)
+            .frame(minHeight: 43)
+            .background(
+                tier == selectedTier ? BondTheme.burntOrange.opacity(0.09) : Color.clear,
+                in: RoundedRectangle(cornerRadius: 9, style: .continuous)
+            )
+    }
+
+    private var pricePicker: some View {
+        // Ücretsiz kartı yok: tablo zaten ücretsizde ne olduğunu gösteriyor,
+        // seçilebilecek bir şey değil. İki ödeme kartı genişliği paylaşır.
+        HStack(spacing: BondTheme.Space.sm) {
+            paidPriceCard(.plus)
+            paidPriceCard(.pro)
+        }
+    }
+
+    private func paidPriceCard(_ tier: SubscriptionTier) -> some View {
+        let selected = tier == selectedTier
         return Button {
-            withAnimation(.snappy(duration: 0.18)) { secili = kademe }
+            withAnimation(reduceMotion ? nil : BondTheme.Motion.snappy) {
+                selectedTier = tier
+            }
             Haptics.impact(.light)
         } label: {
-            HStack(spacing: 12) {
-                Image(systemName: aktif ? "largecircle.fill.circle" : "circle")
-                    .font(.system(size: 19))
-                    .foregroundStyle(aktif ? BondTheme.acid : .white.opacity(0.3))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(L10n.Paywall.planName(kademe.title))
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(.white)
-                    if let not {
-                        Text(not)
-                            .font(.system(size: 12))
-                            .foregroundStyle(.white.opacity(0.5))
+            VStack(spacing: 5) {
+                HStack(spacing: 3) {
+                    Text(tier.title)
+                        .font(.caption.weight(.semibold))
+                    Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                        .font(.caption2)
+                        .accessibilityHidden(true)
+                }
+                Text(priceText(for: tier))
+                    .font(.system(.footnote, design: .rounded).weight(.bold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
+                Text(L10n.Paywall.perWeek)
+                    .font(.caption2)
+                    .opacity(0.72)
+            }
+            .foregroundStyle(selected ? BondTheme.onAccent : BondTheme.ink)
+            .frame(maxWidth: .infinity, minHeight: 66)
+            .background(
+                selected ? BondTheme.acid : BondTheme.surface,
+                in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous)
+                    .stroke(selected ? Color.clear : BondTheme.hairline, lineWidth: 1)
+            }
+        }
+        .buttonStyle(.pressable)
+        .disabled(busy)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityIdentifier("paywall.plan.\(tier.serverValue)")
+    }
+
+    private var checkout: some View {
+        VStack(spacing: 7) {
+            if let failure = store.productLoadFailure,
+               store.displayPrice(for: selectedTier) == nil {
+                HStack(spacing: 8) {
+                    Text(failure)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer(minLength: 4)
+                    Button(L10n.CampusDesign.retryPrices) {
+                        Task { await store.loadProducts() }
+                    }
+                    .font(.caption.weight(.semibold))
+                    .frame(minHeight: 44)
+                    .disabled(busy || store.isLoadingProducts)
+                    .accessibilityIdentifier("paywall.retry")
+                }
+            }
+
+            Button {
+                Task { await purchase() }
+            } label: {
+                HStack(spacing: 8) {
+                    if store.purchasingTier != nil {
+                        ProgressView().tint(BondTheme.onAccent)
+                    }
+                    Text(selectedTier == .plus ? L10n.Paywall.goPlus : L10n.Paywall.goPro)
+                        .fontWeight(.semibold)
+                    Spacer(minLength: 8)
+                    if let price = store.displayPrice(for: selectedTier) {
+                        Text(price).font(.headline)
                     }
                 }
-                Spacer()
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text(fiyat)
-                        .font(.system(size: 19, weight: .bold))
-                        .foregroundStyle(.white)
-                    Text(L10n.Paywall.perWeek)
-                        .font(.system(size: 11))
-                        .foregroundStyle(.white.opacity(0.45))
-                }
+                .padding(.horizontal, BondTheme.Space.md)
+                .frame(maxWidth: .infinity, minHeight: 54)
+                .foregroundStyle(BondTheme.onAccent)
+                .background(BondTheme.acid, in: Capsule())
             }
-            .padding(.horizontal, 16)
-            .frame(height: 48)
-            .background(aktif ? .white.opacity(0.07) : .clear, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(aktif ? BondTheme.acid.opacity(0.55) : .white.opacity(0.13), lineWidth: 1)
-            )
-            .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        }
-        .buttonStyle(PressableStyle())
-    }
+            .buttonStyle(.pressable)
+            .disabled(!canPurchaseSelectedTier)
+            .opacity(canPurchaseSelectedTier ? 1 : 0.45)
+            .accessibilityIdentifier("paywall.purchase")
 
-    /// Sayfanın kenarına elle iliştirilmiş bir not gibi. Apple'ın istediği
-    /// zorunlu metinlerin arasında değil, kendi başına duruyor.
-    private var elYazisiNot: some View {
-        // Tek satıra sıkıştırılıyor: sayfanın tamamı kaydırmadan görünsün diye
-        // metni kısaltmak yerine ölçeği düşürüyoruz, cümle aynen kalıyor.
-        Text(L10n.Paywall.handNote)
-            .font(.custom("BradleyHandITCTT-Bold", size: 16))
-            .foregroundStyle(BondTheme.acid.opacity(0.85))
-            .lineLimit(1)
-            .minimumScaleFactor(0.72)
-            .rotationEffect(.degrees(-1.5))
-            .padding(.top, 2)
-            .padding(.bottom, 6)
-    }
-
-    /// Apple'ın abonelik ekranlarında zorunlu tuttuğu bilgiler.
-    private var yasalDipnot: some View {
-        VStack(alignment: .leading, spacing: 6) {
             Text(L10n.Paywall.legal)
-                .font(.system(size: 10))
-                .foregroundStyle(.white.opacity(0.4))
-                .lineSpacing(2)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
 
-            HStack(spacing: 12) {
-                Button(magaza.isRestoring ? L10n.Paywall.restoring : L10n.Paywall.restore) {
-                    Task { await geriYukle() }
-                }
-                .disabled(magaza.isRestoring)
-                Text("·").foregroundStyle(.white.opacity(0.25))
-                Button(L10n.Paywall.terms) { legalDocument = .kosullar }
-                Text("·").foregroundStyle(.white.opacity(0.25))
-                Button(L10n.Paywall.privacy) { legalDocument = .gizlilik }
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 16) { legalLinks }
+                VStack(spacing: 0) { legalLinks }
             }
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(.white.opacity(0.55))
-        }
-    }
-
-    private var eylem: some View {
-        VStack(spacing: 10) {
-            // Ürünler gelmediyse sebebini söylüyoruz. Sessizce sönük duran bir
-            // düğme, kullanıcıya "uygulama bozuk" dedirtiyor; oysa sorun çoğu
-            // zaman geçici ve kendisi çözebiliyor.
-            if let hata = magaza.productLoadFailure, magaza.products.isEmpty, !magaza.canPurchase(secili) {
-                Text(hata)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(BondTheme.coral)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
-            }
-            eylemDugmesi
-            yasalDipnot
-        }
-        .padding(.horizontal, 26)
-        .padding(.top, 10)
-        .padding(.bottom, 6)
-        .background(BondTheme.canvasDark.opacity(0.97))
-    }
-
-    private var eylemDugmesi: some View {
-        let calisiyor = magaza.purchasingTier != nil
-        // Ürün gelmediyse düğme açılmıyor. Dokununca hiçbir şey olmayan bir
-        // düğme, kullanıcıya uygulamanın bozuk olduğunu düşündürür.
-        let hazir = magaza.canPurchase(secili) && !calisiyor && !magaza.isRestoring
-        return Button {
-            Task { await satinAl() }
-        } label: {
-            ZStack {
-                if calisiyor {
-                    ProgressView().tint(BondTheme.onAccent)
-                } else {
-                    Text(secili == .plus ? L10n.Paywall.goPlus : L10n.Paywall.goPro)
-                        .font(.system(size: 13, weight: .black))
-                        .tracking(1.2)
-                }
-            }
-            .foregroundStyle(BondTheme.onAccent)
+            .font(.caption)
+            .tint(BondTheme.ink)
             .frame(maxWidth: .infinity)
-            .frame(height: 56)
-            .background(BondTheme.acid.opacity(hazir ? 1 : 0.35), in: Capsule())
         }
-        .buttonStyle(PressableStyle())
-        .disabled(!hazir)
     }
 
-    private func satinAl() async {
-        switch await magaza.purchase(secili) {
+    private var canPurchaseSelectedTier: Bool {
+        store.displayPrice(for: selectedTier) != nil
+            && store.canPurchase(selectedTier)
+            && !busy
+    }
+
+    private func priceText(for tier: SubscriptionTier) -> String {
+        if let price = store.displayPrice(for: tier) { return price }
+        return store.productLoadFailure == nil
+            ? L10n.CampusDesign.priceLoading
+            : L10n.PaywallDesign.priceUnavailable
+    }
+
+    private func accessibilityComparison(for feature: PlanFeature) -> String {
+        let values = tiers.map { "\($0.title): \(feature.value($0))" }.joined(separator: ", ")
+        return "\(feature.label.replacingOccurrences(of: "\n", with: " ")), \(values)"
+    }
+
+    private func featureSymbol(_ id: Int) -> String {
+        switch id {
+        case 2: "rectangle.stack"
+        case 3: "mappin.and.ellipse"
+        case 5: "eye"
+        case 7: "pencil"
+        case 8: "chart.bar"
+        case 9: "eye.slash"
+        default: "checkmark"
+        }
+    }
+
+    @ViewBuilder private var legalLinks: some View {
+        Button(store.isRestoring ? L10n.Paywall.restoring : L10n.Paywall.restore) {
+            Task { await restore() }
+        }
+        .disabled(busy)
+        .frame(minHeight: 44)
+        .accessibilityIdentifier("paywall.restore")
+
+        Button(L10n.Paywall.terms) { legalDocument = .kosullar }
+            .frame(minHeight: 44)
+            .accessibilityIdentifier("paywall.terms")
+
+        Button(L10n.Paywall.privacy) { legalDocument = .gizlilik }
+            .frame(minHeight: 44)
+            .accessibilityIdentifier("paywall.privacy")
+    }
+
+    private func purchase() async {
+        switch await store.purchase(selectedTier) {
         case .success:
             Haptics.success()
             dismiss()
         case .cancelled:
             break
         case .pending:
-            uyari = L10n.Paywall.pending
-        case .failed(let mesaj):
-            uyari = mesaj
+            alertMessage = L10n.Paywall.pending
+        case .failed(let message):
+            alertMessage = message
         }
     }
 
-    private func geriYukle() async {
-        if let mesaj = await magaza.restore() {
-            uyari = mesaj
+    private func restore() async {
+        if let message = await store.restore() {
+            alertMessage = message
         } else {
             Haptics.success()
             dismiss()

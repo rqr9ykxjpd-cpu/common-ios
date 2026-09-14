@@ -18,17 +18,17 @@
           "codeOffers" : [ ],
           "displayPrice" : "1.99",
           "familyShareable" : false,
-          "groupNumber" : 1,
+          "groupNumber" : 2,
           "internalID" : "6741001001",
           "introductoryOffer" : null,
           "localizations" : [
             {
-              "description" : "Daha fazla tanışma hakkı, profil ziyaretçileri, mesaj düzenleme ve silme.",
+              "description" : "Daha fazla buluşma isteği, profil ziyaretçileri, mesaj düzenleme ve silme.",
               "displayName" : "Common Plus",
               "locale" : "tr_TR"
             },
             {
-              "description" : "More likes, profile visitors, message editing and deletion.",
+              "description" : "More meetup requests, profile visitors, message editing and deletion.",
               "displayName" : "Common Plus",
               "locale" : "en_US"
             }
@@ -45,17 +45,17 @@
           "codeOffers" : [ ],
           "displayPrice" : "4.99",
           "familyShareable" : false,
-          "groupNumber" : 2,
+          "groupNumber" : 1,
           "internalID" : "6741001002",
           "introductoryOffer" : null,
           "localizations" : [
             {
-              "description" : "Sınırsız tanışma, story izlenme sayıları, story duraklatma ve hayalet mod.",
+              "description" : "Sınırsız buluşma isteği, story izlenme sayıları, story duraklatma ve hayalet mod.",
               "displayName" : "Common Pro",
               "locale" : "tr_TR"
             },
             {
-              "description" : "Unlimited likes, story view counts, story pause and ghost mode.",
+              "description" : "Unlimited meetup requests, story view counts, story pause and ghost mode.",
               "displayName" : "Common Pro",
               "locale" : "en_US"
             }

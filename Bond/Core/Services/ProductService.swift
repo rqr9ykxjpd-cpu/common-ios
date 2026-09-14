@@ -60,12 +60,14 @@ protocol ProductService: Sendable {
     /// Kullanıcı maildeki bağlantıya dokununca iOS'un uygulamaya ilettiği URL.
     /// İçindeki token'ı doğrulayıp oturumu kurar.
     func completeEmailSignIn(url: URL) async throws
+    /// E-posta ve şifre. Yalnızca geliştirme derlemesindeki demo hesaplar için.
+    func signInWithEmail(email: String, password: String) async throws
     func restoreSession() async throws -> UUID?
     func signOut() async throws
     func deleteAccount() async throws
     func saveProfile(_ draft: ProfileDraft) async throws
-    func fetchDiscoveryCandidates(filters: DiscoveryFilters, offset: Int, limit: Int) async throws -> [StudentProfile]
-    func reactToProfile(profileID: UUID, liked: Bool) async throws -> DiscoveryReactionResult
+    /// Kampüs insan dizini. Cinsiyet ve kaydırma süzgeci yok.
+    func fetchCampusPeople(offset: Int, limit: Int) async throws -> [StudentProfile]
     func fetchConversations() async throws -> [Conversation]
     func sendMessage(_ message: Message, matchID: UUID) async throws -> Message
     func markConversationRead(matchID: UUID) async throws
@@ -84,8 +86,10 @@ protocol ProductService: Sendable {
     func fetchFeed() async throws -> [BackendPost]
     /// Kullanıcının duran gönderi sayısı. Paylaşım tavanı buna bakıyor.
     func countMyPosts() async throws -> Int
-    func createPost(caption: String, placeName: String?, imageData: Data?) async throws -> BackendPost
+    func createPost(caption: String, placeName: String?, imageData: Data?, kind: PostKind) async throws -> BackendPost
     func addComment(_ body: String, to postID: UUID) async throws -> BackendComment
+    /// Cevaba oy: +1 yukarı, -1 aşağı, 0 geri al.
+    func setCommentVote(_ commentID: UUID, value: Int) async throws
     func deletePost(_ postID: UUID) async throws
     func deleteComment(_ commentID: UUID) async throws
     /// Sunucudaki profil. Kullanıcının profili henüz yoksa `nil` döner — giriş akışı
@@ -101,16 +105,17 @@ protocol ProductService: Sendable {
     func fetchMyProfilePhotos() async throws -> ProfilePhotosResult
     func updateAvatar(_ imageData: Data?) async throws -> URL?
     func updateGallery(_ images: [Data]) async throws -> [URL]
+    /// Adds one extra profile photo without rewriting the rest of the gallery.
+    func appendGalleryPhoto(_ image: Data) async throws -> URL
     func blockUser(_ profileID: UUID) async throws
     func unblockUser(_ profileID: UUID) async throws
     /// Engellediğin kişiler. Engeli kaldırabilmek için önce kimi engellediğini
     /// görebilmen gerekiyor; engelleme tek yönlü bir kapı olmamalı.
     func fetchBlockedProfiles() async throws -> [BlockedProfile]
     func reportUser(_ profileID: UUID, reason: ReportReason, details: String?) async throws
+    func reportContent(_ target: ReportTarget, reason: ReportReason, details: String?) async throws
     /// Şikayet listesi. Yalnızca moderatör okuyabiliyor; başkası çağırırsa boş döner.
     func fetchReports() async throws -> [ModerationReport]
-    /// Kurucuya özel: hesabımı sağa kaydıranlar. Yetkiyi sunucu denetliyor.
-    func fetchAdmirers() async throws -> [Admirer]
     /// Şikayeti kapatır.
     func resolveReport(_ reportID: UUID, resolution: String) async throws
     /// Moderatör olarak içerik kaldırır.
@@ -118,7 +123,18 @@ protocol ProductService: Sendable {
     /// Hesabı askıya alır ya da geri açar.
     func setAccountActive(_ profileID: UUID, active: Bool) async throws
     func messageStream() -> AsyncStream<RealtimeMessage>
-    func setPostLiked(_ postID: UUID, liked: Bool) async throws
+    /// Gönderiye oy: +1 yukarı, -1 aşağı, 0 geri al.
+    func setPostVote(_ postID: UUID, value: Int) async throws
+    /// Kurucu: gönderiye oy ekler (eksi geri alır); yeni boost'u döndürür.
+    func boostPost(_ postID: UUID, extra: Int) async throws -> Int
+    /// Kurucu: cevaba `extra` oy ekler; yeni toplamı döndürür.
+    func boostComment(_ commentID: UUID, extra: Int) async throws -> Int
+    /// Kurucu: gönderiyi akışta `slot`. sıraya sabitler (1 = en üst); nil kaldırır.
+    func setPostPin(_ postID: UUID, slot: Int?) async throws
+    /// Kurucu/moderatör: oy verenler.
+    func fetchPostVoters(_ postID: UUID) async throws -> [PostVoter]
+    /// Kurucu/moderatör: bu cevaba kim ne oy vermiş.
+    func fetchCommentVoters(_ commentID: UUID) async throws -> [PostVoter]
     func setPostSaved(_ postID: UUID, saved: Bool) async throws
     /// Kaydedilen gönderiler. Akıştan süzmek yetmiyor: akış yalnızca son 100 gönderiyi
     /// getirdiği için eski bir gönderiyi kaydeden kişi onu yer imlerinde bulamıyordu.
@@ -132,15 +148,14 @@ protocol ProductService: Sendable {
     /// Profildeki gönderi ızgarası.
     func fetchPersonPosts(_ profileID: UUID) async -> [BackendPost]
 
-    /// "Geç" kararlarını siler; o kişiler keşifte tekrar görünür hale gelir.
-    /// Beğenilere dokunmaz, dolayısıyla eşleşmeler etkilenmez.
-    func resetPasses() async throws
     func fetchNotifications() async throws -> [BackendNotification]
     func markNotificationRead(_ notificationID: UUID) async throws
     func markAllNotificationsRead() async throws
     func registerDeviceToken(_ token: String) async throws
     func unregisterDeviceToken(_ token: String) async throws
     func fetchPlaces() async throws -> [CampusPlace]
+    /// Yer başına kaç kişi görünüyor (liste satırı).
+    func fetchPlacePresence() async throws -> [PlacePresenceSummary]
     func fetchMeetingRequests() async throws -> [MeetingRequest]
     func sendMeetingRequest(to profileID: UUID, placeID: UUID) async throws
     /// Kabul edilirse oluşturulan/yeniden açılan sohbetin kimliğini döner.
@@ -148,6 +163,13 @@ protocol ProductService: Sendable {
     func respondToMeetingRequest(_ requestID: UUID, accept: Bool) async throws -> UUID?
     /// Eşleşmeden yanıt. Sohbete değil, karşı tarafa istek olarak gider.
     func sendMessageRequest(to profileID: UUID, body: String, storyID: UUID?) async throws
+    /// Profil kartını sağa kaydırma. Tek tarafta bildirim; karşılıklıysa eşleşme (DM) açılır.
+    func sendRightSwipe(to profileID: UUID) async throws -> RightSwipeOutcome
+    /// Sola kaydırma kaydı (sessiz).
+    func recordLeftSwipe(on profileID: UUID) async throws
+    /// Kurucu: kartımı kaydıranlar.
+    func fetchProfileSwipers() async throws -> [ProfileSwiper]
+    func fetchIntroductionRequests() async throws -> [StudentProfile]
     func fetchMessageRequests() async throws -> [MessageRequest]
     /// Kabul, eşleşmeyi kurup ilk mesajı sohbete yazar ve eşleşmenin kimliğini döner.
     func acceptMessageRequest(_ requestID: UUID) async throws -> UUID
@@ -206,12 +228,12 @@ struct UnconfiguredProductService: ProductService {
     func signInWithGoogle(idToken: String, accessToken: String, nonce: String) async throws { try fail() }
     func requestEmailSignInLink(email: String) async throws { try fail() }
     func completeEmailSignIn(url: URL) async throws { try fail() }
+    func signInWithEmail(email: String, password: String) async throws { try fail() }
     func restoreSession() async throws -> UUID? { nil }
     func signOut() async throws {}
     func deleteAccount() async throws { try fail() }
     func saveProfile(_ draft: ProfileDraft) async throws { try fail() }
-    func fetchDiscoveryCandidates(filters: DiscoveryFilters, offset: Int, limit: Int) async throws -> [StudentProfile] { try fail() }
-    func reactToProfile(profileID: UUID, liked: Bool) async throws -> DiscoveryReactionResult { try fail() }
+    func fetchCampusPeople(offset: Int, limit: Int) async throws -> [StudentProfile] { try fail() }
     func fetchConversations() async throws -> [Conversation] { try fail() }
     func sendMessage(_ message: Message, matchID: UUID) async throws -> Message { try fail() }
     func markConversationRead(matchID: UUID) async throws { try fail() }
@@ -222,8 +244,9 @@ struct UnconfiguredProductService: ProductService {
     func isStoryLiked(_ storyID: UUID) async throws -> Bool { try fail() }
     func fetchFeed() async throws -> [BackendPost] { try fail() }
     func countMyPosts() async throws -> Int { try fail() }
-    func createPost(caption: String, placeName: String?, imageData: Data?) async throws -> BackendPost { try fail() }
+    func createPost(caption: String, placeName: String?, imageData: Data?, kind: PostKind) async throws -> BackendPost { try fail() }
     func addComment(_ body: String, to postID: UUID) async throws -> BackendComment { try fail() }
+    func setCommentVote(_ commentID: UUID, value: Int) async throws { try fail() }
     func deletePost(_ postID: UUID) async throws { try fail() }
     func deleteComment(_ commentID: UUID) async throws { try fail() }
     func fetchMyProfile() async throws -> ProfileDraft? { try fail() }
@@ -232,32 +255,42 @@ struct UnconfiguredProductService: ProductService {
     func fetchMyProfilePhotos() async throws -> ProfilePhotosResult { try fail() }
     func updateAvatar(_ imageData: Data?) async throws -> URL? { try fail() }
     func updateGallery(_ images: [Data]) async throws -> [URL] { try fail() }
+    func appendGalleryPhoto(_ image: Data) async throws -> URL { try fail() }
     func blockUser(_ profileID: UUID) async throws { try fail() }
     func unblockUser(_ profileID: UUID) async throws { try fail() }
     func fetchBlockedProfiles() async throws -> [BlockedProfile] { try fail() }
     func reportUser(_ profileID: UUID, reason: ReportReason, details: String?) async throws { try fail() }
+    func reportContent(_ target: ReportTarget, reason: ReportReason, details: String?) async throws { try fail() }
     func fetchReports() async throws -> [ModerationReport] { try fail() }
-    func fetchAdmirers() async throws -> [Admirer] { try fail() }
     func resolveReport(_ reportID: UUID, resolution: String) async throws { try fail() }
     func moderatorDeletePost(_ postID: UUID) async throws { try fail() }
     func setAccountActive(_ profileID: UUID, active: Bool) async throws { try fail() }
     func messageStream() -> AsyncStream<RealtimeMessage> { AsyncStream { $0.finish() } }
-    func setPostLiked(_ postID: UUID, liked: Bool) async throws { try fail() }
+    func setPostVote(_ postID: UUID, value: Int) async throws { try fail() }
+    func boostPost(_ postID: UUID, extra: Int) async throws -> Int { try fail() }
+    func boostComment(_ commentID: UUID, extra: Int) async throws -> Int { try fail() }
+    func setPostPin(_ postID: UUID, slot: Int?) async throws { try fail() }
+    func fetchPostVoters(_ postID: UUID) async throws -> [PostVoter] { try fail() }
+    func fetchCommentVoters(_ commentID: UUID) async throws -> [PostVoter] { try fail() }
     func setPostSaved(_ postID: UUID, saved: Bool) async throws { try fail() }
     func fetchSavedPosts() async throws -> [BackendPost] { try fail() }
     func fetchPersonDetails(_ profileID: UUID) async throws -> PersonDetails { try fail() }
     func fetchPersonPosts(_ profileID: UUID) async -> [BackendPost] { [] }
-    func resetPasses() async throws { try fail() }
     func fetchNotifications() async throws -> [BackendNotification] { try fail() }
     func markNotificationRead(_ notificationID: UUID) async throws { try fail() }
     func markAllNotificationsRead() async throws { try fail() }
     func registerDeviceToken(_ token: String) async throws { try fail() }
     func unregisterDeviceToken(_ token: String) async throws { try fail() }
     func fetchPlaces() async throws -> [CampusPlace] { try fail() }
+    func fetchPlacePresence() async throws -> [PlacePresenceSummary] { try fail() }
     func fetchMeetingRequests() async throws -> [MeetingRequest] { try fail() }
     func sendMeetingRequest(to profileID: UUID, placeID: UUID) async throws { try fail() }
     func respondToMeetingRequest(_ requestID: UUID, accept: Bool) async throws -> UUID? { try fail() }
     func sendMessageRequest(to profileID: UUID, body: String, storyID: UUID?) async throws { try fail() }
+    func sendRightSwipe(to profileID: UUID) async throws -> RightSwipeOutcome { try fail() }
+    func recordLeftSwipe(on profileID: UUID) async throws { try fail() }
+    func fetchProfileSwipers() async throws -> [ProfileSwiper] { try fail() }
+    func fetchIntroductionRequests() async throws -> [StudentProfile] { try fail() }
     func fetchMessageRequests() async throws -> [MessageRequest] { try fail() }
     func acceptMessageRequest(_ requestID: UUID) async throws -> UUID { try fail() }
     func declineMessageRequest(_ requestID: UUID) async throws { try fail() }

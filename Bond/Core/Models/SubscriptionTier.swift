@@ -54,8 +54,9 @@ enum SubscriptionTier: Int, Comparable, Codable, CaseIterable {
         }
     }
 
-    /// Tanış'ta 2 günde kullanılabilecek beğeni.
-    var likeQuota: Int? {
+    /// İki günde gönderilebilecek bağlantı isteği (kartı sağa kaydırma).
+    /// Pencere kayan 48 saat; sunucu `enforce_right_swipe_quota` ile aynı.
+    var connectionRequestQuota: Int? {
         switch self {
         case .free: 5
         case .plus: 10
@@ -66,7 +67,7 @@ enum SubscriptionTier: Int, Comparable, Codable, CaseIterable {
     /// Haftada gönderilebilecek buluşma isteği.
     var meetingRequestQuota: Int? {
         switch self {
-        case .free: 3
+        case .free: 2
         case .plus: 5
         case .pro: nil
         }
@@ -75,7 +76,7 @@ enum SubscriptionTier: Int, Comparable, Codable, CaseIterable {
     /// Haftada kabul edilebilecek buluşma isteği.
     var meetingAcceptQuota: Int? {
         switch self {
-        case .free: 2
+        case .free: 1
         case .plus: 5
         case .pro: nil
         }
@@ -89,8 +90,8 @@ enum SubscriptionTier: Int, Comparable, Codable, CaseIterable {
     /// Profiline kimlerin baktığını görebilme.
     var canSeeProfileVisitors: Bool { self >= .plus }
 
-    /// Story izlerken duraklatabilme. Yalnızca Pro.
-    var canPauseStory: Bool { self >= .pro }
+    /// Story izlerken duraklatabilme.
+    var canPauseStory: Bool { self >= .plus }
 
     /// Story'yi kimin kaç kez izlediğini görebilme.
     var canSeeStoryViewCounts: Bool { self >= .pro }
@@ -108,7 +109,7 @@ struct PlanFeature: Identifiable, Sendable {
     let value: @Sendable (SubscriptionTier) -> String
 
     static let all: [PlanFeature] = [
-        PlanFeature(id: 1, label: L10n.Paywall.featureLikes) { $0.likeQuota.map(String.init) ?? L10n.Paywall.infinity },
+        PlanFeature(id: 1, label: L10n.Paywall.featureConnections) { $0.connectionRequestQuota.map(String.init) ?? L10n.Paywall.infinity },
         PlanFeature(id: 2, label: L10n.Paywall.featurePosts) { $0.maxPosts.map(String.init) ?? L10n.Paywall.infinity },
         PlanFeature(id: 3, label: L10n.Paywall.featureRequests) { $0.meetingRequestQuota.map(String.init) ?? L10n.Paywall.infinity },
         PlanFeature(id: 4, label: L10n.Paywall.featureAccepts) { $0.meetingAcceptQuota.map(String.init) ?? L10n.Paywall.infinity },

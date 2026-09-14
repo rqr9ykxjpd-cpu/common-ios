@@ -54,27 +54,32 @@ extension SupabaseProductService {
         _ = try? await client.storage.from("story-media").remove(paths: paths)
     }
 
-    /// Profil fotoğrafının CDN adresi. SDK `appendingPathComponent` ile `/` işaretini
-    /// `%2F` yapabiliyor; burada yol `URLComponents` ile kuruluyor.
-    func publicProfilePhotoURL(_ path: String) -> URL? {
-        storageHTTPURL(kind: "public", bucket: "profile-photos", path: path).map(Self.usableSignedURL)
+    /// Private photos require an authorized download or an expiring signed URL.
+    func profilePhotoURL(_ path: String) async -> URL? {
+        (await signedURLs(bucket: "profile-photos", paths: [path]))[path]
     }
 
-    /// Görseller: oturumlu GET / public GET / SDK indirme → `file://`.
-    /// Video: imzalı HTTPS. Profil fotoğrafında yalnızca public URL üretmek,
-    /// bucket kapalıyken Tanış kartını boş bırakıyordu.
+    /// Yalnızca imzalı HTTPS. JPEG burada indirilmez: akış hydrate'i 100
+    /// gönderiyi paralel `download` edince telefonda jetsam oluyordu. Asıl
+    /// dosya, hücre görünürken `BondImageLoader` / `loadMediaData` ile gelir.
     func signedURLs(bucket: String, paths: [String]) async -> [String: URL] {
         let uniquePaths = Array(Set(paths.filter { !$0.isEmpty }))
         guard !uniquePaths.isEmpty else { return [:] }
         var map: [String: URL] = [:]
         await withTaskGroup(of: (String, URL?).self) { group in
-            for path in uniquePaths {
+            var iterator = uniquePaths.makeIterator()
+            let limit = min(8, uniquePaths.count)
+            for _ in 0..<limit {
+                guard let path = iterator.next() else { break }
                 group.addTask { await self.resolveOneMediaURL(bucket: bucket, path: path) }
             }
             for await (path, url) in group {
                 if let url {
                     map[path] = url
                     map[Self.normalizedMediaPath(path)] = url
+                }
+                if let next = iterator.next() {
+                    group.addTask { await self.resolveOneMediaURL(bucket: bucket, path: next) }
                 }
             }
         }
@@ -92,15 +97,6 @@ extension SupabaseProductService {
     }
 
     private func resolveOneMediaURL(bucket: String, path: String) async -> (String, URL?) {
-        if !Self.isProbablyVideo(path) {
-            if let data = await downloadImageData(bucket: bucket, path: path),
-               let fileURL = cacheMediaFile(data: data, path: path) {
-                return (path, fileURL)
-            }
-        }
-        if bucket == "profile-photos", let url = publicProfilePhotoURL(path) {
-            return (path, url)
-        }
         if let url = try? await client.storage.from(bucket).createSignedURL(path: path, expiresIn: 3_600) {
             return (path, Self.usableSignedURL(url))
         }
@@ -125,10 +121,6 @@ extension SupabaseProductService {
     /// SDK indirmesi yolu `%2F` kodlarsa 404 olur. Public ve oturumlu GET
     /// burada `URLComponents` ile kuruluyor.
     private func fetchStorageObject(bucket: String, path: String) async -> Data? {
-        if let url = storageHTTPURL(kind: "public", bucket: bucket, path: path),
-           let data = await Self.httpImageData(url), Self.isImageData(data) {
-            return data
-        }
         if let url = storageHTTPURL(kind: nil, bucket: bucket, path: path),
            let data = await authorizedStorageData(url), Self.isImageData(data) {
             return data
@@ -207,7 +199,7 @@ extension SupabaseProductService {
     }
 
     /// SDK göreli yolu `storage/v1` ile birleştirirken bazen yolu ikiye katlıyor.
-    private static func usableSignedURL(_ url: URL) -> URL {
+    static func usableSignedURL(_ url: URL) -> URL {
         var text = url.absoluteString
         while text.contains("/storage/v1/storage/v1/") {
             text = text.replacingOccurrences(of: "/storage/v1/storage/v1/", with: "/storage/v1/")
@@ -223,11 +215,6 @@ extension SupabaseProductService {
               (200...299).contains(http.statusCode),
               isImageData(data) else { return nil }
         return data
-    }
-
-    private static func isProbablyVideo(_ path: String) -> Bool {
-        let lower = path.lowercased()
-        return lower.hasSuffix(".mp4") || lower.hasSuffix(".mov") || lower.hasSuffix(".m4v")
     }
 
     private static func isImageData(_ data: Data) -> Bool {
@@ -268,23 +255,5 @@ extension SupabaseProductService {
             return object
         }
         return nil
-    }
-
-    private func cacheMediaFile(data: Data, path: String) -> URL? {
-        let user = currentUserID?.uuidString.lowercased() ?? "anon"
-        let safe = path
-            .replacingOccurrences(of: "/", with: "_")
-            .replacingOccurrences(of: ":", with: "_")
-        let dir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("bond-media", isDirectory: true)
-            .appendingPathComponent(user, isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let file = dir.appendingPathComponent(safe)
-        do {
-            try data.write(to: file, options: .atomic)
-            return file
-        } catch {
-            return nil
-        }
     }
 }

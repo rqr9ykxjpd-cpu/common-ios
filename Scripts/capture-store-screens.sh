@@ -1,5 +1,5 @@
 #!/bin/sh
-# Bond App Store 6.9" ham kareleri. iPhone 17 Pro Max, örnek veri.
+# Common App Store 6.9" ham kareleri. iPhone 17 Pro Max (1320x2868), örnek veri.
 set -eu
 ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
 SIM="${SIM:-CB8BEE12-FE13-4664-8427-876193E59871}"
@@ -28,7 +28,7 @@ xcrun simctl ui "$SIM" appearance light
 xcrun simctl privacy "$SIM" grant notifications "$BUNDLE" || true
 status_bar
 
-APP="$(find /tmp/BondSimDD/Build/Products -name Bond.app -path '*iphonesimulator*' 2>/dev/null | head -1)"
+APP="$(find "$ROOT/.derived-sim/Build/Products" -name Bond.app -path '*iphonesimulator*' 2>/dev/null | head -1)"
 if [ -z "$APP" ] || [ ! -d "$APP" ]; then
     echo "Bond.app yok; önce simülatör derlemesi lazım." >&2
     exit 1
@@ -54,11 +54,13 @@ shot() {
     echo "çekildi $name"
 }
 
+# Keşif/insanlar sekmesi 4.3(b) sonrası kaldırıldı. Vitrin kampüs akışı,
+# kulüpler, story, kampüs noktaları ve sohbet üzerine kurulu.
 shot 01-feed 6.5 -sample -tab feed
-shot 02-discover 5.0 -sample -tab discover
+shot 02-clubs 6.0 -sample -club
 shot 03-story 6.0 -sample -story Ece
 shot 04-places 6.0 -sample -places
-shot 05-chats 6.0 -sample -tab discover -chats
+shot 05-chats 6.0 -sample -tab chats -chats
 shot 06-profile 5.5 -sample -profile Ece
 
 echo "ham kareler: $RAW"

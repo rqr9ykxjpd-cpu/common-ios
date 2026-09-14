@@ -51,6 +51,12 @@ enum UserFacingError {
     }
 
     private static func known(_ error: Error) -> String? {
+        if let safetyError = error as? ContentSafetyError {
+            return safetyError.errorDescription
+        }
+        if String(describing: error).localizedCaseInsensitiveContains("CONTENT_BLOCKED") {
+            return ContentSafetyError.blockedText.errorDescription
+        }
         // Kendi tanımladığımız hatalar zaten Türkçe ve yerinde.
         if let backendError = error as? BackendServiceError {
             return backendError.errorDescription
@@ -108,8 +114,12 @@ enum UserFacingError {
         (["nonce"], L10n.Errors.nonce),
         (["provider is not enabled"], L10n.Errors.providerDisabled),
         (["bad_oauth_state"], L10n.Errors.oauthState),
+        (["invalid_credentials"], L10n.Auth.passwordFailed),
+        (["invalid login credentials"], L10n.Auth.passwordFailed),
         (["invalid", "token"], L10n.Errors.invalidToken),
         (["email", "already"], L10n.Errors.emailTaken),
+        // Bağlantı isteği: taraflardan biri diğerini engellemiş.
+        (["right_swipe_blocked"], L10n.Errors.connectionBlocked),
         (["banned"], L10n.Errors.banned),
         (["signup", "disabled"], L10n.Errors.signupDisabled),
         (["rate limit"], L10n.Errors.rateLimit),
@@ -124,6 +134,7 @@ enum UserFacingError {
         (["at least three interests"], L10n.Errors.minInterests),
         (["post_limit"], L10n.Composer.postLimit(CampusLimits.maxPostsPerUser)),
         (["quota_post"], L10n.Composer.postLimit(CampusLimits.maxPostsPerUser)),
+        (["gallery_full"], L10n.Composer.galleryFull),
 
         // — Yetki ve veri —
         (["row-level security"], L10n.Errors.permission),

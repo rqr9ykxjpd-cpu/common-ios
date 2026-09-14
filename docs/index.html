@@ -10,25 +10,38 @@
          font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
          color: #1a1a1a; background: #fbfaf7; }
   @media (prefers-color-scheme: dark) { body { color: #ececec; background: #16161a; } }
-  h1 { font-size: 2.2rem; margin: 0 0 .5rem; }
-  p { color: #6a6a6a; }
-  @media (prefers-color-scheme: dark) { p { color: #a0a0a0; } }
-  ul { list-style: none; padding: 0; margin-top: 2.5rem; }
+  h1 { font: 700 2.2rem/1.15 "Times New Roman", Times, serif; margin: 0 0 .5rem; letter-spacing: -0.03em; }
+  .lead { color: #6a6a6a; margin: 0 0 2rem; }
+  @media (prefers-color-scheme: dark) { .lead { color: #a0a0a0; } }
+  .stores { display: grid; gap: 10px; margin: 0 0 2.5rem; }
+  .store { display: flex; align-items: baseline; justify-content: space-between;
+           padding: 14px 16px; border: 1px solid #e6e3da; background: #fff; }
+  @media (prefers-color-scheme: dark) {
+    .store { border-color: #2c2c32; background: #1c1c22; }
+  }
+  .store strong { font-size: 15px; }
+  .store span { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: #7a7a7a; }
+  ul { list-style: none; padding: 0; margin: 2rem 0 0; }
   li { margin: .8rem 0; }
   a { color: #6b4df6; font-weight: 600; }
   @media (prefers-color-scheme: dark) { a { color: #a99bff; } }
+  .lang { margin-top: 2.5rem; color: #6a6a6a; }
 </style>
 </head>
 <body>
 <h1>Common</h1>
-<p>Yalova Üniversitesi öğrencileri için kampüste tanışma uygulaması.</p>
+<p class="lead">Üniversite kampüsleri için sosyal ağ: kampüs paylaşımları, kulüpler, buluşmalar ve mesajlaşma.</p>
+<div class="stores">
+  <div class="store"><strong>App Store</strong><span>Yakında</span></div>
+  <div class="store"><strong>Google Play</strong><span>Yakında</span></div>
+</div>
 <ul>
   <li><a href="gizlilik.html">Gizlilik Politikası</a></li>
   <li><a href="kosullar.html">Kullanım Koşulları</a></li>
   <li><a href="mailto:220207018@yalova.edu.tr">İletişim &amp; Destek</a></li>
 </ul>
-<p style="margin-top:2.5rem">In English</p>
-<ul style="margin-top:.5rem">
+<p class="lang">In English</p>
+<ul>
   <li><a href="en/privacy.html">Privacy Policy</a></li>
   <li><a href="en/terms.html">Terms of Use</a></li>
   <li><a href="mailto:220207018@yalova.edu.tr">Contact &amp; Support</a></li>

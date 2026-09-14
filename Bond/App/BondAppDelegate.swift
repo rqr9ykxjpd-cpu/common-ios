@@ -12,7 +12,10 @@ final class PushTokenStore {
 
     func bind(_ appState: AppState) {
         self.appState = appState
-        Task { await appState.startPushRegistration() }
+        // Yerel "oturum açık" bayrağı, gerçek Supabase oturumu geri yüklenmeden
+        // okunursa eski kalabilir. Burada izin istemek bu yüzden giriş ekranını
+        // sistem bildirimiyle kapatıyordu. Kayıt; başarılı giriş, geçerli oturum
+        // geri yükleme veya onboarding tamamlandıktan sonra başlatılıyor.
         if let currentToken {
             Task { await appState.registerPushToken(currentToken) }
         }
@@ -38,8 +41,24 @@ final class BondAppDelegate: NSObject, UIApplicationDelegate, UNUserNotification
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        URLCache.shared = URLCache(memoryCapacity: 2 * 1024 * 1024, diskCapacity: 40 * 1024 * 1024, directory: nil)
         UNUserNotificationCenter.current().delegate = self
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(purgeImageMemory),
+            name: UIApplication.didReceiveMemoryWarningNotification,
+            object: nil
+        )
         return true
+    }
+
+    func applicationDidReceiveMemoryWarning(_ application: UIApplication) {
+        purgeImageMemory()
+    }
+
+    @objc private func purgeImageMemory() {
+        URLCache.shared.removeAllCachedResponses()
+        Task { await BondImageLoader.shared.purgeMemory() }
     }
 
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {

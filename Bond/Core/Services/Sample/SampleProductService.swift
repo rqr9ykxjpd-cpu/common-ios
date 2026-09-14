@@ -27,6 +27,7 @@ struct SampleProductService: ProductService {
     func signInWithGoogle(idToken: String, accessToken: String, nonce: String) async throws {}
     func requestEmailSignInLink(email: String) async throws {}
     func completeEmailSignIn(url: URL) async throws {}
+    func signInWithEmail(email: String, password: String) async throws {}
     func restoreSession() async throws -> UUID? { SampleData.me.id }
     func signOut() async throws {}
     func deleteAccount() async throws {}
@@ -39,22 +40,22 @@ struct SampleProductService: ProductService {
     func fetchMyPlan() async throws -> SubscriptionTier { .free }
 
     func fetchMyProfile() async throws -> ProfileDraft? { hasProfile ? await store.myDraft() : nil }
-    /// Örnek veride depolama yok, imzalı adres de yok. Yine de boş dönmüyoruz:
-    /// fotoğraf zorunluluğu kapısı (bkz. `AppState.requiresAvatarStep`) örnek
-    /// veriyle gezerken uygulamayı kayıt akışına düşürüyor, hiçbir ekran
-    /// görülemiyordu. Bu adres yalnızca "fotoğrafı var" demek için.
+    /// Örnek veride imzalı adres yok. BondApp yerel görseli avatarData'ya yükler.
     func fetchMyProfilePhotos() async throws -> ProfilePhotosResult {
-        ProfilePhotosResult(avatarURL: SampleData.me.imageURL, galleryURLs: [])
+        ProfilePhotosResult(avatarURL: SampleData.me.imageURL, galleryURLs: SampleData.profiles[0].galleryImageURLs)
     }
     func updateAvatar(_ imageData: Data?) async throws -> URL? { nil }
-    func updateGallery(_ images: [Data]) async throws -> [URL] { [] }
-
-    // Keşif
-    func fetchDiscoveryCandidates(filters: DiscoveryFilters, offset: Int, limit: Int) async throws -> [StudentProfile] {
-        await store.takeCandidates(offset: offset, limit: limit)
+    func updateGallery(_ images: [Data]) async throws -> [URL] {
+        await store.replaceGalleryCount(images.count)
+        return []
     }
-    func reactToProfile(profileID: UUID, liked: Bool) async throws -> DiscoveryReactionResult {
-        await store.react(to: profileID, liked: liked)
+    func appendGalleryPhoto(_ image: Data) async throws -> URL {
+        try await store.appendGalleryPhoto()
+    }
+
+    // Kampüs insanları
+    func fetchCampusPeople(offset: Int, limit: Int) async throws -> [StudentProfile] {
+        await store.campusPeople(offset: offset, limit: limit)
     }
 
     // Sohbet
@@ -78,10 +79,10 @@ struct SampleProductService: ProductService {
     func countMyPosts() async throws -> Int {
         await store.allPosts().filter { $0.authorID == SampleData.me.id }.count
     }
-    func createPost(caption: String, placeName: String?, imageData: Data?) async throws -> BackendPost {
+    func createPost(caption: String, placeName: String?, imageData: Data?, kind: PostKind) async throws -> BackendPost {
         let count = await store.allPosts().filter { $0.authorID == SampleData.me.id }.count
         if count >= CampusLimits.maxPostsPerUser { throw BackendServiceError.postLimit }
-        let post = SampleData.newPost(caption: caption, placeName: placeName, imageData: imageData)
+        let post = SampleData.newPost(caption: caption, placeName: placeName, imageData: imageData, kind: kind)
         await store.insert(post)
         return post
     }
@@ -100,19 +101,33 @@ struct SampleProductService: ProductService {
     }
     func deletePost(_ postID: UUID) async throws { await store.removePost(postID) }
     func deleteComment(_ commentID: UUID) async throws { await store.removeComment(commentID) }
-    func setPostLiked(_ postID: UUID, liked: Bool) async throws { await store.setLiked(postID, liked: liked) }
-    func setPostSaved(_ postID: UUID, saved: Bool) async throws { await store.setSaved(postID, saved: saved) }
-    func resetPasses() async throws {
-        await store.resetDiscoveryDeck()
+    func setPostVote(_ postID: UUID, value: Int) async throws { await store.setPostVote(postID, value: value) }
+    func boostPost(_ postID: UUID, extra: Int) async throws -> Int { await store.boost(postID, extra: extra) }
+    func boostComment(_ commentID: UUID, extra: Int) async throws -> Int { await store.boostComment(commentID, extra: extra) }
+    func setPostPin(_ postID: UUID, slot: Int?) async throws { await store.setPin(postID, slot: slot) }
+    func fetchPostVoters(_ postID: UUID) async throws -> [PostVoter] {
+        // Örnek veride oy satırı yok; demo için ilk birkaç profil oy vermiş gibi.
+        SampleData.profiles.prefix(4).enumerated().map { i, p in
+            PostVoter(id: p.id, name: p.name, avatarURL: nil, value: i == 2 ? -1 : 1, avatarAssetName: p.imageAssetName)
+        }
     }
+
+    func fetchCommentVoters(_ commentID: UUID) async throws -> [PostVoter] {
+        SampleData.profiles.dropFirst(2).prefix(3).enumerated().map { i, p in
+            PostVoter(id: p.id, name: p.name, avatarURL: nil, value: i == 1 ? -1 : 1, avatarAssetName: p.imageAssetName)
+        }
+    }
+    func setCommentVote(_ commentID: UUID, value: Int) async throws { await store.setCommentVote(commentID, value: value) }
+    func setPostSaved(_ postID: UUID, saved: Bool) async throws { await store.setSaved(postID, saved: saved) }
 
     func fetchPersonDetails(_ profileID: UUID) async throws -> PersonDetails {
         // Rozet sabit `.none` idi ve örnek modda kurucu rozetini eziyordu:
         // kurucuya özel görünümü geliştirirken hiç görünmüyordu.
+        if ProcessInfo.processInfo.arguments.contains("-preview-details-error") { throw URLError(.notConnectedToInternet) }
         let kisi = await store.profile(id: profileID)
         return PersonDetails(
             interests: kisi.map { Array($0.interests) } ?? ["Kahve", "Fotoğraf", "Yürüyüş"],
-            galleryURLs: [],
+            galleryURLs: kisi?.galleryImageURLs ?? [],
             avatarURL: kisi?.imageURL,
             badge: kisi?.badge,
             posts: []
@@ -129,20 +144,15 @@ struct SampleProductService: ProductService {
     func blockUser(_ profileID: UUID) async throws { await store.block(profileID) }
     func unblockUser(_ profileID: UUID) async throws { await store.unblock(profileID) }
     func fetchBlockedProfiles() async throws -> [BlockedProfile] { await store.allBlocked() }
-    func reportUser(_ profileID: UUID, reason: ReportReason, details: String?) async throws {}
-    func fetchReports() async throws -> [ModerationReport] { await store.allReports() }
-    /// Örnek modda sunucuya gidilmiyor; ilk üç örnek profil beğenmiş sayılıyor.
-    func fetchAdmirers() async throws -> [Admirer] {
-        SampleData.profiles.prefix(3).enumerated().map { sira, profil in
-            Admirer(
-                profile: profil,
-                likedAt: Date().addingTimeInterval(Double(sira + 1) * -5400),
-                isMatched: sira == 0
-            )
-        }
+    func reportUser(_ profileID: UUID, reason: ReportReason, details: String?) async throws {
+        await store.addReport(profileID: profileID, reason: reason, details: details)
     }
+    func reportContent(_ target: ReportTarget, reason: ReportReason, details: String?) async throws {
+        try await store.addContentReport(target, reason: reason, details: details)
+    }
+    func fetchReports() async throws -> [ModerationReport] { await store.allReports() }
     func resolveReport(_ reportID: UUID, resolution: String) async throws {
-        await store.resolveReport(reportID, resolution: resolution)
+        try await store.resolveReport(reportID, resolution: resolution)
     }
     func moderatorDeletePost(_ postID: UUID) async throws { await store.removePost(postID) }
     func setAccountActive(_ profileID: UUID, active: Bool) async throws {
@@ -161,6 +171,7 @@ struct SampleProductService: ProductService {
 
     // Yer, story, kulüp, buluşma
     func fetchPlaces() async throws -> [CampusPlace] { await store.allPlaces() }
+    func fetchPlacePresence() async throws -> [PlacePresenceSummary] { await store.placePresence() }
     func fetchMeetingRequests() async throws -> [MeetingRequest] { await store.allMeetingRequests() }
     func sendMeetingRequest(to profileID: UUID, placeID: UUID) async throws {
         await store.addMeetingRequest(to: profileID, placeID: placeID)
@@ -171,12 +182,28 @@ struct SampleProductService: ProductService {
     func sendMessageRequest(to profileID: UUID, body: String, storyID: UUID?) async throws {
         await store.addMessageRequest(to: profileID, body: body)
     }
+    func recordLeftSwipe(on profileID: UUID) async throws {}
+    func fetchProfileSwipers() async throws -> [ProfileSwiper] {
+        // Demo: iki sağa, bir sola, bir de bağlantı kurulmuş.
+        let p = SampleData.profiles
+        return [
+            ProfileSwiper(id: p[0].id, name: p[0].name, avatarURL: nil, swipedRight: true, swipedAt: SampleData.hours(1), isMatched: true, avatarAssetName: p[0].imageAssetName),
+            ProfileSwiper(id: p[2].id, name: p[2].name, avatarURL: nil, swipedRight: false, swipedAt: SampleData.hours(3), isMatched: false, avatarAssetName: p[2].imageAssetName),
+            ProfileSwiper(id: p[3].id, name: p[3].name, avatarURL: nil, swipedRight: true, swipedAt: SampleData.hours(7), isMatched: false, avatarAssetName: p[3].imageAssetName),
+            ProfileSwiper(id: p[4].id, name: p[4].name, avatarURL: nil, swipedRight: false, swipedAt: SampleData.date(1.2), isMatched: false, avatarAssetName: p[4].imageAssetName),
+        ]
+    }
+    func sendRightSwipe(to profileID: UUID) async throws -> RightSwipeOutcome {
+        try await store.addRightSwipe(to: profileID)
+    }
+    /// Kaydırmalar görünmez: tek yönlü istek listesi artık boş (sunucu da boş döner).
+    func fetchIntroductionRequests() async throws -> [StudentProfile] { [] }
     func fetchMessageRequests() async throws -> [MessageRequest] { await store.allMessageRequests() }
     func acceptMessageRequest(_ requestID: UUID) async throws -> UUID {
-        guard let eslesme = await store.respondToMessageRequest(requestID, accept: true) else {
+        guard let matchID = await store.respondToMessageRequest(requestID, accept: true) else {
             throw BackendServiceError.missingSession
         }
-        return eslesme
+        return matchID
     }
     func declineMessageRequest(_ requestID: UUID) async throws {
         _ = await store.respondToMessageRequest(requestID, accept: false)
@@ -237,17 +264,21 @@ struct SampleProductService: ProductService {
 // MARK: - Değiştirici yardımcılar
 
 extension BackendPost {
-    func copy(liked: Bool? = nil, saved: Bool? = nil, likeCount: Int? = nil, comments: [BackendComment]? = nil) -> BackendPost {
+    func copy(liked: Bool? = nil, downvoted: Bool? = nil, saved: Bool? = nil, likeCount: Int? = nil, comments: [BackendComment]? = nil, boost: Int? = nil, pinnedAt: Date?? = nil, pinnedSlot: Int?? = nil) -> BackendPost {
         BackendPost(
             id: id, authorID: authorID, authorName: authorName, authorBirthDate: authorBirthDate,
             authorUniversity: authorUniversity, authorDepartment: authorDepartment, authorYear: authorYear,
             authorBio: authorBio, authorVerified: authorVerified, authorBadge: authorBadge,
             authorAvatarURL: authorAvatarURL,
-            caption: caption, placeName: placeName, imageData: imageData, imageURL: imageURL, createdAt: createdAt,
+            caption: caption, placeName: placeName, kind: kind, imageData: imageData, imageURL: imageURL, createdAt: createdAt,
             comments: comments ?? self.comments,
             likeCount: likeCount ?? self.likeCount,
             liked: liked ?? self.liked,
-            saved: saved ?? self.saved
+            downvoted: downvoted ?? self.downvoted,
+            saved: saved ?? self.saved,
+            boost: boost ?? self.boost,
+            pinnedAt: pinnedAt ?? self.pinnedAt,
+            pinnedSlot: pinnedSlot ?? self.pinnedSlot
         )
     }
 }

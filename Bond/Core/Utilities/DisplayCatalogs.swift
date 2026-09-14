@@ -115,24 +115,9 @@ enum UniversityCatalog {
     }
 }
 
-enum CompatibilityCopy {
-    static func localize(_ reason: String) -> String {
-        if reason == "Aynı sınıf düzeyi" { return L10n.Discovery.sameYear }
-        if let count = commonInterestCount(reason) {
-            return L10n.Discovery.commonInterests(count)
-        }
-        return reason
-    }
-
-    private static func commonInterestCount(_ reason: String) -> Int? {
-        let suffix = " ortak ilgi alanı"
-        guard reason.hasSuffix(suffix) else { return nil }
-        return Int(reason.dropLast(suffix.count))
-    }
-}
-
 enum NotificationCopy {
     static func title(kind: AppNotificationKind, actorName: String, serverTitle: String) -> String {
+        if serverTitle == "Tanışma isteği" { return L10n.Introduction.requests }
         switch kind {
         case .match:
             return L10n.Notification.matchTitle
@@ -147,6 +132,9 @@ enum NotificationCopy {
             if serverTitle.contains("story") {
                 return L10n.Notification.storyLikeTitle(actorName)
             }
+            if serverTitle.contains("kaydırdı") {
+                return L10n.Notification.rightSwipeTitle
+            }
             return L10n.Notification.postLikeTitle(actorName)
         case .meetingRequest:
             if serverTitle.contains("kabul") {
@@ -158,13 +146,23 @@ enum NotificationCopy {
         }
     }
 
-    static func body(kind: AppNotificationKind, actorName: String, serverTitle: String, serverBody: String) -> String {
+    static func body(kind: AppNotificationKind, actorName: String?, serverTitle: String, serverBody: String) -> String {
+        if serverTitle == "Tanışma isteği" {
+            return "\(actorName ?? L10n.Common.someone) · \(L10n.Introduction.incoming)"
+        }
+        let named = actorName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         switch kind {
         case .match:
-            return L10n.Notification.matchBody(actorName)
+            return L10n.Notification.matchBody(named.isEmpty ? L10n.Common.someone : named)
         case .message, .comment:
             return serverBody
         case .like:
+            if serverTitle.contains("kaydırdı") {
+                if !named.isEmpty {
+                    return L10n.Notification.rightSwipeBody(named)
+                }
+                return L10n.Notification.rightSwipeBodyAnonymous
+            }
             return serverBody
         case .meetingRequest:
             let place = serverBody

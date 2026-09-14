@@ -6,50 +6,65 @@ import GoogleSignIn
 
 struct WelcomeView: View {
     @Environment(AppState.self) private var appState
+    @Environment(\.openURL) private var openURL
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage(AppleAccountDeletionNotice.defaultsKey) private var showAppleDeletionNotice = false
     @State private var appeared = false
     @State private var currentAppleNonce: String?
     @State private var isSigningIn = false
 
-    /// E-posta ile giriş girişinin görünürlüğü. bkz. aşağıdaki açıklama.
+    /// E-posta ile giriş App Store sürümünde kapalı. Debug'da da demo hesap
+    /// yolu yok — gerçek Apple/Google oturumu kullanılır.
     private static let epostaGirisiAcik = false
     @State private var showingEmailSignIn = false
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                Text(L10n.Welcome.headline)
-                    .campusDisplay(34)
+                Text(L10n.Brand.wordmark)
+                    .font(.system(size: 34, weight: .bold, design: .serif))
+                    .tracking(-0.8)
                     .foregroundStyle(BondTheme.ink)
-                    .fixedSize(horizontal: false, vertical: true)
                     .accessibilityAddTraits(.isHeader)
 
-                VStack(alignment: .leading, spacing: BondTheme.Space.xl) {
-                    WelcomeFeatureRow(
-                        systemImage: "text.below.photo",
-                        title: L10n.Welcome.featureShareTitle,
-                        detail: L10n.Welcome.featureShareBody
-                    )
-                    WelcomeFeatureRow(
-                        systemImage: "heart",
-                        title: L10n.Welcome.featureMeetTitle,
-                        detail: L10n.Welcome.featureMeetBody
-                    )
-                    WelcomeFeatureRow(
-                        systemImage: "person.3",
-                        title: L10n.Welcome.featureClubsTitle,
-                        detail: L10n.Welcome.featureClubsBody
-                    )
-                    WelcomeFeatureRow(
-                        systemImage: "mappin.and.ellipse",
-                        title: L10n.Welcome.featureOfflineTitle,
-                        detail: L10n.Welcome.featureOfflineBody
-                    )
+                VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
+                    Text(L10n.Welcome.headline)
+                        .editorialTitle(38)
+                        .foregroundStyle(BondTheme.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityAddTraits(.isHeader)
+
+                    Text(L10n.Welcome.handNote)
+                        .font(.custom("BradleyHandITCTT-Bold", size: 18, relativeTo: .callout))
+                        .foregroundStyle(BondTheme.burntOrange)
+                        .rotationEffect(.degrees(-0.7))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.top, BondTheme.Space.lg)
+                .opacity(appeared ? 1 : 0)
+                .offset(y: appeared || reduceMotion ? 0 : 10)
+                .animation(reduceMotion ? nil : BondTheme.Motion.smooth.delay(0.04), value: appeared)
+
+                VStack(spacing: BondTheme.Space.md) {
+                    ForEach(Array(welcomeFeatures.enumerated()), id: \.offset) { index, feature in
+                        WelcomeFeatureRow(
+                            systemImage: feature.systemImage,
+                            title: feature.title,
+                            detail: feature.detail
+                        )
+                        .opacity(appeared ? 1 : 0)
+                        .offset(y: appeared || reduceMotion ? 0 : 12)
+                        .animation(
+                            reduceMotion ? nil : BondTheme.Motion.smooth.delay(0.10 + Double(index) * 0.06),
+                            value: appeared
+                        )
+                    }
                 }
                 .padding(.top, BondTheme.Space.xxl)
             }
             .padding(.horizontal, BondTheme.Space.lg)
-            .padding(.top, BondTheme.Space.xxl)
-            .padding(.bottom, BondTheme.Space.lg)
+            .padding(.top, BondTheme.Space.xl)
+            .padding(.bottom, BondTheme.Space.xl)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .scrollBounceBehavior(.basedOnSize)
@@ -57,13 +72,28 @@ struct WelcomeView: View {
         .safeAreaInset(edge: .bottom) {
             signInFooter
         }
-        .opacity(appeared ? 1 : 0)
         .onAppear {
-            withAnimation(BondTheme.Motion.easing) { appeared = true }
+            appeared = true
         }
         .sheet(isPresented: $showingEmailSignIn) {
             EmailSignInSheet()
         }
+        .alert(L10n.AccountDeletion.deletedTitle, isPresented: $showAppleDeletionNotice) {
+            Button(L10n.AccountDeletion.appleInstructions) {
+                openURL(AppleAccountDeletionNotice.instructionsURL)
+            }
+            Button(L10n.Common.ok, role: .cancel) {}
+        } message: {
+            Text(L10n.AccountDeletion.deletedManualBody)
+        }
+    }
+
+    private var welcomeFeatures: [(systemImage: String, title: String, detail: String)] {
+        [
+            ("text.below.photo", L10n.Welcome.featureShareTitle, L10n.Welcome.featureShareBody),
+            ("person.3", L10n.Welcome.featureClubsTitle, L10n.Welcome.featureClubsBody),
+            ("mappin.and.ellipse", L10n.Welcome.featureOfflineTitle, L10n.Welcome.featureOfflineBody),
+        ]
     }
 
     private var signInFooter: some View {
@@ -135,6 +165,14 @@ struct WelcomeView: View {
         .padding(.top, BondTheme.Space.md)
         .padding(.bottom, BondTheme.Space.md)
         .background(BondTheme.paper)
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(BondTheme.hairline.opacity(0.7))
+                .frame(height: 0.5)
+        }
+        .opacity(appeared ? 1 : 0)
+        .offset(y: appeared || reduceMotion ? 0 : 12)
+        .animation(reduceMotion ? nil : BondTheme.Motion.smooth.delay(0.22), value: appeared)
     }
 
     /// Kullanıcı içeriği barındıran uygulamalarda Apple, koşulların kayıt sırasında
@@ -274,12 +312,8 @@ struct WelcomeView: View {
     }
 }
 
-/// Apple/Google yanına eklenen üçüncü giriş yolu: e-postaya giriş bağlantısı
-/// gönderip mailden dönüşü bekleme. Kod yerine link kullanıyoruz çünkü
-/// Supabase'in "Confirm signup" şablonu Free planda özelleştirilemiyor (kodu göstermek
-/// için Pro'ya geçmek ya da custom SMTP kurmak gerekiyordu, ikincisinin bu üniversite
-/// sunucusuna teslimat sorunu vardı) — varsayılan şablondaki link zaten çalışıyordu.
-/// Buton yalnızca adresin e-posta gibi durmasını bekler.
+/// Apple/Google yanına eklenen üçüncü giriş yolu.
+/// Debug derlemesinde e-posta + şifre (demo hesaplar). Release'de sihirli bağlantı.
 struct EmailSignInSheet: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
@@ -288,6 +322,9 @@ struct EmailSignInSheet: View {
 
     @State private var step: Step = .email
     @State private var email = ""
+#if DEBUG
+    @State private var password = ""
+#endif
     @State private var isBusy = false
     @FocusState private var fieldFocused: Bool
 
@@ -299,6 +336,39 @@ struct EmailSignInSheet: View {
         return !local.isEmpty && domain.contains(".") && !domain.hasPrefix(".") && !domain.hasSuffix(".")
     }
 
+#if DEBUG
+    private var canSubmitEmailSignIn: Bool { !password.isEmpty }
+    private var emailSignInSubtitle: String { L10n.Welcome.emailPasswordSubtitle }
+    private var emailSignInButtonTitle: String {
+        isBusy ? L10n.Welcome.signingIn : L10n.Welcome.signInWithPassword
+    }
+#else
+    private var canSubmitEmailSignIn: Bool { true }
+    private var emailSignInSubtitle: String { L10n.Welcome.emailSubtitle }
+    private var emailSignInButtonTitle: String {
+        isBusy ? L10n.Common.sending : L10n.Welcome.sendLink
+    }
+#endif
+
+    private func submitEmailSignIn() async {
+        Haptics.impact(.light)
+        isBusy = true
+        defer { isBusy = false }
+#if DEBUG
+        let signedIn = await appState.signInWithEmail(email, password: password)
+        if signedIn {
+            Haptics.success()
+            dismiss()
+        }
+#else
+        let sent = await appState.requestEmailSignInLink(email)
+        if sent {
+            Haptics.success()
+            withAnimation(.snappy) { step = .sent }
+        }
+#endif
+    }
+
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: BondTheme.Space.xl) {
@@ -308,7 +378,7 @@ struct EmailSignInSheet: View {
                         Text(L10n.Welcome.emailTitle)
                             .font(BondTheme.Typography.title2)
                             .foregroundStyle(BondTheme.ink)
-                        Text(L10n.Welcome.emailSubtitle)
+                        Text(emailSignInSubtitle)
                             .font(BondTheme.Typography.footnote)
                             .foregroundStyle(BondTheme.muted)
                     }
@@ -323,19 +393,20 @@ struct EmailSignInSheet: View {
                         .padding(BondTheme.Space.md)
                         .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
 
+#if DEBUG
+                    SecureField(L10n.Welcome.passwordPlaceholder, text: $password)
+                        .textContentType(.password)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .font(BondTheme.Typography.body)
+                        .padding(BondTheme.Space.md)
+                        .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
+#endif
+
                     Spacer(minLength: 0)
 
-                    AppButton(title: isBusy ? L10n.Common.sending : L10n.Welcome.sendLink, enabled: !isBusy && looksLikeEmail) {
-                        Task {
-                            Haptics.impact(.light)
-                            isBusy = true
-                            let sent = await appState.requestEmailSignInLink(email)
-                            isBusy = false
-                            if sent {
-                                Haptics.success()
-                                withAnimation(.snappy) { step = .sent }
-                            }
-                        }
+                    AppButton(title: emailSignInButtonTitle, enabled: !isBusy && looksLikeEmail && canSubmitEmailSignIn) {
+                        Task { await submitEmailSignIn() }
                     }
 
                 case .sent:
@@ -369,7 +440,7 @@ struct EmailSignInSheet: View {
             }
             .onAppear { fieldFocused = true }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
     }
 }
 
@@ -379,26 +450,29 @@ private struct WelcomeFeatureRow: View {
     let detail: String
 
     var body: some View {
-        HStack(alignment: .top, spacing: BondTheme.Space.md) {
+        HStack(alignment: .center, spacing: BondTheme.Space.md) {
             Image(systemName: systemImage)
-                .font(.system(size: 34))
+                .font(.system(size: 17, weight: .semibold))
                 .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(BondTheme.acid)
-                .frame(width: 44, height: 44)
+                .foregroundStyle(BondTheme.ink)
+                .frame(width: 42, height: 42)
+                .background(BondTheme.surface, in: Circle())
                 .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: BondTheme.Space.xs) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(BondTheme.Typography.heading)
+                    .font(BondTheme.Typography.headline)
                     .foregroundStyle(BondTheme.ink)
+                    .fixedSize(horizontal: false, vertical: true)
                 Text(detail)
-                    .font(BondTheme.Typography.callout)
+                    .font(BondTheme.Typography.footnote)
                     .foregroundStyle(BondTheme.muted)
                     .fixedSize(horizontal: false, vertical: true)
             }
+
+            Spacer(minLength: 0)
         }
+        .frame(minHeight: 48)
         .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(.isHeader)
     }
 }
-

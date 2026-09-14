@@ -2,6 +2,8 @@ import Foundation
 
 extension L10n {
     enum Places {
+        static func peopleHere(_ count: Int) -> String { L10n.format("places.peopleHere", Int64(count)) }
+        static var nobodyHere: String { String(localized: "places.nobodyHere") }
         static var loadFailedTitle: String { String(localized: "places.loadFailedTitle") }
         static var loadFailedBody: String { String(localized: "places.loadFailedBody") }
         static var emptyTitle: String { String(localized: "places.emptyTitle") }
@@ -13,6 +15,7 @@ extension L10n {
         }
         static var visibleHint: String { String(localized: "places.visibleHint") }
         static var hideVisibility: String { String(localized: "places.hideVisibility") }
+        static var notVisible: String { String(localized: "places.notVisible") }
         static var beVisible: String { String(localized: "places.beVisible") }
         static var beVisibleHint: String { String(localized: "places.beVisibleHint") }
         static var feedFiltered: String { String(localized: "places.feedFiltered") }
@@ -32,6 +35,7 @@ extension L10n {
         static func sendMeetupA11y(_ name: String) -> String {
             L10n.format("places.sendMeetupA11y", name)
         }
+        static var meetHere: String { String(localized: "places.meetHere") }
         static var hidden: String { String(localized: "places.hidden") }
         static func nowVisible(_ place: String) -> String {
             L10n.format("places.nowVisible", place)

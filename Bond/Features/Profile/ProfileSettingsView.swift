@@ -5,18 +5,16 @@ struct ProfileSettingsView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
 
-    @State private var showCardPreview = false
-    @State private var showSaved = false
-    @State private var showVisits = false
     @State private var showPaywall = false
     @State private var showBlocked = false
     @State private var showModeration = false
-    @State private var showAdmirers = false
+    @State private var showSwipers = false
     @State private var showMeetingRequests = false
     @State private var showTerms = false
     @State private var showPrivacy = false
     @State private var showSignOutAlert = false
     @State private var showDeleteAccountAlert = false
+    @State private var showAppleDeleteAccount = false
 
     private static let supportURL = URL(
         string: "mailto:220207018@yalova.edu.tr?subject=Common%20destek"
@@ -28,14 +26,6 @@ struct ProfileSettingsView: View {
         NavigationStack {
             List {
                 Section(L10n.Profile.yourAccount) {
-                    settingsButton(
-                        icon: "rectangle.portrait.on.rectangle.portrait.angled",
-                        title: L10n.Profile.cardHow,
-                        detail: L10n.Profile.cardHowHint
-                    ) {
-                        showCardPreview = true
-                    }
-
                     if appState.isModerator {
                         settingsButton(
                             icon: appState.pendingReports.isEmpty ? "shield" : "shield.fill",
@@ -48,40 +38,14 @@ struct ProfileSettingsView: View {
                             showModeration = true
                         }
                     }
-
-                    // Yalnızca kurucuda. Moderatör rozetli biri bunu görmüyor;
-                    // sunucudaki `who_liked_me` de zaten yalnızca kurucuya açık.
+                    // Yalnızca kurucu: kartını kim sağa/sola kaydırdı.
                     if appState.isFounder {
                         settingsButton(
-                            icon: "heart.text.square",
-                            title: L10n.Profile.admirers,
-                            detail: L10n.Profile.admirersHint,
-                            badge: appState.admirers.count
+                            icon: "hand.draw",
+                            title: L10n.Board.swipersTitle,
+                            detail: L10n.Board.swipersHint
                         ) {
-                            showAdmirers = true
-                        }
-                    }
-
-                    settingsButton(
-                        icon: "bookmark",
-                        title: L10n.Profile.saved,
-                        detail: L10n.Profile.savedHint
-                    ) {
-                        showSaved = true
-                    }
-
-                    settingsButton(
-                        icon: appState.tier.canSeeProfileVisitors ? "eye" : "lock.fill",
-                        title: L10n.Profile.visitors,
-                        detail: L10n.Profile.visitorsHint,
-                        trailing: appState.tier.canSeeProfileVisitors
-                            ? (appState.profileVisits.isEmpty ? nil : "\(appState.profileVisits.count)")
-                            : L10n.Tier.plus
-                    ) {
-                        if appState.tier.canSeeProfileVisitors {
-                            showVisits = true
-                        } else {
-                            showPaywall = true
+                            showSwipers = true
                         }
                     }
 
@@ -156,7 +120,11 @@ struct ProfileSettingsView: View {
                         destructive: true,
                         disabled: appState.isAccountActionInProgress
                     ) {
-                        showDeleteAccountAlert = true
+                        if appState.hasAppleIdentity {
+                            showAppleDeleteAccount = true
+                        } else {
+                            showDeleteAccountAlert = true
+                        }
                     }
 
                     if appState.isAccountActionInProgress {
@@ -207,7 +175,6 @@ struct ProfileSettingsView: View {
             }
 #if DEBUG
             .onAppear {
-                if appState.opensCardPreview { showCardPreview = true }
                 if appState.opensModeration { showModeration = true }
             }
 #endif
@@ -215,27 +182,21 @@ struct ProfileSettingsView: View {
                 if appState.isModerator {
                     await appState.loadReports()
                 }
-                if appState.isFounder {
-                    await appState.loadAdmirers()
-                }
             }
-            .sheet(isPresented: $showCardPreview) {
-                OwnCardPreviewView()
-            }
-            .sheet(isPresented: $showAdmirers) {
-                AdmirersView()
-            }
-            .sheet(isPresented: $showSaved) {
-                ProfileSavedPostsView()
-            }
-            .sheet(isPresented: $showVisits) {
-                ProfileVisitorsView()
+            .sheet(isPresented: $showAppleDeleteAccount) {
+                AppleAccountDeletionView()
             }
             .sheet(isPresented: $showBlocked) {
                 NavigationStack { BlockedProfilesView() }
             }
             .sheet(isPresented: $showPaywall) {
                 PaywallView()
+            }
+            .sheet(isPresented: $showSwipers) {
+                ProfileSwipersView()
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+                    .presentationCornerRadius(28)
             }
             .fullScreenCover(isPresented: $showModeration) {
                 ModerationView()
@@ -396,7 +357,7 @@ struct ProfileVisitorsView: View {
     }
 }
 
-private struct ProfileSavedPostsView: View {
+struct ProfileSavedPostsView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
 

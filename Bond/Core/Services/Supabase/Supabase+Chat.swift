@@ -39,6 +39,7 @@ extension SupabaseProductService {
 
     func sendMessage(_ message: Message, matchID: UUID) async throws -> Message {
         guard let userID = currentUserID else { throw BackendServiceError.missingSession }
+        try ContentSafety.validate(message.body)
         let payload = MessageInsert(
             id: message.id,
             matchID: matchID,
@@ -85,6 +86,7 @@ extension SupabaseProductService {
     }
 
     func editMessage(_ messageID: UUID, body: String) async throws {
+        try ContentSafety.validate(body)
         try await client.from("messages")
             .update(MessageEdit(body: body, editedAt: Date()), returning: .minimal)
             .eq("id", value: messageID)
@@ -196,6 +198,7 @@ extension SupabaseProductService {
     }
     func sendMessageRequest(to profileID: UUID, body: String, storyID: UUID?) async throws {
         guard let userID = currentUserID else { throw BackendServiceError.missingSession }
+        try ContentSafety.validate(body)
         try await client.from("message_requests")
             .insert(MessageRequestInsert(senderID: userID, recipientID: profileID,
                                          body: body, storyID: storyID), returning: .minimal)

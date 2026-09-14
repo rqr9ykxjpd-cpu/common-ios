@@ -1,13 +1,16 @@
 import SwiftUI
+import UserNotifications
 
 struct NotificationsView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var selectedProfile: StudentProfile?
     @State private var showMessageRequests = false
     @State private var showMeetingRequests = false
     @State private var conversationRoute: NotificationConversationRoute?
+    @State private var pushAuthorizationStatus: UNAuthorizationStatus?
 
     var body: some View {
         NavigationStack {
@@ -16,6 +19,10 @@ struct NotificationsView: View {
                     Text(L10n.Notification.intro)
                         .font(BondTheme.Typography.footnote)
                         .foregroundStyle(BondTheme.muted)
+                    if let pushAuthorizationStatus,
+                       pushAuthorizationStatus == .notDetermined || pushAuthorizationStatus == .denied {
+                        pushPermissionCard(status: pushAuthorizationStatus)
+                    }
                     if appState.notifications.isEmpty {
                         notificationState
                     } else {
@@ -60,6 +67,7 @@ struct NotificationsView: View {
                 if appState.unreadNotificationCount > 0 {
                     appState.markAllNotificationsRead()
                 }
+                await refreshPushAuthorizationStatus()
             }
             .navigationTitle(L10n.Notification.title)
             .toolbar {
@@ -87,10 +95,59 @@ struct NotificationsView: View {
         }
     }
 
+    private func pushPermissionCard(status: UNAuthorizationStatus) -> some View {
+        HStack(spacing: BondTheme.Space.md) {
+            Image(systemName: "bell.badge")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(BondTheme.ink)
+                .frame(width: 42, height: 42)
+                .background(BondTheme.paper, in: Circle())
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(L10n.Notification.permissionTitle)
+                    .font(BondTheme.Typography.headline)
+                    .foregroundStyle(BondTheme.ink)
+                Text(L10n.Notification.permissionBody)
+                    .font(BondTheme.Typography.footnote)
+                    .foregroundStyle(BondTheme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 0)
+
+            Button(status == .denied ? L10n.Common.openSettings : L10n.Notification.permissionAction) {
+                if status == .denied {
+                    guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
+                    openURL(settingsURL)
+                } else {
+                    Task {
+                        await appState.startPushRegistration(requestAuthorization: true)
+                        await refreshPushAuthorizationStatus()
+                    }
+                }
+            }
+            .font(BondTheme.Typography.footnote.weight(.semibold))
+            .foregroundStyle(BondTheme.onAccent)
+            .padding(.horizontal, BondTheme.Space.compact)
+            .frame(minHeight: 36)
+            .background(BondTheme.acid, in: Capsule())
+            .buttonStyle(PressableStyle())
+        }
+        .padding(BondTheme.Space.compact)
+        .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
+    }
+
+    private func refreshPushAuthorizationStatus() async {
+        pushAuthorizationStatus = await UNUserNotificationCenter.current()
+            .notificationSettings()
+            .authorizationStatus
+    }
+
     @ViewBuilder
     private var notificationState: some View {
         if appState.isLoadingNotifications {
-            AppLoadingView()
+            VStack(spacing: 0) { ForEach(0..<4, id: \.self) { _ in SkeletonRow() } }
+                .padding(.horizontal, BondTheme.Space.lg)
         } else if let error = appState.notificationsError {
             ContentUnavailableView {
                 Label(L10n.Errors.title, systemImage: "wifi.exclamationmark")

@@ -1,5 +1,13 @@
 import Foundation
 
+/// Bir yerde şu an kaç kişi görünüyor + ilk birkaç avatar (liste satırı için).
+struct PlacePresenceSummary: Hashable, Sendable {
+    let placeID: UUID
+    let count: Int
+    let avatarURLs: [URL]
+    var avatarAssetNames: [String] = []
+}
+
 struct CampusPlace: Identifiable, Hashable, Codable {
     let id: UUID
     let name: String
@@ -49,14 +57,23 @@ struct SocialComment: Identifiable, Hashable {
     let body: String
     let isMine: Bool
     let createdAt: Date
+    var voteCount: Int
+    var voted: Bool
+    var downvoted: Bool
+    /// Kurucunun eklediği oy (voteCount'a dahil).
+    var boost: Int
 
-    init(id: UUID = UUID(), author: String, authorAvatarURL: URL? = nil, body: String, isMine: Bool = false, createdAt: Date = .now) {
+    init(id: UUID = UUID(), author: String, authorAvatarURL: URL? = nil, body: String, isMine: Bool = false, createdAt: Date = .now, voteCount: Int = 0, voted: Bool = false, downvoted: Bool = false, boost: Int = 0) {
         self.id = id
         self.author = author
         self.authorAvatarURL = authorAvatarURL
         self.body = body
         self.isMine = isMine
         self.createdAt = createdAt
+        self.voteCount = voteCount
+        self.voted = voted
+        self.downvoted = downvoted
+        self.boost = boost
     }
 }
 
@@ -68,14 +85,20 @@ struct SocialPost: Identifiable, Hashable {
     var imageAssetName: String?
     var localImageData: Data?
     var place: CampusPlace?
+    var kind: PostKind
     var liked: Bool
+    var downvoted: Bool
     var saved: Bool
     var isMine: Bool
+    /// Kurucu oyu (likeCount'a dahil) ve sabit.
+    var boost: Int
+    var pinnedAt: Date?
+    var pinnedSlot: Int?
     var likeCount: Int
     var comments: [SocialComment]
     let createdAt: Date
 
-    init(id: UUID = UUID(), author: StudentProfile, caption: String, imageURL: URL? = nil, imageAssetName: String? = nil, localImageData: Data? = nil, place: CampusPlace? = nil, liked: Bool = false, saved: Bool = false, isMine: Bool = false, likeCount: Int, comments: [SocialComment] = [], createdAt: Date = .now) {
+    init(id: UUID = UUID(), author: StudentProfile, caption: String, imageURL: URL? = nil, imageAssetName: String? = nil, localImageData: Data? = nil, place: CampusPlace? = nil, kind: PostKind = .moment, liked: Bool = false, downvoted: Bool = false, saved: Bool = false, isMine: Bool = false, likeCount: Int, comments: [SocialComment] = [], createdAt: Date = .now, boost: Int = 0, pinnedAt: Date? = nil, pinnedSlot: Int? = nil) {
         self.id = id
         self.author = author
         self.caption = caption
@@ -83,14 +106,22 @@ struct SocialPost: Identifiable, Hashable {
         self.imageAssetName = imageAssetName
         self.localImageData = localImageData
         self.place = place
+        self.kind = kind
         self.liked = liked
+        self.downvoted = downvoted
         self.saved = saved
         self.isMine = isMine
         self.likeCount = likeCount
         self.comments = comments
         self.createdAt = createdAt
+        self.boost = boost
+        self.pinnedAt = pinnedAt
+        self.pinnedSlot = pinnedSlot
     }
 
+    var hasPhoto: Bool {
+        imageURL != nil || imageAssetName != nil || localImageData != nil
+    }
 }
 
 struct StoryViewRecord: Identifiable, Hashable {

@@ -2,60 +2,175 @@ import SwiftUI
 
 // MARK: - AppState+Feed
 extension AppState {
-    func toggleLike(postID: UUID) {
+    /// ▲ / ▼: aynı yöne ikinci dokunuş oyu geri alır, ters yön oyu çevirir.
+    /// Önce ekranda, sonra sunucuda; sunucu reddederse eski hâle döner.
+    func vote(postID: UUID, up: Bool) {
         guard let index = posts.firstIndex(where: { $0.id == postID }) else { return }
-        let newLiked = !posts[index].liked
-        posts[index].liked = newLiked
-        posts[index].likeCount += newLiked ? 1 : -1
+        let eski = posts[index].myVote
+        let yeni = (up ? 1 : -1) == eski ? 0 : (up ? 1 : -1)
+        apply(vote: yeni, postID: postID)
         Haptics.impact(.light)
         Task {
             do {
-                try await service.setPostLiked(postID, liked: newLiked)
+                try await service.setPostVote(postID, value: yeni)
             } catch {
-                guard let refreshedIndex = posts.firstIndex(where: { $0.id == postID }) else { return }
-                posts[refreshedIndex].liked = !newLiked
-                posts[refreshedIndex].likeCount += newLiked ? -1 : 1
+                apply(vote: eski, postID: postID)
                 showError(error, fallback: L10n.Feed.likeFailed)
             }
         }
     }
 
+    private func apply(vote: Int, postID: UUID) {
+        guard let i = posts.firstIndex(where: { $0.id == postID }) else { return }
+        posts[i].likeCount += vote - posts[i].myVote
+        posts[i].liked = vote == 1
+        posts[i].downvoted = vote == -1
+    }
+
+    /// Eski çağrılar için: ▲ ile aynı.
+    func toggleLike(postID: UUID) { vote(postID: postID, up: true) }
+
+    /// Kart ekrana geldi; bir sonraki yüklemede sıralama bunu hesaba katar.
+    func markPostSeen(_ postID: UUID) {
+        FeedSeenTracker.markSeen(postID)
+    }
+
+    // MARK: Kurucu araçları
+
+    /// Gönderiye `extra` oy ekler (eksi geri alır). Sunucu kurucu rozetini kontrol eder.
+    func boostPost(_ postID: UUID, extra: Int) {
+        guard extra != 0, let i = posts.firstIndex(where: { $0.id == postID }) else { return }
+        let eskiBoost = posts[i].boost
+        let yeniBoost = max(0, eskiBoost + extra)
+        posts[i].likeCount += yeniBoost - eskiBoost
+        posts[i].boost = yeniBoost
+        feedRankVersion += 1
+        Haptics.success()
+        Task {
+            do {
+                let sunucu = try await service.boostPost(postID, extra: extra)
+                guard let j = posts.firstIndex(where: { $0.id == postID }) else { return }
+                posts[j].likeCount += sunucu - posts[j].boost
+                posts[j].boost = sunucu
+            } catch {
+                guard let j = posts.firstIndex(where: { $0.id == postID }) else { return }
+                posts[j].likeCount += eskiBoost - posts[j].boost
+                posts[j].boost = eskiBoost
+                feedRankVersion += 1
+                showError(error, fallback: L10n.Board.founderActionFailed)
+            }
+        }
+    }
+
+    /// Cevaba `extra` oy ekler (eksi geri alır); boostPost ile aynı akış.
+    func boostComment(postID: UUID, commentID: UUID, extra: Int) {
+        guard extra != 0,
+              let pi = posts.firstIndex(where: { $0.id == postID }),
+              let ci = posts[pi].comments.firstIndex(where: { $0.id == commentID }) else { return }
+        let eskiBoost = posts[pi].comments[ci].boost
+        let yeniBoost = max(0, eskiBoost + extra)
+        posts[pi].comments[ci].voteCount += yeniBoost - eskiBoost
+        posts[pi].comments[ci].boost = yeniBoost
+        Haptics.success()
+        Task {
+            do {
+                let sunucu = try await service.boostComment(commentID, extra: extra)
+                guard let pj = posts.firstIndex(where: { $0.id == postID }),
+                      let cj = posts[pj].comments.firstIndex(where: { $0.id == commentID }) else { return }
+                posts[pj].comments[cj].voteCount += sunucu - posts[pj].comments[cj].boost
+                posts[pj].comments[cj].boost = sunucu
+            } catch {
+                guard let pj = posts.firstIndex(where: { $0.id == postID }),
+                      let cj = posts[pj].comments.firstIndex(where: { $0.id == commentID }) else { return }
+                posts[pj].comments[cj].voteCount += eskiBoost - posts[pj].comments[cj].boost
+                posts[pj].comments[cj].boost = eskiBoost
+                showError(error, fallback: L10n.Board.founderActionFailed)
+            }
+        }
+    }
+
+    func fetchPostVoters(_ postID: UUID) async throws -> [PostVoter] {
+        try await service.fetchPostVoters(postID)
+    }
+
+    func fetchCommentVoters(_ commentID: UUID) async throws -> [PostVoter] {
+        try await service.fetchCommentVoters(commentID)
+    }
+
+    /// Gönderiyi `slot`. sıraya sabitler (1 = en üst); nil kaldırır.
+    func setPostPin(_ postID: UUID, slot: Int?) {
+        guard let i = posts.firstIndex(where: { $0.id == postID }) else { return }
+        let eskiAt = posts[i].pinnedAt, eskiSlot = posts[i].pinnedSlot
+        posts[i].pinnedAt = slot == nil ? nil : Date()
+        posts[i].pinnedSlot = slot.map { min(max($0, 1), 20) }
+        feedRankVersion += 1
+        Haptics.success()
+        Task {
+            do {
+                try await service.setPostPin(postID, slot: posts[i].pinnedSlot)
+            } catch {
+                guard let j = posts.firstIndex(where: { $0.id == postID }) else { return }
+                posts[j].pinnedAt = eskiAt
+                posts[j].pinnedSlot = eskiSlot
+                feedRankVersion += 1
+                showError(error, fallback: L10n.Board.founderActionFailed)
+            }
+        }
+    }
+
     func loadFeed() async {
+        feedLoadGeneration += 1
+        let generation = feedLoadGeneration
+        let userID = currentUserID
+        isLoadingFeed = true
+        defer { if generation == feedLoadGeneration { isLoadingFeed = false } }
         // Gönderinin yeri, sunucudan gelen yer *adı* `places` listesiyle eşleştirilerek
         // çözülüyor ve dönüşüm anında sabitleniyor. Akış ekranı açılışta `loadFeed`'i
         // kendi başına çağırdığı için bu, yerleri yükleyen `restoreBackendSession` ile
         // yarışıyordu: akış önce biterse bütün gönderiler konum etiketini kaybediyor ve
         // kullanıcı akışı elle yenileyene kadar geri gelmiyordu.
         if places.isEmpty { await loadPlaces() }
-        isLoadingFeed = true
-        defer { isLoadingFeed = false }
+        guard generation == feedLoadGeneration, userID == currentUserID, !Task.isCancelled else { return }
         do {
-            posts = try await service.fetchFeed().map { backend in
+            let result = try await service.fetchFeed()
+            guard generation == feedLoadGeneration, userID == currentUserID, !Task.isCancelled else { return }
+            justPublishedPostIDs.removeAll()
+            seenCounts = FeedSeenTracker.snapshot()
+            feedRankVersion += 1
+            posts = result.map { backend in
                 let social = socialPost(from: backend)
                 if social.isMine, social.author.badge == .none, myBadge != .none {
                     return socialPost(from: backend, badgeOverride: myBadge)
                 }
                 return social
             }
+            feedError = nil
         } catch {
-            showError(error, fallback: L10n.Feed.loadFailed)
+            guard generation == feedLoadGeneration, userID == currentUserID, !isCancellation(error) else { return }
+            feedError = UserFacingError.message(error, fallback: L10n.Feed.loadFailed)
         }
     }
 
     @discardableResult
-    func publishPost(imageData: Data?, caption: String, place: CampusPlace?) async -> Bool {
+    func publishPost(imageData: Data?, caption: String, place: CampusPlace?, kind: PostKind = .moment, announces: Bool = true) async -> Bool {
         let cleanCaption = caption.trimmingCharacters(in: .whitespacesAndNewlines)
         guard imageData != nil || !cleanCaption.isEmpty else { return false }
         do {
-            let post = try await service.createPost(caption: cleanCaption, placeName: place?.name, imageData: imageData)
+            let post = try await service.createPost(caption: cleanCaption, placeName: place?.name, imageData: imageData, kind: kind)
             var social = socialPost(from: post)
             // Sunucu rozeti kaçırsa bile kendi gönderinde yerel rozet kalsın.
             if social.isMine, social.author.badge == .none, myBadge != .none {
                 social = socialPost(from: post, badgeOverride: myBadge)
             }
             posts.insert(social, at: 0)
+            justPublishedPostIDs.insert(social.id)
+            // Başka rozete bakarken paylaşan kişi kendi gönderisini göremiyordu;
+            // filtre uymuyorsa akış "Tümü"ye döner, gönderi en üstte.
+            if let filter = selectedKindFilter, filter != kind {
+                withAnimation(BondTheme.Motion.snappy) { selectedKindFilter = nil }
+            }
             Haptics.success()
-            show(L10n.Composer.postShared)
+            if announces { show(L10n.Composer.postShared) }
             return true
         } catch {
             showError(error, fallback: L10n.Feed.postFailed)
@@ -147,6 +262,33 @@ extension AppState {
         }
     }
 
+    /// Cevaba ▲ / ▼. Kendi cevabına oy yok; kurucu istisna (sunucu da aynı kuralı uygular).
+    func voteComment(postID: UUID, commentID: UUID, up: Bool) {
+        guard let pi = posts.firstIndex(where: { $0.id == postID }),
+              let ci = posts[pi].comments.firstIndex(where: { $0.id == commentID }),
+              !posts[pi].comments[ci].isMine || isFounder else { return }
+        let eski = posts[pi].comments[ci].myVote
+        let yeni = (up ? 1 : -1) == eski ? 0 : (up ? 1 : -1)
+        apply(vote: yeni, postID: postID, commentID: commentID)
+        Haptics.impact(.light)
+        Task {
+            do {
+                try await service.setCommentVote(commentID, value: yeni)
+            } catch {
+                apply(vote: eski, postID: postID, commentID: commentID)
+                showError(error, fallback: L10n.Feed.likeFailed)
+            }
+        }
+    }
+
+    private func apply(vote: Int, postID: UUID, commentID: UUID) {
+        guard let pi = posts.firstIndex(where: { $0.id == postID }),
+              let ci = posts[pi].comments.firstIndex(where: { $0.id == commentID }) else { return }
+        posts[pi].comments[ci].voteCount += vote - posts[pi].comments[ci].myVote
+        posts[pi].comments[ci].voted = vote == 1
+        posts[pi].comments[ci].downvoted = vote == -1
+    }
+
     func deleteComment(_ commentID: UUID, from postID: UUID) {
         guard let postIndex = posts.firstIndex(where: { $0.id == postID }),
               posts[postIndex].comments.contains(where: { $0.id == commentID && $0.isMine }) else { return }
@@ -174,7 +316,6 @@ extension AppState {
             bio: post.authorBio,
             interests: [],
             imageURL: post.authorAvatarURL,
-            compatibility: 0,
             isVerified: post.authorVerified,
             badge: badgeOverride ?? post.authorBadge
         )
@@ -185,12 +326,17 @@ extension AppState {
             imageURL: post.imageURL,
             localImageData: post.imageData,
             place: post.placeName.flatMap { name in places.first { $0.name == name } },
+            kind: post.kind,
             liked: post.liked,
+            downvoted: post.downvoted,
             saved: post.saved,
             isMine: post.authorID == currentUserID,
             likeCount: post.likeCount,
             comments: post.comments.map(socialComment(from:)),
-            createdAt: post.createdAt
+            createdAt: post.createdAt,
+            boost: post.boost,
+            pinnedAt: post.pinnedAt,
+            pinnedSlot: post.pinnedSlot
         )
     }
 
@@ -201,7 +347,11 @@ extension AppState {
             authorAvatarURL: comment.authorAvatarURL,
             body: comment.body,
             isMine: comment.authorID == currentUserID,
-            createdAt: comment.createdAt
+            createdAt: comment.createdAt,
+            voteCount: comment.voteCount,
+            voted: comment.voted,
+            downvoted: comment.downvoted,
+            boost: comment.boost
         )
     }
 }

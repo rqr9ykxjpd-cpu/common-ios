@@ -44,6 +44,10 @@ extension SupabaseProductService {
         try await client.auth.session(from: url)
     }
 
+    func signInWithEmail(email: String, password: String) async throws {
+        _ = try await client.auth.signIn(email: email, password: password)
+    }
+
     func restoreSession() async throws -> UUID? {
         // Yerel oturum `emitLocalSessionAsInitialSession` ile hemen gelir; süresi
         // dolmuş olabilir. Kullanıcıyı içeri almak için yenilenmiş `session`'ı bekleriz

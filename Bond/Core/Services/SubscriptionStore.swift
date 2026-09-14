@@ -87,7 +87,7 @@ final class SubscriptionStore {
         if Purchases.isConfigured {
             Task { [weak self] in
                 for await info in Purchases.shared.customerInfoStream {
-                    await self?.applyRevenueCat(info, sync: false)
+                    self?.applyRevenueCat(info, sync: false)
                 }
             }
         }

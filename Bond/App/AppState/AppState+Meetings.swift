@@ -10,11 +10,11 @@ extension AppState {
 
     /// Buluşma isteklerini sunucudan yükler. Bu liste şimdiye kadar yalnızca bellekte
     /// yaşıyordu; uygulama kapanınca gönderilen ve gelen istekler kayboluyordu.
-    func loadMeetingRequests() async {
+    func loadMeetingRequests(silently: Bool = false) async {
         do {
             meetingRequests = try await service.fetchMeetingRequests()
         } catch {
-            showError(error, fallback: L10n.Meetings.loadFailed)
+            if !silently { showError(error, fallback: L10n.Meetings.loadFailed) }
         }
     }
     func sendMeetingRequest(to profile: StudentProfile, at place: CampusPlace) {

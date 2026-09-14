@@ -1,0 +1,72 @@
+{
+  "sourceLanguage" : "tr",
+  "strings" : {
+    "contentReport.post" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Gönderi" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Post" } }
+      }
+    },
+    "contentReport.story" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Story" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Story" } }
+      }
+    },
+    "contentReport.comment" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Yorum" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Comment" } }
+      }
+    },
+    "contentReport.message" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Mesaj" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Message" } }
+      }
+    },
+    "contentReport.profile" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Profil şikâyeti" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Profile report" } }
+      }
+    },
+    "contentReport.openMedia" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Şikâyet edilen medyayı görüntüle" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "View reported media" } }
+      }
+    },
+    "contentReport.remove" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "İçeriği kaldır" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Remove content" } }
+      }
+    },
+    "contentReport.removeConfirm" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Şikâyet edilen bu içerik kaldırılsın mı?" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Remove this reported content?" } }
+      }
+    },
+    "contentReport.removeBody" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bu işlem şikâyete konu olan gönderiyi, story'yi, yorumu veya mesajı kaldırır. Geri alınamaz." } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This removes the exact reported post, story, comment or message. It cannot be undone." } }
+      }
+    },
+    "contentReport.shareMessage" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Yalnızca seçtiğin mesaj, inceleme için moderasyon ekibiyle paylaşılacak." } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Only the selected message will be shared with the moderation team for review." } }
+      }
+    },
+    "contentReport.noTarget" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bu şikâyette belirli bir içerik seçilmemiş." } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This report does not identify a specific piece of content." } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

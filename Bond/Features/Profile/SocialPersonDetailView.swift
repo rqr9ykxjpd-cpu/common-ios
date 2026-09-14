@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct SocialPersonDetailView: View {
     let profile: StudentProfile
@@ -10,14 +11,34 @@ struct SocialPersonDetailView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
     @State private var conversationRoute: ConversationRoute?
-    @State private var selectedPost: SocialPost?
     @State private var details: PersonProfileData?
-    @State private var reacted = false
+    @State private var detailsError: String?
+    @State private var isLoadingDetails = false
+    @State private var isSendingSwipe = false
     @State private var showBlockConfirmation = false
     @State private var showSuspendConfirmation = false
 
+    // Kart kaydırma. Sağ = bağlantı isteği, sol = kapat. Fotoğraf destesi
+    // yatay pan almıyor; bu jest kartın tamamına ait.
+    @State private var cardOffset: CGFloat = 0
+    @State private var cardDragging = false
+    @State private var cardFlying = false
+    /// Sağa kaydırma sonrası ortada beliren onay.
+    @State private var showSentBurst = false
+    @State private var showConnectedMoment = false
+    @State private var avatarsTogether = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var cardLifted: Bool { cardDragging || cardFlying }
+    /// 100pt eşiğe göre 0…1. Etiket opaklığı ve gölge buradan.
+    private var swipeProgress: CGFloat { min(abs(cardOffset) / 100, 1) }
+    private var swipingRight: Bool { cardOffset > 0 }
+
     private var isMe: Bool { profile.id == appState.currentUserID }
+    private var alreadySwiped: Bool { appState.rightSwipedProfileIDs.contains(profile.id) }
     private var isMatched: Bool { conversation(with: profile) != nil }
+    /// Eşleşme isteği: fotoğraf destesinden ayrı (buton). Kaydırma fotoğrafta yalnızca fotoğraf.
+    private var allowsMatchRequest: Bool { !isMe && !isMatched && !alreadySwiped }
 
     private func conversation(with person: StudentProfile) -> Conversation? {
         appState.conversations.first(where: { $0.profile.id == person.id })
@@ -25,163 +46,55 @@ struct SocialPersonDetailView: View {
 
     private var visiblePlace: CampusPlace? { place }
 
-    /// Hero fotoğraf: navigasyondaki URL zaten varsa onu tut — detaydan gelen
-    /// yeni imzalı URL AsyncImage'ı sıfırdan indirmesin.
-    private var heroImageURL: URL? {
-        profile.imageURL ?? details?.avatarURL ?? details?.galleryURLs.first ?? profile.galleryImageURLs.first
-    }
-
-    /// Kurucu profili. Rozet tek başına yeterince ayırt edici değildi: ekranın
-    /// geri kalanı herkesinkiyle aynı görünüyordu.
     private var kurucu: Bool { (details?.badge ?? profile.badge) == .founder }
 
-    /// İlgi alanı çipinin zemini. Kurucu profilinde vurgu rengi turuncu; ortak
-    /// ilgi alanı vurgusu her profilde olduğu gibi duruyor.
     private func cipZemini(paylasilan: Bool) -> Color {
         if paylasilan { return BondTheme.acid.opacity(0.5) }
         return kurucu ? BondTheme.ember.opacity(0.12) : BondTheme.ink.opacity(0.055)
     }
+
     private var pendingRequest: MeetingRequest? {
         guard let visiblePlace else { return nil }
         return appState.meetingRequest(for: profile, at: visiblePlace)
     }
 
-    /// Durum çubuğu + gezinme çubuğu yüksekliği. Kahraman fotoğraf bunların
-    /// altına uzanıyor; yükseklik sabit yazılmıyor, sistemden okunuyor.
     var body: some View {
         ZStack(alignment: .topLeading) {
-            BondTheme.paper.ignoresSafeArea()
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    ProfileMedia(url: heroImageURL, data: nil, assetName: profile.imageAssetName)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 340)
-                        .clipped()
+            // Kart kalkınca altındaki masa görünür.
+            (cardLifted ? BondTheme.surface : BondTheme.paper)
+                .ignoresSafeArea()
+                .animation(BondTheme.Motion.smooth, value: cardLifted)
 
-                    VStack(alignment: .leading, spacing: 14) {
-                        HStack(alignment: .firstTextBaseline) {
-                            Text("\(profile.name), \(profile.age)").editorialTitle(38)
-                            // Çıplak ikon ne anlama geldiğini söylemiyordu.
-                            // Gönderi ve story sorguları rozeti getirmiyor; ayrıca
-                            // çekilen değer varsa o kullanılıyor.
-                            ProfileBadgeLabel(badge: details?.badge ?? profile.badge)
-                        }
-                        if (details?.badge ?? profile.badge) == .founder {
-                            FounderCredLine()
-                            FounderContactCard()
-                        } else if let rozetAlt = (details?.badge ?? profile.badge).subtitle {
-                            Text(rozetAlt)
-                                .font(.system(size: 14))
-                                .italic()
-                                .foregroundStyle(BondTheme.ember)
-                        }
-                        ProfileEducationLine(
-                            department: profile.department,
-                            university: profile.university,
-                            year: profile.year,
-                            font: .system(size: 15, weight: .bold),
-                            highlightUniversity: (details?.badge ?? profile.badge) == .founder
-                        )
-                        .padding(.top, 18)
+            cardBody
+                .overlay(alignment: .topLeading) { swipeStamp(right: false) }
+                .overlay(alignment: .topTrailing) { swipeStamp(right: true) }
+                .background(BondTheme.paper)
+                .clipShape(RoundedRectangle(cornerRadius: cardLifted ? 28 : 0, style: .continuous))
+                .shadow(color: .black.opacity(0.18 * swipeProgress), radius: 24, y: 12)
+                .offset(x: cardOffset)
+                // Tinder'daki gibi: kart yatay çekildikçe alt köşesinden döner.
+                .rotationEffect(.degrees(max(-12, min(12, cardOffset / 14))), anchor: .bottom)
+                .scaleEffect(1 - 0.03 * swipeProgress)
+                .simultaneousGesture(cardSwipeGesture)
 
-                        if let visiblePlace {
-                            HStack(spacing: 10) {
-                                Image(systemName: "location.fill").foregroundStyle(BondTheme.violet)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(L10n.Profile.visibleNowCaps).font(.system(size: 11, weight: .bold)).tracking(0.7)
-                                    Text(visiblePlace.name).font(.system(size: 17, weight: .semibold))
-                                }
-                                Spacer()
-                                Circle().fill(.green).frame(width: 8, height: 8)
-                            }
-                            .padding(14)
-                            .background(BondTheme.violet.opacity(0.1), in: RoundedRectangle(cornerRadius: 14))
-                        }
-
-                        Text(profile.bio).font(.system(size: 16)).lineSpacing(4)
-
-                        interestList
-
-                        gallery
-
-                        personPosts
-
-                        // Kendi profilinde eylem düğmesi çıkıyordu: kendine mesaj
-                        // gönderme ve kendinle buluşma isteği.
-                        if isMe {
-                            EmptyView()
-                        } else if !isMatched {
-                            // Eşleşmemişken tek düğme "Mesaj gönder"di, ama mesajlaşma
-                            // eşleşmeye bağlı olduğu için hiçbir yere çıkmıyordu:
-                            // birini beğenip tanışmanın profilden bir yolu yoktu.
-                            Button {
-                                Haptics.impact(.light)
-                                reacted = true
-                                Task { await appState.react(to: profile, liked: true) }
-                            } label: {
-                                Label(reacted ? L10n.Profile.likeSent : L10n.Discovery.meet,
-                                      systemImage: reacted ? "checkmark" : "heart.fill")
-                                    .font(.system(size: 15, weight: .bold))
-                                    .foregroundStyle(reacted ? BondTheme.ink.opacity(0.55) : BondTheme.onAccent)
-                                    .frame(maxWidth: .infinity).frame(height: 50)
-                                    .background(reacted ? BondTheme.ink.opacity(0.08) : BondTheme.acid,
-                                                in: RoundedRectangle(cornerRadius: 14))
-                            }
-                            .buttonStyle(PressableStyle())
-                            .disabled(reacted)
-
-                            Text(L10n.Profile.likeHint)
-                                .font(.system(size: 11))
-                                .foregroundStyle(BondTheme.muted)
-                                .frame(maxWidth: .infinity, alignment: .center)
-                        } else {
-                        Button { openConversation() } label: {
-                            Label(L10n.Profile.sendMessage, systemImage: "message.fill")
-                                .font(.system(size: 15, weight: .bold)).foregroundStyle(BondTheme.paper)
-                                .frame(maxWidth: .infinity).frame(height: 50)
-                                .background(BondTheme.ink, in: RoundedRectangle(cornerRadius: 14))
-                        }
-                        .buttonStyle(PressableStyle())
-
-                        }
-
-                        if visiblePlace != nil, !isMe {
-                            // Metin eskiden "Buluşma isteği gönder"di ve kulağa çıkma
-                            // teklifi gibi geliyordu. Özellik aslında bunu yapmıyor:
-                            // ikisi de o an aynı yerde, bu yalnızca "buradayım, gelsene"
-                            // demek. Altındaki satır da atma eşiğini düşürüyor —
-                            // reddedilme gerçekten sessiz, ama bunu kimse bilmiyordu.
-                            VStack(spacing: 7) {
-                                Button { sendRequest() } label: {
-                                    Label(pendingRequest == nil ? L10n.Profile.meetHere : L10n.Profile.requestSent, systemImage: pendingRequest == nil ? "cup.and.saucer.fill" : "checkmark")
-                                        .font(.system(size: 15, weight: .bold))
-                                        .foregroundStyle(pendingRequest == nil ? BondTheme.onAccent : BondTheme.ink.opacity(0.55))
-                                        .frame(maxWidth: .infinity).frame(height: 50)
-                                        .background(pendingRequest == nil ? BondTheme.acid : BondTheme.ink.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
-                                }
-                                .buttonStyle(PressableStyle())
-                                .disabled(pendingRequest != nil)
-
-                                if pendingRequest == nil {
-                                    Text(L10n.Profile.noNotifyIfIgnored)
-                                        .font(.system(size: 11))
-                                        .foregroundStyle(BondTheme.muted)
-                                }
-                            }
-                        }
-                    }
-                    .foregroundStyle(BondTheme.ink)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 24)
-                }
+            if showSentBurst {
+                sentBurst
+                    .transition(.scale(scale: 0.6).combined(with: .opacity))
             }
 
+            if showConnectedMoment {
+                connectedMoment
+                    .transition(.opacity)
+            }
         }
-        .ignoresSafeArea(edges: .top)
-        // Kahraman fotoğrafın üstünde iki düğme yüzüyordu: elle çizilmiş siyah
-        // daireler, elle verilmiş 16pt kenar boşluğu, safe area'yı taklit eden
-        // konumlar. Aynı iş sistemin bar'ında yapılıyor; bar fotoğrafın üstünde
-        // şeffaf duruyor ve kaydırınca kendi materyalini getiriyor.
+        .safeAreaInset(edge: .bottom) {
+            if !isMe {
+                actions
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(BondTheme.paper)
+            }
+        }
         .confirmationDialog(L10n.Moderation.suspendAccount, isPresented: $showSuspendConfirmation, titleVisibility: .visible) {
             Button(L10n.Moderation.suspendAccount, role: .destructive) {
                 Task {
@@ -193,9 +106,10 @@ struct SocialPersonDetailView: View {
         } message: {
             Text(L10n.Moderation.suspendAccountBody)
         }
-        .toolbarBackground(.hidden, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
+        .navigationTitle(profile.name)
         .navigationBarTitleDisplayMode(.inline)
+        .presentationCornerRadius(28)
+        .presentationDragIndicator(.visible)
         .toolbar {
             if showsClose {
                 ToolbarItem(placement: .topBarLeading) {
@@ -215,8 +129,6 @@ struct SocialPersonDetailView: View {
                     Button(L10n.Feed.blockUser, role: .destructive) {
                         showBlockConfirmation = true
                     }
-                    // Moderatör moderatörü askıya alamıyor; sunucu da reddediyor
-                    // ama düğmeyi hiç göstermemek daha anlaşılır.
                     if appState.isModerator, !isMe,
                        profile.badge != .founder, profile.badge != .moderator {
                         Divider()
@@ -242,76 +154,15 @@ struct SocialPersonDetailView: View {
         } message: {
             Text(L10n.Chat.blockBody)
         }
-        // Ziyaret yalnızca birinin profili kasıtlı olarak açıldığında kaydedilir;
-        // keşif destesinde kart çevirmek ziyaret sayılmaz.
-        // Fotoğraflar önce boyanır; gönderiler ikinci turda gelir — eskiden ikisi
-        // tek await'te seri indirmeyi bekliyordu.
-        .task {
+        .task(id: profile.id) {
             appState.recordProfileVisit(profile)
-            let seededPosts = appState.posts.filter { $0.author.id == profile.id }
-            if !profile.galleryImageURLs.isEmpty || profile.imageURL != nil || !seededPosts.isEmpty {
-                details = PersonProfileData(
-                    interests: profile.interests,
-                    galleryURLs: profile.galleryImageURLs,
-                    avatarURL: profile.imageURL,
-                    badge: profile.badge == .none ? nil : profile.badge,
-                    posts: seededPosts
-                )
-            }
-            if let fast = await appState.personDetails(for: profile.id) {
-                details = PersonProfileData(
-                    interests: fast.interests.isEmpty ? (details?.interests ?? profile.interests) : fast.interests,
-                    galleryURLs: fast.galleryURLs.isEmpty ? (details?.galleryURLs ?? []) : fast.galleryURLs,
-                    avatarURL: fast.avatarURL ?? details?.avatarURL ?? profile.imageURL,
-                    badge: fast.badge ?? details?.badge,
-                    posts: details?.posts ?? []
-                )
-            }
-            let posts = await appState.personPosts(for: profile.id)
-            if var mevcut = details {
-                mevcut.posts = posts
-                details = mevcut
-            } else if !posts.isEmpty {
-                details = PersonProfileData(
-                    interests: profile.interests,
-                    galleryURLs: [],
-                    avatarURL: profile.imageURL,
-                    badge: profile.badge == .none ? nil : profile.badge,
-                    posts: posts
-                )
-            }
+            await reloadDetails()
         }
         .fullScreenCover(item: $conversationRoute) { route in
             NavigationStack { ConversationView(conversationID: route.id, showsClose: true) }
         }
-        .sheet(item: $selectedPost) { secili in
-            let guncel = appState.posts.first(where: { $0.id == secili.id }) ?? secili
-            NavigationStack {
-                ScrollView {
-                    PostCard(
-                        post: guncel,
-                        toggleLike: { appState.toggleLike(postID: guncel.id) },
-                        toggleSaved: { appState.toggleSaved(postID: guncel.id) },
-                        openProfile: {},
-                        delete: {
-                            appState.deletePost(guncel.id)
-                            selectedPost = nil
-                        }
-                    )
-                    .padding(.vertical, BondTheme.Space.md)
-                }
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button(L10n.Common.close) { selectedPost = nil }
-                    }
-                }
-            }
-        }
     }
 
-    /// İlgi alanları eskiden üçle sınırlıydı ve hangilerinin ortak olduğu
-    /// görünmüyordu. Ortak olanlar öne çıkarılıyor: tanışma sebebi zaten orada.
     @ViewBuilder private var interestList: some View {
         let hepsi = details?.interests ?? profile.interests
         if !hepsi.isEmpty {
@@ -327,9 +178,9 @@ struct SocialPersonDetailView: View {
                     ForEach(hepsi, id: \.self) { interest in
                         let paylasilan = benimkiler.contains(interest)
                         Text(InterestCatalog.displayName(interest))
-                            .font(.system(size: 12, weight: paylasilan ? .bold : .medium))
+                            .font(.footnote.weight(paylasilan ? .bold : .medium))
                             .foregroundStyle(BondTheme.ink)
-                            .padding(.horizontal, 11).frame(height: 30)
+                            .padding(.horizontal, 12).padding(.vertical, 8)
                             .background(cipZemini(paylasilan: paylasilan), in: Capsule())
                     }
                 }
@@ -337,65 +188,360 @@ struct SocialPersonDetailView: View {
         }
     }
 
-    /// Galeri fotoğrafları. Kart tek bir fotoğraf gösteriyordu; kişi hakkında
-    /// fikir edinmek için en çok işe yarayan şey diğer fotoğraflarıydı.
     @ViewBuilder private var gallery: some View {
-        let fotograflar = details?.galleryURLs ?? profile.galleryImageURLs
-        if !fotograflar.isEmpty {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(L10n.Profile.photos)
-                    .font(.system(size: 11, weight: .bold)).tracking(0.7)
-                    .foregroundStyle(kurucu ? BondTheme.ember : BondTheme.muted)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(fotograflar, id: \.self) { url in
-                            ProfileMedia(url: url, data: nil)
-                                .frame(width: 132, height: 176)
-                                .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous))
+        if isLoadingDetails && galleryPhotos.isEmpty {
+            ProgressView(L10n.ScreenStates.photoLoading).frame(maxWidth: .infinity, minHeight: 44)
+        } else if !galleryPhotos.isEmpty {
+            // Fotoğrafı sürüklemek fotoğrafı çevirir. Kartın bağlan/kapat jesti
+            // fotoğrafın dışında: isim bloğu ve alt bilgiler.
+            ProfileGalleryStack(photos: galleryPhotos)
+        }
+    }
+
+    private var galleryPhotos: [ProfileGalleryPhoto] {
+        let extras = ProfileGalleryPhoto.remote(
+            (details?.galleryURLs ?? profile.galleryImageURLs).filter { url in
+                guard let avatar = details?.avatarURL ?? profile.imageURL else { return true }
+                return url.path != avatar.path
+            }
+        )
+        var deck = ProfileGalleryPhoto.deck(gallery: extras)
+        if deck.isEmpty {
+            if let avatar = details?.avatarURL ?? profile.imageURL {
+                deck = [ProfileGalleryPhoto(id: "avatar:\(avatar.absoluteString)", url: avatar)]
+            } else if let asset = profile.imageAssetName {
+                deck = [ProfileGalleryPhoto(id: "avatar-asset:\(asset)", assetName: asset)]
+            }
+        }
+        return deck
+    }
+
+    @MainActor
+    private func sendRightSwipe() async {
+        guard allowsMatchRequest, !isSendingSwipe else { return }
+        isSendingSwipe = true
+        defer { isSendingSwipe = false }
+        switch await appState.sendRightSwipe(to: profile) {
+        case .matched(let matchID):
+            // İki taraf da istek göndermiş → önce an, sonra sohbet.
+            await presentConnectedMoment(then: matchID)
+        case .sent, .already:
+            // Kart açık kalır; alt yazı "İstek gönderildi" olur.
+            break
+        case .failed:
+            break
+        }
+    }
+
+    // MARK: - Kart kaydırma
+
+    /// Kart jesti: fotoğrafın dışındaki her yer (isim bloğu, alt bilgiler).
+    private var cardSwipeGesture: some Gesture {
+        DragGesture(minimumDistance: 14, coordinateSpace: .local)
+            .onChanged { value in
+                cardDragChanged(x: value.translation.width, y: value.translation.height)
+            }
+            .onEnded { value in
+                cardDragEnded(x: value.translation.width, y: value.translation.height,
+                              predictedX: value.predictedEndTranslation.width)
+            }
+    }
+
+    private func cardDragChanged(x: CGFloat, y: CGFloat) {
+        guard !cardFlying, !showConnectedMoment, !isMe, !isMatched else { return }
+        // Dikey niyet scroll'un; yatay niyet netse kart oynar.
+        guard cardDragging || ProfileGestureDecision.deckClaimsPan(x: x, y: y) else { return }
+        cardDragging = true
+        // İstek zaten gittiyse sağa direnç: kart 40pt'den öteye gitmez.
+        let sinir: CGFloat = allowsMatchRequest ? .infinity : 40
+        cardOffset = x > 0 ? min(x, sinir) : x
+    }
+
+    private func cardDragEnded(x: CGFloat, y: CGFloat, predictedX: CGFloat) {
+        guard cardDragging else { return }
+        cardDragging = false
+        if ProfileGestureDecision.requestsMatch(x: max(x, predictedX), y: y, enabled: allowsMatchRequest) {
+            commitConnect()
+        } else if ProfileGestureDecision.dismissesCard(x: min(x, predictedX), y: y, enabled: true) {
+            flyOffAndClose()
+        } else {
+            withAnimation(reduceMotion ? nil : BondTheme.Motion.interactive) { cardOffset = 0 }
+        }
+    }
+
+    /// Sağa: kart sağdan uçar (istek gitti), ortada onay belirir, kart yeni
+    /// hâliyle ("İstek gönderildi") sağdan geri süzülür.
+    private func commitConnect() {
+        Haptics.success()
+        cardFlying = true
+        Task { await sendRightSwipe() }
+        guard !reduceMotion else {
+            cardFlying = false
+            cardOffset = 0
+            return
+        }
+        withAnimation(.easeIn(duration: 0.22)) { cardOffset = 700 }
+        Task {
+            try? await Task.sleep(for: .milliseconds(200))
+            withAnimation(BondTheme.Motion.bouncy) { showSentBurst = true }
+            try? await Task.sleep(for: .milliseconds(650))
+            withAnimation(BondTheme.Motion.smooth) { showSentBurst = false }
+            cardFlying = false
+            withAnimation(BondTheme.Motion.bouncy) { cardOffset = 0 }
+        }
+    }
+
+    /// Sola: kart soldan uçar, sheet kapanır. Kayıt sessiz: kimse görmez, kurucu
+    /// kendi kartında görür.
+    private func flyOffAndClose() {
+        cardFlying = true
+        Haptics.selection()
+        if !isMe { appState.recordLeftSwipe(on: profile) }
+        withAnimation(reduceMotion ? nil : .easeIn(duration: 0.28)) { cardOffset = -800 }
+        Task {
+            try? await Task.sleep(for: .milliseconds(reduceMotion ? 0 : 260))
+            dismiss()
+        }
+    }
+
+    /// Bağlantı anı: iki avatar kısa ve belirgin biçimde yaklaşır, sonra sohbet.
+    private func presentConnectedMoment(then matchID: UUID) async {
+        withAnimation(reduceMotion ? nil : BondTheme.Motion.smooth) { showConnectedMoment = true }
+        try? await Task.sleep(for: .milliseconds(reduceMotion ? 0 : 100))
+        withAnimation(reduceMotion ? nil : BondTheme.Motion.bouncy) { avatarsTogether = true }
+        try? await Task.sleep(for: .milliseconds(reduceMotion ? 450 : 950))
+        withAnimation(reduceMotion ? nil : BondTheme.Motion.smooth) { showConnectedMoment = false }
+        conversationRoute = ConversationRoute(id: matchID)
+    }
+
+    /// Kaydırırken kartın köşesinde beliren damga: sağa çekince sağ üstte turuncu
+    /// "BAĞLAN", sola çekince sol üstte "KAPAT". Çektikçe belirir, hafif eğik.
+    @ViewBuilder private func swipeStamp(right: Bool) -> some View {
+        let aktif = (cardDragging || cardFlying) && (right ? (swipingRight && allowsMatchRequest) : cardOffset < 0)
+        Text(right ? L10n.Introduction.connect.uppercased() : L10n.Introduction.close.uppercased())
+            .font(.system(size: 26, weight: .heavy))
+            .tracking(1)
+            .foregroundStyle(right ? BondTheme.burntOrange : BondTheme.ink)
+            .padding(.horizontal, 12).padding(.vertical, 6)
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(right ? BondTheme.burntOrange : BondTheme.ink, lineWidth: 3))
+            .rotationEffect(.degrees(right ? -12 : 12))
+            .opacity(aktif ? Double(swipeProgress) : 0)
+            .scaleEffect(aktif ? 0.8 + 0.2 * swipeProgress : 0.8)
+            .padding(.top, 88)
+            .padding(.horizontal, BondTheme.Space.xl)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+
+    /// İstek gitti: ortada turuncu onay dairesi, kısa.
+    private var sentBurst: some View {
+        VStack(spacing: BondTheme.Space.sm) {
+            Image(systemName: "paperplane.fill")
+                .font(.system(size: 30, weight: .bold))
+                .foregroundStyle(BondTheme.paper)
+                .frame(width: 84, height: 84)
+                .background(BondTheme.burntOrange, in: Circle())
+            Text(L10n.CampusDesign.cardRequestSentHint)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(BondTheme.ink)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .allowsHitTesting(false)
+    }
+
+    /// "Bağlantı kuruldu" — kartın üstünde yarı saydam katman.
+    private var connectedMoment: some View {
+        ZStack {
+            BondTheme.ink.opacity(0.35).ignoresSafeArea()
+            VStack(spacing: BondTheme.Space.md) {
+                HStack(spacing: avatarsTogether ? -18 : 28) {
+                    ProfileMedia(url: nil, data: appState.avatarData, assetName: nil)
+                        .frame(width: 76, height: 76).clipShape(Circle())
+                        .overlay(Circle().stroke(BondTheme.paper, lineWidth: 3))
+                    ProfileMedia(url: details?.avatarURL ?? profile.imageURL, data: nil, assetName: profile.imageAssetName)
+                        .frame(width: 76, height: 76).clipShape(Circle())
+                        .overlay(Circle().stroke(BondTheme.paper, lineWidth: 3))
+                }
+                Text(L10n.Introduction.connected)
+                    .font(BondTheme.Typography.title2)
+                Text(L10n.Introduction.connectedBody)
+                    .font(BondTheme.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .foregroundStyle(BondTheme.ink)
+            .padding(BondTheme.Space.xl)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .transition(.scale(scale: 0.92).combined(with: .opacity))
+        }
+        .sensoryFeedback(.success, trigger: showConnectedMoment) { _, yeni in yeni }
+    }
+
+    /// Kaydırılan kart: başlık, fotoğraf destesi, gönderiler, hakkında.
+    private var cardBody: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: BondTheme.Space.lg) {
+                identityHeader
+                gallery
+                personPosts
+
+                if let visiblePlace {
+                    Label(visiblePlace.name, systemImage: "mappin.and.ellipse")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                if let detailsError {
+                    ScreenFailureView(message: detailsError, compact: true) {
+                        Task { await reloadDetails() }
+                    }
+                }
+
+                if !profile.bio.trimmed.isEmpty {
+                    VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
+                        Text(L10n.CampusDesign.about).font(.headline)
+                        Text(profile.bio).font(.body).lineSpacing(4)
+                    }
+                }
+
+                interestList
+                meetHere
+            }
+            .foregroundStyle(BondTheme.ink)
+            .padding(.horizontal, BondTheme.Space.md)
+            .padding(.top, BondTheme.Space.sm)
+            .padding(.bottom, BondTheme.Space.xl)
+        }
+        .accessibilityAction(named: L10n.Introduction.send) {
+            guard allowsMatchRequest else { return }
+            Task { await sendRightSwipe() }
+        }
+    }
+
+    private var identityHeader: some View {
+        VStack(spacing: BondTheme.Space.sm) {
+            ProfileMedia(
+                url: details?.avatarURL ?? profile.imageURL,
+                data: nil,
+                assetName: profile.imageAssetName
+            )
+            .frame(width: 96, height: 96)
+            .clipShape(Circle())
+            .accessibilityHidden(true)
+
+            VStack(spacing: 4) {
+                Text(profile.name)
+                    .font(BondTheme.Typography.title2)
+                    .multilineTextAlignment(.center)
+                if !isMe, !isMatched {
+                    // İki durum ayrı görünüm; blurReplace biri erirken öteki belirir.
+                    Group {
+                        if alreadySwiped {
+                            Text(L10n.CampusDesign.cardRequestSentHint)
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                        } else {
+                            // Yönler doğru: sol ok + sola kaydır kapat | sağa kaydır bağlan + sağ ok.
+                            HStack(spacing: 8) {
+                                Image(systemName: "arrow.left").font(.caption2.weight(.bold))
+                                Text(L10n.Introduction.swipeHintLeft).font(.footnote.weight(.medium))
+                                Text("·").foregroundStyle(BondTheme.hairline)
+                                Text(L10n.Introduction.swipeHintRight).font(.footnote.weight(.medium))
+                                Image(systemName: "arrow.right").font(.caption2.weight(.bold))
+                            }
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 12).padding(.vertical, 7)
+                            .background(BondTheme.surface, in: Capsule())
+                            .multilineTextAlignment(.center)
                         }
                     }
+                    .transition(.blurReplace)
+                    .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: alreadySwiped)
+                }
+                ProfileEducationLine(
+                    department: profile.department,
+                    university: profile.university,
+                    year: profile.year,
+                    font: BondTheme.Typography.subheadline
+                )
+                .foregroundStyle(.secondary)
+                ProfileBadgeLabel(badge: details?.badge ?? profile.badge)
+            }
+            .frame(maxWidth: .infinity)
+
+            if kurucu {
+                FounderCredLine()
+                FounderContactCard()
+            }
+        }
+    }
+
+    @ViewBuilder private var actions: some View {
+        if isMe {
+            EmptyView()
+        } else if isMatched {
+            Button { openConversation() } label: {
+                Label(L10n.Introduction.openChat, systemImage: "message")
+                    .frame(maxWidth: .infinity, minHeight: 44)
+            }
+            .buttonStyle(.bordered)
+            .sensoryFeedback(.selection, trigger: conversationRoute?.id)
+        }
+        // Bağlantı isteği düğme değil, kartı sağa kaydırmak. VoiceOver için
+        // aynı iş `cardBody` üstündeki accessibilityAction'da.
+    }
+
+    @ViewBuilder private var meetHere: some View {
+        if visiblePlace != nil, !isMe {
+            VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
+                Button { sendRequest() } label: {
+                    Label(pendingRequest == nil ? L10n.Profile.meetHere : L10n.Profile.requestSent,
+                          systemImage: pendingRequest == nil ? "cup.and.saucer" : "checkmark")
+                }
+                .buttonStyle(.bordered)
+                .disabled(pendingRequest != nil)
+
+                if pendingRequest == nil {
+                    Text(L10n.Profile.noNotifyIfIgnored)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
             }
         }
     }
 
-    /// Kişinin paylaşımları. Profil ekranı yalnızca kartı gösteriyordu; kimin ne
-    /// paylaştığını görmeden o kişi hakkında fikir edinmek zor. Sunucuda tek bir
-    /// kişinin gönderilerini çeken bir yol yok, o yüzden yüklü akıştan süzülüyor —
-    /// yeni bir sorgu ve yeni bir izin kuralı gerektirmiyor.
+    private func reloadDetails() async {
+        isLoadingDetails = true
+        defer { isLoadingDetails = false }
+        do {
+            let fetched = try await appState.service.fetchPersonDetails(profile.id)
+            guard !Task.isCancelled else { return }
+            details = PersonProfileData(interests: fetched.interests, galleryURLs: fetched.galleryURLs,
+                                        avatarURL: fetched.avatarURL, badge: fetched.badge,
+                                        posts: appState.posts.filter { $0.author.id == profile.id })
+            detailsError = nil
+        } catch {
+            guard !appState.isCancellation(error) else { return }
+            detailsError = UserFacingError.message(error, fallback: L10n.Errors.title)
+        }
+        let loadedPosts = await appState.personPosts(for: profile.id)
+        guard !Task.isCancelled else { return }
+        if details == nil {
+            details = PersonProfileData(interests: profile.interests, galleryURLs: profile.galleryImageURLs,
+                                        avatarURL: profile.imageURL, badge: profile.badge, posts: loadedPosts)
+        } else {
+            details?.posts = loadedPosts
+        }
+    }
+
     @ViewBuilder private var personPosts: some View {
-        let gonderiler = details?.posts ?? []
-        if !gonderiler.isEmpty {
-            VStack(alignment: .leading, spacing: 10) {
+        let posts = details?.posts ?? []
+        if !posts.isEmpty {
+            VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
                 Text(L10n.Profile.theirPostsCaps)
-                    .font(.system(size: 11, weight: .bold)).tracking(0.7)
-                    .foregroundStyle(kurucu ? BondTheme.ember : BondTheme.muted)
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 3), count: 3), spacing: 3) {
-                    ForEach(gonderiler) { post in
-                        Button {
-                            Haptics.impact(.light)
-                            selectedPost = post
-                        } label: {
-                            Color.clear
-                                .aspectRatio(1, contentMode: .fit)
-                                .overlay {
-                                    if post.imageURL != nil || post.imageAssetName != nil || post.localImageData != nil {
-                                        ProfileMedia(url: post.imageURL, data: post.localImageData, assetName: post.imageAssetName)
-                                    } else {
-                                        Text(post.caption)
-                                            .font(.system(size: 12, weight: .bold))
-                                            .foregroundStyle(BondTheme.ink)
-                                            .lineLimit(5)
-                                            .padding(10)
-                                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                                            .background(BondTheme.acid.opacity(0.35))
-                                    }
-                                }
-                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(PressableStyle())
-                    }
+                    .font(.headline)
+                ForEach(posts) { post in
+                    ProfilePostRow(post: post)
                 }
             }
         }
@@ -411,7 +557,7 @@ struct SocialPersonDetailView: View {
 
     private func sendRequest() {
         guard let visiblePlace else { return }
-        withAnimation(.snappy) {
+        withAnimation(reduceMotion ? nil : BondTheme.Motion.snappy) {
             appState.sendMeetingRequest(to: profile, at: visiblePlace)
         }
     }

@@ -13,24 +13,55 @@ struct ProfileEditorView: View {
     /// Kırpma ekranında bekleyen fotoğraf.
     @State private var cropCandidate: IdentifiableImage?
     @State private var galleryItems: [PhotosPickerItem] = []
+    @State private var shareToFeed: [Bool] = []
     @State private var loaded = false
     @State private var showDiscardAlert = false
+    @State private var myPostCount = 0
 
     private var valid: Bool {
         !draft.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !draft.department.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        draft.gender != nil &&
         draft.bio.count <= 220 &&
         draft.interests.count >= 3
     }
 
     private var changed: Bool {
-        draft != appState.draft || avatarData != baselineAvatarData || galleryData != baselineGalleryData
+        draft != appState.draft || avatarData != baselineAvatarData || galleryData != baselineGalleryData || shareToFeed.contains(true)
+    }
+
+    private var atPostLimit: Bool {
+        guard let cap = appState.tier.maxPosts else { return false }
+        return myPostCount >= cap
+    }
+
+    private var editorCompletion: Int {
+        draft.completionPercent(hasAvatar: avatarData != nil || appState.avatarURL != nil)
+    }
+
+    private var onlyAboutMissing: Bool {
+        editorCompletion == 90 && draft.bio.trimmed.isEmpty
+    }
+
+    @ViewBuilder
+    private var completionBanner: some View {
+        if editorCompletion < 100 {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(L10n.Profile.completion(editorCompletion))
+                    .font(.subheadline.weight(.semibold))
+                Text(onlyAboutMissing ? L10n.Profile.aboutOptional : L10n.Profile.completionHint)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+        }
     }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: BondTheme.Space.xl) {
+                completionBanner
                 Text(L10n.Profile.publishNote)
                     .font(.system(size: 12))
                     .foregroundStyle(BondTheme.muted)
@@ -38,7 +69,6 @@ struct ProfileEditorView: View {
                 basicInformation
                 about
                 interestSelection
-                preferences
                 accountInformation
             }
             .padding(.horizontal, BondTheme.Space.lg)
@@ -67,6 +97,7 @@ struct ProfileEditorView: View {
             }
         }
         .onAppear { loadOnce() }
+        .task { myPostCount = await appState.countMyPosts() }
         .onChange(of: avatarItem) { _, item in
             // Seçilen fotoğraf doğrudan kaydedilmiyor: önce dairesel çerçeveye göre
             // konumlandırılıyor. Aksi halde kadraj neredeyse her fotoğrafta ortadan
@@ -74,7 +105,7 @@ struct ProfileEditorView: View {
             Task {
                 guard let item else { return }
                 guard let raw = try? await item.loadTransferable(type: Data.self),
-                      let picked = UIImage(data: raw) else {
+                      let picked = ImageCompression.imageForDisplay(raw) else {
                     await MainActor.run { appState.show(L10n.Composer.photoLoadFailed) }
                     return
                 }
@@ -92,7 +123,7 @@ struct ProfileEditorView: View {
         .onChange(of: galleryItems) { _, items in
             Task {
                 var loadedImages: [Data] = []
-                for item in items.prefix(5) {
+                for item in items.prefix(CampusLimits.maxGalleryPhotos) {
                     if let raw = try? await item.loadTransferable(type: Data.self),
                        let data = ImageCompression.prepareForUpload(raw) { loadedImages.append(data) }
                 }
@@ -101,6 +132,7 @@ struct ProfileEditorView: View {
                         appState.show(L10n.Composer.photoLoadFailed)
                     } else {
                         galleryData = loadedImages
+                        shareToFeed = Array(repeating: false, count: loadedImages.count)
                     }
                 }
             }
@@ -160,7 +192,6 @@ struct ProfileEditorView: View {
         var missing: [String] = []
         if draft.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { missing.append(L10n.Profile.needName) }
         if draft.department.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { missing.append(L10n.Profile.needDepartment) }
-        if draft.gender == nil { missing.append(L10n.Profile.needGender) }
         if draft.interests.count < InterestCatalog.minimumSelection {
             missing.append(L10n.Profile.needMoreInterests(InterestCatalog.minimumSelection - draft.interests.count))
         }
@@ -204,7 +235,7 @@ struct ProfileEditorView: View {
                 .padding(.top, 8)
             }
 
-            PhotosPicker(selection: $galleryItems, maxSelectionCount: 5, matching: .images) {
+            PhotosPicker(selection: $galleryItems, maxSelectionCount: CampusLimits.maxGalleryPhotos, matching: .images) {
                 Label(galleryButtonTitle, systemImage: "photo.stack")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(BondTheme.ink)
@@ -214,32 +245,47 @@ struct ProfileEditorView: View {
             }
             .buttonStyle(PressableStyle())
 
-            // Kullanıcı buraya fotoğraf ekleyince nereye gittiğini bilmiyordu.
-            // Kart artık ana fotoğrafı kapak alıp galeriyi arkasına diziyor;
-            // metin de bunu anlatıyor, yoksa "ana fotoğrafım nerede" sorusu
-            // aynı yerden tekrar çıkıyor.
+            // Galeri, profiline içerikten ulaşan kişilere ek bağlam verir.
+            // Ana fotoğraf yorum ve sohbetlerdeki küçük avatar olarak kalır.
             Text(L10n.Profile.galleryHint)
                 .font(.system(size: 12))
                 .foregroundStyle(BondTheme.muted)
                 .fixedSize(horizontal: false, vertical: true)
 
             if !galleryData.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(Array(galleryData.enumerated()), id: \.offset) { index, data in
-                            ZStack(alignment: .topTrailing) {
-                                ProfileMedia(url: nil, data: data)
-                                    .frame(width: 82, height: 104)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                                Button { galleryData.remove(at: index) } label: {
-                                    Image(systemName: "xmark")
-                                        .font(.system(size: 12, weight: .bold)).foregroundStyle(.white)
-                                        .frame(width: 44, height: 44).background(.black.opacity(0.62), in: Circle())
-                                }
-                                .accessibilityLabel(L10n.Profile.removePhoto)
-                                .padding(5)
+                VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
+                    ForEach(galleryData.indices, id: \.self) { index in
+                        HStack(alignment: .center, spacing: BondTheme.Space.md) {
+                            ProfileMedia(url: nil, data: galleryData[index])
+                                .frame(width: 56, height: 72)
+                                .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
+                            Picker(selection: shareBinding(at: index)) {
+                                Text(L10n.Profile.photoOnProfileOnly).tag(false)
+                                Text(L10n.Profile.photoAlsoFeed).tag(true)
+                            } label: {
+                                EmptyView()
                             }
+                            .pickerStyle(.menu)
+                            .labelsHidden()
+                            .accessibilityLabel(
+                                shareToFeed.indices.contains(index) && shareToFeed[index]
+                                    ? L10n.Profile.photoAlsoFeed
+                                    : L10n.Profile.photoOnProfileOnly
+                            )
+                            .disabled(atPostLimit && !(shareToFeed.indices.contains(index) && shareToFeed[index]))
+                            Spacer(minLength: 0)
+                            Button(role: .destructive) {
+                                removeGalleryPhoto(at: index)
+                            } label: {
+                                Image(systemName: "trash")
+                            }
+                            .accessibilityLabel(L10n.Profile.removePhoto)
                         }
+                    }
+                    if atPostLimit {
+                        Text(L10n.Composer.postLimit(CampusLimits.maxPostsPerUser))
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
@@ -279,6 +325,10 @@ struct ProfileEditorView: View {
                     .lineLimit(4...7)
                     .padding(12)
                     .background(BondTheme.ink.opacity(0.045), in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface))
+                Text(L10n.Profile.aboutOptional)
+                    .font(.system(size: 12))
+                    .foregroundStyle(BondTheme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
@@ -286,7 +336,7 @@ struct ProfileEditorView: View {
     private var interestSelection: some View {
         let full = draft.interests.count >= InterestCatalog.maximumSelection
         return VStack(alignment: .leading, spacing: BondTheme.Space.md) {
-            AppSectionHeader(title: L10n.Discovery.interests)
+            AppSectionHeader(title: L10n.Onboarding.interestsTitle)
             Text(L10n.Profile.interestCount(draft.interests.count, InterestCatalog.maximumSelection, InterestCatalog.minimumSelection))
                 .font(.system(size: 12))
                 .foregroundStyle(BondTheme.muted)
@@ -322,46 +372,11 @@ struct ProfileEditorView: View {
             }
         }
     }
-    private var preferences: some View {
-        AppSurface {
-            VStack(alignment: .leading, spacing: 16) {
-                AppSectionHeader(title: L10n.Profile.meetPrefs)
-                Picker(L10n.Profile.needGender, selection: $draft.gender) {
-                    Text(L10n.Common.select).tag(ProfileGender?.none)
-                    ForEach(ProfileGender.allCases) { option in
-                        Text(option.title).tag(ProfileGender?.some(option))
-                    }
-                }
-                .tint(BondTheme.violet)
-                Text(L10n.Profile.genderRequired)
-                    .font(.system(size: 12))
-                    .foregroundStyle(BondTheme.muted)
-                Menu {
-                    Button(L10n.Profile.hideLocation) { appState.currentVisiblePlace = nil }
-                    ForEach(appState.places) { place in
-                        Button(place.name) { appState.currentVisiblePlace = place }
-                    }
-                } label: {
-                    HStack {
-                        Label(L10n.Profile.visiblePlace, systemImage: "location")
-                        Spacer()
-                        Text(appState.currentVisiblePlace?.name ?? L10n.Common.off)
-                            .foregroundStyle(BondTheme.muted)
-                        Image(systemName: "chevron.up.chevron.down").font(.system(size: 12))
-                    }
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(BondTheme.ink)
-                }
-            }
-        }
-    }
-
     private var accountInformation: some View {
         AppSurface {
             VStack(alignment: .leading, spacing: 14) {
                 AppSectionHeader(title: L10n.Profile.accountSection)
                 readOnlyRow(L10n.Profile.account, appState.email.isEmpty ? L10n.Profile.notSignedIn : appState.email)
-                readOnlyRow(L10n.Profile.studentStatus, L10n.Profile.verified)
                 Text(L10n.Profile.lockedFields)
                     .font(.system(size: 12)).foregroundStyle(BondTheme.muted)
             }
@@ -382,6 +397,7 @@ struct ProfileEditorView: View {
         draft = appState.draft
         avatarData = appState.avatarData
         galleryData = appState.profileGalleryData
+        shareToFeed = Array(repeating: false, count: galleryData.count)
         loaded = true
         Task { await hydrateExistingPhotos() }
     }
@@ -392,26 +408,62 @@ struct ProfileEditorView: View {
     // vermez ve kaydetmeden çıkıldığında mevcut fotoğraflar kaybolmuş gibi görünmez.
     private func hydrateExistingPhotos() async {
         if avatarData == nil, let url = appState.avatarURL {
-            avatarData = await appState.remoteImageData(for: url)
+            avatarData = await compactedRemoteImage(url)
+        } else if let avatarData {
+            self.avatarData = ImageCompression.prepareForUpload(avatarData) ?? avatarData
         }
         if galleryData.isEmpty, !appState.galleryURLs.isEmpty {
             var hydrated: [Data] = []
             for url in appState.galleryURLs {
-                if let data = await appState.remoteImageData(for: url) { hydrated.append(data) }
+                if let data = await compactedRemoteImage(url) { hydrated.append(data) }
             }
             galleryData = hydrated
+            shareToFeed = Array(repeating: false, count: galleryData.count)
+        } else if !galleryData.isEmpty {
+            galleryData = galleryData.map { ImageCompression.prepareForUpload($0) ?? $0 }
+        }
+        if shareToFeed.count != galleryData.count {
+            shareToFeed = Array(repeating: false, count: galleryData.count)
         }
         baselineAvatarData = avatarData
         baselineGalleryData = galleryData
     }
 
+    /// Düzenleyici kaydetmede ham JPEG tutuyor; sunucudaki 8 MB aslı burada
+    /// ekran boyutuna indirgenmezse beş kare telefonda onlarca MB eder.
+    private func compactedRemoteImage(_ url: URL) async -> Data? {
+        guard let data = await appState.remoteImageData(for: url) else { return nil }
+        return ImageCompression.prepareForUpload(data) ?? data
+    }
+
     private func save() {
         guard valid else { return }
+        let flagged = galleryData.indices.compactMap { index -> Data? in
+            guard shareToFeed.indices.contains(index), shareToFeed[index] else { return nil }
+            return galleryData[index]
+        }
         Task {
             if await appState.saveProfile(draft, avatar: avatarData, gallery: galleryData) {
+                await appState.publishPhotosAsPosts(flagged)
                 dismiss()
             }
         }
+    }
+
+    private func shareBinding(at index: Int) -> Binding<Bool> {
+        Binding(
+            get: { shareToFeed.indices.contains(index) ? shareToFeed[index] : false },
+            set: { value in
+                guard shareToFeed.indices.contains(index) else { return }
+                shareToFeed[index] = value
+            }
+        )
+    }
+
+    private func removeGalleryPhoto(at index: Int) {
+        guard galleryData.indices.contains(index) else { return }
+        galleryData.remove(at: index)
+        if shareToFeed.indices.contains(index) { shareToFeed.remove(at: index) }
     }
 }
 

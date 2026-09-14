@@ -11,7 +11,6 @@ extension L10n {
         static var fromUnmatched: String { String(localized: "chat.fromUnmatched") }
         static var messages: String { String(localized: "chat.messages") }
         static var newConnections: String { String(localized: "chat.newConnections") }
-        static var peopleToMeet: String { String(localized: "chat.peopleToMeet") }
         static var emptyTitle: String { String(localized: "chat.emptyTitle") }
         static var emptyBody: String { String(localized: "chat.emptyBody") }
         static var requestsIntro: String { String(localized: "chat.requestsIntro") }

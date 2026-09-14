@@ -24,7 +24,9 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 /// RevenueCat'teki entitlement kimlikleri. Panelde birebir böyle olmalı.
 const PLAN_BY_ENTITLEMENT: Record<string, string> = {
   plus: "plus",
+  bond_plus: "plus",
   pro: "pro",
+  bond_pro: "pro",
 };
 
 /// Hakkı bitiren olaylar. Diğerlerinde entitlement listesine bakıyoruz.

@@ -1,6 +1,6 @@
 # Terms of Use
 
-**Last updated:** 25 August 2026
+**Last updated:** 11 September 2026
 
 By using Common you accept these terms. If you do not accept them, do not use
 the app. English translation of the Turkish original; the Turkish version
@@ -8,9 +8,12 @@ governs.
 
 ## Who can use it
 
-Common is for students at Yalova University and you must be **over 18**. You
+Common is intended for university students and you must be **18 or older**. You
 open an account in your own name; you may not impersonate anyone or create a
 fake profile. You may not transfer or share your account.
+
+You can sign in with Google or Apple. A .edu.tr address is not required;
+signing in does not verify that you are a university student.
 
 ## You are responsible for what you share
 
@@ -36,8 +39,15 @@ We operate a **zero tolerance** policy for the following:
 
 ## Reporting, blocking and moderation
 
-Every profile and post in the app has **report** and **block** options. Someone
-you block cannot contact you.
+You can **report** profiles, posts, comments, stories and messages you receive
+inside the app. Reporting content shares that content and your reason with
+moderators. You can **block** people from their profiles or conversations;
+someone you block cannot contact you.
+
+Text is checked for certain explicit insults and obscene phrases before
+publication. This check cannot detect every violation and does not mean that
+photos and videos are fully moderated automatically. Please report content
+that gets through the check or otherwise breaks our rules.
 
 We review reports **within 24 hours**, remove content that breaks the rules
 and, where necessary, permanently close the account. In serious cases we may
@@ -49,6 +59,11 @@ separate notice of these decisions.
 If we find that you have broken these rules we may close your account without
 warning. You can delete your own account at any time from inside the app:
 **Profile → Delete account permanently**.
+
+Deleting your account does not automatically cancel an App Store subscription.
+Manage your subscription separately in your Apple account settings. If Sign
+in with Apple permission cannot be revoked automatically, the app shows
+instructions for removing that permission from your Apple account.
 
 ## Subscriptions
 
@@ -71,10 +86,11 @@ we will not take away features you have already paid for during that period.
 
 ## Limits of our responsibility
 
-Common is a tool that makes meeting people easier; it does not guarantee the
-identity, honesty or intentions of its users. You are responsible for your own
-safety when meeting people: we recommend meeting first in busy public places
-and telling someone close to you where you are going.
+Common is a social tool for campus communication and meetups; it does not
+guarantee the identity, honesty or intentions of its users. You are responsible
+for your own safety when meeting someone you know through the app: we recommend
+meeting first in busy public places and telling someone close to you where you
+are going.
 
 The app is provided "as is". We do not promise it will run without
 interruption or error. To the extent permitted by law, we are not liable for

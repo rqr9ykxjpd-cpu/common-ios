@@ -34,7 +34,7 @@ struct Conversation: Identifiable, Hashable {
     var updatedAt: Date
     var unreadCount: Int
 
-    var lastMessage: String { messages.last?.body ?? L10n.Chat.newMatch }
+    var lastMessage: String { messages.last?.body ?? "" }
 
 }
 
@@ -101,6 +101,10 @@ struct ModerationReport: Identifiable, Hashable {
     var resolution: String?
     /// Şikayet edilen hesap şu an etkin mi.
     var reportedActive: Bool
+    /// Nil on existing profile reports and reports created by older app versions.
+    var target: ReportTarget? = nil
+    var contentText: String? = nil
+    var contentMediaURL: URL? = nil
 }
 
 enum AppNotificationKind: Hashable {
