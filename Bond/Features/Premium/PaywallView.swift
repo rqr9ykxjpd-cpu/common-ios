@@ -366,11 +366,15 @@ struct PaywallView: View {
     }
 
     private func restore() async {
-        if let message = await store.restore() {
+        let message = await store.restore()
+        // Cihazda abonelik yoksa bile sunucu planı biliyor olabilir (kurucu,
+        // hediye, başka cihaz). Ona sormadan "abonelik bulunamadı" demiyoruz.
+        await appState.refreshServerPlan()
+        if appState.tier == .free, let message {
             alertMessage = message
-        } else {
-            Haptics.success()
-            dismiss()
+            return
         }
+        Haptics.success()
+        dismiss()
     }
 }

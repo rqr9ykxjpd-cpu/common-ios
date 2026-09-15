@@ -181,6 +181,12 @@ final class AppState {
     /// beğeni hakkını artıramaz.
     var tier: SubscriptionTier = .free
 
+    /// Sunucunun en son bildirdiği plan (`my_plan`). Kurucu/moderatör rozeti,
+    /// hediye edilen plan ve başka cihazda alınan abonelik yalnızca burada
+    /// görünür; cihazdaki StoreKit/RevenueCat bunları bilmez. Cihaz bir hak
+    /// değişikliği bildirdiğinde `tier` bunun altına düşmez.
+    var serverPlan: SubscriptionTier = .free
+
     /// StoreKit katmanı. Uygulama boyunca tek örnek: `Transaction.updates`
     /// dinleyicisi açılışta başlayıp hiç kapanmamalı.
     let subscriptions = SubscriptionStore()
@@ -376,7 +382,10 @@ final class AppState {
         // bu çağrı bir talep, bir bildirim değil.
         subscriptions.onEntitlementChange = { [weak self] kademe, satinAlma in
             guard let self else { return }
-            self.tier = kademe
+            // Cihaz 'free' dese de sunucunun verdiği plan kalır. "Satın alımları
+            // geri yükle" RevenueCat'ten boş dönünce kurucunun Pro'su, hediye
+            // edilen Plus ve başka cihazdaki abonelik arayüzde siliniyordu.
+            self.tier = max(kademe, self.serverPlan)
             guard let satinAlma else { return }
             Task { await self.syncPlanWithServer(satinAlma) }
         }
@@ -403,12 +412,24 @@ final class AppState {
     /// görüp paywall'a geri düşerdi. En fazla ~12 saniye, arada sessiz.
     func confirmPlanWithServer(expecting kademe: SubscriptionTier) async {
         for _ in 0..<6 {
-            if let sunucu = try? await service.fetchMyPlan(), sunucu >= kademe {
-                tier = max(tier, sunucu)
-                return
+            if let sunucu = try? await service.fetchMyPlan() {
+                serverPlan = sunucu
+                if sunucu >= kademe {
+                    tier = max(tier, sunucu)
+                    return
+                }
             }
             try? await Task.sleep(for: .seconds(2))
         }
+    }
+
+    /// Sunucuya bir kez sorup arayüz kademesini cihaz ve sunucunun büyüğüne
+    /// çeker. "Geri yükle" sonrası: cihaz boş dönse de sunucu planı biliyorsa
+    /// kullanıcıya "abonelik bulunamadı" denmez.
+    func refreshServerPlan() async {
+        guard let sunucu = try? await service.fetchMyPlan() else { return }
+        serverPlan = sunucu
+        tier = max(subscriptions.tier, sunucu)
     }
 
     /// Açılışta: ürünleri yükle, cihazdaki hakları oku, sunucuya danış.
@@ -449,10 +470,11 @@ final class AppState {
             // migration çalışmadıysa) cihazın bildiği geçerli. Kullanıcıya
             // hata göstermiyoruz: abonelik ekranıyla ilgisi olmayan bir anda
             // "abonelik okunamadı" demek kafa karıştırır.
-            tier = cihaz
+            tier = max(cihaz, serverPlan)
             return
         }
 
+        serverPlan = sunucu
         tier = max(cihaz, sunucu)
         if cihaz > sunucu {
             await subscriptions.refreshEntitlements(forceSync: true)

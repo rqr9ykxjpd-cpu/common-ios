@@ -393,6 +393,8 @@ extension AppState {
         clubsError = nil
         joinedClubIDs = []
         myBadge = .none
+        serverPlan = .free
+        tier = subscriptions.tier
 
         isFinishingOnboarding = false
         onboardingFailure = nil
