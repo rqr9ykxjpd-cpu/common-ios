@@ -15,6 +15,7 @@ struct SocialFeedView: View {
     @State private var showNotifications = false
     @State private var showPlacesWall = false
     @State private var selectedPostAuthor: StudentProfile?
+    @State private var showStudyGroupComposer = false
     /// Avatar → kişi kartı zoom geçişinin ad alanı.
     @Namespace private var profileZoom
 
@@ -132,6 +133,7 @@ struct SocialFeedView: View {
                             Divider().opacity(0.35).padding(.vertical, BondTheme.Space.md)
                             kindFilterRow
                             sortRow
+                            studyGroupsSection
                             if let error = appState.feedError {
                                 ScreenFailureView(message: error, compact: !visiblePosts.isEmpty) {
                                     Task { await appState.loadFeed() }
@@ -162,7 +164,11 @@ struct SocialFeedView: View {
                         .padding(.bottom, 24)
                     }
                     .scrollContentBackground(.hidden)
-                    .refreshable { await appState.loadFeed(); await appState.loadStories() }
+                    .refreshable {
+                        await appState.loadFeed()
+                        await appState.loadStories()
+                        await appState.loadStudyGroups(silently: true)
+                    }
                     .onAppear {
                         proxy.scrollTo("feed-top", anchor: .top)
                     }
@@ -179,6 +185,11 @@ struct SocialFeedView: View {
             }
             .sheet(isPresented: $showPostComposer, onDismiss: { composerKind = .moment }) {
                 CreatePostView(initialKind: composerKind)
+            }
+            .sheet(isPresented: $showStudyGroupComposer) {
+                StudyGroupComposer()
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
             }
             .sheet(item: $selectedPostAuthor) { profile in
                 NavigationStack {
@@ -206,7 +217,17 @@ struct SocialFeedView: View {
             .sheet(isPresented: $showPlacesWall) {
                 PlacesWallView { place in appState.selectedPlaceFilter = place }
             }
-            .task { await appState.loadFeed(); await appState.loadStories() }
+            // Açılışta oturum kurulurken görünüm yeniden kuruluyor ve SwiftUI bu
+            // .task'ı iptal ediyordu: istek yarıda kesiliyor, iptal hata sayılmadığı
+            // için akış "henüz boş" görünüyordu (yenileyene kadar). Yükleme, görünümün
+            // iptalinden bağımsız bir görevde koşuyor.
+            .task {
+                await Task { @MainActor in
+                    await appState.loadFeed()
+                    await appState.loadStories()
+                    await appState.loadStudyGroups(silently: true)
+                }.value
+            }
             .task(id: rankKey) { rerank() }
             .modifier(FounderPresentations(boostInput: $boostInput, pinInput: $pinInput))
 #if DEBUG
@@ -259,13 +280,58 @@ struct SocialFeedView: View {
     }
 
     /// "Popüler ⌄" çiplerin altında, sola yaslı — kullanıcı tercihi.
+    /// Sağda "Çalışma grubu kur": şu saatte şurada çalışacağım, gelen olur mu.
     private var sortRow: some View {
         HStack {
             sortChip
             Spacer()
+            studyGroupButton
         }
         .padding(.horizontal, 20)
         .padding(.bottom, BondTheme.Space.xs)
+    }
+
+    private var studyGroupButton: some View {
+        Button {
+            Haptics.selection()
+            showStudyGroupComposer = true
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "book.pages")
+                    .font(.system(size: 12, weight: .semibold))
+                Text(L10n.StudyGroup.create)
+                    .font(.footnote.weight(.semibold))
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 34)
+            .foregroundStyle(BondTheme.ink)
+            .background(BondTheme.surface, in: Capsule())
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.pressable)
+        .accessibilityLabel(L10n.StudyGroup.create)
+    }
+
+    /// Açık çalışma grupları: gönderilerin üstünde, yakın saat önce. Yoksa görünmez.
+    @ViewBuilder private var studyGroupsSection: some View {
+        if !appState.studyGroups.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(L10n.StudyGroup.sectionTitle)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(BondTheme.muted)
+                    .textCase(.uppercase)
+                    .kerning(0.6)
+                ForEach(appState.studyGroups) { group in
+                    StudyGroupCard(group: group) { profile in
+                        selectedPostAuthor = profile
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, BondTheme.Space.xs)
+            .padding(.bottom, BondTheme.Space.md)
+            .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: appState.studyGroups.map(\.id))
+        }
     }
 
     /// "Popüler ⌄" — Reddit'teki sıralama menüsü.

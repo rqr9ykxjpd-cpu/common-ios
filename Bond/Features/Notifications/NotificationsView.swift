@@ -258,6 +258,7 @@ struct NotificationsView: View {
         case .club: BondTheme.ink
         case .meetingRequest: BondTheme.coral
         case .announcement: BondTheme.burntOrange
+        case .studyGroup: BondTheme.ink
         }
     }
 }

@@ -8,6 +8,27 @@ struct PlacePresenceSummary: Hashable, Sendable {
     var avatarAssetNames: [String] = []
 }
 
+/// Çalışma grubu: "şu saatte şurada ders çalışacağım". Kim nerede'deki
+/// BURADAYIM gibi tek dokunuşla katılınır; grup sohbeti yok, tanışma kartlardan.
+struct StudyGroup: Identifiable, Hashable {
+    let id: UUID
+    let host: StudentProfile
+    let place: CampusPlace
+    let startsAt: Date
+    let note: String
+    /// nil: sınırsız. Ev sahibi dâhil toplam kişi.
+    let capacity: Int?
+    var members: [StudentProfile]
+    let createdAt: Date
+    var isMine: Bool
+    var joined: Bool
+
+    /// Ev sahibi + katılanlar.
+    var headcount: Int { members.count + 1 }
+    var isFull: Bool { capacity.map { headcount >= $0 } ?? false }
+    var hasStarted: Bool { startsAt <= .now }
+}
+
 struct CampusPlace: Identifiable, Hashable, Codable {
     let id: UUID
     let name: String

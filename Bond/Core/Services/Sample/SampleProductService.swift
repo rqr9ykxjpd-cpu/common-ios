@@ -232,6 +232,13 @@ struct SampleProductService: ProductService {
         try await store.addRightSwipe(to: profileID)
     }
     func openFounderChat() async throws -> UUID { try await store.openFounderChat() }
+    func fetchStudyGroups() async throws -> [StudyGroup] { await store.allStudyGroups() }
+    func createStudyGroup(placeID: UUID, startsAt: Date, note: String, capacity: Int?) async throws -> StudyGroup {
+        try await store.createStudyGroup(placeID: placeID, startsAt: startsAt, note: note, capacity: capacity)
+    }
+    func cancelStudyGroup(_ groupID: UUID) async throws { await store.cancelStudyGroup(groupID) }
+    func joinStudyGroup(_ groupID: UUID) async throws { try await store.joinStudyGroup(groupID) }
+    func leaveStudyGroup(_ groupID: UUID) async throws { await store.leaveStudyGroup(groupID) }
     /// Kaydırmalar görünmez: tek yönlü istek listesi artık boş (sunucu da boş döner).
     func fetchIntroductionRequests() async throws -> [StudentProfile] { [] }
     func fetchMessageRequests() async throws -> [MessageRequest] { await store.allMessageRequests() }

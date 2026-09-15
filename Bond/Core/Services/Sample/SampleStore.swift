@@ -28,6 +28,7 @@ actor SampleStore {
     var visiblePlaceID: UUID?
     var draft: ProfileDraft
     var galleryPhotoCount: Int
+    var studyGroups: [StudyGroup]
 
     let me: StudentProfile
 
@@ -47,6 +48,53 @@ actor SampleStore {
         self.visits = SampleData.visits
         self.visiblePlaceID = nil
         self.galleryPhotoCount = SampleData.profiles[0].galleryImageURLs.count
+        // Örnek: kütüphanede bir saat sonra başlayan, iki katılımlı grup.
+        let host = SampleData.profiles[1]
+        self.studyGroups = [
+            StudyGroup(
+                id: UUID(), host: host,
+                place: places.first(where: { $0.name == "Merkez Kütüphane" }) ?? places[0],
+                startsAt: Date().addingTimeInterval(3600), note: "Veri Yapıları vize tekrarı",
+                capacity: 5, members: [SampleData.profiles[2], SampleData.profiles[3]],
+                createdAt: Date().addingTimeInterval(-1200), isMine: false, joined: false
+            )
+        ]
+    }
+
+    // MARK: Çalışma grupları
+
+    func allStudyGroups() -> [StudyGroup] {
+        studyGroups.filter { $0.startsAt.addingTimeInterval(7200) > .now }.sorted { $0.startsAt < $1.startsAt }
+    }
+
+    func createStudyGroup(placeID: UUID, startsAt: Date, note: String, capacity: Int?) throws -> StudyGroup {
+        if studyGroups.contains(where: { $0.isMine && $0.startsAt.addingTimeInterval(7200) > .now }) {
+            throw NSError(domain: "Campus", code: 409, userInfo: [NSLocalizedDescriptionKey: "STUDY_GROUP_ACTIVE_EXISTS"])
+        }
+        guard let place = places.first(where: { $0.id == placeID }) else {
+            throw NSError(domain: "Campus", code: 404, userInfo: [NSLocalizedDescriptionKey: "PLACE_NOT_FOUND"])
+        }
+        let group = StudyGroup(id: UUID(), host: me, place: place, startsAt: startsAt, note: note,
+                               capacity: capacity, members: [], createdAt: .now, isMine: true, joined: false)
+        studyGroups.insert(group, at: 0)
+        return group
+    }
+
+    func cancelStudyGroup(_ id: UUID) { studyGroups.removeAll { $0.id == id } }
+
+    func joinStudyGroup(_ id: UUID) throws {
+        guard let i = studyGroups.firstIndex(where: { $0.id == id }) else { return }
+        if studyGroups[i].isFull {
+            throw NSError(domain: "Campus", code: 409, userInfo: [NSLocalizedDescriptionKey: "STUDY_GROUP_FULL"])
+        }
+        studyGroups[i].members.append(me)
+        studyGroups[i].joined = true
+    }
+
+    func leaveStudyGroup(_ id: UUID) {
+        guard let i = studyGroups.firstIndex(where: { $0.id == id }) else { return }
+        studyGroups[i].members.removeAll { $0.id == me.id }
+        studyGroups[i].joined = false
     }
 
     // MARK: Kampüs insanları

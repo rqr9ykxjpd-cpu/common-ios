@@ -106,6 +106,7 @@ extension AppState {
         await loadStories()
         await loadClubs(silently: true)
         await loadMeetingRequests()
+        await loadStudyGroups(silently: true)
         await loadMessageRequests(silently: true)
         await loadProfileVisits(silently: true)
         try? await service.touchLastActive()
@@ -158,6 +159,7 @@ extension AppState {
             await loadStories()
             await loadClubs(silently: true)
             await loadMeetingRequests()
+            await loadStudyGroups(silently: true)
             await loadMessageRequests(silently: true)
             await loadProfileVisits(silently: true)
             try? await service.touchLastActive()
@@ -392,6 +394,7 @@ extension AppState {
         feedError = nil
         clubsError = nil
         joinedClubIDs = []
+        studyGroups = []
         myBadge = .none
         serverPlan = .free
         tier = subscriptions.tier

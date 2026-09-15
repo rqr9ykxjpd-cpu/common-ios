@@ -114,6 +114,8 @@ final class AppState {
     /// Liste yenilenince rozetin geri gelmesini engeller.
     var pendingNotificationReadIDs: Set<UUID> = []
     var meetingRequests: [MeetingRequest] = []
+    /// Açık çalışma grupları (akışın üstünde kartlar). Yakın saat önce.
+    var studyGroups: [StudyGroup] = []
 
     /// Eşleşmeden gelen/giden yanıt istekleri.
     var messageRequests: [MessageRequest] = []

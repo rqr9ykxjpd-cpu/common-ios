@@ -222,6 +222,64 @@ struct PlaceRow: Decodable {
     let area: String
 }
 
+struct StudyGroupRow: Decodable {
+    let id: UUID
+    let hostID: UUID
+    let startsAt: Date
+    let note: String
+    let capacity: Int?
+    let createdAt: Date
+    let place: PlaceRow?
+    let host: SupabaseProfileRow?
+    let members: [StudyGroupMemberRow]
+
+    enum CodingKeys: String, CodingKey {
+        case id, note, capacity, place, host, members
+        case hostID = "host_id"
+        case startsAt = "starts_at"
+        case createdAt = "created_at"
+    }
+}
+
+struct StudyGroupMemberRow: Decodable {
+    let userID: UUID
+    let joinedAt: Date
+    let profile: SupabaseProfileRow?
+    enum CodingKeys: String, CodingKey {
+        case profile
+        case userID = "user_id"
+        case joinedAt = "joined_at"
+    }
+}
+
+struct StudyGroupInsert: Encodable {
+    let hostID: UUID
+    let placeID: UUID
+    let startsAt: Date
+    let note: String
+    let capacity: Int?
+    enum CodingKeys: String, CodingKey {
+        case note, capacity
+        case hostID = "host_id"
+        case placeID = "place_id"
+        case startsAt = "starts_at"
+    }
+}
+
+struct StudyGroupMemberInsert: Encodable {
+    let groupID: UUID
+    let userID: UUID
+    enum CodingKeys: String, CodingKey {
+        case groupID = "group_id"
+        case userID = "user_id"
+    }
+}
+
+struct StudyGroupCancelUpdate: Encodable {
+    let cancelledAt: Date
+    enum CodingKeys: String, CodingKey { case cancelledAt = "cancelled_at" }
+}
+
 struct PlacePresenceRow: Decodable {
     let placeID: UUID
     let peopleCount: Int
@@ -411,6 +469,7 @@ struct NotificationRow: Decodable {
         case "message": .message
         case "club": .club
         case "announcement": .announcement
+        case "study_group": .studyGroup
         default: .meetingRequest
         }
     }

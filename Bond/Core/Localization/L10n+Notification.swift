@@ -37,6 +37,12 @@ extension L10n {
         static func meetingTitle(_ name: String) -> String {
             L10n.format("notification.meetingTitle", name)
         }
+        static func studyGroupTitle(_ name: String) -> String {
+            L10n.format("notification.studyGroupTitle", name)
+        }
+        static func studyGroupBody(_ name: String) -> String {
+            L10n.format("notification.studyGroupBody", name)
+        }
         static func meetingAcceptedTitle(_ name: String) -> String {
             L10n.format("notification.meetingAcceptedTitle", name)
         }

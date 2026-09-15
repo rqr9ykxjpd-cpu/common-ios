@@ -111,6 +111,8 @@ enum AppNotificationKind: Hashable {
     case like, comment, match, message, club, meetingRequest
     /// Kurucunun herkese duyurusu.
     case announcement
+    /// Çalışma grubuna katılım.
+    case studyGroup
 
     var systemName: String {
         switch self {
@@ -120,6 +122,7 @@ enum AppNotificationKind: Hashable {
         case .message: "message.fill"
         case .club: "person.3.fill"
         case .meetingRequest: "cup.and.saucer.fill"
+        case .studyGroup: "book.fill"
         case .announcement: "megaphone.fill"
         }
     }

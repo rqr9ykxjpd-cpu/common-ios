@@ -167,6 +167,12 @@ protocol ProductService: Sendable {
     func sendRightSwipe(to profileID: UUID) async throws -> RightSwipeOutcome
     /// Kurucuya doğrudan sohbet: bağlantı gerekmez. Açılan/yeniden açılan sohbetin kimliği.
     func openFounderChat() async throws -> UUID
+    /// Çalışma grupları: açık olanlar (iptal edilmemiş, süresi dolmamış), yakın saat önce.
+    func fetchStudyGroups() async throws -> [StudyGroup]
+    func createStudyGroup(placeID: UUID, startsAt: Date, note: String, capacity: Int?) async throws -> StudyGroup
+    func cancelStudyGroup(_ groupID: UUID) async throws
+    func joinStudyGroup(_ groupID: UUID) async throws
+    func leaveStudyGroup(_ groupID: UUID) async throws
     /// Sola kaydırma kaydı (sessiz).
     func recordLeftSwipe(on profileID: UUID) async throws
     /// Kurucu: kartımı kaydıranlar.
@@ -302,6 +308,11 @@ struct UnconfiguredProductService: ProductService {
     func sendMessageRequest(to profileID: UUID, body: String, storyID: UUID?) async throws { try fail() }
     func sendRightSwipe(to profileID: UUID) async throws -> RightSwipeOutcome { try fail() }
     func openFounderChat() async throws -> UUID { try fail() }
+    func fetchStudyGroups() async throws -> [StudyGroup] { try fail() }
+    func createStudyGroup(placeID: UUID, startsAt: Date, note: String, capacity: Int?) async throws -> StudyGroup { try fail() }
+    func cancelStudyGroup(_ groupID: UUID) async throws { try fail() }
+    func joinStudyGroup(_ groupID: UUID) async throws { try fail() }
+    func leaveStudyGroup(_ groupID: UUID) async throws { try fail() }
     func recordLeftSwipe(on profileID: UUID) async throws { try fail() }
     func fetchProfileSwipers() async throws -> [ProfileSwiper] { try fail() }
     func fetchFounderStats() async throws -> FounderStats { try fail() }

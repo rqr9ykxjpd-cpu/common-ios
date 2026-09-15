@@ -146,6 +146,8 @@ enum NotificationCopy {
         case .announcement:
             // Kurucunun yazdığı başlık olduğu gibi.
             return serverTitle
+        case .studyGroup:
+            return L10n.Notification.studyGroupTitle(actorName)
         }
     }
 
@@ -177,6 +179,8 @@ enum NotificationCopy {
             return L10n.Notification.meetingBody(place)
         case .club, .announcement:
             return serverBody
+        case .studyGroup:
+            return L10n.Notification.studyGroupBody(named.isEmpty ? L10n.Common.someone : named)
         }
     }
 }
