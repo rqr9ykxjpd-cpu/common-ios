@@ -411,6 +411,17 @@ actor SampleStore {
         return RightSwipeOutcome(matched: false, matchID: nil)
     }
 
+    /// Örnek veride kurucu "ben" olduğu için başka bir kurucu yoksa açılmaz.
+    func openFounderChat() throws -> UUID {
+        guard let kurucu = profiles.first(where: { $0.badge == .founder }) else {
+            throw NSError(domain: "Campus", code: 404, userInfo: [NSLocalizedDescriptionKey: "FOUNDER_NOT_FOUND"])
+        }
+        if let mevcut = conversations.first(where: { $0.profile.id == kurucu.id }) { return mevcut.id }
+        let yeni = Conversation(id: UUID(), profile: kurucu, messages: [], updatedAt: .now, unreadCount: 0)
+        conversations.insert(yeni, at: 0)
+        return yeni.id
+    }
+
     // MARK: Profil
 
     func allVisits() -> [ProfileVisit] { visits }

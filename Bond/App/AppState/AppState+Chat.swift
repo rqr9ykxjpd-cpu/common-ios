@@ -250,6 +250,20 @@ extension AppState {
     /// yazdığı mesajın anında kaybolduğunu görüyordu. En sık yolu kabul edilmiş
     /// bir buluşma isteğinden "Mesaj gönder"e basmaktı — buluşma kabulü eşleşme
     /// anlamına gelmiyor.
+    /// Kurucuya doğrudan sohbet. Sunucu bağlantıyı açar (istek/kabul yok) ve
+    /// sohbet kimliğini döner; liste tazelenince o sohbet açılır.
+    func openFounderChat(with profile: StudentProfile) async -> UUID? {
+        do {
+            let matchID = try await service.openFounderChat()
+            await loadConversations()
+            Haptics.success()
+            return conversationID(for: profile, matchID: matchID)
+        } catch {
+            showError(error, fallback: L10n.Profile.founderChatFailed)
+            return nil
+        }
+    }
+
     func conversationID(for profile: StudentProfile, matchID: UUID? = nil) -> UUID? {
         if let existing = conversations.first(where: { $0.profile.id == profile.id }) {
             return existing.id

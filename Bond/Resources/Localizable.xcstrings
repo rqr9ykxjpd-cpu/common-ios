@@ -9857,6 +9857,57 @@
         }
       }
     },
+    "profile.founderChatFailed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t open the chat."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sohbet açılamadı."
+          }
+        }
+      }
+    },
+    "profile.messageFounder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Message the founder"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kurucuya yaz"
+          }
+        }
+      }
+    },
+    "profile.messageFounderHint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No connection needed — you can message directly."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bağlantı gerekmez; doğrudan yazabilirsin."
+          }
+        }
+      }
+    },
     "profile.needMatchToChat" : {
       "extractionState" : "manual",
       "localizations" : {

@@ -11,6 +11,7 @@ struct SocialPersonDetailView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
     @State private var conversationRoute: ConversationRoute?
+    @State private var isOpeningFounderChat = false
     @State private var details: PersonProfileData?
     @State private var detailsError: String?
     @State private var isLoadingDetails = false
@@ -486,9 +487,36 @@ struct SocialPersonDetailView: View {
             }
             .buttonStyle(.bordered)
             .sensoryFeedback(.selection, trigger: conversationRoute?.id)
+        } else if kurucu {
+            // Kurucuya herkes doğrudan yazabilir; bağlantı isteği beklenmez.
+            VStack(spacing: 6) {
+                Button {
+                    Task { await openFounderChat() }
+                } label: {
+                    Label(L10n.Profile.messageFounder, systemImage: "message.fill")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(BondTheme.paper)
+                        .frame(maxWidth: .infinity, minHeight: 48)
+                        .background(BondTheme.ink, in: RoundedRectangle(cornerRadius: 14))
+                }
+                .buttonStyle(PressableStyle())
+                .disabled(isOpeningFounderChat)
+                Text(L10n.Profile.messageFounderHint)
+                    .font(.system(size: 11))
+                    .foregroundStyle(BondTheme.muted)
+            }
         }
         // Bağlantı isteği düğme değil, kartı sağa kaydırmak. VoiceOver için
         // aynı iş `cardBody` üstündeki accessibilityAction'da.
+    }
+
+    private func openFounderChat() async {
+        guard !isOpeningFounderChat else { return }
+        isOpeningFounderChat = true
+        defer { isOpeningFounderChat = false }
+        if let id = await appState.openFounderChat(with: profile) {
+            conversationRoute = ConversationRoute(id: id)
+        }
     }
 
     @ViewBuilder private var meetHere: some View {

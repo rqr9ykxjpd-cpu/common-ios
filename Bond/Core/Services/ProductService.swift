@@ -165,6 +165,8 @@ protocol ProductService: Sendable {
     func sendMessageRequest(to profileID: UUID, body: String, storyID: UUID?) async throws
     /// Profil kartını sağa kaydırma. Tek tarafta bildirim; karşılıklıysa eşleşme (DM) açılır.
     func sendRightSwipe(to profileID: UUID) async throws -> RightSwipeOutcome
+    /// Kurucuya doğrudan sohbet: bağlantı gerekmez. Açılan/yeniden açılan sohbetin kimliği.
+    func openFounderChat() async throws -> UUID
     /// Sola kaydırma kaydı (sessiz).
     func recordLeftSwipe(on profileID: UUID) async throws
     /// Kurucu: kartımı kaydıranlar.
@@ -299,6 +301,7 @@ struct UnconfiguredProductService: ProductService {
     func respondToMeetingRequest(_ requestID: UUID, accept: Bool) async throws -> UUID? { try fail() }
     func sendMessageRequest(to profileID: UUID, body: String, storyID: UUID?) async throws { try fail() }
     func sendRightSwipe(to profileID: UUID) async throws -> RightSwipeOutcome { try fail() }
+    func openFounderChat() async throws -> UUID { try fail() }
     func recordLeftSwipe(on profileID: UUID) async throws { try fail() }
     func fetchProfileSwipers() async throws -> [ProfileSwiper] { try fail() }
     func fetchFounderStats() async throws -> FounderStats { try fail() }

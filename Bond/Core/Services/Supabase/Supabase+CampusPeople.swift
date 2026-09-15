@@ -118,4 +118,8 @@ extension SupabaseProductService {
         let row = rows.first
         return RightSwipeOutcome(matched: row?.matched == true, matchID: row?.matchID)
     }
+
+    func openFounderChat() async throws -> UUID {
+        try await client.rpc("open_founder_chat").execute().value
+    }
 }

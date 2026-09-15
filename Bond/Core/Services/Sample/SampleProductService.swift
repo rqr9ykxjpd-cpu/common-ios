@@ -231,6 +231,7 @@ struct SampleProductService: ProductService {
     func sendRightSwipe(to profileID: UUID) async throws -> RightSwipeOutcome {
         try await store.addRightSwipe(to: profileID)
     }
+    func openFounderChat() async throws -> UUID { try await store.openFounderChat() }
     /// Kaydırmalar görünmez: tek yönlü istek listesi artık boş (sunucu da boş döner).
     func fetchIntroductionRequests() async throws -> [StudentProfile] { [] }
     func fetchMessageRequests() async throws -> [MessageRequest] { await store.allMessageRequests() }
