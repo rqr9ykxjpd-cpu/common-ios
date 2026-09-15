@@ -35,6 +35,8 @@ struct RootView: View {
             }
         }
         .preferredColorScheme(resolvedColorScheme)
+        // Klavye açıkken boşluğa dokununca kapanır; her ekranda ayrı ayrı bağlamak yerine tek yer.
+        .background(KeyboardDismissOnTap())
         .transaction { transaction in
             if reduceMotion {
                 transaction.animation = nil
