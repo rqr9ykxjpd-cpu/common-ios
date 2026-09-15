@@ -275,10 +275,6 @@ struct StudyGroupMemberInsert: Encodable {
     }
 }
 
-struct StudyGroupCancelUpdate: Encodable {
-    let cancelledAt: Date
-    enum CodingKeys: String, CodingKey { case cancelledAt = "cancelled_at" }
-}
 
 struct PlacePresenceRow: Decodable {
     let placeID: UUID

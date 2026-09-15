@@ -35,12 +35,10 @@ extension SupabaseProductService {
         return group
     }
 
+    /// RPC: doğrudan UPDATE, iptal edilen satır okuma politikasından düştüğü için
+    /// PostgREST'in RETURNING'li sarmalında RLS'e takılıyordu.
     func cancelStudyGroup(_ groupID: UUID) async throws {
-        try await client
-            .from("study_groups")
-            .update(StudyGroupCancelUpdate(cancelledAt: Date()))
-            .eq("id", value: groupID)
-            .execute()
+        try await client.rpc("cancel_study_group", params: PostVoterParams(target: groupID)).execute()
     }
 
     func joinStudyGroup(_ groupID: UUID) async throws {
