@@ -194,7 +194,8 @@ struct CommentsView: View {
                         Label(L10n.Common.report, systemImage: "flag")
                     }
                 }
-                if comment.isMine || appState.isModerator {
+                // Gönderi sahibi de kendi gönderisindeki cevabı kaldırabilir (sunucu kuralı).
+                if comment.isMine || post.isMine || appState.isModerator {
                     Button(
                         comment.isMine ? L10n.Comments.delete : L10n.Moderation.removeComment,
                         systemImage: "trash",

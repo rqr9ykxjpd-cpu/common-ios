@@ -292,8 +292,12 @@ extension AppState {
     }
 
     func deleteComment(_ commentID: UUID, from postID: UUID) {
+        // Kendi cevabı, kendi gönderisindeki cevap ya da moderatör. Önceden
+        // yalnızca `isMine` geçiyordu: menüde "Yorumu kaldır" çıkıyor ama
+        // düğme sessizce hiçbir şey yapmıyordu (sunucu kuralı zaten izin veriyor).
         guard let postIndex = posts.firstIndex(where: { $0.id == postID }),
-              posts[postIndex].comments.contains(where: { $0.id == commentID && $0.isMine }) else { return }
+              let comment = posts[postIndex].comments.first(where: { $0.id == commentID }),
+              comment.isMine || posts[postIndex].isMine || isModerator else { return }
         Task {
             do {
                 try await service.deleteComment(commentID)
