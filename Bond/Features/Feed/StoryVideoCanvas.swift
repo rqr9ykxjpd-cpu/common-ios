@@ -34,7 +34,8 @@ struct StoryVideoCanvas: UIViewRepresentable {
             player = item
             currentURL = url
             view.playerLayer.player = item
-            view.playerLayer.videoGravity = .resizeAspectFill
+            // Video da kırpılmasın: yatay klip siyah bantla tam sığar.
+            view.playerLayer.videoGravity = .resizeAspect
             if play {
                 item.play()
             }

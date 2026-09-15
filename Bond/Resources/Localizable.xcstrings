@@ -60,6 +60,26 @@
         }
       }
     },
+    "%@: %lld %@, %lld %@" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$lld %3$@, %4$lld %5$@"
+          }
+        }
+      }
+    },
+    "%@%lld%%" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@%2$lld%%"
+          }
+        }
+      }
+    },
     "%lld" : {
 
     },

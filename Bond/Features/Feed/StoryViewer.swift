@@ -180,15 +180,11 @@ struct StoryViewer: View {
 
     @ViewBuilder
     private func storyCanvas(_ story: CampusStory, size: CGSize) -> some View {
-        Group {
-            if story.isVideo, let url = story.videoURL {
-                StoryVideoCanvas(url: url, isPaused: isInteractionBlocking)
-            } else {
-                ProfileMedia(url: story.imageURL, data: story.localImageData, assetName: story.imageAssetName, kind: .content)
-            }
-        }
+        StoryMediaCanvas(
+            url: story.imageURL, data: story.localImageData, assetName: story.imageAssetName,
+            videoURL: story.isVideo ? story.videoURL : nil, isPaused: isInteractionBlocking
+        )
         .frame(width: size.width, height: size.height)
-        .clipped()
         .ignoresSafeArea()
     }
 

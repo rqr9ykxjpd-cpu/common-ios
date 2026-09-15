@@ -55,12 +55,20 @@ struct CreatePostView: View {
 
     var body: some View {
         NavigationStack {
-            composerForm
-            .scrollDismissesKeyboard(.interactively)
-            .dismissesKeyboardOnTap()
+            Group {
+                if isStory {
+                    storyComposer
+                } else {
+                    composerForm
+                        .scrollDismissesKeyboard(.interactively)
+                        .dismissesKeyboardOnTap()
+                }
+            }
             .keyboardDoneButton()
             .navigationTitle(isStory ? L10n.Composer.shareStory : L10n.Composer.sharePost)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(isStory ? .hidden : .automatic, for: .navigationBar)
+            .toolbarColorScheme(isStory ? .dark : nil, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(L10n.Common.close) { dismiss() }
@@ -195,6 +203,108 @@ struct CreatePostView: View {
             composerFields
         }
         .background(Color(uiColor: .systemGroupedBackground))
+    }
+
+    /// Story: tam ekran tuval. Görsel izleyicide nasıl görünecekse burada da
+    /// öyle (kırpma yok, bulanık dolgu). Not fotoğrafın üstüne yazılır, yer çipi
+    /// altta. Form kalktı: küçük kart, gerçek paylaşımı hiç göstermiyordu.
+    private var storyComposer: some View {
+        let filter: PHPickerFilter = .any(of: [.images, .videos])
+        return ZStack {
+            Color.black.ignoresSafeArea()
+            if imageData == nil {
+                storyEmptyState(filter: filter)
+            } else {
+                StoryMediaCanvas(url: nil, data: videoClip?.posterJPEG ?? imageData, videoURL: videoClip?.fileURL, isPaused: false)
+                    .ignoresSafeArea()
+                    .onTapGesture { UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil) }
+                storyOverlay(filter: filter)
+            }
+            if isPreparingMedia {
+                Color.black.opacity(0.35).ignoresSafeArea()
+                ProgressView().tint(.white).scaleEffect(1.2)
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+
+    private func storyEmptyState(filter: PHPickerFilter) -> some View {
+        VStack(spacing: BondTheme.Space.lg) {
+            PhotosPicker(selection: $selectedItem, matching: filter) {
+                VStack(spacing: BondTheme.Space.sm) {
+                    Image(systemName: "photo.badge.plus").font(.system(size: 40, weight: .light))
+                    Text(L10n.Composer.pickStoryPhoto).font(.system(size: 17, weight: .semibold))
+                    Text(L10n.Composer.storyNeedsPhoto).font(.footnote).foregroundStyle(.white.opacity(0.6))
+                }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 260)
+                .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(.white.opacity(0.15)))
+            }
+            .buttonStyle(.pressableCard)
+            Button(action: openCamera) {
+                Label(L10n.Composer.takePhoto, systemImage: "camera")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, minHeight: 48)
+                    .background(.white.opacity(0.12), in: Capsule())
+            }
+            .buttonStyle(.pressable)
+        }
+        .padding(.horizontal, BondTheme.Space.lg)
+        .disabled(isPreparingMedia || isPublishing)
+    }
+
+    /// Alt şerit: not alanı (izleyicideki yazı stiliyle), yer çipi, değiştir/kamera.
+    private func storyOverlay(filter: PHPickerFilter) -> some View {
+        VStack {
+            Spacer()
+            VStack(alignment: .leading, spacing: BondTheme.Space.md) {
+                TextField("", text: $caption, prompt: Text(L10n.Composer.storyPlaceholder).foregroundStyle(.white.opacity(0.55)), axis: .vertical)
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1...4)
+                    .textFieldStyle(.plain)
+                    .shadow(color: .black.opacity(0.5), radius: 6, y: 1)
+                HStack(spacing: 8) {
+                    Menu {
+                        Button(L10n.Composer.noPlace) { selectedPlace = nil }
+                        ForEach(appState.places) { place in
+                            Button(L10n.Composer.placeOption(place.name, place.area)) { selectedPlace = place }
+                        }
+                    } label: {
+                        storyChip(selectedPlace?.name ?? L10n.Composer.addPlace, icon: "mappin", highlighted: selectedPlace != nil)
+                    }
+                    Spacer()
+                    PhotosPicker(selection: $selectedItem, matching: filter) {
+                        // PhotosPicker etiketi Sendable kapanış; view'i dışarıda kur.
+                        StoryChipLabel(title: L10n.Composer.changePhoto, icon: "photo.on.rectangle", highlighted: false)
+                    }
+                    Button(action: openCamera) {
+                        Image(systemName: "camera")
+                            .font(.system(size: 14, weight: .semibold))
+                            .frame(width: 34, height: 34)
+                            .background(.white.opacity(0.18), in: Circle())
+                            .foregroundStyle(.white)
+                    }
+                    .buttonStyle(.pressable)
+                    .accessibilityLabel(L10n.Composer.takePhoto)
+                }
+            }
+            .padding(.horizontal, BondTheme.Space.lg)
+            .padding(.top, 40)
+            .padding(.bottom, BondTheme.Space.lg)
+            .background(
+                LinearGradient(colors: [.clear, .black.opacity(0.55)], startPoint: .top, endPoint: .bottom)
+                    .ignoresSafeArea()
+            )
+        }
+        .disabled(isPreparingMedia || isPublishing)
+    }
+
+    private func storyChip(_ title: String, icon: String, highlighted: Bool) -> some View {
+        StoryChipLabel(title: title, icon: icon, highlighted: highlighted)
     }
 
     private var composerFields: some View {
@@ -572,5 +682,21 @@ private struct ComposerPreview: View {
                 preview = nil
             }
         }
+    }
+}
+
+private struct StoryChipLabel: View {
+    let title: String
+    let icon: String
+    let highlighted: Bool
+    var body: some View {
+        HStack(spacing: 5) {
+            Image(systemName: icon).font(.system(size: 12, weight: .semibold))
+            Text(title).font(.footnote.weight(.semibold)).lineLimit(1)
+        }
+        .foregroundStyle(highlighted ? .black : .white)
+        .padding(.horizontal, 12)
+        .frame(height: 34)
+        .background(highlighted ? Color.white : Color.white.opacity(0.18), in: Capsule())
     }
 }
