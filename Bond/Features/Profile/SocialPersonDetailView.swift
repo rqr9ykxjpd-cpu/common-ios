@@ -493,7 +493,7 @@ struct SocialPersonDetailView: View {
                 Button {
                     Task { await openFounderChat() }
                 } label: {
-                    Label(L10n.Profile.messageFounder, systemImage: "message.fill")
+                    Label(L10n.Profile.sendMessage, systemImage: "message.fill")
                         .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(BondTheme.paper)
                         .frame(maxWidth: .infinity, minHeight: 48)

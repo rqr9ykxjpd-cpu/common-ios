@@ -9874,23 +9874,6 @@
         }
       }
     },
-    "profile.messageFounder" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Message the founder"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kurucuya yaz"
-          }
-        }
-      }
-    },
     "profile.messageFounderHint" : {
       "extractionState" : "manual",
       "localizations" : {

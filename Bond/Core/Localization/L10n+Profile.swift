@@ -87,7 +87,6 @@ extension L10n {
         static var photos: String { String(localized: "profile.photos") }
         static var theirPostsCaps: String { String(localized: "profile.theirPostsCaps") }
         static var needMatchToChat: String { String(localized: "profile.needMatchToChat") }
-        static var messageFounder: String { String(localized: "profile.messageFounder") }
         static var messageFounderHint: String { String(localized: "profile.messageFounderHint") }
         static var founderChatFailed: String { String(localized: "profile.founderChatFailed") }
         static var editTitle: String { String(localized: "profile.editTitle") }
