@@ -1,6 +1,51 @@
 import Foundation
+import UserNotifications
 
 extension AppState {
+    /// "Yerimi göster": ev sahibi fotoğrafı çekti; sıkıştır, yükle, karta koy.
+    @discardableResult
+    func shareStudyGroupSpot(_ groupID: UUID, imageData: Data) async -> Bool {
+        guard let i = studyGroups.firstIndex(where: { $0.id == groupID }), studyGroups[i].isMine else { return false }
+        guard let hazir = ImageCompression.prepareForUpload(imageData) else {
+            showError(L10n.StudyGroup.spotFailed); return false
+        }
+        do {
+            let url = try await service.setStudyGroupSpotPhoto(groupID, imageData: hazir)
+            if let j = studyGroups.firstIndex(where: { $0.id == groupID }) {
+                studyGroups[j].spotPhotoURL = url
+                studyGroups[j].spotPhotoAt = .now
+            }
+            show(L10n.StudyGroup.spotShared)
+            Haptics.success()
+            return true
+        } catch {
+            let ham = String(describing: error) + error.localizedDescription
+            if ham.contains("STUDY_GROUP_SPOT_WINDOW") { showError(L10n.StudyGroup.spotWindowClosed) }
+            else { showError(error, fallback: L10n.StudyGroup.spotFailed) }
+            return false
+        }
+    }
+
+    /// Ev sahibine başlangıçtan 15 dk önce yerel hatırlatma: "yerini fotoğrafla göster".
+    /// Sunucu zamanlayıcısı gerekmiyor; izin yoksa sessizce atlanır.
+    func scheduleStudySpotReminder(for group: StudyGroup) {
+        let ates = group.startsAt.addingTimeInterval(-15 * 60)
+        guard ates > Date() else { return }
+        let icerik = UNMutableNotificationContent()
+        icerik.title = L10n.StudyGroup.reminderTitle
+        icerik.body = L10n.StudyGroup.reminderBody(group.place.name)
+        icerik.sound = .default
+        let tetik = UNTimeIntervalNotificationTrigger(timeInterval: ates.timeIntervalSinceNow, repeats: false)
+        let istek = UNNotificationRequest(identifier: Self.spotReminderID(group.id), content: icerik, trigger: tetik)
+        UNUserNotificationCenter.current().add(istek)
+    }
+
+    func cancelStudySpotReminder(_ groupID: UUID) {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [Self.spotReminderID(groupID)])
+    }
+
+    private static func spotReminderID(_ groupID: UUID) -> String { "study-spot-\(groupID.uuidString)" }
+
     func loadStudyGroups(silently: Bool = false) async {
         do {
             studyGroups = try await service.fetchStudyGroups()
@@ -21,6 +66,7 @@ extension AppState {
             studyGroups.removeAll { $0.id == group.id }
             studyGroups.append(group)
             studyGroups.sort { $0.startsAt < $1.startsAt }
+            scheduleStudySpotReminder(for: group)
             show(L10n.StudyGroup.created)
             Haptics.success()
             promptForPushIfNeeded()
@@ -39,6 +85,7 @@ extension AppState {
     func cancelStudyGroup(_ groupID: UUID) {
         let onceki = studyGroups
         studyGroups.removeAll { $0.id == groupID }
+        cancelStudySpotReminder(groupID)
         Task {
             do {
                 try await service.cancelStudyGroup(groupID)

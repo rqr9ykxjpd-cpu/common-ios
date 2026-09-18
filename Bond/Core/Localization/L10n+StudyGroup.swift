@@ -8,6 +8,8 @@ extension L10n {
         static var composerHint: String { String(localized: "studyGroup.composerHint") }
         static var place: String { String(localized: "studyGroup.place") }
         static var time: String { String(localized: "studyGroup.time") }
+        static var now: String { String(localized: "studyGroup.now") }
+        static var pickTime: String { String(localized: "studyGroup.pickTime") }
         static var notePlaceholder: String { String(localized: "studyGroup.notePlaceholder") }
         static var capacityToggle: String { String(localized: "studyGroup.capacityToggle") }
         static func capacityValue(_ n: Int) -> String { L10n.format("studyGroup.capacityValue", Int64(n)) }
@@ -32,5 +34,18 @@ extension L10n {
         static var closed: String { String(localized: "studyGroup.closed") }
         static var mine: String { String(localized: "studyGroup.mine") }
         static var loadFailed: String { String(localized: "studyGroup.loadFailed") }
+        static var spotShow: String { String(localized: "studyGroup.spotShow") }
+        static var spotRetake: String { String(localized: "studyGroup.spotRetake") }
+        static var spotHint: String { String(localized: "studyGroup.spotHint") }
+        static var spotBeforeWindow: String { String(localized: "studyGroup.spotBeforeWindow") }
+        static var spotWaiting: String { String(localized: "studyGroup.spotWaiting") }
+        static var spotMembersOnly: String { String(localized: "studyGroup.spotMembersOnly") }
+        static func spotHere(_ name: String, _ time: String) -> String { L10n.format("studyGroup.spotHere", name, time) }
+        static var spotShared: String { String(localized: "studyGroup.spotShared") }
+        static var spotFailed: String { String(localized: "studyGroup.spotFailed") }
+        static var spotWindowClosed: String { String(localized: "studyGroup.spotWindowClosed") }
+        static var reminderTitle: String { String(localized: "studyGroup.reminderTitle") }
+        static func reminderBody(_ place: String) -> String { L10n.format("studyGroup.reminderBody", place) }
+        static var spotViewerTitle: String { String(localized: "studyGroup.spotViewerTitle") }
     }
 }

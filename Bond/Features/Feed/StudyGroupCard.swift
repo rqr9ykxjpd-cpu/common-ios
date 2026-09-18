@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 /// Akıştaki çalışma grubu kartı: kim, nerede, ne zaman; katılanların küçük
 /// avatarları; Kim nerede'deki BURADAYIM gibi tek dokunuşla "Katıl".
@@ -9,6 +10,9 @@ struct StudyGroupCard: View {
     @Environment(AppState.self) private var appState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showCancelConfirm = false
+    @State private var spotPickerItem: PhotosPickerItem?
+    @State private var isSharingSpot = false
+    @State private var showSpotViewer = false
 
     private static let saat: DateFormatter = {
         let f = DateFormatter(); f.locale = Locale(identifier: "tr_TR"); f.dateFormat = "HH:mm"; return f
@@ -89,6 +93,8 @@ struct StudyGroupCard: View {
                 Spacer(minLength: 8)
                 if !group.isMine { joinButton }
             }
+
+            spotSection
         }
         .padding(14)
         .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
@@ -96,6 +102,13 @@ struct StudyGroupCard: View {
             RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous)
                 .strokeBorder(group.joined ? BondTheme.ink.opacity(0.35) : Color.clear, lineWidth: 1)
         )
+        .onChange(of: spotPickerItem) { _, item in
+            guard let item else { return }
+            Task { await shareSpot(item) }
+        }
+        .fullScreenCover(isPresented: $showSpotViewer) {
+            PhotoZoomView(url: group.spotPhotoURL, data: nil)
+        }
         .confirmationDialog(L10n.StudyGroup.cancel, isPresented: $showCancelConfirm, titleVisibility: .visible) {
             Button(L10n.StudyGroup.cancel, role: .destructive) { appState.cancelStudyGroup(group.id) }
         } message: {
@@ -103,6 +116,88 @@ struct StudyGroupCard: View {
         }
         .animation(reduceMotion ? nil : BondTheme.Motion.snappy, value: group.joined)
         .animation(reduceMotion ? nil : BondTheme.Motion.snappy, value: group.members.count)
+    }
+
+    // MARK: - "Yerimi göster"
+
+    /// Ev sahibi: pencere açıksa çek/yeniden çek; kapalıysa ipucu. Katılan: fotoğraf
+    /// ya da "başlayınca gösterecek". Katılmayan: fotoğraf varsa "katılanlara açık".
+    @ViewBuilder private var spotSection: some View {
+        if group.isMine {
+            if group.spotWindowOpen {
+                VStack(alignment: .leading, spacing: 8) {
+                    if group.hasSpotPhoto { spotThumbnail }
+                    PhotosPicker(selection: $spotPickerItem, matching: .images) {
+                        HStack(spacing: 6) {
+                            if isSharingSpot { ProgressView().controlSize(.small) }
+                            else { Image(systemName: "camera.fill").font(.system(size: 13, weight: .semibold)) }
+                            Text(group.hasSpotPhoto ? L10n.StudyGroup.spotRetake : L10n.StudyGroup.spotShow)
+                                .font(.subheadline.weight(.semibold))
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 42)
+                        .foregroundStyle(group.hasSpotPhoto ? BondTheme.ink : BondTheme.paper)
+                        .background(group.hasSpotPhoto ? BondTheme.paper : BondTheme.ink, in: Capsule())
+                    }
+                    .disabled(isSharingSpot)
+                    if !group.hasSpotPhoto {
+                        Text(L10n.StudyGroup.spotHint)
+                            .font(.system(size: 12))
+                            .foregroundStyle(BondTheme.muted)
+                    }
+                }
+            } else if !group.hasStarted {
+                Label(L10n.StudyGroup.spotBeforeWindow, systemImage: "camera")
+                    .font(.system(size: 12))
+                    .foregroundStyle(BondTheme.muted)
+            }
+        } else if group.hasSpotPhoto {
+            if group.spotPhotoURL != nil {
+                spotThumbnail
+            } else {
+                Label(L10n.StudyGroup.spotMembersOnly, systemImage: "lock.fill")
+                    .font(.system(size: 12))
+                    .foregroundStyle(BondTheme.muted)
+            }
+        } else if group.joined {
+            Label(L10n.StudyGroup.spotWaiting, systemImage: "camera")
+                .font(.system(size: 12))
+                .foregroundStyle(BondTheme.muted)
+        }
+    }
+
+    private var spotThumbnail: some View {
+        Button { showSpotViewer = true } label: {
+            HStack(spacing: 10) {
+                ProfileMedia(url: group.spotPhotoURL, data: nil, kind: .content)
+                    .frame(width: 64, height: 64)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(L10n.StudyGroup.spotHere(group.host.name, group.spotPhotoAt.map { Self.saat.string(from: $0) } ?? ""))
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(BondTheme.ink)
+                    Text(group.place.name)
+                        .font(.system(size: 12))
+                        .foregroundStyle(BondTheme.muted)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "arrow.up.left.and.arrow.down.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(BondTheme.muted)
+            }
+            .padding(8)
+            .background(BondTheme.paper, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(L10n.StudyGroup.spotViewerTitle)
+    }
+
+    private func shareSpot(_ item: PhotosPickerItem) async {
+        isSharingSpot = true
+        defer { isSharingSpot = false; spotPickerItem = nil }
+        guard let data = try? await item.loadTransferable(type: Data.self) else {
+            appState.showError(L10n.StudyGroup.spotFailed); return
+        }
+        await appState.shareStudyGroupSpot(group.id, imageData: data)
     }
 
     /// Ev sahibi + katılanlar, üst üste binen küçük avatarlar; 4'ten sonrası "+N".

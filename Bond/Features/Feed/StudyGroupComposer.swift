@@ -6,13 +6,16 @@ struct StudyGroupComposer: View {
     @Environment(\.dismiss) private var dismiss
     @State private var placeID: UUID?
     @State private var startsAt: Date = Calendar.current.date(byAdding: .hour, value: 1, to: .now) ?? .now
+    /// "Şimdi": kütüphaneye oturmuş, hemen gelen olsun diye açıyor — en sık durum.
+    @State private var startsNow = true
     @State private var note = ""
     @State private var limitsHeadcount = false
     @State private var capacity = 4
     @State private var isSending = false
 
     private var place: CampusPlace? { appState.places.first { $0.id == placeID } }
-    private var canPublish: Bool { place != nil && !isSending && startsAt > Date().addingTimeInterval(-15 * 60) }
+    private var effectiveStart: Date { startsNow ? Date().addingTimeInterval(60) : startsAt }
+    private var canPublish: Bool { place != nil && !isSending && effectiveStart > Date().addingTimeInterval(-15 * 60) }
 
     var body: some View {
         NavigationStack {
@@ -31,14 +34,21 @@ struct StudyGroupComposer: View {
                     .pickerStyle(.menu)
                 }
                 Section(L10n.StudyGroup.time) {
-                    DatePicker(
-                        L10n.StudyGroup.time,
-                        selection: $startsAt,
-                        in: Date()...(Calendar.current.date(byAdding: .day, value: 6, to: .now) ?? .now),
-                        displayedComponents: [.date, .hourAndMinute]
-                    )
-                    .datePickerStyle(.compact)
-                    .environment(\.locale, Locale(identifier: "tr_TR"))
+                    Picker(L10n.StudyGroup.time, selection: $startsNow.animation()) {
+                        Text(L10n.StudyGroup.now).tag(true)
+                        Text(L10n.StudyGroup.pickTime).tag(false)
+                    }
+                    .pickerStyle(.segmented)
+                    if !startsNow {
+                        DatePicker(
+                            L10n.StudyGroup.time,
+                            selection: $startsAt,
+                            in: Date()...(Calendar.current.date(byAdding: .day, value: 6, to: .now) ?? .now),
+                            displayedComponents: [.date, .hourAndMinute]
+                        )
+                        .datePickerStyle(.compact)
+                        .environment(\.locale, Locale(identifier: "tr_TR"))
+                    }
                 }
                 Section {
                     TextField(L10n.StudyGroup.notePlaceholder, text: $note, axis: .vertical)
@@ -64,7 +74,7 @@ struct StudyGroupComposer: View {
                         isSending = true
                         Task {
                             let oldu = await appState.createStudyGroup(
-                                place: place, startsAt: startsAt, note: note,
+                                place: place, startsAt: effectiveStart, note: note,
                                 capacity: limitsHeadcount ? capacity : nil
                             )
                             isSending = false

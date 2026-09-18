@@ -229,6 +229,8 @@ struct StudyGroupRow: Decodable {
     let note: String
     let capacity: Int?
     let createdAt: Date
+    let spotPhotoPath: String?
+    let spotPhotoAt: Date?
     let place: PlaceRow?
     let host: SupabaseProfileRow?
     let members: [StudyGroupMemberRow]
@@ -238,8 +240,12 @@ struct StudyGroupRow: Decodable {
         case hostID = "host_id"
         case startsAt = "starts_at"
         case createdAt = "created_at"
+        case spotPhotoPath = "spot_photo_path"
+        case spotPhotoAt = "spot_photo_at"
     }
 }
+
+struct StudyGroupSpotParams: Encodable { let target: UUID; let path: String }
 
 struct StudyGroupMemberRow: Decodable {
     let userID: UUID

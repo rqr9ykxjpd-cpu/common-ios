@@ -2,7 +2,7 @@ import Foundation
 import Supabase
 
 private let studyGroupSelect = """
-id,host_id,starts_at,note,capacity,created_at,\
+id,host_id,starts_at,note,capacity,created_at,spot_photo_path,spot_photo_at,\
 place:places!study_groups_place_id_fkey(id,name,area),\
 host:profiles!study_groups_host_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified,badge),\
 members:study_group_members(user_id,joined_at,profile:profiles!study_group_members_user_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified,badge))
@@ -59,12 +59,26 @@ extension SupabaseProductService {
             .execute()
     }
 
+    /// Yol: <ev sahibi>/<grup>.jpg — bucket kuralı klasör = kullanıcı. Aynı yola
+    /// yeniden yükleme (upsert) fotoğrafı değiştirir.
+    func setStudyGroupSpotPhoto(_ groupID: UUID, imageData: Data) async throws -> URL? {
+        guard let userID = currentUserID else { throw BackendServiceError.missingSession }
+        let path = "\(userID.uuidString.lowercased())/\(groupID.uuidString.lowercased()).jpg"
+        try await client.storage.from("study-group-photos")
+            .upload(path, data: imageData, options: FileOptions(cacheControl: "60", contentType: "image/jpeg", upsert: true))
+        try await client.rpc("set_study_group_spot_photo", params: StudyGroupSpotParams(target: groupID, path: path)).execute()
+        return await signedURLs(bucket: "study-group-photos", paths: [path])[path]
+    }
+
     private func hydrate(_ rows: [StudyGroupRow]) async -> [StudyGroup] {
         guard !rows.isEmpty else { return [] }
         let userID = currentUserID
         let paths = rows.compactMap { $0.host?.avatarPath }
             + rows.flatMap { $0.members }.compactMap { $0.profile?.avatarPath }
-        let urls = await signedURLs(bucket: "profile-photos", paths: paths)
+        async let avatarURLs = signedURLs(bucket: "profile-photos", paths: paths)
+        // Katılmayanın imzalı URL isteği sunucuda reddedilir; sözlükte yer almaz.
+        async let spotURLs = signedURLs(bucket: "study-group-photos", paths: rows.compactMap(\.spotPhotoPath))
+        let (urls, spots) = await (avatarURLs, spotURLs)
         return rows.compactMap { row in
             guard let host = row.host, let place = row.place else { return nil }
             let members = row.members
@@ -83,7 +97,9 @@ extension SupabaseProductService {
                 members: members,
                 createdAt: row.createdAt,
                 isMine: row.hostID == userID,
-                joined: row.members.contains { $0.userID == userID }
+                joined: row.members.contains { $0.userID == userID },
+                spotPhotoURL: row.spotPhotoPath.flatMap { spots[$0] },
+                spotPhotoAt: row.spotPhotoAt
             )
         }
     }

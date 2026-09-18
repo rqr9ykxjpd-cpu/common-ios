@@ -56,7 +56,8 @@ actor SampleStore {
                 place: places.first(where: { $0.name == "Merkez Kütüphane" }) ?? places[0],
                 startsAt: Date().addingTimeInterval(3600), note: "Veri Yapıları vize tekrarı",
                 capacity: 5, members: [SampleData.profiles[2], SampleData.profiles[3]],
-                createdAt: Date().addingTimeInterval(-1200), isMine: false, joined: false
+                createdAt: Date().addingTimeInterval(-1200), isMine: false, joined: false,
+                spotPhotoURL: nil, spotPhotoAt: nil
             )
         ]
     }
@@ -75,7 +76,8 @@ actor SampleStore {
             throw NSError(domain: "Campus", code: 404, userInfo: [NSLocalizedDescriptionKey: "PLACE_NOT_FOUND"])
         }
         let group = StudyGroup(id: UUID(), host: me, place: place, startsAt: startsAt, note: note,
-                               capacity: capacity, members: [], createdAt: .now, isMine: true, joined: false)
+                               capacity: capacity, members: [], createdAt: .now, isMine: true, joined: false,
+                               spotPhotoURL: nil, spotPhotoAt: nil)
         studyGroups.insert(group, at: 0)
         return group
     }
@@ -95,6 +97,16 @@ actor SampleStore {
         guard let i = studyGroups.firstIndex(where: { $0.id == id }) else { return }
         studyGroups[i].members.removeAll { $0.id == me.id }
         studyGroups[i].joined = false
+    }
+
+    /// Örnek: fotoğraf geçici dosyaya yazılır, kart oradan okur.
+    func setStudyGroupSpotPhoto(_ id: UUID, imageData: Data) -> URL? {
+        guard let i = studyGroups.firstIndex(where: { $0.id == id }) else { return nil }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("spot-\(id.uuidString).jpg")
+        try? imageData.write(to: url)
+        studyGroups[i].spotPhotoURL = url
+        studyGroups[i].spotPhotoAt = .now
+        return url
     }
 
     // MARK: Kampüs insanları

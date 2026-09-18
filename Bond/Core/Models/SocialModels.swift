@@ -22,11 +22,21 @@ struct StudyGroup: Identifiable, Hashable {
     let createdAt: Date
     var isMine: Bool
     var joined: Bool
+    /// "Yerimi göster" fotoğrafı: yalnızca katılanlar ve ev sahibi imzalı URL alır.
+    /// Fotoğraf var ama URL yoksa (katılmayan) kartta "katılanlara açık" yazar.
+    var spotPhotoURL: URL?
+    var spotPhotoAt: Date?
 
     /// Ev sahibi + katılanlar.
     var headcount: Int { members.count + 1 }
     var isFull: Bool { capacity.map { headcount >= $0 } ?? false }
     var hasStarted: Bool { startsAt <= .now }
+    /// Fotoğraf penceresi: başlangıçtan 15 dk önce → bitişe kadar.
+    var spotWindowOpen: Bool {
+        let now = Date()
+        return now >= startsAt.addingTimeInterval(-15 * 60) && now < startsAt.addingTimeInterval(2 * 3600)
+    }
+    var hasSpotPhoto: Bool { spotPhotoAt != nil }
 }
 
 struct CampusPlace: Identifiable, Hashable, Codable {

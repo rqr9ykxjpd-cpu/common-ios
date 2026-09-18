@@ -239,6 +239,9 @@ struct SampleProductService: ProductService {
     func cancelStudyGroup(_ groupID: UUID) async throws { await store.cancelStudyGroup(groupID) }
     func joinStudyGroup(_ groupID: UUID) async throws { try await store.joinStudyGroup(groupID) }
     func leaveStudyGroup(_ groupID: UUID) async throws { await store.leaveStudyGroup(groupID) }
+    func setStudyGroupSpotPhoto(_ groupID: UUID, imageData: Data) async throws -> URL? {
+        await store.setStudyGroupSpotPhoto(groupID, imageData: imageData)
+    }
     /// Kaydırmalar görünmez: tek yönlü istek listesi artık boş (sunucu da boş döner).
     func fetchIntroductionRequests() async throws -> [StudentProfile] { [] }
     func fetchMessageRequests() async throws -> [MessageRequest] { await store.allMessageRequests() }
