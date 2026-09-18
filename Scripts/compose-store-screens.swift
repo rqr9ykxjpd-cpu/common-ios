@@ -22,7 +22,7 @@ struct Slide {
 }
 
 let slides: [Slide] = [
-    .init(file: "01-feed", title: "Kampüsün hali.", subtitle: "Akış, kulüp, kim nerede.", dark: false),
+    .init(file: "01-feed", title: "Kampüsün hali.", subtitle: "Soru sor, not paylaş, çalışma grubu kur.", dark: false),
     .init(file: "04-places", title: "Kim nerede?", subtitle: "Kampüs noktasını sen seçersin.", dark: false),
     .init(file: "03-story", title: "Kampüs anı.", subtitle: "Fotoğraf veya 15 saniyelik video.", dark: true),
     .init(file: "05-chats", title: "Kampüste yazış.", subtitle: "Aynı okul, aynı sohbet.", dark: false),

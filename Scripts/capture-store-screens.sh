@@ -28,7 +28,9 @@ xcrun simctl ui "$SIM" appearance light
 xcrun simctl privacy "$SIM" grant notifications "$BUNDLE" || true
 status_bar
 
-APP="$(find "$ROOT/.derived-sim/Build/Products" -name Bond.app -path '*iphonesimulator*' 2>/dev/null | head -1)"
+# Örnek mod yalnızca Debug derlemesinde var; Release-iphonesimulator seçilirse
+# karşılama ekranı çekiliyordu.
+APP="$ROOT/.derived-sim/Build/Products/Debug-iphonesimulator/Bond.app"
 if [ -z "$APP" ] || [ ! -d "$APP" ]; then
     echo "Bond.app yok; önce simülatör derlemesi lazım." >&2
     exit 1

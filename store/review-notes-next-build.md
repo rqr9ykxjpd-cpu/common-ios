@@ -8,13 +8,25 @@ do not put credentials in this repository.
 ## Notes for Review
 
 Common is a campus-focused social app for university students; each user sees only their own campus. It is
-currently offered in Türkiye. It includes a campus feed, manually selected
+currently offered in Türkiye. It includes a campus feed (questions, lecture
+notes, events, announcements, help requests), study groups, manually selected
 campus places, clubs (opened from the feed), meetup requests and messaging.
 There is no people-directory or swipe-discovery tab. The main tabs are Feed,
 On Campus, Chats and Profile. Clubs is not a tab; it opens as a sheet from
 Feed. Existing conversations are preserved.
-Profiles offer a written message request. The recipient chooses whether to
-accept before a conversation opens.
+
+Study groups: from the feed, a student can post "I will study at <campus
+place> at <time>" with a short note and an optional headcount limit. The
+group appears as a card above the feed; other students join with one tap and
+their avatars are shown on the card. There is no group chat. A group expires
+two hours after its start time; the host can cancel it; moderators can remove it.
+
+Founder contact: the founder's profile (badge "Common kurucusu") has a
+"Send message" button that opens a direct conversation without a connection
+request, so any student can reach the team from inside the app.
+
+Message requests: replying to a story sends a written message request; the
+recipient chooses whether to accept before a conversation opens.
 
 A profile card can also be swiped right, but only on a profile the user has
 deliberately opened from the feed, a campus place, a notification or a chat.
@@ -59,6 +71,22 @@ manually by the user for a limited time.
 
 English Terms: https://rqr9ykxjpd-cpu.github.io/common-ios/en/terms.html
 English Privacy: https://rqr9ykxjpd-cpu.github.io/common-ios/en/privacy.html
+
+## Build 5 — what changed since build 4 (for "What's New" / internal)
+
+- Study groups (create, join, leave, cancel; cards above the feed).
+- "Send message" on the founder's profile.
+- Read receipts: messages are now marked read when a conversation is opened
+  (server policy fix).
+- Content from suspended or blocked accounts no longer appears in the feed,
+  comments or stories.
+- Restore Purchases no longer hides a plan the server already knows about.
+- Moderators and post owners can remove comments.
+- Keyboard dismisses when tapping outside a text field.
+- Feed no longer stays empty after a cold launch.
+
+Store version: keep 1.0 if build 4 is still unreleased (replace the build);
+use 1.0.1 if build 4 has been released.
 
 ## Before submission
 
