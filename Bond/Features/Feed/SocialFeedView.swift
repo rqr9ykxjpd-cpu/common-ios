@@ -355,11 +355,23 @@ struct SocialFeedView: View {
                 .scrollClipDisabled()
 
                 if coklu {
-                    HStack(spacing: 6) {
-                        ForEach(groups) { group in
-                            Capsule()
-                                .fill(group.id == (studyGroupPage ?? groups.first?.id) ? BondTheme.ink : BondTheme.ink.opacity(0.18))
-                                .frame(width: group.id == (studyGroupPage ?? groups.first?.id) ? 16 : 6, height: 6)
+                    let aktif = studyGroupPage ?? groups.first?.id
+                    Group {
+                        if groups.count <= 8 {
+                            HStack(spacing: 6) {
+                                ForEach(groups) { group in
+                                    Capsule()
+                                        .fill(group.id == aktif ? BondTheme.ink : BondTheme.ink.opacity(0.18))
+                                        .frame(width: group.id == aktif ? 16 : 6, height: 6)
+                                }
+                            }
+                        } else {
+                            // Çok grupta noktalar taşar; "3 / 12" sayacı.
+                            let sira = (groups.firstIndex { $0.id == aktif } ?? 0) + 1
+                            Text("\(sira) / \(groups.count)")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(BondTheme.muted)
+                                .contentTransition(.numericText())
                         }
                     }
                     .frame(maxWidth: .infinity)
