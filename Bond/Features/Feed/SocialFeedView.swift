@@ -16,6 +16,7 @@ struct SocialFeedView: View {
     @State private var showPlacesWall = false
     @State private var selectedPostAuthor: StudentProfile?
     @State private var showStudyGroupComposer = false
+    @State private var studyGroupPage: UUID?
     /// Avatar → kişi kartı zoom geçişinin ad alanı.
     @Namespace private var profileZoom
 
@@ -312,25 +313,63 @@ struct SocialFeedView: View {
         .accessibilityLabel(L10n.StudyGroup.create)
     }
 
-    /// Açık çalışma grupları: gönderilerin üstünde, yakın saat önce. Yoksa görünmez.
+    /// Açık çalışma grupları: gönderilerin üstünde, yatay şerit. Alt alta
+    /// dizilince gönderiler ekrandan düşüyordu. Bir sonraki kartın kenarı
+    /// görünür (kaydırılabilir olduğunun işareti), başlıkta sayı, altta noktalar.
     @ViewBuilder private var studyGroupsSection: some View {
-        if !appState.studyGroups.isEmpty {
+        let groups = appState.studyGroups
+        if !groups.isEmpty {
+            let coklu = groups.count > 1
             VStack(alignment: .leading, spacing: 10) {
-                Text(L10n.StudyGroup.sectionTitle)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(BondTheme.muted)
-                    .textCase(.uppercase)
-                    .kerning(0.6)
-                ForEach(appState.studyGroups) { group in
-                    StudyGroupCard(group: group) { profile in
-                        selectedPostAuthor = profile
+                HStack(spacing: 6) {
+                    Text(L10n.StudyGroup.sectionTitle)
+                    if coklu {
+                        Text("·")
+                        Text("\(groups.count)").contentTransition(.numericText())
                     }
                 }
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(BondTheme.muted)
+                .textCase(.uppercase)
+                .kerning(0.6)
+                .padding(.horizontal, 20)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .top, spacing: 12) {
+                        ForEach(groups) { group in
+                            StudyGroupCard(group: group) { profile in
+                                selectedPostAuthor = profile
+                            }
+                            .containerRelativeFrame(.horizontal) { width, _ in
+                                // Çoklu: komşu kartın 36pt'i görünsün; tek: tam genişlik.
+                                coklu ? width - 36 : width
+                            }
+                            .id(group.id)
+                        }
+                    }
+                    .scrollTargetLayout()
+                }
+                .contentMargins(.horizontal, 20, for: .scrollContent)
+                .scrollTargetBehavior(.viewAligned)
+                .scrollPosition(id: $studyGroupPage)
+                .scrollClipDisabled()
+
+                if coklu {
+                    HStack(spacing: 6) {
+                        ForEach(groups) { group in
+                            Capsule()
+                                .fill(group.id == (studyGroupPage ?? groups.first?.id) ? BondTheme.ink : BondTheme.ink.opacity(0.18))
+                                .frame(width: group.id == (studyGroupPage ?? groups.first?.id) ? 16 : 6, height: 6)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .animation(reduceMotion ? nil : BondTheme.Motion.snappy, value: studyGroupPage)
+                    .accessibilityHidden(true)
+                }
             }
-            .padding(.horizontal, 20)
             .padding(.top, BondTheme.Space.xs)
             .padding(.bottom, BondTheme.Space.md)
-            .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: appState.studyGroups.map(\.id))
+            .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: groups.map(\.id))
         }
     }
 

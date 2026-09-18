@@ -50,16 +50,14 @@ struct StudyGroupCard: View {
                                 .foregroundStyle(BondTheme.burntOrange)
                         }
                     }
-                    HStack(spacing: 5) {
-                        Image(systemName: "mappin.and.ellipse").font(.system(size: 11, weight: .semibold))
-                        Text(group.place.name)
-                        Text("·")
-                        Image(systemName: "clock").font(.system(size: 11, weight: .semibold))
-                        Text(group.hasStarted ? L10n.StudyGroup.started : whenText)
-                    }
-                    .font(.system(size: 13))
-                    .foregroundStyle(BondTheme.muted)
-                    .lineLimit(1)
+                    // Tek Text: dar kartta (yatay şerit) yer adı kesilmek yerine
+                    // ikinci satıra sarar, saat hep tam görünür.
+                    (Text(Image(systemName: "mappin.and.ellipse")) + Text(" \(group.place.name)  ")
+                        + Text(Image(systemName: "clock")) + Text(" \(group.hasStarted ? L10n.StudyGroup.started : whenText)"))
+                        .font(.system(size: 13))
+                        .foregroundStyle(BondTheme.muted)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 8)
                 if group.isMine {
@@ -96,6 +94,8 @@ struct StudyGroupCard: View {
 
             spotSection
         }
+        // Yatay şeritte kartlar aynı boyda: kısa içerikli kartın zemini de dolsun.
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .padding(14)
         .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
         .overlay(
