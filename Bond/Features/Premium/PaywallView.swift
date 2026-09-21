@@ -59,7 +59,12 @@ struct PaywallView: View {
         }
         .task { await store.loadProducts() }
         // Plus'taki kullanıcı için tek anlamlı seçenek Pro; Pro'daki için hiçbiri.
-        .onAppear { if currentTier >= selectedTier { selectedTier = .pro } }
+        .onAppear {
+            if currentTier >= selectedTier { selectedTier = .pro }
+#if DEBUG
+            if let plan = appState.debugPaywallPlan { selectedTier = plan }
+#endif
+        }
         .alert(L10n.Paywall.problem, isPresented: Binding(
             get: { alertMessage != nil },
             set: { if !$0 { alertMessage = nil } }

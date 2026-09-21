@@ -70,10 +70,13 @@ struct BondApp: App {
                 state.opensProfileOf = .some(ad)
             }
             if arguments.contains("-paywall") { state.opensPaywall = true }
+            if let i = arguments.firstIndex(of: "-plan"), i + 1 < arguments.count {
+                state.debugPaywallPlan = ["plus": SubscriptionTier.plus, "pro": .pro][arguments[i + 1]]
+            }
             if arguments.contains("-pronote") { state.opensProNote = true }
             // `-badge founder`: kurucuya özel ekranları görmek için.
             if let i = arguments.firstIndex(of: "-badge"), i + 1 < arguments.count {
-                let rozetler: [String: ProfileBadge] = ["founder": .founder, "moderator": .moderator]
+                let rozetler: [String: ProfileBadge] = ["founder": .founder, "moderator": .moderator, "none": .none]
                 if let rozet = rozetler[arguments[i + 1]] {
                     state.myBadge = rozet
                     state.debugBadgeOverride = rozet

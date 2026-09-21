@@ -60,8 +60,8 @@ shot() {
 # kulüpler, story, kampüs noktaları ve sohbet üzerine kurulu.
 shot 01-feed 6.5 -sample -tab feed
 shot 02-clubs 6.0 -sample -club
-shot 03-story 6.0 -sample -story Ece
-shot 04-places 6.0 -sample -places
+shot 03-story 6.0 -sample -story Mina -badge none
+shot 04-places 6.0 -sample -tab places
 shot 05-chats 6.0 -sample -tab chats -chats
 shot 06-profile 5.5 -sample -profile Ece
 

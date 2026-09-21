@@ -142,7 +142,20 @@ enum SampleData {
     static var conversations: [Conversation] {
         let ece = profiles[0]
         let defne = profiles[1]
+        let mina = profiles[4]
+        let arda = profiles[5]
+        let selin = profiles[3]
         return [
+            Conversation(
+                id: UUID(),
+                profile: mina,
+                messages: [
+                    Message(body: "Veri Yapıları notlarını attım, hash kısmına özellikle bak 📎", isMine: false, sentAt: hours(0.6)),
+                    Message(body: "Yarın kütüphanede 15.00'te birlikte bakalım mı?", isMine: false, sentAt: hours(0.4))
+                ],
+                updatedAt: hours(0.4),
+                unreadCount: 2
+            ),
             Conversation(
                 id: UUID(),
                 profile: ece,
@@ -165,6 +178,27 @@ enum SampleData {
                 ],
                 updatedAt: hours(3),
                 unreadCount: 1
+            ),
+            Conversation(
+                id: UUID(),
+                profile: arda,
+                messages: [
+                    Message(body: "Cumartesi 10.00 bisiklet turu var, kampüs kapısında toplanıyoruz", isMine: false, sentAt: hours(9)),
+                    Message(body: "Varım, kask lazım mı?", isMine: true, sentAt: hours(8.5)),
+                    Message(body: "Kulüpte fazladan var, hallederiz 🚴", isMine: false, sentAt: hours(8))
+                ],
+                updatedAt: hours(8),
+                unreadCount: 0
+            ),
+            Conversation(
+                id: UUID(),
+                profile: selin,
+                messages: [
+                    Message(body: "Münazara turnuvası için ekip kuruyoruz, ilgilenir misin?", isMine: false, sentAt: hours(30)),
+                    Message(body: "Konu ne? Hafta içi akşamları uygunum", isMine: true, sentAt: hours(29))
+                ],
+                updatedAt: hours(29),
+                unreadCount: 0
             )
         ]
     }
@@ -177,7 +211,7 @@ enum SampleData {
                     ("Mina", "Işık gerçekten güzel olmuş", 5)
                  ]),
             post(author: profiles[4], caption: "Veri Yapıları vizesinde geçen yılki sorular çıkıyor mu? Elinde eski soru olan var mı?",
-                 place: nil, asset: nil, createdAt: hours(3.5), likes: 6, liked: false, kind: .question, comments: [
+                 place: nil, asset: nil, createdAt: hours(3.5), likes: 16, liked: false, kind: .question, comments: [
                     ("Arda", "Geçen yıl ağaçlar ve hash ağırlıklıydı, notlarımı atarım", 9),
                     ("Selin", "Hoca bu yıl soruları değiştirdi diye duydum", 3)
                  ]),
@@ -185,9 +219,10 @@ enum SampleData {
                  place: nil, asset: nil, createdAt: hours(5), likes: 18, liked: true, kind: .notes, comments: [
                     ("Mina", "Süpersin, mühendislik grubuna da at", 4)
                  ]),
-            post(author: profiles[3], caption: "Yarın 09.00'da Hazırlık binasına masa taşıyoruz, iki kişi lazım. Kahve benden.",
-                 place: nil, asset: nil, createdAt: hours(6), likes: 8, liked: false, kind: .help, comments: [
-                    ("Arda", "Ben varım, 8.45'te oradayım", 3)
+            post(author: profiles[3], caption: "Perşembe 19.00 açık hava sineması: amfide, battaniyeni getir. Kısa filmler gecesi.",
+                 place: nil, asset: nil, createdAt: hours(6), likes: 41, liked: false, kind: .event, comments: [
+                    ("Arda", "Biz 3 kişi geliyoruz", 7),
+                    ("Mina", "Mısır kimden?", 4)
                  ]),
             post(author: profiles[4], caption: "Vize haftası kütüphane kampı başladı. İkinci kahve gidiyor.",
                  place: "Merkez Kütüphane", asset: "post-study", createdAt: hours(7), likes: 21, liked: false, comments: [

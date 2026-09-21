@@ -360,6 +360,8 @@ final class AppState {
     var opensProfileOf: String??
     /// Yalnızca geliştirme derlemesinde: Plus ekranını açar (tasarım kontrolü).
     var opensPaywall = false
+    /// `-plan pro`: paywall'da ön seçili paket (abonelik inceleme ekran görüntüsü için).
+    var debugPaywallPlan: SubscriptionTier?
     var opensProNote = false
     /// `-onboarding <adım>` ile açıldığında oturum geri yüklemesi rotayı ezmesin diye.
     /// Yalnızca geliştirme derlemesinde var.
