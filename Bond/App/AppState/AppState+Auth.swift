@@ -5,8 +5,12 @@ import AuthenticationServices
 extension AppState {
     /// Apple'ın verdiği ham (hash'lenmemiş) nonce'u geçir; `SupabaseProductService` bunu
     /// olduğu gibi Supabase'e iletir, hash'lenmiş hali yalnızca Apple'a giden istekte kullanılır.
+    /// `providerName`: Apple/Google'ın verdiği ad. Kayıt adımında ad alanı bununla
+    /// dolu gelir; Apple girişinden sonra adı yeniden sormak App Review'de
+    /// Guideline 4 (Sign in with Apple) reddine yol açıyordu.
     @discardableResult
-    func signInWithApple(idToken: String, nonce: String) async -> Bool {
+    func signInWithApple(idToken: String, nonce: String, providerName: String? = nil) async -> Bool {
+        pendingProviderName = providerName?.trimmingCharacters(in: .whitespacesAndNewlines)
         do {
             try await service.signInWithApple(idToken: idToken, nonce: nonce)
             // A new Apple authorization grants permission again, so an old
@@ -23,7 +27,8 @@ extension AppState {
     }
 
     @discardableResult
-    func signInWithGoogle(idToken: String, accessToken: String, nonce: String) async -> Bool {
+    func signInWithGoogle(idToken: String, accessToken: String, nonce: String, providerName: String? = nil) async -> Bool {
+        pendingProviderName = providerName?.trimmingCharacters(in: .whitespacesAndNewlines)
         do {
             try await service.signInWithGoogle(idToken: idToken, accessToken: accessToken, nonce: nonce)
         } catch {
@@ -94,10 +99,17 @@ extension AppState {
             return false
         }
         guard let profile else {
+            // Sunucuda profil yok: kayıt adımı. Sağlayıcı ad verdiyse alan dolu gelir.
+            if draft.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+               let ad = pendingProviderName, !ad.isEmpty {
+                draft.name = ad
+            }
+            pendingProviderName = nil
             persistSession()
             withAnimation(.smooth(duration: 0.55)) { route = .onboarding(.identity) }
             return true
         }
+        pendingProviderName = nil
         applyRemoteProfile(profile)
         persistSession()
         let fotograflarOkundu = await loadMyProfilePhotos()

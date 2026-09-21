@@ -10183,6 +10183,40 @@
         }
       }
     },
+    "profile.upgradeTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Common Plus and Pro"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Common Plus ve Pro"
+          }
+        }
+      }
+    },
+    "profile.upgradeHint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subscriptions: remove connection, meetup and post limits."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonelikler: bağlantı, buluşma ve gönderi sınırlarını kaldır."
+          }
+        }
+      }
+    },
     "profile.needMatchToChat" : {
       "extractionState" : "manual",
       "localizations" : {

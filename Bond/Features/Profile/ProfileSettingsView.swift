@@ -25,6 +25,20 @@ struct ProfileSettingsView: View {
 
         NavigationStack {
             List {
+                // Abonelik girişi en üstte ve açık adla: App Review 2.1(b) "satın almayı
+                // bulamadık" dedi; Planım kartı ve kilitli satırlar yetmemiş.
+                if appState.tier != .pro {
+                    Section {
+                        settingsButton(
+                            icon: "crown.fill",
+                            title: L10n.Profile.upgradeTitle,
+                            detail: L10n.Profile.upgradeHint,
+                            trailing: appState.tier == .free ? L10n.Tier.plus + " · " + L10n.Tier.pro : L10n.Tier.pro
+                        ) {
+                            showPaywall = true
+                        }
+                    }
+                }
                 Section(L10n.Profile.yourAccount) {
                     if appState.isModerator {
                         settingsButton(

@@ -189,6 +189,9 @@ final class AppState {
     /// değişikliği bildirdiğinde `tier` bunun altına düşmez.
     var serverPlan: SubscriptionTier = .free
 
+    /// Apple/Google girişinin verdiği ad; yalnızca ilk kayıtta ad alanını doldurmak için.
+    var pendingProviderName: String?
+
     /// StoreKit katmanı. Uygulama boyunca tek örnek: `Transaction.updates`
     /// dinleyicisi açılışta başlayıp hiç kapanmamalı.
     let subscriptions = SubscriptionStore()

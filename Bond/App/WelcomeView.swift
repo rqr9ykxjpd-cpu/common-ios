@@ -217,9 +217,11 @@ struct WelcomeView: View {
                 appState.showError(L10n.Welcome.appleIncomplete)
                 return
             }
+            // Apple adı yalnızca ilk yetkilendirmede verir; sonraki girişlerde nil.
+            let ad = credential.fullName.map { PersonNameComponentsFormatter.localizedString(from: $0, style: .default) }
             isSigningIn = true
             Task {
-                await appState.signInWithApple(idToken: idToken, nonce: nonce)
+                await appState.signInWithApple(idToken: idToken, nonce: nonce, providerName: ad)
                 isSigningIn = false
             }
         case .failure(let error):
@@ -273,7 +275,8 @@ struct WelcomeView: View {
                 await appState.signInWithGoogle(
                     idToken: idToken,
                     accessToken: result.user.accessToken.tokenString,
-                    nonce: nonce
+                    nonce: nonce,
+                    providerName: result.user.profile?.name
                 )
             } catch {
                 let nsError = error as NSError

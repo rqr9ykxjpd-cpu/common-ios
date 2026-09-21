@@ -89,6 +89,8 @@ extension L10n {
         static var needMatchToChat: String { String(localized: "profile.needMatchToChat") }
         static var messageFounderHint: String { String(localized: "profile.messageFounderHint") }
         static var founderChatFailed: String { String(localized: "profile.founderChatFailed") }
+        static var upgradeTitle: String { String(localized: "profile.upgradeTitle") }
+        static var upgradeHint: String { String(localized: "profile.upgradeHint") }
         static var editTitle: String { String(localized: "profile.editTitle") }
         static var publishNote: String { String(localized: "profile.publishNote") }
         static var discardTitle: String { String(localized: "profile.discardTitle") }
