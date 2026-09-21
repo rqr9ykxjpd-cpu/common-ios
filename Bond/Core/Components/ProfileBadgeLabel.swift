@@ -24,6 +24,21 @@ struct ProfileBadgeLabel: View {
     }
 }
 
+/// Öğrenci e-postası doğrulanmış hesabın küçük rozeti; rozet kapsülüyle aynı boy.
+struct EduStudentChip: View {
+    var body: some View {
+        Label(L10n.Edu.badge, systemImage: "checkmark.seal.fill")
+            .font(.system(size: 10, weight: .semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 8)
+            .frame(height: 22)
+            .background(BondTheme.violet, in: Capsule())
+            .lineLimit(1)
+            .fixedSize()
+            .accessibilityLabel(L10n.Edu.verifiedLine)
+    }
+}
+
 /// Kurucu künyesi — rozetin altındaki kimlik satırı.
 ///
 /// Basit el yazısı (Noteworthy Bold): Girişimci · Startup Developer / Concept Manager.

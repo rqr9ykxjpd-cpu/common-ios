@@ -44,6 +44,7 @@ struct SocialProfileView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
                     identity
+                    if appState.eduNeedsAttention { EduVerificationCard() }
                     tools
                     gallery
                     posts
@@ -201,7 +202,11 @@ struct SocialProfileView: View {
                 .filter { !$0.isEmpty }.joined(separator: " · "))
                 .font(.subheadline).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-            ProfileBadgeLabel(badge: appState.myBadge, compact: true)
+            // İki rozet dar sütuna sığmayınca alt satıra insin; HStack sütunu taşırıyordu.
+            FlowLayout(spacing: 6) {
+                ProfileBadgeLabel(badge: appState.myBadge, compact: true)
+                if appState.eduStatus?.isVerified == true { EduStudentChip() }
+            }
             // Kurucu künyesi kendi profilinde de görünsün; kartta zaten vardı.
             if appState.myBadge == .founder {
                 FounderCredLine(size: 15)
@@ -508,11 +513,12 @@ struct SocialProfileView: View {
         defer { if loadID == operation { loadingPosts = false } }
 
         async let fetchedPosts = appState.personPosts(for: account)
+        async let edu: Void = appState.loadEduStatus()
         async let introductions: Void = appState.loadIntroductionRequests()
         async let meetings: Void = appState.loadMeetingRequests(silently: true)
         async let messages: Void = appState.loadMessageRequests(silently: true)
         let fetched = await fetchedPosts
-        _ = await (introductions, meetings, messages)
+        _ = await (introductions, meetings, messages, edu)
 
         guard loadID == operation, account == appState.currentUserID, !Task.isCancelled else { return }
         profilePosts = fetched

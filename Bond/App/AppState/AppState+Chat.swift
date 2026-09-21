@@ -64,6 +64,8 @@ extension AppState {
         await loadStories()
         try? await service.touchLastActive()
         await startPushRegistration()
+        // Kullanıcı maildeki doğrulama bağlantısına Safari'de dokunup geri gelmiş olabilir.
+        if eduStatus?.isPending == true { await syncEduVerification() }
     }
     /// Engellediğin kişiler. Ayarlardaki liste bunu okuyor.
     ///

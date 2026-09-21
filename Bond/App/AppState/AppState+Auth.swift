@@ -407,6 +407,7 @@ extension AppState {
         clubsError = nil
         joinedClubIDs = []
         studyGroups = []
+        eduStatus = nil
         myBadge = .none
         serverPlan = .free
         tier = subscriptions.tier

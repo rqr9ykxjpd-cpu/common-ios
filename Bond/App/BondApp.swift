@@ -43,7 +43,17 @@ struct BondApp: App {
             // yönlendirir. Sunucu olmadan bu ekranları görmenin başka yolu yok.
             // İsteğe bağlı olarak adım adı verilebilir: `-onboarding ready`
             let onboarding = arguments.contains("-onboarding")
-            let state = AppState(service: SampleProductService(hasProfile: !onboarding))
+            // `-edu none|pending|verified|exempt`: öğrenci e-postası kartının durumları.
+            var edu = EduVerificationStatus.unknown
+            if let i = arguments.firstIndex(of: "-edu"), i + 1 < arguments.count {
+                switch arguments[i + 1] {
+                case "pending": edu.pendingEmail = "220207018@ogrenci.yalova.edu.tr"
+                case "verified": edu.email = "220207018@ogrenci.yalova.edu.tr"; edu.verifiedAt = .now
+                case "exempt": edu.exempt = true
+                default: break
+                }
+            }
+            let state = AppState(service: SampleProductService(hasProfile: !onboarding, eduStatus: edu))
             if !onboarding, let asset = SampleData.me.imageAssetName {
                 state.avatarData = UIImage(named: asset)?.jpegData(compressionQuality: 0.85)
             }
@@ -130,7 +140,10 @@ struct BondApp: App {
                     // Üniversite e-postasındaki giriş bağlantısı bu şemayla geliyor
                     // (bkz. Info.plist, SupabaseProductService.requestEmailSignInLink).
                     // Google'ın kendi geri çağrısıyla karışmasın diye şemaya bakıyoruz.
-                    if url.scheme == "bond" {
+                    if url.scheme == "bond", url.host == "edu-verified" {
+                        // Doğrulama sayfasındaki "Uygulamaya dön" düğmesi.
+                        Task { await appState.syncEduVerification() }
+                    } else if url.scheme == "bond" {
                         Task { await appState.completeEmailSignIn(url: url) }
                     } else {
                         GIDSignIn.sharedInstance.handle(url)

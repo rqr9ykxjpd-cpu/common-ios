@@ -62,6 +62,12 @@ protocol ProductService: Sendable {
     func completeEmailSignIn(url: URL) async throws
     /// E-posta ve şifre. Yalnızca geliştirme derlemesindeki demo hesaplar için.
     func signInWithEmail(email: String, password: String) async throws
+    /// Öğrenci e-postası doğrulaması: durum, izinli alan adları, bağlantı isteği,
+    /// bağlantı tıklandıktan sonra profili eşitleme.
+    func fetchEduStatus() async throws -> EduVerificationStatus
+    func fetchEduDomains() async throws -> [String]
+    func requestEduVerification(email: String) async throws
+    func syncEduVerification() async throws -> Bool
     func restoreSession() async throws -> UUID?
     func signOut() async throws
     func deleteAccount() async throws
@@ -271,6 +277,10 @@ struct UnconfiguredProductService: ProductService {
     func deletePost(_ postID: UUID) async throws { try fail() }
     func deleteComment(_ commentID: UUID) async throws { try fail() }
     func fetchMyProfile() async throws -> ProfileDraft? { try fail() }
+    func fetchEduStatus() async throws -> EduVerificationStatus { try fail() }
+    func fetchEduDomains() async throws -> [String] { try fail() }
+    func requestEduVerification(email: String) async throws { try fail() }
+    func syncEduVerification() async throws -> Bool { try fail() }
     func submitPurchase(jws: String, productID: String) async throws { try fail() }
     func fetchMyPlan() async throws -> SubscriptionTier { try fail() }
     func fetchMyProfilePhotos() async throws -> ProfilePhotosResult { try fail() }

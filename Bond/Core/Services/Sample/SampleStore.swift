@@ -15,6 +15,18 @@ import UIKit
 /// Veri bellekte tutulur: beğeni, mesaj, yorum ve kaydetme uygulama açık kaldığı
 /// sürece korunur, kapanınca sıfırlanır.
 actor SampleStore {
+    var eduStatus: EduVerificationStatus
+    private var eduChecks = 0
+    func setEduPending(_ email: String) { eduStatus.pendingEmail = email }
+    /// Örnekte ilk kontrol "henüz tıklanmadı" der (öne gelince otomatik kontrol
+    /// bekleyen durumu hemen bitirmesin), ikincisi bağlantıyı tıklanmış sayar.
+    func completeEdu() -> Bool {
+        guard let adres = eduStatus.pendingEmail else { return eduStatus.isVerified }
+        eduChecks += 1
+        guard eduChecks >= 2 else { return false }
+        eduStatus = EduVerificationStatus(email: adres, verifiedAt: .now, exempt: eduStatus.exempt, pendingEmail: nil)
+        return true
+    }
     var profiles: [StudentProfile]
     var conversations: [Conversation]
     var posts: [BackendPost]
@@ -32,7 +44,8 @@ actor SampleStore {
 
     let me: StudentProfile
 
-    init() {
+    init(eduStatus: EduVerificationStatus = .unknown) {
+        self.eduStatus = eduStatus
         let places = SampleData.places
         self.places = places
         self.profiles = SampleData.profiles

@@ -9,14 +9,15 @@ import UIKit
 // MARK: - Servis
 
 struct SampleProductService: ProductService {
-    private let store = SampleStore()
+    private let store: SampleStore
     /// `false` verilirse sunucuda profil yokmuş gibi davranır; `restoreBackendSession`
     /// da kullanıcıyı kayıt akışına yönlendirir. Gerçek yeni kullanıcı yolunu sunucu
     /// olmadan görebilmek için.
     private let hasProfile: Bool
 
-    init(hasProfile: Bool = true) {
+    init(hasProfile: Bool = true, eduStatus: EduVerificationStatus = .unknown) {
         self.hasProfile = hasProfile
+        self.store = SampleStore(eduStatus: eduStatus)
     }
 
     var currentUserID: UUID? { SampleData.me.id }
@@ -40,6 +41,13 @@ struct SampleProductService: ProductService {
     func fetchMyPlan() async throws -> SubscriptionTier { .free }
 
     func fetchMyProfile() async throws -> ProfileDraft? { hasProfile ? await store.myDraft() : nil }
+
+    // Öğrenci e-postası: `-edu none|pending|verified` ile başlangıç durumu seçilir
+    // (bkz. BondApp); bağlantı isteği durumu "bekliyor"a çevirir, eşitleme doğrular.
+    func fetchEduStatus() async throws -> EduVerificationStatus { await store.eduStatus }
+    func fetchEduDomains() async throws -> [String] { ["yalova.edu.tr"] }
+    func requestEduVerification(email: String) async throws { await store.setEduPending(email) }
+    func syncEduVerification() async throws -> Bool { await store.completeEdu() }
     /// Örnek veride imzalı adres yok. BondApp yerel görseli avatarData'ya yükler.
     func fetchMyProfilePhotos() async throws -> ProfilePhotosResult {
         ProfilePhotosResult(avatarURL: SampleData.me.imageURL, galleryURLs: SampleData.profiles[0].galleryImageURLs)

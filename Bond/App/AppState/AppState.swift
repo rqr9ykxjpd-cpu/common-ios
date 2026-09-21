@@ -116,6 +116,10 @@ final class AppState {
     var meetingRequests: [MeetingRequest] = []
     /// Açık çalışma grupları (akışın üstünde kartlar). Yakın saat önce.
     var studyGroups: [StudyGroup] = []
+    /// Öğrenci e-postası doğrulaması; `nil` = henüz sunucudan okunmadı.
+    var eduStatus: EduVerificationStatus?
+    /// İzinli edu alan adları (istemcide anında kontrol için).
+    var eduDomains: [String] = []
 
     /// Eşleşmeden gelen/giden yanıt istekleri.
     var messageRequests: [MessageRequest] = []
