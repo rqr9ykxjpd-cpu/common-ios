@@ -426,7 +426,7 @@ struct SocialFeedView: View {
                         VStack(spacing: 6) {
                             Circle()
                                 .fill(BondTheme.ink.opacity(0.07))
-                                .frame(width: 62, height: 62)
+                                .frame(width: 70, height: 70)
                                 .overlay { ProgressView().tint(BondTheme.muted).scaleEffect(0.7) }
                             Capsule()
                                 .fill(BondTheme.ink.opacity(0.07))
@@ -445,7 +445,7 @@ struct SocialFeedView: View {
                                     data: nil,
                                     assetName: story.author.imageAssetName
                                 )
-                                    .frame(width: 47, height: 47)
+                                    .frame(width: 56, height: 56)
                                     .clipShape(Circle())
                                     .overlay {
                                         Circle().stroke(.white, lineWidth: 1)
@@ -457,24 +457,24 @@ struct SocialFeedView: View {
                                         .foregroundStyle(.white)
                                         .frame(width: 16, height: 16)
                                         .background(.black.opacity(0.55), in: Circle())
-                                        .offset(x: -17, y: 17)
+                                        .offset(x: -21, y: 21)
                                         .accessibilityHidden(true)
                                 }
                                 if let place = story.place {
                                     Image(systemName: "mappin.circle.fill")
                                         .font(.system(size: 13))
                                         .foregroundStyle(.white, BondTheme.violet)
-                                        .offset(x: 17, y: 17)
+                                        .offset(x: 21, y: 21)
                                         .accessibilityLabel(place.name)
                                 }
                             }
-                            .frame(width: 58, height: 58)
+                            .frame(width: 70, height: 70)
                             .contentShape(Circle())
                             Text(story.author.name)
-                                .font(.system(size: 11, weight: story.viewed ? .medium : .bold))
+                                .font(.system(size: 12, weight: story.viewed ? .medium : .bold))
                                 .foregroundStyle(BondTheme.ink.opacity(story.viewed ? 0.5 : 1))
                                 .lineLimit(1)
-                                .frame(width: 58)
+                                .frame(width: 70)
                         }
                     }
                     .buttonStyle(PressableStyle())
@@ -561,17 +561,17 @@ private struct AddStoryBubble: View {
                 } label: {
                     ZStack {
                         ProfileMedia(url: appState.avatarURL, data: appState.avatarData)
-                            .frame(width: 47, height: 47)
+                            .frame(width: 56, height: 56)
                             .clipShape(Circle())
                             .overlay { Circle().stroke(.white, lineWidth: 1) }
                         Circle()
                             .stroke(
                                 ownStory == nil ? BondTheme.ink.opacity(0.14) : BondTheme.burntOrange,
-                                style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
+                                style: StrokeStyle(lineWidth: 3, lineCap: .round)
                             )
-                            .frame(width: 55, height: 55)
+                            .frame(width: 66, height: 66)
                     }
-                    .frame(width: 58, height: 58)
+                    .frame(width: 70, height: 70)
                     .contentShape(Circle())
                 }
                 .buttonStyle(PressableStyle())
@@ -746,9 +746,9 @@ private struct StoryRing: View {
         Circle()
             .stroke(
                 viewed ? BondTheme.ink.opacity(0.14) : BondTheme.burntOrange,
-                style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
+                style: StrokeStyle(lineWidth: 3, lineCap: .round)
             )
-            .frame(width: 55, height: 55)
+            .frame(width: 66, height: 66)
             .scaleEffect(breathed || viewed || reduceMotion ? 1 : 0.86)
             .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: viewed)
             .onAppear {
