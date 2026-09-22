@@ -115,7 +115,9 @@ struct StudyGroupCard: View {
             Text(L10n.StudyGroup.cancelConfirm)
         }
         .animation(reduceMotion ? nil : BondTheme.Motion.snappy, value: group.joined)
-        .animation(reduceMotion ? nil : BondTheme.Motion.snappy, value: group.members.count)
+        // Katılınca avatar sekerek dizinin sonuna girer; ayrılınca aynı yoldan çıkar.
+        .animation(reduceMotion ? nil : BondTheme.Motion.bouncy, value: group.members.count)
+        .animation(reduceMotion ? nil : BondTheme.Motion.bouncy, value: group.hasSpotPhoto)
     }
 
     // MARK: - "Yerimi göster"
@@ -189,6 +191,7 @@ struct StudyGroupCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(L10n.StudyGroup.spotViewerTitle)
+        .transition(.scale(scale: 0.85).combined(with: .opacity))
     }
 
     private func shareSpot(_ item: PhotosPickerItem) async {
@@ -215,6 +218,7 @@ struct StudyGroupCard: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(kisi.name)
+                .transition(.scale(scale: 0.3).combined(with: .opacity))
             }
             if fazla > 0 {
                 Text("+\(fazla)")

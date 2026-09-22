@@ -450,12 +450,7 @@ struct SocialFeedView: View {
                                     .overlay {
                                         Circle().stroke(.white, lineWidth: 1)
                                     }
-                                Circle()
-                                    .stroke(
-                                        story.viewed ? BondTheme.ink.opacity(0.14) : BondTheme.burntOrange,
-                                        style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
-                                    )
-                                    .frame(width: 55, height: 55)
+                                StoryRing(viewed: story.viewed)
                                 if story.isVideo {
                                     Image(systemName: "play.fill")
                                         .font(.system(size: 8, weight: .bold))
@@ -516,8 +511,12 @@ struct SocialFeedView: View {
                                 .foregroundStyle(.white)
                                 .frame(minWidth: 15, minHeight: 15)
                                 .background(BondTheme.coral, in: Capsule())
+                                .contentTransition(.numericText())
+                                .transition(.scale(scale: 0.4).combined(with: .opacity))
                         }
                     }
+                    // Yeni bildirim: rozet sekerek belirir, sayı yuvarlanarak değişir.
+                    .animation(reduceMotion ? nil : BondTheme.Motion.bouncy, value: appState.unreadNotificationCount)
             }
             .accessibilityLabel(L10n.Feed.notificationsA11y(appState.unreadNotificationCount))
         }
@@ -735,3 +734,26 @@ struct DebugProfileRoute: Identifiable {
     var id: String { name ?? "ben" }
 }
 #endif
+
+/// Story halkası. Görülmemişse ekrana gelince bir kez hafifçe genişler
+/// ("yeni bir şey var"); izlenince renk yumuşakça söner. Hareket azaltmada durağan.
+private struct StoryRing: View {
+    let viewed: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var breathed = false
+
+    var body: some View {
+        Circle()
+            .stroke(
+                viewed ? BondTheme.ink.opacity(0.14) : BondTheme.burntOrange,
+                style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
+            )
+            .frame(width: 55, height: 55)
+            .scaleEffect(breathed || viewed || reduceMotion ? 1 : 0.86)
+            .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: viewed)
+            .onAppear {
+                guard !viewed, !reduceMotion else { breathed = true; return }
+                withAnimation(.bouncy(duration: 0.55, extraBounce: 0.25).delay(0.15)) { breathed = true }
+            }
+    }
+}

@@ -12,6 +12,7 @@ struct PaywallView: View {
     private var store: SubscriptionStore { appState.subscriptions }
     private let tiers = SubscriptionTier.allCases
     @State private var selectedTier: SubscriptionTier = .plus
+    @Namespace private var tierPill
     /// Kullanıcının bugünkü kademesi. Plus'taki biri paywall'ı açınca Pro
     /// ön-seçili gelir; kendi planını yeniden "satın alamaz" (Apple zaten
     /// reddederdi, kafa karıştırırdı). Aynı abonelik grubundalar: Pro'ya
@@ -131,12 +132,16 @@ struct PaywallView: View {
                     .frame(width: tierColumnWidth)
                     .frame(minHeight: 28)
                     .foregroundStyle(tier == selectedTier ? BondTheme.onAccent : .secondary)
-                    .background(
-                        tier == selectedTier ? BondTheme.acid : Color.clear,
-                        in: Capsule()
-                    )
+                    .background {
+                        // Kapsül sütunlar arasında kayar; iki ayrı kapsülün yanıp sönmesi yerine.
+                        if tier == selectedTier {
+                            Capsule().fill(BondTheme.acid)
+                                .matchedGeometryEffect(id: "pill", in: tierPill)
+                        }
+                    }
             }
         }
+        .animation(reduceMotion ? nil : BondTheme.Motion.snappy, value: selectedTier)
     }
 
     private func featureRow(_ feature: PlanFeature) -> some View {
