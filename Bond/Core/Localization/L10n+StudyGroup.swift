@@ -44,6 +44,10 @@ extension L10n {
         static var spotShared: String { String(localized: "studyGroup.spotShared") }
         static var spotFailed: String { String(localized: "studyGroup.spotFailed") }
         static var spotWindowClosed: String { String(localized: "studyGroup.spotWindowClosed") }
+        static var memberReminderTitle: String { String(localized: "studyGroup.memberReminderTitle") }
+        static func memberReminderBody(_ place: String, _ host: String) -> String {
+            L10n.format("studyGroup.memberReminderBody", place, host)
+        }
         static var reminderTitle: String { String(localized: "studyGroup.reminderTitle") }
         static func reminderBody(_ place: String) -> String { L10n.format("studyGroup.reminderBody", place) }
         static var spotViewerTitle: String { String(localized: "studyGroup.spotViewerTitle") }

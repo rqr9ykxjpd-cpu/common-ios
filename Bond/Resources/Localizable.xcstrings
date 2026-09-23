@@ -10098,6 +10098,40 @@
         }
       }
     },
+    "studyGroup.memberReminderTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your study group starts in 15 minutes"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çalışma grubun 15 dakika sonra"
+          }
+        }
+      }
+    },
+    "studyGroup.memberReminderBody" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · with %2$@."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@ ile buluşuyorsun."
+          }
+        }
+      }
+    },
     "studyGroup.reminderTitle" : {
       "extractionState" : "manual",
       "localizations" : {

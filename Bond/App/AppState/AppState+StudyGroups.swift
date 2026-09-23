@@ -44,11 +44,37 @@ extension AppState {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [Self.spotReminderID(groupID)])
     }
 
+    /// Katılana da başlangıçtan 15 dk önce hatırlatma: saat gelince unutulmasın.
+    /// Aynı kimlikle yeniden eklemek eskisini değiştirir, kopya oluşmaz.
+    func scheduleStudyGroupReminder(for group: StudyGroup) {
+        guard !group.isMine else { return }
+        let ates = group.startsAt.addingTimeInterval(-15 * 60)
+        guard ates > Date() else { return }
+        let icerik = UNMutableNotificationContent()
+        icerik.title = L10n.StudyGroup.memberReminderTitle
+        icerik.body = L10n.StudyGroup.memberReminderBody(group.place.name, group.host.name)
+        icerik.sound = .default
+        let tetik = UNTimeIntervalNotificationTrigger(timeInterval: ates.timeIntervalSinceNow, repeats: false)
+        UNUserNotificationCenter.current().add(
+            UNNotificationRequest(identifier: Self.memberReminderID(group.id), content: icerik, trigger: tetik)
+        )
+    }
+
+    func cancelStudyGroupReminder(_ groupID: UUID) {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [Self.memberReminderID(groupID)])
+    }
+
     private static func spotReminderID(_ groupID: UUID) -> String { "study-spot-\(groupID.uuidString)" }
+    private static func memberReminderID(_ groupID: UUID) -> String { "study-member-\(groupID.uuidString)" }
 
     func loadStudyGroups(silently: Bool = false) async {
         do {
             studyGroups = try await service.fetchStudyGroups()
+            // Katıldığın gruplar için hatırlatmayı tazele: uygulama silinip
+            // kurulduğunda ya da saat değiştiğinde yerel bildirim kaybolmuş olur.
+            for grup in studyGroups where grup.joined && !grup.isMine {
+                scheduleStudyGroupReminder(for: grup)
+            }
         } catch {
             guard !isCancellation(error) else { return }
             if !silently { showError(error, fallback: L10n.StudyGroup.loadFailed) }
@@ -86,6 +112,7 @@ extension AppState {
         let onceki = studyGroups
         studyGroups.removeAll { $0.id == groupID }
         cancelStudySpotReminder(groupID)
+        cancelStudyGroupReminder(groupID)
         Task {
             do {
                 try await service.cancelStudyGroup(groupID)
@@ -117,10 +144,12 @@ extension AppState {
             do {
                 if katiliyor {
                     try await service.joinStudyGroup(groupID)
+                    scheduleStudyGroupReminder(for: onceki)
                     show(L10n.StudyGroup.joinedToast)
                     promptForPushIfNeeded()
                 } else {
                     try await service.leaveStudyGroup(groupID)
+                    cancelStudyGroupReminder(groupID)
                     show(L10n.StudyGroup.leftToast)
                 }
             } catch {
