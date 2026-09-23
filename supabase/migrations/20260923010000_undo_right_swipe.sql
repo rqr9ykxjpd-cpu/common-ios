@@ -47,6 +47,9 @@ begin
    where n.user_id = target
      and n.actor_id = auth.uid()
      and n.kind = 'like'
+     -- Gönderi beğenisi de 'like' türünde; yalnızca kaydırma bildirimi gitsin.
+     and n.post_id is null
+     and n.match_id is null
      and n.created_at > now() - interval '2 minutes';
 
   return true;
