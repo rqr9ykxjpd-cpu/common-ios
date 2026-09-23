@@ -12225,13 +12225,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pause is a Pro feature"
+            "value" : "Pause is a Plus feature"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duraklatma Pro'da"
+            "value" : "Duraklatma Plus'ta"
           }
         }
       }

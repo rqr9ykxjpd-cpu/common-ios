@@ -6,7 +6,7 @@ extension L10n {
         static var deleteConfirm: String { String(localized: "story.deleteConfirm") }
         static var delete: String { String(localized: "story.delete") }
         static var paused: String { String(localized: "story.paused") }
-        static var pausePro: String { String(localized: "story.pausePro") }
+        static var pausePlus: String { String(localized: "story.pausePlus") }
         static var people: String { String(localized: "story.people") }
         static var previous: String { String(localized: "story.previous") }
         static var next: String { String(localized: "story.next") }

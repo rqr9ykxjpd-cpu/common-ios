@@ -305,7 +305,7 @@ struct StoryViewer: View {
             // Dokunursa Plus ekranı açılıyor — ama zorlamıyor.
             if pauseHintVisible {
                 Button { showPaywall = true } label: {
-                    Label(L10n.Story.pausePro, systemImage: "lock.fill")
+                    Label(L10n.Story.pausePlus, systemImage: "lock.fill")
                         .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(BondTheme.canvasDark)
                         .padding(.horizontal, 11).frame(height: 28)
