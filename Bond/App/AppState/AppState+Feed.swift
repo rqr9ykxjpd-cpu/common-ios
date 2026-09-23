@@ -139,13 +139,8 @@ extension AppState {
             feedRankVersion += 1
             pendingPosts = []
             newPostCount = 0
-            posts = result.map { backend in
-                let social = socialPost(from: backend)
-                if social.isMine, social.author.badge == .none, myBadge != .none {
-                    return socialPost(from: backend, badgeOverride: myBadge)
-                }
-                return social
-            }
+            lastFeedFetch = .now
+            posts = feedPosts(from: result)
             feedError = nil
         } catch {
             guard generation == feedLoadGeneration, userID == currentUserID, !isCancellation(error) else { return }
@@ -153,13 +148,29 @@ extension AppState {
         }
     }
 
+    /// Sunucu satırlarını akış gönderisine çevirir. Sunucu rozeti kaçırsa bile
+    /// kendi gönderinde yerel rozet kalsın.
+    private func feedPosts(from result: [BackendPost]) -> [SocialPost] {
+        result.map { backend in
+            let social = socialPost(from: backend)
+            if social.isMine, social.author.badge == .none, myBadge != .none {
+                return socialPost(from: backend, badgeOverride: myBadge)
+            }
+            return social
+        }
+    }
+
     /// Arka plandan dönünce sessizce bakar: en üstte yeni gönderi var mı?
-    /// Liste anında değişmez; kullanıcı balona dokununca uygulanır.
+    /// Liste anında değişmez; kullanıcı balona dokununca uygulanır. Her öne
+    /// gelişte tam akış çekmek ücretsiz plandaki trafiği yiyordu: son çekimden
+    /// 2 dakika geçmediyse bakılmaz.
     func checkForNewPosts() async {
         guard route == .app, !posts.isEmpty, !isLoadingFeed else { return }
+        if let son = lastFeedFetch, Date.now.timeIntervalSince(son) < 120 { return }
         guard let result = try? await service.fetchFeed() else { return }
+        lastFeedFetch = .now
+        let yeniler = feedPosts(from: result)
         let mevcut = Set(posts.map(\.id))
-        let yeniler = result.map { socialPost(from: $0) }
         let sayi = yeniler.filter { !mevcut.contains($0.id) && !$0.isMine }.count
         guard sayi > 0 else { return }
         pendingPosts = yeniler
@@ -169,6 +180,7 @@ extension AppState {
     /// "N yeni gönderi" balonuna dokunuldu: bekleyen liste uygulanır.
     func applyPendingPosts() {
         guard !pendingPosts.isEmpty else { return }
+        seenCounts = FeedSeenTracker.snapshot()
         posts = pendingPosts
         pendingPosts = []
         newPostCount = 0

@@ -19,7 +19,10 @@ extension AppState {
     @discardableResult
     func requestEduVerification(_ rawEmail: String) async -> Bool {
         let adres = rawEmail.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard EduEmailCheck.isAllowed(adres, domains: eduDomains) else {
+        if eduDomains.isEmpty { eduDomains = (try? await service.fetchEduDomains()) ?? [] }
+        // Liste hâlâ yoksa (ağ) istemci karar vermesin: yanlış "üniversite adresi
+        // değil" demek yerine sunucuya bırak; doğrulamayı zaten sunucu damgalıyor.
+        if !eduDomains.isEmpty, !EduEmailCheck.isAllowed(adres, domains: eduDomains) {
             showError(L10n.Edu.notAllowedDomain); return false
         }
         do {

@@ -69,9 +69,6 @@ extension AppState {
         case failed
     }
 
-    /// Tek taraf: bildirim. Karşılıklı: `matches` + Sohbet listesinde DM.
-    @discardableResult
-    /// Sola kaydırma: kart kapanır, kayıt sessizce gider; hata kullanıcıya gösterilmez.
     /// Geri al: sunucudaki satırı ve karşı tarafa giden bildirimi siler.
     /// Eşleşme doğduysa sunucu reddeder; o zaman kullanıcıya durumu söyleriz.
     func undoRightSwipe(on profile: StudentProfile) async {
@@ -90,6 +87,7 @@ extension AppState {
         }
     }
 
+    /// Sola kaydırma: kart kapanır, kayıt sessizce gider; hata kullanıcıya gösterilmez.
     func recordLeftSwipe(on profile: StudentProfile) {
         guard profile.id != currentUserID else { return }
         Task { try? await service.recordLeftSwipe(on: profile.id) }
@@ -119,6 +117,8 @@ extension AppState {
     func fetchFounderDaily(days: Int) async throws -> [FounderDay] { try await service.fetchFounderDaily(days: days) }
     func fetchFounderAnnouncements() async throws -> [FounderAnnouncement] { try await service.fetchFounderAnnouncements() }
 
+    /// Tek taraf: bildirim. Karşılıklı: `matches` + Sohbet listesinde DM.
+    @discardableResult
     func sendRightSwipe(to profile: StudentProfile) async -> RightSwipeResult {
         if rightSwipedProfileIDs.contains(profile.id) {
             show(L10n.CampusDesign.alreadySwiped)

@@ -64,6 +64,17 @@ extension AppState {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [Self.memberReminderID(groupID)])
     }
 
+    private func pruneStudyGroupReminders(keeping ids: Set<UUID>) async {
+        let merkez = UNUserNotificationCenter.current()
+        let bekleyenler = await merkez.pendingNotificationRequests()
+        let onek = "study-member-"
+        let eskiler = bekleyenler.map(\.identifier).filter { kimlik in
+            guard kimlik.hasPrefix(onek), let id = UUID(uuidString: String(kimlik.dropFirst(onek.count))) else { return false }
+            return !ids.contains(id)
+        }
+        if !eskiler.isEmpty { merkez.removePendingNotificationRequests(withIdentifiers: eskiler) }
+    }
+
     private static func spotReminderID(_ groupID: UUID) -> String { "study-spot-\(groupID.uuidString)" }
     private static func memberReminderID(_ groupID: UUID) -> String { "study-member-\(groupID.uuidString)" }
 
@@ -72,9 +83,11 @@ extension AppState {
             studyGroups = try await service.fetchStudyGroups()
             // Katıldığın gruplar için hatırlatmayı tazele: uygulama silinip
             // kurulduğunda ya da saat değiştiğinde yerel bildirim kaybolmuş olur.
-            for grup in studyGroups where grup.joined && !grup.isMine {
-                scheduleStudyGroupReminder(for: grup)
-            }
+            let katildiklarim = studyGroups.filter { $0.joined && !$0.isMine }
+            for grup in katildiklarim { scheduleStudyGroupReminder(for: grup) }
+            // Ev sahibi grubu iptal ettiyse ya da grup listeden düştüyse, telefonda
+            // bekleyen "15 dk sonra başlıyor" bildirimi de düşsün.
+            await pruneStudyGroupReminders(keeping: Set(katildiklarim.map(\.id)))
         } catch {
             guard !isCancellation(error) else { return }
             if !silently { showError(error, fallback: L10n.StudyGroup.loadFailed) }

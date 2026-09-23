@@ -112,6 +112,8 @@ final class AppState {
     /// okurken içerik altından kaymasın; üstte "N yeni gönderi" balonu çıkar.
     var pendingPosts: [SocialPost] = []
     var newPostCount = 0
+    /// Son tam akış çekimi; öne gelişteki sessiz kontrol bunu aralık için kullanır.
+    var lastFeedFetch: Date?
     var stories: [CampusStory] = []
     var notifications: [AppNotification] = []
     /// Okundu diye işaretlenmiş ama sunucu henüz onaylamamış bildirimler.
