@@ -11,3 +11,8 @@ GOOGLE_CLIENT_ID =
 GOOGLE_SERVER_CLIENT_ID =
 GOOGLE_REVERSED_CLIENT_ID =
 #include? "Generated.xcconfig"
+
+// Demo fotoğrafları (Ece, Mina, kafe…) yalnızca DEBUG'daki örnek veri modunda
+// kullanılıyor. App Store derlemesine girmesinler: hem boşuna ~2 MB, hem de
+// incelemede gerçek olmayan kişilerin fotoğrafları paketin içinde durmasın.
+EXCLUDED_SOURCE_FILE_NAMES[config=Release] = SampleAssets.xcassets

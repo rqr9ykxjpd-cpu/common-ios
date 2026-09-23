@@ -34,3 +34,4 @@ Bond/Configuration.local.xcconfig
 .derived-welcome/
 supabase/.temp/
 .derived-device/
+.derived-release/
