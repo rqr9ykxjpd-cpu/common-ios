@@ -33,3 +33,4 @@ Bond/Configuration.local.xcconfig
 .derived-sim/
 .derived-welcome/
 supabase/.temp/
+.derived-device/
