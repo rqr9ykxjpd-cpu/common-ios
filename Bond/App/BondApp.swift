@@ -17,34 +17,13 @@ struct BondApp: App {
 #if DEBUG
         // Offline design fixtures must not create RevenueCat customers.
         let arguments = ProcessInfo.processInfo.arguments
-        guard !isSampleMode, !arguments.contains("-welcome") else { return }
+        guard !arguments.contains("-sample"), !arguments.contains("-welcome") else { return }
 #endif
         let key = AppSecrets.revenueCatAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !key.isEmpty, Purchases.isConfigured == false else { return }
         Purchases.logLevel = .warn
         Purchases.configure(withAPIKey: key)
     }
-
-#if DEBUG
-    /// Örnek veri modu. `-sample` ile bir kez açılınca hatırlanır: telefonda
-    /// Xcode'dan bir kez başlatıp sonra ana ekrandan açınca da örnek veriyle
-    /// gelsin, sunucuya tek satır gitmeden. `-live` unutturur ve gerçek servise
-    /// döner. Yalnızca DEBUG; App Store derlemesinde bu kod hiç yok.
-    private static var isSampleMode: Bool {
-        let arguments = ProcessInfo.processInfo.arguments
-        let defaults = UserDefaults.standard
-        let key = "debug.sampleMode"
-        if arguments.contains("-live") {
-            defaults.removeObject(forKey: key)
-            return false
-        }
-        if arguments.contains("-sample") {
-            defaults.set(true, forKey: key)
-            return true
-        }
-        return defaults.bool(forKey: key)
-    }
-#endif
 
     private static func initialState() -> AppState {
         configureRevenueCat()
@@ -58,7 +37,7 @@ struct BondApp: App {
             state.skipsSessionRestore = true
             return state
         }
-        if isSampleMode {
+        if arguments.contains("-sample") {
             // `-onboarding` kayıt akışını baştan açar: örnek servis "sunucuda profil
             // yok" der, uygulama da gerçek yeni kullanıcıdaki gibi kayıt akışına
             // yönlendirir. Sunucu olmadan bu ekranları görmenin başka yolu yok.
