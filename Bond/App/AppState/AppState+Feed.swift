@@ -123,7 +123,12 @@ extension AppState {
         let generation = feedLoadGeneration
         let userID = currentUserID
         isLoadingFeed = true
-        defer { if generation == feedLoadGeneration { isLoadingFeed = false } }
+        defer {
+            if generation == feedLoadGeneration {
+                isLoadingFeed = false
+                hasFinishedFeedLoad = true
+            }
+        }
         // Gönderinin yeri, sunucudan gelen yer *adı* `places` listesiyle eşleştirilerek
         // çözülüyor ve dönüşüm anında sabitleniyor. Akış ekranı açılışta `loadFeed`'i
         // kendi başına çağırdığı için bu, yerleri yükleyen `restoreBackendSession` ile

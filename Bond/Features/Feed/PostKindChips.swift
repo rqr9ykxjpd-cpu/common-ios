@@ -176,6 +176,10 @@ struct VoteControl: View {
     var disabled: Bool = false
     let onUp: () -> Void
     let onDown: () -> Void
+    /// Oy verildiği an artar: ok zıplar, yukarı oyda turuncu halka yayılır.
+    /// Oyu geri alırken tetiklenmez; geri almak kutlanacak bir şey değil.
+    @State private var upPulse = 0
+    @State private var downPulse = 0
 
     var body: some View {
         HStack(spacing: 2) {
@@ -199,20 +203,73 @@ struct VoteControl: View {
     }
 
     private func arrow(up: Bool, active: Bool, action: @escaping () -> Void) -> some View {
+        let fill = up ? BondTheme.upvote : BondTheme.ink
         // Dokunma alanı 36pt (HIG'e yakın), görünen daire 28pt.
-        Button(action: action) {
+        return Button {
+            if !active, !reduceMotion {
+                if up { upPulse += 1 } else { downPulse += 1 }
+            }
+            action()
+        } label: {
             Image(systemName: up ? "arrow.up" : "arrow.down")
                 .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(active ? BondTheme.paper : BondTheme.ink)
+                // Ok oyun yönüne kısa bir sıçrayış yapıp yerine oturuyor.
+                .keyframeAnimator(initialValue: VoteHop(), trigger: up ? upPulse : downPulse) { icon, hop in
+                    icon.offset(y: hop.y)
+                } keyframes: { _ in
+                    KeyframeTrack(\.y) {
+                        CubicKeyframe(up ? -6 : 6, duration: 0.1)
+                        SpringKeyframe(0, duration: 0.35, spring: .bouncy)
+                    }
+                }
                 .frame(width: 28, height: 28)
-                .background(active ? (up ? BondTheme.upvote : BondTheme.ink) : .clear, in: Circle())
+                // Dolgu merkezden büyüyerek geliyor; eskiden renk bir anda değişiyordu.
+                .background {
+                    Circle()
+                        .fill(fill)
+                        .scaleEffect(active ? 1 : 0.4)
+                        .opacity(active ? 1 : 0)
+                }
+                .overlay {
+                    if up {
+                        // Yukarı oyda daireden dışa yayılıp sönen ince turuncu halka.
+                        Circle()
+                            .strokeBorder(BondTheme.upvote, lineWidth: 2)
+                            .keyframeAnimator(initialValue: VoteRing(), trigger: upPulse) { ring, frame in
+                                ring.scaleEffect(frame.scale).opacity(frame.opacity)
+                            } keyframes: { _ in
+                                KeyframeTrack(\.scale) {
+                                    MoveKeyframe(1)
+                                    CubicKeyframe(2.1, duration: 0.5)
+                                }
+                                KeyframeTrack(\.opacity) {
+                                    MoveKeyframe(0.7)
+                                    CubicKeyframe(0, duration: 0.5)
+                                }
+                            }
+                            .allowsHitTesting(false)
+                    }
+                }
                 .frame(width: 36, height: 36)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.pressable)
         .disabled(disabled)
+        .animation(reduceMotion ? nil : BondTheme.Motion.bouncy, value: active)
         .accessibilityLabel(up ? (active ? L10n.Board.unvote : L10n.Board.vote)
                                : (active ? L10n.Board.undoDownvote : L10n.Board.downvote))
         .accessibilityAddTraits(active ? .isSelected : [])
     }
+}
+
+/// Oy okunun sıçrama karesi.
+private struct VoteHop {
+    var y: CGFloat = 0
+}
+
+/// Yukarı oy halkasının karesi; başlangıçta görünmez.
+private struct VoteRing {
+    var scale: CGFloat = 1
+    var opacity: Double = 0
 }

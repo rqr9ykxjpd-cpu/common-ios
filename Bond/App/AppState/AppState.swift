@@ -77,6 +77,10 @@ final class AppState {
     /// ayırt edilemiyordu: akış yüklenirken ekranda "Akış henüz boş" yazıyordu,
     /// yani kullanıcıya yanlış bilgi veriliyordu.
     var isLoadingFeed = false
+    /// Akış bu oturumda en az bir kez yüklenmeyi bitirdi mi (başarılı ya da
+    /// hatalı). Açılışta ekran, yükleme başlamadan bir kare önce çiziliyor ve o
+    /// karede "Akış henüz boş" beliriyordu; bitene kadar yükleme gösteriyoruz.
+    var hasFinishedFeedLoad = false
     var feedError: String?
     var feedLoadGeneration: UInt = 0
     var isLoadingClubs = false

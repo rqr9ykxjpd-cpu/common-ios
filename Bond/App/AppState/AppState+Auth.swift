@@ -402,6 +402,7 @@ extension AppState {
         feedLoadGeneration += 1
         clubsLoadGeneration += 1
         isLoadingFeed = false
+        hasFinishedFeedLoad = false
         isLoadingClubs = false
         feedError = nil
         clubsError = nil

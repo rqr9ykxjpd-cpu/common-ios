@@ -32,6 +32,7 @@ actor SampleStore {
     var posts: [BackendPost]
     var notifications: [BackendNotification]
     var stories: [CampusStory]
+    private var likedStoryIDs: Set<UUID> = []
     var clubs: [CampusClub]
     var joinedClubIDs: Set<UUID>
     var meetingRequests: [MeetingRequest]
@@ -157,6 +158,21 @@ actor SampleStore {
         }
     }
 
+    func editMessage(_ messageID: UUID, body: String) {
+        for index in conversations.indices {
+            guard let m = conversations[index].messages.firstIndex(where: { $0.id == messageID }) else { continue }
+            conversations[index].messages[m].body = body
+            conversations[index].messages[m].editedAt = .now
+            return
+        }
+    }
+
+    func deleteMessage(_ messageID: UUID) {
+        for index in conversations.indices {
+            conversations[index].messages.removeAll { $0.id == messageID }
+        }
+    }
+
     func removeConversation(_ matchID: UUID) {
         conversations.removeAll { $0.id == matchID }
     }
@@ -252,7 +268,22 @@ actor SampleStore {
     func markStoryViewed(_ id: UUID) {
         guard let index = stories.firstIndex(where: { $0.id == id }) else { return }
         stories[index].viewed = true
+        // Sunucudaki gibi sahibinin kendi açışları da sayılıyor; yoksa demoda
+        // kendi story'ni açınca izleyenlerde ne sen çıkıyordun ne de sayı artıyordu.
+        guard stories[index].isMine else { return }
+        if let r = stories[index].viewRecords.firstIndex(where: { $0.viewer.id == SampleData.me.id }) {
+            stories[index].viewRecords[r].viewCount += 1
+            stories[index].viewRecords[r].lastViewedAt = .now
+        } else {
+            stories[index].viewRecords.insert(StoryViewRecord(viewer: SampleData.me, viewCount: 1), at: 0)
+        }
     }
+
+    func setStoryLiked(_ id: UUID, liked: Bool) {
+        if liked { likedStoryIDs.insert(id) } else { likedStoryIDs.remove(id) }
+    }
+
+    func isStoryLiked(_ id: UUID) -> Bool { likedStoryIDs.contains(id) }
 
     func storyViews(_ id: UUID) -> [StoryViewRecord] {
         stories.first { $0.id == id }?.viewRecords ?? []

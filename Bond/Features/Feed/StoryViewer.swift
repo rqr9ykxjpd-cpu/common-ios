@@ -331,7 +331,14 @@ struct StoryViewer: View {
                                 .lineLimit(1)
                         }
                         if let place = story.place {
-                            Label(place.name, systemImage: "mappin").font(.system(size: 12)).opacity(0.72)
+                            // Tek satır: kendi story'nde sağda dört düğme var, yer
+                            // adı iki satıra kelimenin ortasından bölünüyordu.
+                            HStack(spacing: 3) {
+                                Image(systemName: "mappin").font(.system(size: 10, weight: .semibold))
+                                Text(place.name).lineLimit(1).truncationMode(.tail)
+                            }
+                            .font(.system(size: 12))
+                            .opacity(0.72)
                         }
                     }
                 }
@@ -341,7 +348,11 @@ struct StoryViewer: View {
             }
             .buttonStyle(PressableStyle())
             .accessibilityLabel(L10n.Feed.openProfile(story.author.name))
-            Spacer()
+            Spacer(minLength: 4)
+            // Sağdaki düğmeler kendi aralarında boşluksuz: her biri zaten 44pt
+            // dokunma alanında. Aradaki 11'er puanlık boşluk kendi story'nde yer
+            // adını "Şamd…" diye kesiyordu.
+            HStack(spacing: 0) {
             if !story.isMine {
                 Button { reportTarget = story } label: {
                     Image(systemName: "flag").frame(width: 44, height: 44)
@@ -358,7 +369,7 @@ struct StoryViewer: View {
                         ?? viewRecords(story.id).count
                     Label("\(count)", systemImage: "eye.fill")
                         .font(.system(size: 12, weight: .bold))
-                        .padding(.horizontal, 12)
+                        .padding(.horizontal, 11)
                         .frame(height: 44)
                         .background(.black.opacity(0.28), in: Capsule())
                 }
@@ -390,6 +401,9 @@ struct StoryViewer: View {
             }
             Button(action: close) { Image(systemName: "xmark").frame(width: 44, height: 44) }
                 .accessibilityLabel(L10n.Common.close)
+            }
+            // Düğmeler ve izleyen sayısı hiç sıkışmaz; yer darsa kısalan yer adı olur.
+            .fixedSize()
         }
     }
 

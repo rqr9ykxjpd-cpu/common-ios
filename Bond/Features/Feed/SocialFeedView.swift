@@ -145,7 +145,7 @@ struct SocialFeedView: View {
                                 }
                                 .padding(.horizontal, 20)
                             }
-                            if visiblePosts.isEmpty, appState.isLoadingFeed {
+                            if visiblePosts.isEmpty, appState.isLoadingFeed || !appState.hasFinishedFeedLoad {
                                 // Yüklenirken "Akış henüz boş" yazıyordu; kullanıcı
                                 // gönderisinin silindiğini sanabiliyordu.
                                 AppLoadingView(message: L10n.Feed.loading)
