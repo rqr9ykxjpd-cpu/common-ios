@@ -7,6 +7,8 @@ extension L10n {
         static var delete: String { String(localized: "story.delete") }
         static var paused: String { String(localized: "story.paused") }
         static var pausePlus: String { String(localized: "story.pausePlus") }
+        static func ageMinutes(_ n: Int) -> String { L10n.format("story.ageMinutes", Int64(n)) }
+        static func ageHours(_ n: Int) -> String { L10n.format("story.ageHours", Int64(n)) }
         static var people: String { String(localized: "story.people") }
         static var previous: String { String(localized: "story.previous") }
         static var next: String { String(localized: "story.next") }

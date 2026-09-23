@@ -11,7 +11,16 @@ struct StoryViewer: View {
     var onAddStory: (() -> Void)? = nil
     let close: () -> Void
     @State private var currentIndex: Int
-    @State private var progress: CGFloat = 0
+    /// Şu anki kare ne zaman oynamaya başladı; duraklatınca nil.
+    @State private var playStartedAt: Date?
+    /// Duraklatmadan önce oynanmış süre (saniye).
+    @State private var playedBefore: TimeInterval = 0
+    /// Geçiş yönü ve türü: kişi değişince kayar, aynı kişide çapraz solar.
+    @State private var goingForward = true
+    @State private var authorChanged = false
+    @State private var heartBurst = 0
+    @State private var holdTask: Task<Void, Never>?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var reply = ""
     @State private var replySent = false
     @State private var sendingRequest = false
@@ -45,46 +54,30 @@ struct StoryViewer: View {
     }
 
     var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                Color.black.ignoresSafeArea()
-                if let story {
-                    storyCanvas(story, size: proxy.size)
-                    LinearGradient(colors: [.black.opacity(0.64), .clear, .black.opacity(0.78)], startPoint: .top, endPoint: .bottom)
-                        .ignoresSafeArea()
-
-                    HStack(spacing: 0) {
-                        Button(action: previous) {
-                            Color.clear.contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(L10n.Story.previous)
-                        Button(action: next) {
-                            Color.clear.contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(L10n.Story.next)
-                    }
-                    .padding(.top, 90).padding(.bottom, 115)
-
-                    VStack(spacing: 12) {
-                        progressBars
-                        storyHeader(story)
-                        Spacer()
-                        storyFooter(story)
-                    }
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
-                    .padding(.bottom, 12)
-                    // Önceki/sonraki dokunma katmanının üstünde kalsın; sil düğmesi
-                    // altındaki şeffaf butona yemesin.
-                    .zIndex(2)
-                } else {
-                    Button(L10n.Common.close, action: close).foregroundStyle(.white)
+        VStack(spacing: 10) {
+            if let story {
+                // Kart: medya ve üstündeki bilgi. Kişi değişince kart kayar,
+                // aynı kişinin sıradaki karesinde çapraz solar.
+                ZStack {
+                    storyCard(story)
+                        .id(story.id)
+                        .transition(cardTransition)
                 }
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .scaleEffect(isPaused ? 0.985 : 1)
+                .padding(.horizontal, 4)
+
+                storyFooter(story)
+                    .padding(.horizontal, 14)
+                    .padding(.bottom, 4)
+            } else {
+                Spacer()
+                Button(L10n.Common.close, action: close).foregroundStyle(.white)
+                Spacer()
             }
         }
+        .foregroundStyle(.white)
+        .background(Color.black.ignoresSafeArea())
         .onAppear { activatePlaybackAudio() }
         .onDisappear { deactivatePlaybackAudio() }
         .task(id: currentIndex) {
@@ -99,20 +92,29 @@ struct StoryViewer: View {
             await playCurrentStory()
         }
         // Basılı tutunca duraklatma Plus'a özel. Ücretsizde basılı tutmak, bunun
-        // bir özellik olduğunu gösteren ekranı açıyor.
+        // bir özellik olduğunu gösteren ipucunu açıyor.
+        //
+        // `onPressingChanged` parmak değer değmez `true` geliyor; eskiden her
+        // dokunuşta (kalp, ileri) ipucu çıkıyor, Plus'ta ekran bir an duruyordu.
+        // Artık yalnızca gerçekten basılı tutulunca (0,22 sn) devreye giriyor.
         .onLongPressGesture(minimumDuration: 0.22, maximumDistance: 24) { } onPressingChanged: { basiliyor in
-            guard appState.tier.canPauseStory else {
-                // Hareketin ortasında modal açmak kullanıcıyı hapsediyordu:
-                // story akıp giderken önüne tam ekran bir sayfa çıkıyor,
-                // kapatması zorlaşıyordu. Bunun yerine story akmaya devam
-                // ediyor ve engellemeyen bir ipucu beliriyor.
-                if basiliyor {
-                    withAnimation(.easeOut(duration: 0.15)) { pauseHintVisible = true }
-                    Haptics.impact(.light)
+            holdTask?.cancel()
+            if basiliyor {
+                holdTask = Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(220))
+                    guard !Task.isCancelled else { return }
+                    if appState.tier.canPauseStory {
+                        withAnimation(.easeOut(duration: 0.15)) { isPaused = true }
+                    } else {
+                        // Hareketin ortasında modal açmak kullanıcıyı hapsediyordu;
+                        // story akmaya devam ediyor, engellemeyen bir ipucu beliriyor.
+                        withAnimation(.easeOut(duration: 0.15)) { pauseHintVisible = true }
+                        Haptics.impact(.light)
+                    }
                 }
-                return
+            } else if isPaused {
+                withAnimation(.easeOut(duration: 0.15)) { isPaused = false }
             }
-            withAnimation(.easeOut(duration: 0.15)) { isPaused = basiliyor }
         }
         .sheet(isPresented: $showPaywall) { PaywallView() }
         .confirmationDialog(L10n.Common.report, isPresented: Binding(
@@ -178,28 +180,128 @@ struct StoryViewer: View {
         }
     }
 
-    @ViewBuilder
-    private func storyCanvas(_ story: CampusStory, size: CGSize) -> some View {
-        StoryMediaCanvas(
-            url: story.imageURL, data: story.localImageData, assetName: story.imageAssetName,
-            videoURL: story.isVideo ? story.videoURL : nil, isPaused: isInteractionBlocking
+    private var cardTransition: AnyTransition {
+        if reduceMotion || !authorChanged { return .opacity }
+        return .asymmetric(
+            insertion: .move(edge: goingForward ? .trailing : .leading),
+            removal: .scale(scale: 0.9).combined(with: .opacity)
         )
-        .frame(width: size.width, height: size.height)
-        .ignoresSafeArea()
     }
 
+    private func storyCard(_ story: CampusStory) -> some View {
+        GeometryReader { proxy in
+            ZStack {
+                StoryMediaCanvas(
+                    url: story.imageURL, data: story.localImageData, assetName: story.imageAssetName,
+                    videoURL: story.isVideo ? story.videoURL : nil, isPaused: isInteractionBlocking
+                )
+                .frame(width: proxy.size.width, height: proxy.size.height)
+
+                // Yazı okunsun diye yalnızca üst ve alt kenarda karartma; ortası temiz.
+                VStack(spacing: 0) {
+                    LinearGradient(colors: [.black.opacity(0.55), .clear], startPoint: .top, endPoint: .bottom)
+                        .frame(height: 150)
+                    Spacer(minLength: 0)
+                    LinearGradient(colors: [.clear, .black.opacity(0.6)], startPoint: .top, endPoint: .bottom)
+                        .frame(height: 190)
+                }
+                .allowsHitTesting(false)
+
+                // Instagram'daki gibi: sol üçte bir geri, kalanı ileri.
+                HStack(spacing: 0) {
+                    Button(action: previous) { Color.clear.contentShape(Rectangle()) }
+                        .buttonStyle(.plain)
+                        .frame(width: proxy.size.width * 0.35)
+                        .accessibilityLabel(L10n.Story.previous)
+                    Button(action: next) { Color.clear.contentShape(Rectangle()) }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(L10n.Story.next)
+                }
+                .padding(.top, 70)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    progressBars
+                    storyHeader(story)
+                    Spacer(minLength: 0)
+                    storyCaption(story)
+                }
+                .padding(.horizontal, 12)
+                .padding(.top, 10)
+                .padding(.bottom, 16)
+                // Basılı tutunca arayüz çekilir, yalnızca fotoğraf kalır.
+                .opacity(isPaused ? 0 : 1)
+                .zIndex(2)
+
+                heartBurstView
+            }
+        }
+    }
+
+    /// Beğenince kartın ortasında büyüyüp sönen kalp.
+    private var heartBurstView: some View {
+        Image(systemName: "heart.fill")
+            .font(.system(size: 96, weight: .bold))
+            .foregroundStyle(.white)
+            .shadow(color: .black.opacity(0.25), radius: 14, y: 4)
+            .keyframeAnimator(initialValue: HeartBurst(), trigger: heartBurst) { content, value in
+                content.scaleEffect(value.scale).opacity(value.opacity)
+            } keyframes: { _ in
+                KeyframeTrack(\.scale) {
+                    SpringKeyframe(1.15, duration: 0.28, spring: .bouncy)
+                    CubicKeyframe(1.0, duration: 0.12)
+                    CubicKeyframe(1.25, duration: 0.25)
+                }
+                KeyframeTrack(\.opacity) {
+                    LinearKeyframe(1, duration: 0.06)
+                    LinearKeyframe(1, duration: 0.4)
+                    LinearKeyframe(0, duration: 0.2)
+                }
+            }
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+
+    private struct HeartBurst {
+        var scale: CGFloat = 0.5
+        var opacity: Double = 0
+    }
+
+    /// "12 dk", "3 sa": story'nin ne kadar taze olduğu, başlıkta ismin yanında.
+    private func ageText(_ story: CampusStory) -> String {
+        let olusma = story.expiresAt.addingTimeInterval(-CampusStory.lifetime)
+        let dakika = max(0, Int(Date.now.timeIntervalSince(olusma) / 60))
+        if dakika < 60 { return L10n.Story.ageMinutes(max(1, dakika)) }
+        return L10n.Story.ageHours(dakika / 60)
+    }
+
+    /// Eskiden ilerleme 50 ms'de bir durum değiştirip bütün ekranı (medya dahil)
+    /// saniyede 20 kez yeniden çiziyordu; çubuk da kesik kesik ilerliyordu.
+    /// Şimdi yalnızca çubuklar, ekranın kendi hızında, zamandan hesaplanıyor.
     private var progressBars: some View {
-        HStack(spacing: 4) {
-            ForEach(stories.indices, id: \.self) { index in
-                Capsule().fill(.white.opacity(0.3)).frame(height: 3)
-                    .overlay(alignment: .leading) {
-                        Capsule().fill(.white).frame(maxWidth: .infinity)
-                            .scaleEffect(x: index < currentIndex ? 1 : (index == currentIndex ? progress : 0), anchor: .leading)
-                    }
+        TimelineView(.animation(paused: playStartedAt == nil)) { context in
+            let simdi = currentProgress(at: context.date)
+            HStack(spacing: 3) {
+                ForEach(stories.indices, id: \.self) { index in
+                    let dolu: CGFloat = index < currentIndex ? 1 : (index == currentIndex ? simdi : 0)
+                    Capsule().fill(.white.opacity(0.32))
+                        .overlay(alignment: .leading) {
+                            GeometryReader { geo in
+                                Capsule().fill(.white).frame(width: geo.size.width * dolu)
+                            }
+                        }
+                        .frame(height: 2.5)
+                }
             }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(L10n.Story.progress(currentIndex + 1, stories.count))
+    }
+
+    private func currentProgress(at date: Date) -> CGFloat {
+        guard let story else { return 0 }
+        var gecen = playedBefore
+        if let playStartedAt { gecen += date.timeIntervalSince(playStartedAt) }
+        return min(1, CGFloat(gecen / playbackDuration(for: story)))
     }
 
     private func storyHeader(_ story: CampusStory) -> some View {
@@ -207,24 +309,26 @@ struct StoryViewer: View {
             Button { selectedStoryAuthor = story.author } label: {
                 HStack(spacing: 11) {
                     ProfileMedia(url: story.author.imageURL, data: nil, assetName: story.author.imageAssetName)
-                        .frame(width: 38, height: 38)
+                        .frame(width: 34, height: 34)
                         .clipShape(Circle())
+                        .overlay(Circle().strokeBorder(.white.opacity(0.6), lineWidth: 1))
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 6) {
-                            Text(story.author.name).font(.system(size: 15, weight: .bold))
-                            // Post kartındaki gibi kurucu / doğrulanmış rozeti.
-                            if let icon = story.author.badge.systemImage,
-                               let title = story.author.badge.title {
-                                Label(title, systemImage: icon)
-                                    .font(.system(size: 11, weight: .semibold))
-                                    .foregroundStyle(
-                                        story.author.badge == .founder
-                                            ? BondTheme.ember
-                                            : .white.opacity(0.92)
-                                    )
-                                    .lineLimit(1)
-                                    .fixedSize(horizontal: true, vertical: false)
+                            // İsim asla kesilmesin: rozet yalnızca işaret, tazelik en sonda.
+                            Text(story.author.name)
+                                .font(.system(size: 15, weight: .bold))
+                                .lineLimit(1)
+                                .fixedSize()
+                            if let icon = story.author.badge.systemImage {
+                                Image(systemName: icon)
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(story.author.badge == .founder ? BondTheme.ember : .white.opacity(0.92))
+                                    .accessibilityLabel(story.author.badge.title ?? "")
                             }
+                            Text(ageText(story))
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.7))
+                                .lineLimit(1)
                         }
                         if let place = story.place {
                             Label(place.name, systemImage: "mappin").font(.system(size: 12)).opacity(0.72)
@@ -289,17 +393,9 @@ struct StoryViewer: View {
         }
     }
 
-    private func storyFooter(_ story: CampusStory) -> some View {
-        VStack(alignment: .leading, spacing: 13) {
-            if isPaused {
-                Label(L10n.Story.paused, systemImage: "pause.fill")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.8))
-                    .padding(.horizontal, 10).frame(height: 26)
-                    .background(.black.opacity(0.35), in: Capsule())
-                    .transition(.opacity)
-            }
-
+    /// Kartın altındaki yazı ve (ücretsizde) duraklatma ipucu.
+    private func storyCaption(_ story: CampusStory) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
             // Ücretsiz kullanıcı basılı tuttuğunda: story durmuyor, akış
             // kesilmiyor; yalnızca özelliğin var olduğunu söyleyen bir ipucu.
             // Dokunursa Plus ekranı açılıyor — ama zorlamıyor.
@@ -314,7 +410,18 @@ struct StoryViewer: View {
                 .buttonStyle(PressableStyle())
                 .transition(.opacity)
             }
-            Text(story.caption).font(.system(size: 24, weight: .semibold))
+            if !story.caption.isEmpty {
+                Text(story.caption)
+                    .font(.system(size: 22, weight: .semibold))
+                    .shadow(color: .black.opacity(0.3), radius: 6, y: 1)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    /// Kartın altında, siyah zeminde yanıt şeridi.
+    private func storyFooter(_ story: CampusStory) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
             if story.isMine {
                 // Kendi story'ne yanıt yazma alanı çıkıyordu.
                 EmptyView()
@@ -332,15 +439,17 @@ struct StoryViewer: View {
                     HStack(spacing: 10) {
                         Button { toggleStoryLike() } label: {
                             Image(systemName: liked ? "heart.fill" : "heart")
-                                .font(.system(size: 20)).foregroundStyle(liked ? BondTheme.coral : .white)
+                                .font(.system(size: 22)).foregroundStyle(liked ? BondTheme.coral : .white)
+                                .symbolEffect(.bounce, options: .nonRepeating, value: liked)
+                                .contentTransition(.symbolEffect(.replace))
                                 .frame(width: 44, height: 44)
                         }
                         .accessibilityLabel(liked ? L10n.Story.unlike : L10n.Story.like)
-                        TextField(L10n.Story.replyPlaceholder, text: $reply)
+                        TextField("", text: $reply, prompt: Text(L10n.Story.replyPlaceholder).foregroundStyle(.white.opacity(0.5)))
                             .focused($replyFocused)
                             .padding(.horizontal, 16).frame(height: 46)
-                            .background(.black.opacity(0.2), in: Capsule())
-                            .overlay(Capsule().stroke(.white.opacity(0.55)))
+                            .background(.white.opacity(0.08), in: Capsule())
+                            .overlay(Capsule().strokeBorder(.white.opacity(0.28)))
                         Button { sendRequest() } label: {
                             Image(systemName: "paperplane.fill")
                                 .font(.system(size: 20)).foregroundStyle(.white)
@@ -359,11 +468,11 @@ struct StoryViewer: View {
                 }
             } else {
                 HStack(spacing: 10) {
-                    TextField(L10n.Story.replyTo(story.author.name), text: $reply)
+                    TextField("", text: $reply, prompt: Text(L10n.Story.replyTo(story.author.name)).foregroundStyle(.white.opacity(0.5)))
                         .focused($replyFocused)
                         .padding(.horizontal, 16).frame(height: 46)
-                        .background(.black.opacity(0.2), in: Capsule())
-                        .overlay(Capsule().stroke(.white.opacity(0.55)))
+                        .background(.white.opacity(0.08), in: Capsule())
+                        .overlay(Capsule().strokeBorder(.white.opacity(0.28)))
                     Button { sendReply() } label: {
                         Image(systemName: reply.isEmpty ? "heart.fill" : "paperplane.fill")
                             .font(.system(size: 20)).foregroundStyle(liked ? BondTheme.coral : .white)
@@ -377,26 +486,34 @@ struct StoryViewer: View {
 
     @MainActor
     private func playCurrentStory() async {
-        guard let story, !isInteractionBlocking else { return }
-
-        let tick = Duration.milliseconds(50)
-        let duration = playbackDuration(for: story)
-        let steps = max(1, duration / 0.05)
-        let increment: CGFloat = 1 / CGFloat(steps)
-        while progress < 1 {
-            do {
-                try await Task.sleep(for: tick)
-            } catch {
-                return
-            }
-            guard !Task.isCancelled, !isInteractionBlocking else { return }
-            progress = min(1, progress + increment)
+        guard let story, !isInteractionBlocking else {
+            freezeProgress()
+            return
+        }
+        let kalan = playbackDuration(for: story) - playedBefore
+        guard kalan > 0 else { next(); return }
+        playStartedAt = .now
+        do {
+            try await Task.sleep(for: .seconds(kalan))
+        } catch {
+            // Duraklatma (ya da sayfa) iptali: o ana kadar oynanan süreyi sakla.
+            freezeProgress()
+            return
         }
         guard !Task.isCancelled else { return }
         next()
     }
 
+    private func freezeProgress() {
+        guard let playStartedAt else { return }
+        playedBefore += Date.now.timeIntervalSince(playStartedAt)
+        self.playStartedAt = nil
+    }
+
     private func playbackDuration(for story: CampusStory) -> TimeInterval {
+#if DEBUG
+        if appState.debugSlowStories { return 60 }
+#endif
         if story.isVideo {
             return min(CampusStory.maxVideoDuration, max(0.5, story.duration ?? CampusStory.maxVideoDuration))
         }
@@ -414,7 +531,8 @@ struct StoryViewer: View {
     }
 
     private func prepareForTransition() {
-        progress = 0
+        playStartedAt = nil
+        playedBefore = 0
         reply = ""
         replySent = false
         liked = false
@@ -423,12 +541,22 @@ struct StoryViewer: View {
 
     private func previous() {
         prepareForTransition()
-        if currentIndex > 0 { currentIndex -= 1 }
+        guard currentIndex > 0 else { return }
+        move(to: currentIndex - 1, forward: false)
     }
 
     private func next() {
         prepareForTransition()
-        if currentIndex < stories.count - 1 { currentIndex += 1 } else { close() }
+        guard currentIndex < stories.count - 1 else { close(); return }
+        move(to: currentIndex + 1, forward: true)
+    }
+
+    private func move(to index: Int, forward: Bool) {
+        goingForward = forward
+        authorChanged = stories[index].author.id != stories[currentIndex].author.id
+        withAnimation(reduceMotion ? nil : .smooth(duration: authorChanged ? 0.36 : 0.22)) {
+            currentIndex = index
+        }
     }
 
     private func conversation(with author: StudentProfile) -> Conversation? {
@@ -476,6 +604,10 @@ struct StoryViewer: View {
         guard let story, !story.isMine else { return }
         let yeni = !liked
         withAnimation(.snappy) { liked = yeni }
+        if yeni {
+            heartBurst += 1
+            Haptics.impact(.light)
+        }
         appState.setStoryLiked(story.id, liked: yeni)
     }
 }

@@ -375,6 +375,8 @@ final class AppState {
     var opensProfileOf: String??
     /// Yalnızca geliştirme derlemesinde: Plus ekranını açar (tasarım kontrolü).
     var opensPaywall = false
+    /// `-storyslow`: story 60 sn sürer (simülatörde dokunuşları kaydetmek için).
+    var debugSlowStories = false
     /// `-plan pro`: paywall'da ön seçili paket (abonelik inceleme ekran görüntüsü için).
     var debugPaywallPlan: SubscriptionTier?
     var opensProNote = false

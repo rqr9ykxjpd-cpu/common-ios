@@ -80,6 +80,7 @@ struct BondApp: App {
                 state.opensProfileOf = .some(ad)
             }
             if arguments.contains("-paywall") { state.opensPaywall = true }
+            if arguments.contains("-storyslow") { state.debugSlowStories = true }
             if let i = arguments.firstIndex(of: "-plan"), i + 1 < arguments.count {
                 state.debugPaywallPlan = ["plus": SubscriptionTier.plus, "pro": .pro][arguments[i + 1]]
             }
