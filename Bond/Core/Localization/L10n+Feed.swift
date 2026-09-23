@@ -32,6 +32,7 @@ extension L10n {
             L10n.format("feed.memberCount", Int64(count))
         }
         static var yourStory: String { String(localized: "feed.yourStory") }
+        static func newPosts(_ n: Int) -> String { L10n.format("feed.newPosts", Int64(n)) }
         static func openProfile(_ name: String) -> String {
             L10n.format("feed.openProfile", name)
         }

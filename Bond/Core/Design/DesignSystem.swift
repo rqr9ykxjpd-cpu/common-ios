@@ -558,13 +558,46 @@ extension View {
     }
 }
 
+/// Yükleme göstergesi olarak markanın kendisi: "common" harfleri sırayla
+/// koyulaşıp soluyor. Sistem çarkı her uygulamada aynı; bu bize ait.
+struct WordmarkLoader: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var size: CGFloat = 22
+    @State private var faz = 0
+
+    private var harfler: [(index: Int, karakter: Character)] {
+        Array(L10n.Brand.wordmark).enumerated().map { ($0.offset, $0.element) }
+    }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(harfler, id: \.index) { harf in
+                Text(String(harf.karakter))
+                    .opacity(reduceMotion ? 0.7 : (faz == harf.index ? 1 : 0.28))
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.35), value: faz)
+            }
+        }
+        .font(.system(size: size, weight: .bold, design: .serif))
+        .tracking(-0.6)
+        .foregroundStyle(BondTheme.ink)
+        .fixedSize()
+        .accessibilityHidden(true)
+        .task {
+            guard !reduceMotion else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(180))
+                faz = (faz + 1) % max(harfler.count, 1)
+            }
+        }
+    }
+}
+
 struct AppLoadingView: View {
     var message: String = L10n.Common.loading
 
     var body: some View {
         VStack(spacing: BondTheme.Space.md) {
-            ProgressView()
-                .tint(BondTheme.acid)
+            WordmarkLoader()
             Text(message)
                 .font(BondTheme.Typography.footnote)
                 .foregroundStyle(BondTheme.muted)

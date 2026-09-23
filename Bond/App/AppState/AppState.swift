@@ -108,6 +108,10 @@ final class AppState {
     /// Engellediğin kişiler; ayarlardaki liste için.
     var blockedProfiles: [BlockedProfile] = []
     var posts: [SocialPost] = []
+    /// Arka planda çekilmiş ama henüz listeye uygulanmamış akış: kullanıcı
+    /// okurken içerik altından kaymasın; üstte "N yeni gönderi" balonu çıkar.
+    var pendingPosts: [SocialPost] = []
+    var newPostCount = 0
     var stories: [CampusStory] = []
     var notifications: [AppNotification] = []
     /// Okundu diye işaretlenmiş ama sunucu henüz onaylamamış bildirimler.

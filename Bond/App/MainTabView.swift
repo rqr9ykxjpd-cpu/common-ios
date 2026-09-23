@@ -16,7 +16,16 @@ struct MainTabView: View {
                 .tabItem { Label(L10n.CampusNavigation.places, systemImage: "mappin.and.ellipse") }
                 .tag(1)
             PremiumMatchesView(showsCloseButton: false)
-                .tabItem { Label(L10n.CampusNavigation.chats, systemImage: "bubble.left.and.bubble.right") }
+                .tabItem {
+                    // Yeni mesaj/istek gelince ikon bir kez sekiyor: rozet
+                    // rakamı küçük, hareket göz ucuyla fark ediliyor.
+                    Label {
+                        Text(L10n.CampusNavigation.chats)
+                    } icon: {
+                        Image(systemName: "bubble.left.and.bubble.right")
+                            .symbolEffect(.bounce, options: .nonRepeating, value: appState.chatActivityCount)
+                    }
+                }
                 .badge(appState.chatActivityCount)
                 .tag(2)
             SocialProfileView()

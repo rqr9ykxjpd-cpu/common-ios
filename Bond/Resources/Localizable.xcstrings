@@ -4574,6 +4574,23 @@
         }
       }
     },
+    "feed.newPosts" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld new posts"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld yeni gönderi"
+          }
+        }
+      }
+    },
     "feed.yourStory" : {
       "extractionState" : "manual",
       "localizations" : {

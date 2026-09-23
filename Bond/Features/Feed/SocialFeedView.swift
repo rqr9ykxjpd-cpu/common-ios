@@ -173,6 +173,30 @@ struct SocialFeedView: View {
                     .onAppear {
                         proxy.scrollTo("feed-top", anchor: .top)
                     }
+                    // Arka plandan dönüşte yeni gönderi varsa liste altından
+                    // kaymasın; kullanıcı hazır olunca dokunur.
+                    .overlay(alignment: .top) {
+                        if appState.newPostCount > 0 {
+                            Button {
+                                withAnimation(reduceMotion ? nil : BondTheme.Motion.smooth) {
+                                    appState.applyPendingPosts()
+                                    proxy.scrollTo("feed-top", anchor: .top)
+                                }
+                            } label: {
+                                Label(L10n.Feed.newPosts(appState.newPostCount), systemImage: "arrow.up")
+                                    .font(.footnote.weight(.bold))
+                                    .foregroundStyle(BondTheme.paper)
+                                    .padding(.horizontal, 16)
+                                    .frame(minHeight: 40)
+                                    .background(BondTheme.ink, in: Capsule())
+                                    .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
+                            }
+                            .buttonStyle(PressableStyle())
+                            .padding(.top, 8)
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                        }
+                    }
+                    .animation(reduceMotion ? nil : BondTheme.Motion.bouncy, value: appState.newPostCount)
                 }
             }
             .background(BondTheme.paper.ignoresSafeArea())

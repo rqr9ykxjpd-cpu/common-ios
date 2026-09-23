@@ -137,6 +137,8 @@ extension AppState {
             justPublishedPostIDs.removeAll()
             seenCounts = FeedSeenTracker.snapshot()
             feedRankVersion += 1
+            pendingPosts = []
+            newPostCount = 0
             posts = result.map { backend in
                 let social = socialPost(from: backend)
                 if social.isMine, social.author.badge == .none, myBadge != .none {
@@ -149,6 +151,29 @@ extension AppState {
             guard generation == feedLoadGeneration, userID == currentUserID, !isCancellation(error) else { return }
             feedError = UserFacingError.message(error, fallback: L10n.Feed.loadFailed)
         }
+    }
+
+    /// Arka plandan dönünce sessizce bakar: en üstte yeni gönderi var mı?
+    /// Liste anında değişmez; kullanıcı balona dokununca uygulanır.
+    func checkForNewPosts() async {
+        guard route == .app, !posts.isEmpty, !isLoadingFeed else { return }
+        guard let result = try? await service.fetchFeed() else { return }
+        let mevcut = Set(posts.map(\.id))
+        let yeniler = result.map { socialPost(from: $0) }
+        let sayi = yeniler.filter { !mevcut.contains($0.id) && !$0.isMine }.count
+        guard sayi > 0 else { return }
+        pendingPosts = yeniler
+        newPostCount = sayi
+    }
+
+    /// "N yeni gönderi" balonuna dokunuldu: bekleyen liste uygulanır.
+    func applyPendingPosts() {
+        guard !pendingPosts.isEmpty else { return }
+        posts = pendingPosts
+        pendingPosts = []
+        newPostCount = 0
+        feedRankVersion += 1
+        Haptics.selection()
     }
 
     @discardableResult
