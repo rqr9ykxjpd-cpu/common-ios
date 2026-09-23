@@ -4591,6 +4591,23 @@
         }
       }
     },
+    "feed.storyTapHint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap right: next · Tap left: previous"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sağa dokun: sonraki · Sola dokun: önceki"
+          }
+        }
+      }
+    },
     "feed.yourStory" : {
       "extractionState" : "manual",
       "localizations" : {
