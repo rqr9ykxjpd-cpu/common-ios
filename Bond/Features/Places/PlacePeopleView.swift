@@ -92,19 +92,10 @@ struct PlacePeopleView: View {
 
     private func meetupButton(for profile: StudentProfile) -> some View {
         let sent = appState.meetingRequest(for: profile, at: place) != nil
-        return Button {
+        return MeetupCoffeeButton(sent: sent) {
             appState.sendMeetingRequest(to: profile, at: place)
-        } label: {
-            Text(sent ? L10n.Profile.requestSent : L10n.Places.meetHere)
-                .font(.subheadline.weight(.semibold))
-                .multilineTextAlignment(.trailing)
-                .lineLimit(2)
-                .frame(minWidth: 96, minHeight: 44, alignment: .trailing)
         }
-        .buttonStyle(.bordered)
-        .tint(BondTheme.ink)
-        .disabled(sent)
-        .accessibilityLabel(L10n.Places.sendMeetupA11y(profile.name))
+        .accessibilityLabel(sent ? L10n.Profile.requestSent : L10n.Places.sendMeetupA11y(profile.name))
         .accessibilityIdentifier("place.meetup.\(profile.id)")
     }
 }

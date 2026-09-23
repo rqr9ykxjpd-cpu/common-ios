@@ -522,12 +522,15 @@ struct SocialPersonDetailView: View {
     @ViewBuilder private var meetHere: some View {
         if visiblePlace != nil, !isMe {
             VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
-                Button { sendRequest() } label: {
-                    Label(pendingRequest == nil ? L10n.Profile.meetHere : L10n.Profile.requestSent,
-                          systemImage: pendingRequest == nil ? "cup.and.saucer" : "checkmark")
+                // Fincan düğmesi + yanında ne olduğunu anlatan satır: kart geniş,
+                // tek başına ikon burada fazla sessiz kalıyor.
+                HStack(spacing: BondTheme.Space.compact) {
+                    MeetupCoffeeButton(sent: pendingRequest != nil, size: 52) { sendRequest() }
+                    Text(pendingRequest == nil ? L10n.Profile.meetHere : L10n.Profile.requestSent)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(BondTheme.ink)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .buttonStyle(.bordered)
-                .disabled(pendingRequest != nil)
 
                 if pendingRequest == nil {
                     Text(L10n.Profile.noNotifyIfIgnored)
