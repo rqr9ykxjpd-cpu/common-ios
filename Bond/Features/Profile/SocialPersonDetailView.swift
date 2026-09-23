@@ -24,6 +24,8 @@ struct SocialPersonDetailView: View {
     @State private var cardOffset: CGFloat = 0
     @State private var cardDragging = false
     @State private var cardFlying = false
+    @State private var showsUndo = false
+    @State private var undoTask: Task<Void, Never>?
     /// Sağa kaydırma sonrası ortada beliren onay.
     @State private var showSentBurst = false
     @State private var showConnectedMoment = false
@@ -90,10 +92,37 @@ struct SocialPersonDetailView: View {
         }
         .safeAreaInset(edge: .bottom) {
             if !isMe {
-                actions
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(BondTheme.paper)
+                VStack(spacing: 8) {
+                    // Yanlışlıkla sağa kaydırmak kolay; istek gittikten sonra kısa
+                    // süre geri alınabilsin. Bilgi şeridi kart sayfasının arkasında
+                    // kaldığı için düğme kartın kendi alt şeridinde duruyor.
+                    if showsUndo {
+                        HStack(spacing: 10) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(BondTheme.acid)
+                            Text(L10n.CampusDesign.rightSwipeSent)
+                                .font(.footnote.weight(.medium))
+                                .foregroundStyle(BondTheme.ink)
+                            Spacer(minLength: 0)
+                            Button { Task { await undoConnect() } } label: {
+                                Text(L10n.Common.undo)
+                                    .font(.footnote.weight(.bold))
+                                    .foregroundStyle(BondTheme.burntOrange)
+                                    .padding(.horizontal, 12)
+                                    .frame(minHeight: 36)
+                            }
+                            .buttonStyle(PressableStyle())
+                        }
+                        .padding(.horizontal, 14)
+                        .frame(minHeight: 48)
+                        .background(BondTheme.surface, in: Capsule())
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                    actions
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(BondTheme.paper)
             }
         }
         .confirmationDialog(L10n.Moderation.suspendAccount, isPresented: $showSuspendConfirmation, titleVisibility: .visible) {
@@ -226,12 +255,27 @@ struct SocialPersonDetailView: View {
         case .matched(let matchID):
             // İki taraf da istek göndermiş → önce an, sonra sohbet.
             await presentConnectedMoment(then: matchID)
-        case .sent, .already:
-            // Kart açık kalır; alt yazı "İstek gönderildi" olur.
+        case .sent:
+            // Kart açık kalır; alt yazı "İstek gönderildi" olur, altında geri alma.
+            withAnimation(reduceMotion ? nil : BondTheme.Motion.snappy) { showsUndo = true }
+            undoTask?.cancel()
+            undoTask = Task { @MainActor in
+                try? await Task.sleep(for: .seconds(8))
+                guard !Task.isCancelled else { return }
+                withAnimation(reduceMotion ? nil : BondTheme.Motion.smooth) { showsUndo = false }
+            }
+        case .already:
             break
         case .failed:
             break
         }
+    }
+
+    /// İstek gönderildikten sonra kısa süre görünen "Geri al" düğmesi.
+    private func undoConnect() async {
+        undoTask?.cancel()
+        await appState.undoRightSwipe(on: profile)
+        withAnimation(reduceMotion ? nil : BondTheme.Motion.smooth) { showsUndo = false }
     }
 
     // MARK: - Kart kaydırma

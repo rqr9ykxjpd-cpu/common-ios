@@ -11,6 +11,7 @@ extension L10n {
         static var back: String { String(localized: "common.back") }
         static var retry: String { String(localized: "common.retry") }
         static var continue_: String { String(localized: "common.continue") }
+        static var undo: String { String(localized: "common.undo") }
         static var loading: String { String(localized: "common.loading") }
         static var you: String { String(localized: "common.you") }
         static var someone: String { String(localized: "common.someone") }

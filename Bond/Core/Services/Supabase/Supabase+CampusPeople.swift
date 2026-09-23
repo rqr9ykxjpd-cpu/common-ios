@@ -37,6 +37,11 @@ extension SupabaseProductService {
         }
     }
 
+    @discardableResult
+    func undoRightSwipe(on profileID: UUID) async throws -> Bool {
+        try await client.rpc("undo_right_swipe", params: PostVoterParams(target: profileID)).execute().value
+    }
+
     /// Sola kaydırma: sessizce kaydedilir, kimseye görünmez (kurucu hariç).
     func recordLeftSwipe(on profileID: UUID) async throws {
         try await client.rpc("swipe_left_on_profile", params: RightSwipeParams(subject: profileID)).execute()

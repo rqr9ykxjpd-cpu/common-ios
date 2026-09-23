@@ -191,6 +191,7 @@ struct SampleProductService: ProductService {
         await store.addMessageRequest(to: profileID, body: body)
     }
     func recordLeftSwipe(on profileID: UUID) async throws {}
+    func undoRightSwipe(on profileID: UUID) async throws -> Bool { true }
     func fetchFounderStats() async throws -> FounderStats {
         var s = FounderStats()
         s.usersTotal = 184; s.usersVerified = 171; s.usersToday = 9; s.usersWeek = 41

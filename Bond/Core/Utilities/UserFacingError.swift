@@ -3,11 +3,27 @@ import Foundation
 /// Ekranın üstünde beliren kısa mesaj. Daha önce düz `String` idi ve görünüm her
 /// mesajı yeşil tikle gösteriyordu — hata mesajlarının başında da onay işareti
 /// çıkıyordu, bu da hatayı başarı gibi okutuyordu.
-struct AppToastMessage: Equatable {
+struct AppToastMessage: Equatable, Identifiable {
     enum Kind { case info, error }
 
+    let id = UUID()
     let text: String
     let kind: Kind
+    /// Bilgi mesajının sağındaki düğme ("Geri al" gibi). Yoksa düğme çıkmaz.
+    var actionTitle: String?
+    var action: (@MainActor @Sendable () -> Void)?
+
+    static func == (lhs: AppToastMessage, rhs: AppToastMessage) -> Bool {
+        lhs.id == rhs.id
+    }
+
+    init(text: String, kind: Kind, actionTitle: String? = nil,
+         action: (@MainActor @Sendable () -> Void)? = nil) {
+        self.text = text
+        self.kind = kind
+        self.actionTitle = actionTitle
+        self.action = action
+    }
 
     var systemImage: String {
         switch kind {

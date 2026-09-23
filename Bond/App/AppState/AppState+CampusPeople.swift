@@ -72,6 +72,24 @@ extension AppState {
     /// Tek taraf: bildirim. Karşılıklı: `matches` + Sohbet listesinde DM.
     @discardableResult
     /// Sola kaydırma: kart kapanır, kayıt sessizce gider; hata kullanıcıya gösterilmez.
+    /// Geri al: sunucudaki satırı ve karşı tarafa giden bildirimi siler.
+    /// Eşleşme doğduysa sunucu reddeder; o zaman kullanıcıya durumu söyleriz.
+    func undoRightSwipe(on profile: StudentProfile) async {
+        do {
+            let oldu = try await service.undoRightSwipe(on: profile.id)
+            if oldu {
+                rightSwipedProfileIDs.remove(profile.id)
+                toast = nil
+                show(L10n.CampusDesign.rightSwipeUndone)
+                Haptics.success()
+            } else {
+                show(L10n.CampusDesign.rightSwipeUndoFailed)
+            }
+        } catch {
+            showError(error, fallback: L10n.CampusDesign.rightSwipeUndoFailed)
+        }
+    }
+
     func recordLeftSwipe(on profile: StudentProfile) {
         guard profile.id != currentUserID else { return }
         Task { try? await service.recordLeftSwipe(on: profile.id) }

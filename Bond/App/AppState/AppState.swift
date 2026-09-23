@@ -236,6 +236,11 @@ final class AppState {
         toast = AppToastMessage(text: message, kind: .info)
     }
 
+    /// Sağında düğme olan bilgi mesajı: "İstek gönderildi · Geri al".
+    func show(_ message: String, actionTitle: String, action: @escaping @MainActor @Sendable () -> Void) {
+        toast = AppToastMessage(text: message, kind: .info, actionTitle: actionTitle, action: action)
+    }
+
     /// Hata gösterir (kırmızı ünlem). Ham sunucu metni kullanıcıya çıkmaz; bkz. `UserFacingError`.
     ///
     /// İptal edilen görevler hata sayılmaz. `loadStories` gibi yüklemeler ekran

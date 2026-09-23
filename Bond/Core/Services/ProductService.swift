@@ -183,6 +183,10 @@ protocol ProductService: Sendable {
     func setStudyGroupSpotPhoto(_ groupID: UUID, imageData: Data) async throws -> URL?
     /// Sola kaydırma kaydı (sessiz).
     func recordLeftSwipe(on profileID: UUID) async throws
+    /// Sağa kaydırmayı kısa pencere içinde geri alır (satır + bildirim silinir).
+    /// Eşleşme doğduysa sunucu reddeder ve `false` döner.
+    @discardableResult
+    func undoRightSwipe(on profileID: UUID) async throws -> Bool
     /// Kurucu: kartımı kaydıranlar.
     func fetchProfileSwipers() async throws -> [ProfileSwiper]
     /// Kurucu: sunucudaki anlık sayılar (kullanıcı, Plus/Pro, akış…).
@@ -327,6 +331,7 @@ struct UnconfiguredProductService: ProductService {
     func leaveStudyGroup(_ groupID: UUID) async throws { try fail() }
     func setStudyGroupSpotPhoto(_ groupID: UUID, imageData: Data) async throws -> URL? { try fail() }
     func recordLeftSwipe(on profileID: UUID) async throws { try fail() }
+    func undoRightSwipe(on profileID: UUID) async throws -> Bool { try fail() }
     func fetchProfileSwipers() async throws -> [ProfileSwiper] { try fail() }
     func fetchFounderStats() async throws -> FounderStats { try fail() }
     func sendFounderBroadcast(title: String, body: String, testOnly: Bool) async throws -> Int { try fail() }

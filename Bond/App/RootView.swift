@@ -107,7 +107,9 @@ struct RootView: View {
             // Kısa bilgi mesajlarının süresini metnin okunma uzunluğuna göre ayarlıyoruz.
             // Hatalar native alert içinde kullanıcı kapatana kadar görünür kalıyor.
             let readingTime = 1.6 + Double(toast.text.count) * 0.045
-            try? await Task.sleep(for: .seconds(min(max(readingTime, 2.4), 6)))
+            // Geri al gibi bir düğme varsa dokunmaya vakit kalsın.
+            let duration = toast.actionTitle == nil ? min(max(readingTime, 2.4), 6) : 5.5
+            try? await Task.sleep(for: .seconds(duration))
             guard !Task.isCancelled, appState.toast == toast else { return }
             withAnimation(.snappy) { appState.toast = nil }
         }
@@ -125,6 +127,16 @@ private struct AppToast: View {
                 .font(BondTheme.Typography.footnote.weight(.medium))
                 .lineLimit(6)
             Spacer(minLength: 0)
+            if let title = message.actionTitle, let action = message.action {
+                Button(title) {
+                    Haptics.impact(.light)
+                    action()
+                }
+                .font(BondTheme.Typography.footnote.weight(.bold))
+                .foregroundStyle(BondTheme.burntOrange)
+                .buttonStyle(.plain)
+                .frame(minHeight: 44)
+            }
         }
         .foregroundStyle(BondTheme.ink)
         .padding(.horizontal, BondTheme.Space.lg)

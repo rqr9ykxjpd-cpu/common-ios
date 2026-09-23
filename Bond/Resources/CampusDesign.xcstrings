@@ -673,6 +673,38 @@
         }
       }
     },
+    "rightSwipeUndone": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İstek geri alındı."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request undone."
+          }
+        }
+      }
+    },
+    "rightSwipeUndoFailed": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri alınamadı; bağlantı çoktan kurulmuş olabilir."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't undo — the connection may already exist."
+          }
+        }
+      }
+    },
     "rightSwipeSent": {
       "localizations": {
         "tr": {

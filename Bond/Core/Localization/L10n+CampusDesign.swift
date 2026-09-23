@@ -45,6 +45,8 @@ extension L10n {
         static var swipeRequestBody: String { String(localized: "swipeRequestBody", table: "CampusDesign") }
         static var alreadySwiped: String { String(localized: "alreadySwiped", table: "CampusDesign") }
         static var rightSwipeSent: String { String(localized: "rightSwipeSent", table: "CampusDesign") }
+        static var rightSwipeUndone: String { String(localized: "rightSwipeUndone", table: "CampusDesign") }
+        static var rightSwipeUndoFailed: String { String(localized: "rightSwipeUndoFailed", table: "CampusDesign") }
         static var rightSwipeMatched: String { String(localized: "rightSwipeMatched", table: "CampusDesign") }
         static var rightSwipeFailed: String { String(localized: "rightSwipeFailed", table: "CampusDesign") }
         static var rightSwipeCTA: String { String(localized: "rightSwipeCTA", table: "CampusDesign") }

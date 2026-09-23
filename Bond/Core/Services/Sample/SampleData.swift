@@ -143,8 +143,6 @@ enum SampleData {
         let ece = profiles[0]
         let defne = profiles[1]
         let mina = profiles[4]
-        let arda = profiles[5]
-        let selin = profiles[3]
         return [
             Conversation(
                 id: UUID(),
@@ -178,27 +176,6 @@ enum SampleData {
                 ],
                 updatedAt: hours(3),
                 unreadCount: 1
-            ),
-            Conversation(
-                id: UUID(),
-                profile: arda,
-                messages: [
-                    Message(body: "Cumartesi 10.00 bisiklet turu var, kampüs kapısında toplanıyoruz", isMine: false, sentAt: hours(9)),
-                    Message(body: "Varım, kask lazım mı?", isMine: true, sentAt: hours(8.5)),
-                    Message(body: "Kulüpte fazladan var, hallederiz 🚴", isMine: false, sentAt: hours(8))
-                ],
-                updatedAt: hours(8),
-                unreadCount: 0
-            ),
-            Conversation(
-                id: UUID(),
-                profile: selin,
-                messages: [
-                    Message(body: "Münazara turnuvası için ekip kuruyoruz, ilgilenir misin?", isMine: false, sentAt: hours(30)),
-                    Message(body: "Konu ne? Hafta içi akşamları uygunum", isMine: true, sentAt: hours(29))
-                ],
-                updatedAt: hours(29),
-                unreadCount: 0
             )
         ]
     }
