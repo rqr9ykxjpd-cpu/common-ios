@@ -2,10 +2,6 @@ import SwiftUI
 import AVFoundation
 
 struct StoryViewer: View {
-    /// İlk kez story açana tek seferlik dokunma ipucu. Bayrak ipucu *bittikten*
-    /// sonra çevriliyor: ekran açılırken görünüm bir kez yeniden kuruluyor ve
-    /// başta çevrilen bayrak ikinci kopyada ipucunu hiç göstermiyordu.
-    @AppStorage("story.tapHintSeen") private var tapHintSeen = false
     @Environment(AppState.self) private var appState
     let stories: [CampusStory]
     let viewRecords: (UUID) -> [StoryViewRecord]
@@ -71,19 +67,6 @@ struct StoryViewer: View {
                     }
                     .padding(.top, 90).padding(.bottom, 115)
 
-                    if !tapHintSeen {
-                        Label(L10n.Feed.storyTapHint, systemImage: "hand.tap")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(BondTheme.canvasDark)
-                            .padding(.horizontal, 14)
-                            .frame(height: 34)
-                            .background(BondTheme.onCanvasDark.opacity(0.92), in: Capsule())
-                            .allowsHitTesting(false)
-                            .accessibilityHidden(true)
-                            .transition(.opacity)
-                            .zIndex(3)
-                    }
-
                     VStack(spacing: 12) {
                         progressBars
                         storyHeader(story)
@@ -103,12 +86,6 @@ struct StoryViewer: View {
             }
         }
         .onAppear { activatePlaybackAudio() }
-        .task {
-            guard !tapHintSeen else { return }
-            try? await Task.sleep(for: .seconds(3.5))
-            guard !Task.isCancelled else { return }
-            withAnimation(.easeIn(duration: 0.3)) { tapHintSeen = true }
-        }
         .onDisappear { deactivatePlaybackAudio() }
         .task(id: currentIndex) {
             if let story {
