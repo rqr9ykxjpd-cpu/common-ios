@@ -55,11 +55,14 @@ struct PostCard: View {
         // Erişilebilirlik boyutlarında kapsül sırası taşıyordu; kart bir üst
         // sınırda durur, sistem geri kalanını büyütür.
         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+        // Gönderi sayfası kartın kendisinden büyüyerek açılır, kapanınca yerine döner.
+        .zoomSource(id: "gonderi-\(post.id)", in: zoomNamespace)
         .sheet(isPresented: $showComments) {
             CommentsView(postID: post.id)
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
                 .presentationCornerRadius(28)
+                .zoomTransition(sourceID: "gonderi-\(post.id)", in: zoomNamespace)
         }
         .confirmationDialog(L10n.Moderation.removePostConfirm, isPresented: $showModeratorRemove, titleVisibility: .visible) {
             Button(L10n.Moderation.removePost, role: .destructive) {
@@ -98,7 +101,7 @@ struct PostCard: View {
                     ProfileMedia(url: post.author.imageURL, data: nil, assetName: post.author.imageAssetName)
                         .frame(width: 32, height: 32)
                         .clipShape(Circle())
-                        .zoomSource(id: post.author.id, in: zoomNamespace)
+                        .zoomSource(id: "yazar-\(post.id)", in: zoomNamespace)
                     VStack(alignment: .leading, spacing: 1) {
                         HStack(spacing: BondTheme.Space.xs) {
                             Text(post.author.name)

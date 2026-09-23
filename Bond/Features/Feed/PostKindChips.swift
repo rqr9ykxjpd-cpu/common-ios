@@ -32,6 +32,8 @@ struct PostKindChip: View {
     var kind: PostKind? = nil
     let selected: Bool
     var selectedColor: Color = BondTheme.ink
+    /// Verilirse seçili zemin çipler arasında kayar (sıradaki tek kapsül).
+    var pillNamespace: Namespace.ID? = nil
     let action: () -> Void
 
     var body: some View {
@@ -50,7 +52,19 @@ struct PostKindChip: View {
             .padding(.horizontal, 13)
             .frame(height: 34)
             .foregroundStyle(selected ? BondTheme.onAccent : BondTheme.ink)
-            .background(selected ? selectedColor : BondTheme.surface, in: Capsule())
+            .background {
+                ZStack {
+                    Capsule().fill(BondTheme.surface)
+                    if selected {
+                        if let pillNamespace {
+                            Capsule().fill(selectedColor)
+                                .matchedGeometryEffect(id: "seciliCip", in: pillNamespace)
+                        } else {
+                            Capsule().fill(selectedColor)
+                        }
+                    }
+                }
+            }
             .contentShape(Capsule())
         }
         .buttonStyle(.pressable)
@@ -62,6 +76,7 @@ struct PostKindChip: View {
 /// (akış filtresi); verilmezse yalnızca türler (composer).
 struct PostKindChipRow<Trailing: View>: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Namespace private var pill
     @Binding var selection: PostKind?
     var allTitle: String? = nil
     var kinds: [PostKind] = PostKind.allCases
@@ -82,7 +97,7 @@ struct PostKindChipRow<Trailing: View>: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: BondTheme.Space.sm) {
                     if let allTitle {
-                        PostKindChip(title: allTitle, selected: selection == nil) {
+                        PostKindChip(title: allTitle, selected: selection == nil, pillNamespace: pill) {
                             select(nil)
                         }
                         .id("all")
@@ -95,7 +110,8 @@ struct PostKindChipRow<Trailing: View>: View {
                             kind: kind,
                             selected: selection == kind,
                             // Seçili tür kendi rengini giyer; rozetle aynı ton.
-                            selectedColor: kind.tint
+                            selectedColor: kind.tint,
+                            pillNamespace: pill
                         ) {
                             select(kind)
                         }

@@ -42,6 +42,8 @@ final class BondAppDelegate: NSObject, UIApplicationDelegate, UNUserNotification
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         URLCache.shared = URLCache(memoryCapacity: 2 * 1024 * 1024, diskCapacity: 40 * 1024 * 1024, directory: nil)
+        // Görsel disk önbelleği açılışta sınırın altına insin (arka planda).
+        Task.detached(priority: .background) { MediaDiskCache.trim() }
         UNUserNotificationCenter.current().delegate = self
         NotificationCenter.default.addObserver(
             self,

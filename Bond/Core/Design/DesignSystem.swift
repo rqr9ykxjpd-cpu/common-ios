@@ -552,7 +552,26 @@ struct ZoomSourceIfAvailable: ViewModifier {
     }
 }
 
+/// Hedef tarafı: ad alanı varsa sayfa kaynaktan büyüyerek açılır.
+struct ZoomTransitionIfAvailable: ViewModifier {
+    let sourceID: AnyHashable
+    let namespace: Namespace.ID?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        if let namespace, !reduceMotion {
+            content.navigationTransition(.zoom(sourceID: sourceID, in: namespace))
+        } else {
+            content
+        }
+    }
+}
+
 extension View {
+    func zoomTransition(sourceID: some Hashable, in namespace: Namespace.ID?) -> some View {
+        modifier(ZoomTransitionIfAvailable(sourceID: AnyHashable(sourceID), namespace: namespace))
+    }
+
     func zoomSource(id: some Hashable, in namespace: Namespace.ID?) -> some View {
         modifier(ZoomSourceIfAvailable(id: AnyHashable(id), namespace: namespace))
     }

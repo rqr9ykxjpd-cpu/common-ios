@@ -66,9 +66,27 @@ extension SupabaseProductService {
         let uniquePaths = Array(Set(paths.filter { !$0.isEmpty }))
         guard !uniquePaths.isEmpty else { return [:] }
         var map: [String: URL] = [:]
+        // Önce toplu: 100'lük parçalar, parça başına tek istek. Tek tek imzalamak
+        // 40 görsellik akışta 5-6 tur bekleme demekti.
+        var start = 0
+        while start < uniquePaths.count {
+            let chunk = Array(uniquePaths[start..<min(start + 100, uniquePaths.count)])
+            start += 100
+            let results: [SignedURLResult]? = try? await client.storage.from(bucket)
+                .createSignedURLs(paths: chunk, expiresIn: 3_600)
+            for result in results ?? [] {
+                guard let url = result.signedURL else { continue }
+                let usable = Self.usableSignedURL(url)
+                map[result.path] = usable
+                map[Self.normalizedMediaPath(result.path)] = usable
+            }
+        }
+        // Toplu istekte düşenler (ya da istek tamamen başarısızsa hepsi) eski yoldan
+        // tek tek: bir yolun hatası diğerlerini boş bırakmasın.
+        let eksikler = uniquePaths.filter { map[$0] == nil && map[Self.normalizedMediaPath($0)] == nil }
         await withTaskGroup(of: (String, URL?).self) { group in
-            var iterator = uniquePaths.makeIterator()
-            let limit = min(8, uniquePaths.count)
+            var iterator = eksikler.makeIterator()
+            let limit = min(8, eksikler.count)
             for _ in 0..<limit {
                 guard let path = iterator.next() else { break }
                 group.addTask { await self.resolveOneMediaURL(bucket: bucket, path: path) }

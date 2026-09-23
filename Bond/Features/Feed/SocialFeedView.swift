@@ -15,6 +15,8 @@ struct SocialFeedView: View {
     @State private var showNotifications = false
     @State private var showPlacesWall = false
     @State private var selectedPostAuthor: StudentProfile?
+    /// Profil hangi avatardan açıldı: sayfa oradan büyür, kapanınca oraya döner.
+    @State private var profileSourceID: String?
     @State private var showStudyGroupComposer = false
     @State private var studyGroupPage: UUID?
     /// Avatar → kişi kartı zoom geçişinin ad alanı.
@@ -153,7 +155,10 @@ struct SocialFeedView: View {
                                         post: post,
                                         toggleLike: { appState.toggleLike(postID: post.id) },
                                         toggleSaved: { appState.toggleSaved(postID: post.id) },
-                                        openProfile: { selectedPostAuthor = post.author },
+                                        openProfile: {
+                                            profileSourceID = "yazar-\(post.id)"
+                                            selectedPostAuthor = post.author
+                                        },
                                         delete: { appState.deletePost(post.id) },
                                         zoomNamespace: profileZoom
                                     )
@@ -220,7 +225,7 @@ struct SocialFeedView: View {
                 NavigationStack {
                     ProfilePhotoStackView(profile: profile)
                 }
-                .navigationTransition(.zoom(sourceID: profile.id, in: profileZoom))
+                .zoomTransition(sourceID: profileSourceID ?? profile.id.uuidString, in: profileZoom)
             }
             .sheet(item: $selectedClub) { club in
                 ClubDetailView(club: club)
@@ -263,6 +268,7 @@ struct SocialFeedView: View {
             ))
 #endif
             .fullScreenCover(item: Binding(get: { appState.selectedStory }, set: { appState.selectedStory = $0 })) { story in
+                // Dokunulan daireden büyüyerek açılır, kapanınca geri küçülür.
                 StoryViewer(
                     stories: appState.stories,
                     initialStoryID: story.id,
@@ -279,6 +285,7 @@ struct SocialFeedView: View {
                     },
                     close: { appState.selectedStory = nil }
                 )
+                .zoomTransition(sourceID: "story-\(story.id)", in: profileZoom)
             }
         }
     }
@@ -361,7 +368,8 @@ struct SocialFeedView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(alignment: .top, spacing: 12) {
                         ForEach(groups) { group in
-                            StudyGroupCard(group: group) { profile in
+                            StudyGroupCard(group: group, zoomNamespace: profileZoom) { profile in
+                                profileSourceID = "grup-\(group.id)-\(profile.id)"
                                 selectedPostAuthor = profile
                             }
                             .containerRelativeFrame(.horizontal) { width, _ in
@@ -447,7 +455,7 @@ struct SocialFeedView: View {
     private var storyRail: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
-                AddStoryBubble(action: { showStoryComposer = true }, avatar: storyAvatar, ring: storyRing, cell: storyCell)
+                AddStoryBubble(action: { showStoryComposer = true }, zoomNamespace: profileZoom, avatar: storyAvatar, ring: storyRing, cell: storyCell)
                 // Story'ler gelene kadar şerit "kimse story atmamış" gibi
                 // duruyordu. Yer tutucu daireler, gelmekte olduğunu gösteriyor.
                 if appState.stories.isEmpty, appState.isLoadingStories {
@@ -515,6 +523,7 @@ struct SocialFeedView: View {
                         }
                     }
                     .buttonStyle(PressableStyle())
+                    .zoomSource(id: "story-\(story.id)", in: profileZoom)
                 }
             }
             .padding(.horizontal, 16)
@@ -581,6 +590,7 @@ struct SocialFeedView: View {
 private struct AddStoryBubble: View {
     @Environment(AppState.self) private var appState
     let action: () -> Void
+    var zoomNamespace: Namespace.ID? = nil
     var avatar: CGFloat = 68
     var ring: CGFloat = 80
     var cell: CGFloat = 84
@@ -615,6 +625,7 @@ private struct AddStoryBubble: View {
                     .contentShape(Circle())
                 }
                 .buttonStyle(PressableStyle())
+                .zoomSource(id: "story-\(ownStory?.id.uuidString ?? "yok")", in: zoomNamespace)
                 .accessibilityLabel(L10n.Feed.yourStory)
 
                 Button(action: action) {

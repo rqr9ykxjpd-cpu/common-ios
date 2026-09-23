@@ -6,6 +6,8 @@ import PhotosUI
 /// Avatarlara dokununca kişinin kartı açılır — tanışma oradan (sağa kaydır).
 struct StudyGroupCard: View {
     let group: StudyGroup
+    /// Avatarlar profil sayfasının büyüyerek açıldığı kaynak olur.
+    var zoomNamespace: Namespace.ID? = nil
     let openProfile: (StudentProfile) -> Void
     @Environment(AppState.self) private var appState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -39,6 +41,7 @@ struct StudyGroupCard: View {
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
+                .zoomSource(id: "grup-\(group.id)-\(group.host.id)", in: zoomNamespace)
                 .accessibilityLabel(group.host.name)
 
                 VStack(alignment: .leading, spacing: 3) {
@@ -218,6 +221,8 @@ struct StudyGroupCard: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(kisi.name)
+                // Ev sahibi başlıkta zaten kaynak; aynı kimlik iki kez verilmesin.
+                .zoomSource(id: "grup-\(group.id)-\(kisi.id)", in: kisi.id == group.host.id ? nil : zoomNamespace)
                 .transition(.scale(scale: 0.3).combined(with: .opacity))
             }
             if fazla > 0 {

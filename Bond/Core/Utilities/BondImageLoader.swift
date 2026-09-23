@@ -20,7 +20,9 @@ actor BondImageLoader {
 
     private let maxCount = 24
     private let maxCost = 18 * 1024 * 1024
-    private let maxConcurrent = 2
+    /// 2 iken hızlı kaydırmada kartlar boş kalıyordu. Çözme boyutu sınırlı ve
+    /// görsellerin çoğu artık diskten geliyor; 4 bellek açısından güvenli.
+    private let maxConcurrent = 4
 
     func reset() {
         generation += 1
@@ -33,6 +35,9 @@ actor BondImageLoader {
         URLCache.shared.removeAllCachedResponses()
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("bond-media", isDirectory: true)
         try? FileManager.default.removeItem(at: dir)
+        // Çıkış / hesap değişimi: bir sonraki hesabın önceki kişinin görsellerini
+        // diskte bulmaması için kalıcı önbellek de silinir.
+        MediaDiskCache.clear()
     }
 
     func purgeMemory() {
@@ -53,12 +58,20 @@ actor BondImageLoader {
             let image = await existing.value
             return gen == generation ? image : nil
         }
+        let diskKey = Self.cacheKey(for: url)
         let task = Task.detached(priority: .utility) { () -> UIImage? in
-            await BondImageLoader.shared.withConcurrencyLimit {
+            // Diskteki kopya ağ kuyruğuna girmeden gelir: açılışta akış anında dolar.
+            if !url.isFileURL, MediaDiskCache.isCacheable(diskKey),
+               let data = MediaDiskCache.read(diskKey),
+               let image = ImageCompression.imageForDisplay(data, maxDimension: maxDimension) {
+                return image
+            }
+            return await BondImageLoader.shared.withConcurrencyLimit {
                 if url.isFileURL, let image = ImageCompression.imageForDisplay(at: url, maxDimension: maxDimension) {
                     return image
                 }
                 guard let data = await fetch(url) else { return nil }
+                if MediaDiskCache.isCacheable(diskKey) { MediaDiskCache.write(data, for: diskKey) }
                 return ImageCompression.imageForDisplay(data, maxDimension: maxDimension)
             }
         }

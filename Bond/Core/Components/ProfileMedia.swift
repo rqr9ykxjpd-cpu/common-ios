@@ -123,16 +123,17 @@ private struct RemoteProfileImage: View {
     @State private var image: UIImage?
     @State private var finished = false
     @State private var attempt = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Group {
             if let image {
                 Image(uiImage: image).resizable().aspectRatio(contentMode: contentMode)
+                    .transition(.opacity)
             } else if !finished {
-                BondTheme.surface.overlay {
-                    ProgressView().controlSize(.small).tint(BondTheme.ink)
-                        .accessibilityLabel(kind.loadingLabel)
-                }
+                // Çark yerine ışıltılı iskelet: ekran "donmuş" değil "geliyor" der.
+                ShimmerPlaceholder()
+                    .accessibilityLabel(kind.loadingLabel)
             } else {
                 MediaPlaceholder(kind: kind, failed: true,
                                  retry: showsRetry ? { attempt += 1 } : nil)
@@ -144,10 +145,16 @@ private struct RemoteProfileImage: View {
                 finished = false
                 onImageSize?(nil)
             }
+            let basladi = Date()
             let loaded = await appState.remoteImage(for: url, maxDimension: kind.displayDimension)
             guard !Task.isCancelled else { return }
-            image = loaded
-            finished = true
+            // Bellekten anında gelen görsel solarak girmesin: kaydırırken her kart
+            // yanıp söner. Yalnızca gerçekten beklenen görsel yumuşakça belirir.
+            let beklendi = Date().timeIntervalSince(basladi) > 0.06
+            withAnimation(beklendi && !reduceMotion ? .easeOut(duration: 0.28) : nil) {
+                image = loaded
+                finished = true
+            }
             onImageSize?(loaded?.size)
         }
         .onDisappear {
@@ -155,5 +162,35 @@ private struct RemoteProfileImage: View {
             image = nil
             finished = false
         }
+    }
+}
+
+
+/// Görsel yüklenirken yüzeyin üstünden geçen yumuşak ışık. Hareket azaltmada durağan.
+struct ShimmerPlaceholder: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var faz: CGFloat = -1
+
+    var body: some View {
+        BondTheme.surface
+            .overlay {
+                if !reduceMotion {
+                    GeometryReader { geo in
+                        LinearGradient(
+                            colors: [.clear, .white.opacity(0.35), .clear],
+                            startPoint: .leading, endPoint: .trailing
+                        )
+                        .frame(width: geo.size.width * 0.6)
+                        .offset(x: faz * geo.size.width * 1.4)
+                        .blendMode(.plusLighter)
+                    }
+                    .allowsHitTesting(false)
+                }
+            }
+            .clipped()
+            .onAppear {
+                guard !reduceMotion else { return }
+                withAnimation(.linear(duration: 1.25).repeatForever(autoreverses: false)) { faz = 1 }
+            }
     }
 }
