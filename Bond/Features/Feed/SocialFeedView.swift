@@ -415,10 +415,15 @@ struct SocialFeedView: View {
         .animation(reduceMotion ? nil : BondTheme.Motion.snappy, value: appState.feedSort)
     }
 
+    // Story şeridi ölçüleri: daire belirgin dursun, ismin altında kampüs noktası.
+    private let storyAvatar: CGFloat = 68
+    private let storyRing: CGFloat = 80
+    private let storyCell: CGFloat = 84
+
     private var storyRail: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
-                AddStoryBubble { showStoryComposer = true }
+                AddStoryBubble(action: { showStoryComposer = true }, avatar: storyAvatar, ring: storyRing, cell: storyCell)
                 // Story'ler gelene kadar şerit "kimse story atmamış" gibi
                 // duruyordu. Yer tutucu daireler, gelmekte olduğunu gösteriyor.
                 if appState.stories.isEmpty, appState.isLoadingStories {
@@ -445,36 +450,44 @@ struct SocialFeedView: View {
                                     data: nil,
                                     assetName: story.author.imageAssetName
                                 )
-                                    .frame(width: 56, height: 56)
+                                    .frame(width: storyAvatar, height: storyAvatar)
                                     .clipShape(Circle())
                                     .overlay {
                                         Circle().stroke(.white, lineWidth: 1)
                                     }
-                                StoryRing(viewed: story.viewed)
+                                StoryRing(viewed: story.viewed, size: storyRing)
                                 if story.isVideo {
                                     Image(systemName: "play.fill")
                                         .font(.system(size: 8, weight: .bold))
                                         .foregroundStyle(.white)
                                         .frame(width: 16, height: 16)
                                         .background(.black.opacity(0.55), in: Circle())
-                                        .offset(x: -21, y: 21)
+                                        .offset(x: -storyAvatar / 2.6, y: storyAvatar / 2.6)
                                         .accessibilityHidden(true)
                                 }
                                 if let place = story.place {
                                     Image(systemName: "mappin.circle.fill")
                                         .font(.system(size: 13))
                                         .foregroundStyle(.white, BondTheme.violet)
-                                        .offset(x: 21, y: 21)
+                                        .offset(x: storyAvatar / 2.6, y: storyAvatar / 2.6)
                                         .accessibilityLabel(place.name)
                                 }
                             }
-                            .frame(width: 70, height: 70)
+                            .frame(width: storyCell, height: storyCell)
                             .contentShape(Circle())
-                            Text(story.author.name)
-                                .font(.system(size: 12, weight: story.viewed ? .medium : .bold))
-                                .foregroundStyle(BondTheme.ink.opacity(story.viewed ? 0.5 : 1))
-                                .lineLimit(1)
-                                .frame(width: 70)
+                            VStack(spacing: 1) {
+                                Text(story.author.name)
+                                    .font(.system(size: 12, weight: story.viewed ? .medium : .bold))
+                                    .foregroundStyle(BondTheme.ink.opacity(story.viewed ? 0.5 : 1))
+                                    .lineLimit(1)
+                                if let place = story.place {
+                                    Text(place.name)
+                                        .font(.system(size: 10))
+                                        .foregroundStyle(BondTheme.muted)
+                                        .lineLimit(1)
+                                }
+                            }
+                            .frame(width: storyCell + 6)
                         }
                     }
                     .buttonStyle(PressableStyle())
@@ -544,6 +557,9 @@ struct SocialFeedView: View {
 private struct AddStoryBubble: View {
     @Environment(AppState.self) private var appState
     let action: () -> Void
+    var avatar: CGFloat = 68
+    var ring: CGFloat = 80
+    var cell: CGFloat = 84
 
     private var ownStory: CampusStory? {
         appState.stories.first(where: \.isMine)
@@ -561,7 +577,7 @@ private struct AddStoryBubble: View {
                 } label: {
                     ZStack {
                         ProfileMedia(url: appState.avatarURL, data: appState.avatarData)
-                            .frame(width: 56, height: 56)
+                            .frame(width: avatar, height: avatar)
                             .clipShape(Circle())
                             .overlay { Circle().stroke(.white, lineWidth: 1) }
                         Circle()
@@ -569,9 +585,9 @@ private struct AddStoryBubble: View {
                                 ownStory == nil ? BondTheme.ink.opacity(0.14) : BondTheme.burntOrange,
                                 style: StrokeStyle(lineWidth: 3, lineCap: .round)
                             )
-                            .frame(width: 66, height: 66)
+                            .frame(width: ring, height: ring)
                     }
-                    .frame(width: 70, height: 70)
+                    .frame(width: cell, height: cell)
                     .contentShape(Circle())
                 }
                 .buttonStyle(PressableStyle())
@@ -739,16 +755,16 @@ struct DebugProfileRoute: Identifiable {
 /// ("yeni bir şey var"); izlenince renk yumuşakça söner. Hareket azaltmada durağan.
 private struct StoryRing: View {
     let viewed: Bool
+    var size: CGFloat = 80
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var breathed = false
 
+    private var ringStyle: Color { viewed ? BondTheme.ink.opacity(0.14) : BondTheme.burntOrange }
+
     var body: some View {
         Circle()
-            .stroke(
-                viewed ? BondTheme.ink.opacity(0.14) : BondTheme.burntOrange,
-                style: StrokeStyle(lineWidth: 3, lineCap: .round)
-            )
-            .frame(width: 66, height: 66)
+            .strokeBorder(ringStyle, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+            .frame(width: size, height: size)
             .scaleEffect(breathed || viewed || reduceMotion ? 1 : 0.86)
             .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: viewed)
             .onAppear {
