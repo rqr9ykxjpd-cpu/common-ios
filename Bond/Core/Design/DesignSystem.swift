@@ -575,6 +575,38 @@ extension View {
     func zoomSource(id: some Hashable, in namespace: Namespace.ID?) -> some View {
         modifier(ZoomSourceIfAvailable(id: AnyHashable(id), namespace: namespace))
     }
+
+    /// İlk yüklemede satırın yerine oturması; bkz. `SettleIn`.
+    func settleIn(index: Int, active: Bool) -> some View {
+        modifier(SettleIn(index: index, active: active))
+    }
+}
+
+/// Liste ilk dolduğunda ekrandaki ilk birkaç satır sırayla hafifçe yükselip
+/// belirir. Yükleme göstergesinden içeriğe geçiş bir anda "pat" diye olmuyor,
+/// akıyor.
+///
+/// Yalnızca `active` iken ve ilk `limit` satırda çalışır: kaydırırken gelen
+/// satırlar olduğu gibi gelir, her kaydırmada oynayan bir liste hem yorar hem
+/// yavaş hissettirir. Çağıran, liste bir kez oturunca `active`'i kapatır;
+/// böylece tembel yığın satırı yeniden kurduğunda hareket tekrarlanmaz.
+struct SettleIn: ViewModifier {
+    let index: Int
+    let active: Bool
+    var limit = 6
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var settled = false
+
+    func body(content: Content) -> some View {
+        let hidden = active && !reduceMotion && index < limit && !settled
+        content
+            .opacity(hidden ? 0 : 1)
+            .offset(y: hidden ? 14 : 0)
+            .onAppear {
+                guard active, !reduceMotion, index < limit, !settled else { return }
+                withAnimation(.smooth(duration: 0.45).delay(Double(index) * 0.06)) { settled = true }
+            }
+    }
 }
 
 /// Yükleme göstergesi olarak markanın kendisi: "common" harfleri sırayla

@@ -65,6 +65,8 @@ struct SocialFeedView: View {
     /// Sıra dondurulmuş: oy verince kart yerinden zıplamasın. Yeniden sıralama
     /// yalnızca gönderi kümesi, filtre ya da sıralama değişince (`rankKey`).
     @State private var rankedIDs: [UUID] = []
+    /// Akış ilk kez dolup yerine oturdu mu; oturduktan sonra `settleIn` kapanır.
+    @State private var feedSettled = false
 
     private struct RankKey: Hashable {
         let ids: [UUID]
@@ -150,20 +152,23 @@ struct SocialFeedView: View {
                             } else if visiblePosts.isEmpty && appState.feedError == nil {
                                 feedEmptyState
                             } else {
-                                ForEach(visiblePosts) { post in
-                                    PostCard(
-                                        post: post,
-                                        toggleLike: { appState.toggleLike(postID: post.id) },
-                                        toggleSaved: { appState.toggleSaved(postID: post.id) },
-                                        openProfile: {
-                                            profileSourceID = "yazar-\(post.id)"
-                                            selectedPostAuthor = post.author
-                                        },
-                                        delete: { appState.deletePost(post.id) },
-                                        zoomNamespace: profileZoom
-                                    )
-                                    .onAppear { appState.markPostSeen(post.id) }
-                                    Divider().opacity(0.35).padding(.vertical, 14)
+                                ForEach(Array(visiblePosts.enumerated()), id: \.element.id) { index, post in
+                                    VStack(spacing: 0) {
+                                        PostCard(
+                                            post: post,
+                                            toggleLike: { appState.toggleLike(postID: post.id) },
+                                            toggleSaved: { appState.toggleSaved(postID: post.id) },
+                                            openProfile: {
+                                                profileSourceID = "yazar-\(post.id)"
+                                                selectedPostAuthor = post.author
+                                            },
+                                            delete: { appState.deletePost(post.id) },
+                                            zoomNamespace: profileZoom
+                                        )
+                                        .onAppear { appState.markPostSeen(post.id) }
+                                        Divider().opacity(0.35).padding(.vertical, 14)
+                                    }
+                                    .settleIn(index: index, active: !feedSettled)
                                 }
                             }
                         }
@@ -258,7 +263,21 @@ struct SocialFeedView: View {
                     await appState.loadStudyGroups(silently: true)
                 }.value
             }
-            .task(id: rankKey) { rerank() }
+            .task(id: rankKey) {
+                // Süzgeç ya da sıralama değişince kartlar bir anda yer
+                // değiştirmesin: kalanlar yerine kayar, gidenler solar.
+                // İlk dolumda (liste boşken) doğrudan; o anı `settleIn` taşıyor.
+                if rankedIDs.isEmpty || reduceMotion {
+                    rerank()
+                } else {
+                    withAnimation(BondTheme.Motion.smooth) { rerank() }
+                }
+            }
+            .task(id: visiblePosts.isEmpty) {
+                guard !visiblePosts.isEmpty, !feedSettled else { return }
+                try? await Task.sleep(for: .seconds(1.2))
+                feedSettled = true
+            }
             .modifier(FounderPresentations(boostInput: $boostInput, pinInput: $pinInput))
 #if DEBUG
             .modifier(DebugFeedLaunchHooks(

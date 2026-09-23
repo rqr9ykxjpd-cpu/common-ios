@@ -7,6 +7,13 @@ struct PremiumMatchesView: View {
     var showsCloseButton: Bool
     @State private var acceptingIntroduction: UUID?
     @State private var introductionConversation: UUID?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Liste ilk açılışta yerine oturdu mu; sonra `settleIn` kapanır.
+    @State private var listSettled = false
+
+    private var sortedConversations: [Conversation] {
+        appState.conversations.sorted { $0.updatedAt > $1.updatedAt }
+    }
 
     init(showsCloseButton: Bool = true, close: (() -> Void)? = nil) {
         self.close = close
@@ -34,15 +41,24 @@ struct PremiumMatchesView: View {
                         emptyConversations
                     } else {
                         LazyVStack(spacing: 0) {
-                            ForEach(appState.conversations.sorted(by: { $0.updatedAt > $1.updatedAt })) { conversation in
-                                NavigationLink {
-                                    ConversationView(conversationID: conversation.id)
-                                } label: {
-                                    conversationRow(conversation)
+                            ForEach(Array(sortedConversations.enumerated()), id: \.element.id) { index, conversation in
+                                VStack(spacing: 0) {
+                                    NavigationLink {
+                                        ConversationView(conversationID: conversation.id)
+                                    } label: {
+                                        conversationRow(conversation)
+                                    }
+                                    .buttonStyle(PressableStyle())
+                                    Divider().overlay(BondTheme.hairline)
                                 }
-                                .buttonStyle(PressableStyle())
-                                Divider().overlay(BondTheme.hairline)
+                                .settleIn(index: index, active: !listSettled)
                             }
+                        }
+                        // Yeni mesaj gelen sohbet en üste bir anda sıçramıyor, kayıyor.
+                        .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: sortedConversations.map(\.id))
+                        .task {
+                            try? await Task.sleep(for: .seconds(1.2))
+                            listSettled = true
                         }
                     }
                 }
@@ -233,9 +249,13 @@ struct PremiumMatchesView: View {
                             .padding(.horizontal, 6)
                             .frame(minWidth: 22, minHeight: 22)
                             .background(BondTheme.ink, in: Capsule())
+                            .contentTransition(.numericText(value: Double(conversation.unreadCount)))
+                            // Sohbeti okuyup dönünce rozet yerinde sönüyor.
+                            .transition(.scale(scale: 0.4).combined(with: .opacity))
                             .accessibilityLabel(L10n.ScreenStates.unread(conversation.unreadCount))
                     }
                 }
+                .animation(reduceMotion ? nil : BondTheme.Motion.bouncy, value: conversation.unreadCount)
             }
         }
         .foregroundStyle(BondTheme.ink)

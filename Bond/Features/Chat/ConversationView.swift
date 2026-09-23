@@ -19,6 +19,9 @@ struct ConversationView: View {
     @State private var messagePendingDeletion: UUID?
     @State private var messagePendingReport: UUID?
     @FocusState private var focused: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Her gönderişte artar; gönder düğmesindeki ok yukarı fırlayıp geri gelir.
+    @State private var sendCount = 0
 
     private var conversation: Conversation? { appState.conversations.first { $0.id == conversationID } }
 
@@ -53,17 +56,23 @@ struct ConversationView: View {
                                         showPaywall = true
                                     },
                                     showActions: {
-                                        withAnimation(.snappy(duration: 0.2)) {
+                                        withAnimation(reduceMotion ? nil : BondTheme.Motion.bouncy) {
                                             activeMessageActions = activeMessageActions == message.id ? nil : message.id
                                         }
-                                    }
+                                    },
+                                    opensBelow: message.id == conversation.messages.first?.id
                                 )
+                                // Açık tepki çubuğu komşu balonların üstünde kalsın.
+                                .zIndex(activeMessageActions == message.id ? 1 : 0)
                                 .id(message.id)
                                 // Mesajlar belirip kaybolurken kayıyor: eskiden aniden
                                 // beliriyor ve gönderilemeyip geri alınan mesaj hiç iz
                                 // bırakmadan yok oluyordu.
+                                // Balon kendi köşesinden büyüyerek geliyor: gönderdiğin
+                                // sağ alttan, gelen sol alttan — mesajlaşmanın alıştığımız dili.
                                 .transition(.asymmetric(
-                                    insertion: .move(edge: .bottom).combined(with: .opacity),
+                                    insertion: .scale(scale: 0.5, anchor: message.isMine ? .bottomTrailing : .bottomLeading)
+                                        .combined(with: .opacity),
                                     removal: .scale(scale: 0.85).combined(with: .opacity)
                                 ))
                             }
@@ -285,7 +294,7 @@ struct ConversationView: View {
                     .accessibilityLabel(L10n.Chat.cancelEdit)
                 }
                 .padding(.horizontal, 16)
-                .transition(.opacity)
+                .transition(stripTransition)
             }
 
             if let replyingTo {
@@ -311,6 +320,7 @@ struct ConversationView: View {
                 .padding(.leading, 14)
                 .padding(.trailing, 6)
                 .padding(.top, 7)
+                .transition(stripTransition)
             }
 
             HStack(alignment: .bottom, spacing: 9) {
@@ -321,23 +331,52 @@ struct ConversationView: View {
                     .padding(.horizontal, 14).padding(.vertical, 12)
                     .background(BondTheme.ink.opacity(0.055), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
                 Button { send() } label: {
-                    Image(systemName: "arrow.up")
+                    // Düzenlerken ok tike dönüşüyor: düğmenin bu kez yeni mesaj
+                    // değil düzeltme göndereceği ikondan belli.
+                    Image(systemName: editingMessage == nil ? "arrow.up" : "checkmark")
                         .font(.system(size: 16, weight: .bold))
                         .foregroundStyle(BondTheme.paper)
+                        .contentTransition(.symbolEffect(.replace))
+                        // Gönderince ok yukarı fırlayıp alttan geri geliyor.
+                        .keyframeAnimator(initialValue: SendLaunch(), trigger: sendCount) { icon, frame in
+                            icon.offset(y: frame.y).opacity(frame.opacity)
+                        } keyframes: { _ in
+                            KeyframeTrack(\.y) {
+                                CubicKeyframe(-30, duration: 0.16)
+                                MoveKeyframe(22)
+                                SpringKeyframe(0, duration: 0.34, spring: .snappy)
+                            }
+                            KeyframeTrack(\.opacity) {
+                                LinearKeyframe(0, duration: 0.16)
+                                MoveKeyframe(0)
+                                LinearKeyframe(1, duration: 0.2)
+                            }
+                        }
                         .frame(width: 44, height: 44)
                         .background(canSend ? BondTheme.ink : BondTheme.ink.opacity(0.22), in: Circle())
+                        .clipShape(Circle())
+                        // Yazı yokken düğme biraz geride duruyor; ilk harfle öne çıkıyor.
+                        .scaleEffect(canSend || reduceMotion ? 1 : 0.86)
                 }
-                .accessibilityLabel(L10n.Common.send)
+                .accessibilityLabel(editingMessage == nil ? L10n.Common.send : L10n.Common.edit)
                 .disabled(!canSend)
                 .buttonStyle(PressableStyle())
+                .animation(reduceMotion ? nil : BondTheme.Motion.bouncy, value: canSend)
             }
             .padding(.horizontal, 12).padding(.vertical, 10)
         }
+        .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: replyingTo?.id)
+        .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: editingMessage?.id)
         .background(BondTheme.surface)
         .overlay(alignment: .top) { Rectangle().fill(BondTheme.hairline).frame(height: 0.5) }
     }
 
     private var canSend: Bool { !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+
+    /// Yanıt ve düzenleme şeridi yazma alanının üstünden kayarak açılıp kapanıyor.
+    private var stripTransition: AnyTransition {
+        .opacity.combined(with: .offset(y: 10))
+    }
 
     private func send() {
         guard canSend else { return }
@@ -359,6 +398,7 @@ struct ConversationView: View {
         }
         draft = ""
         replyingTo = nil
+        if !reduceMotion { sendCount += 1 }
         Haptics.impact(.light)
         Task { await appState.send(body, in: conversationID, replyTo: reply) }
     }
@@ -402,25 +442,20 @@ private struct MessageBubble: View {
     let canEdit: Bool
     let showPaywall: () -> Void
     let showActions: () -> Void
+    /// Sohbetin ilk mesajı: tepki çubuğu üste değil alta açılır.
+    var opensBelow = false
     private let reactions = ["❤️", "😂", "😮", "😢", "👍"]
     @State private var dragOffset: CGFloat = 0
+    /// Kaydırma yanıt eşiğini geçti mi: geçince ok büyüyor ve hafif titreşim
+    /// geliyor, bırakınca yanıtlanacağını parmak hissediyor.
+    @State private var replyArmed = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         HStack(alignment: .center, spacing: 5) {
             if message.isMine { Spacer(minLength: 62) }
 
-            Image(systemName: "arrowshape.turn.up.left.fill")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(BondTheme.violet)
-                .frame(width: min(dragOffset, 44), height: 44)
-                .opacity(min(dragOffset / 44, 1))
-
             VStack(alignment: message.isMine ? .trailing : .leading, spacing: 4) {
-                if actionsVisible {
-                    quickActions
-                        .transition(.scale(scale: 0.85, anchor: message.isMine ? .trailing : .leading).combined(with: .opacity))
-                }
-
                 VStack(alignment: message.isMine ? .trailing : .leading, spacing: 6) {
                     if let quoted = message.replyTo {
                         VStack(alignment: .leading, spacing: 2) {
@@ -460,6 +495,31 @@ private struct MessageBubble: View {
                         RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(BondTheme.hairline)
                     }
                 }
+                // Tepki çubuğu balonun üstünde yüzüyor. Eskiden araya girip
+                // altındaki bütün mesajları aşağı itiyordu; ekran zıplıyordu.
+                // İlk mesajda üstte yer yok (başlık çubuğu), çubuk alta açılıyor.
+                // Yanıt oku balonun arkasında, balonun ilk yerinde duruyor;
+                // balon kaydıkça ortaya çıkıyor. Eskiden satırda yer kaplıyor,
+                // kaydırırken balonu daraltıp yazıyı yeniden kırıyordu.
+                .background(alignment: .leading) {
+                    Image(systemName: "arrowshape.turn.up.left.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(BondTheme.violet)
+                        .scaleEffect(replyArmed ? 1.2 : 0.8)
+                        .frame(width: 44, height: 44)
+                        .opacity(min(dragOffset / 44, 1))
+                        .offset(x: -dragOffset + 4)
+                        .animation(reduceMotion ? nil : BondTheme.Motion.bouncy, value: replyArmed)
+                        .accessibilityHidden(true)
+                }
+                .overlay(alignment: actionsAlignment) {
+                    if actionsVisible {
+                        quickActions
+                            .fixedSize()
+                            .offset(y: opensBelow ? 50 : -50)
+                            .transition(.scale(scale: 0.6, anchor: actionsAlignment.unitPoint).combined(with: .opacity))
+                    }
+                }
                 .offset(x: dragOffset)
                 .onLongPressGesture(minimumDuration: 0.35) {
                     Haptics.impact(.light)
@@ -490,9 +550,23 @@ private struct MessageBubble: View {
                     }
                     .buttonStyle(PressableStyle())
                     .accessibilityLabel(L10n.Chat.removeReaction(reaction))
+                    // Tepki balonun köşesinden fırlıyor; değişince yenisi yerine oturuyor.
+                    .transition(.scale(scale: 0.3, anchor: message.isMine ? .topTrailing : .topLeading)
+                        .combined(with: .opacity))
+                    .id(reaction)
                 }
             }
+            .animation(reduceMotion ? nil : BondTheme.Motion.bouncy, value: message.reaction)
             if !message.isMine { Spacer(minLength: 62) }
+        }
+    }
+
+    private var actionsAlignment: Alignment {
+        switch (message.isMine, opensBelow) {
+        case (true, false): .topTrailing
+        case (false, false): .topLeading
+        case (true, true): .bottomTrailing
+        case (false, true): .bottomLeading
         }
     }
 
@@ -572,11 +646,35 @@ private struct MessageBubble: View {
                 guard value.translation.width > 0,
                       abs(value.translation.height) < abs(value.translation.width) else { return }
                 dragOffset = min(value.translation.width, 58)
+                let armed = dragOffset >= 52
+                if armed != replyArmed {
+                    replyArmed = armed
+                    if armed { Haptics.selection() }
+                }
             }
             .onEnded { value in
                 let shouldReply = dragOffset >= 52 || value.predictedEndTranslation.width >= 80
                 withAnimation(.snappy(duration: 0.2)) { dragOffset = 0 }
+                replyArmed = false
                 if shouldReply { reply() }
             }
+    }
+}
+
+/// Gönder okunun fırlama karesi.
+private struct SendLaunch {
+    var y: CGFloat = 0
+    var opacity: Double = 1
+}
+
+private extension Alignment {
+    var unitPoint: UnitPoint {
+        switch self {
+        case .topLeading: .topLeading
+        case .topTrailing: .topTrailing
+        case .bottomLeading: .bottomLeading
+        case .bottomTrailing: .bottomTrailing
+        default: .center
+        }
     }
 }
