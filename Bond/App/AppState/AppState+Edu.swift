@@ -2,9 +2,12 @@ import Foundation
 
 extension AppState {
     /// Kartın kendisi kararı verir: muaf ya da doğrulanmışsa görünmez.
-    var eduNeedsAttention: Bool { eduStatus?.needsAttention ?? false }
+    var eduNeedsAttention: Bool {
+        EduVerificationRollout.isEnabled && (eduStatus?.needsAttention ?? false)
+    }
 
     func loadEduStatus() async {
+        guard EduVerificationRollout.isEnabled else { return }
         do {
             eduStatus = try await service.fetchEduStatus()
             if eduDomains.isEmpty { eduDomains = (try? await service.fetchEduDomains()) ?? [] }
@@ -48,7 +51,8 @@ extension AppState {
     /// çağrılır; doğrulandıysa kutlama.
     @discardableResult
     func syncEduVerification(announce: Bool = true) async -> Bool {
-        guard route == .app, eduStatus?.isPending == true || eduStatus == nil else { return false }
+        guard EduVerificationRollout.isEnabled, route == .app,
+              eduStatus?.isPending == true || eduStatus == nil else { return false }
         let oldu = (try? await service.syncEduVerification()) ?? false
         if oldu {
             await loadEduStatus()
