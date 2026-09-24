@@ -335,13 +335,7 @@ struct SocialProfileView: View {
                     ) { toggleGhostMode() }
                     .accessibilityIdentifier("profile.ghost")
 
-                    membershipTool(
-                        icon: "sparkles",
-                        title: L10n.ProfileHome.myPlan,
-                        value: appState.tier.title,
-                        accent: true
-                    ) { showPaywall = true }
-                    .accessibilityIdentifier("profile.plus")
+                    planTile
                 }
             } else {
                 HStack(spacing: BondTheme.Space.sm) {
@@ -364,13 +358,7 @@ struct SocialProfileView: View {
                     ) { toggleGhostMode() }
                     .accessibilityIdentifier("profile.ghost")
 
-                    membershipTool(
-                        icon: "sparkles",
-                        title: L10n.ProfileHome.myPlan,
-                        value: appState.tier.title,
-                        accent: true
-                    ) { showPaywall = true }
-                    .accessibilityIdentifier("profile.plus")
+                    planTile
                 }
             }
 
@@ -428,6 +416,18 @@ struct SocialProfileView: View {
         .buttonStyle(PressableStyle())
         .animation(BondTheme.Motion.smooth, value: pendingRequestCount)
         .accessibilityIdentifier("profile.requests")
+    }
+
+    /// Plan kutucuğu altın: ücretsizde "PLUS'A GEÇ" ve düzenli parlama,
+    /// Plus/Pro'da plan adı ve açılışta tek parlama.
+    private var planTile: some View {
+        PlusGoldTile(
+            title: L10n.ProfileHome.myPlan,
+            value: appState.tier == .free ? L10n.Paywall.goPlus : appState.tier.title,
+            invites: appState.tier == .free,
+            minHeight: typeSize.isAccessibilitySize ? 98 : 108
+        ) { showPaywall = true }
+        .accessibilityIdentifier("profile.plus")
     }
 
     private func membershipTool(
