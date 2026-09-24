@@ -6,6 +6,9 @@ struct SocialProfileView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var showPhoto = false
+    /// Sayfa yukarıdan ne kadar aşağı çekildi. Yalnızca fotoğraf okuyor; sayfanın
+    /// geri kalanı her karede yeniden çizilmesin diye ayrı bir nesnede.
+    @State private var pull = PullAmount()
     @State private var showComposer = false
     @State private var showEditor = false
     @State private var showMyCard = false
@@ -52,6 +55,11 @@ struct SocialProfileView: View {
                 .padding(.horizontal, 24)
                 .padding(.top, 16)
                 .padding(.bottom, 32)
+            }
+            .onScrollGeometryChange(for: CGFloat.self) { geo in
+                max(0, -(geo.contentOffset.y + geo.contentInsets.top))
+            } action: { _, yeni in
+                pull.amount = yeni
             }
             .background(BondTheme.paper.ignoresSafeArea())
             .foregroundStyle(BondTheme.ink)
@@ -169,6 +177,13 @@ struct SocialProfileView: View {
     }
 
     private var avatar: some View {
+        PullStretch(pull: pull) {
+            avatarTile
+        }
+        .accessibilityIdentifier("profile.avatar")
+    }
+
+    private var avatarTile: some View {
         ZStack(alignment: .bottomTrailing) {
             Button {
                 if hasAvatar { showPhoto = true } else { showEditor = true }
@@ -191,7 +206,6 @@ struct SocialProfileView: View {
             .buttonStyle(PressableStyle())
             .accessibilityLabel(L10n.Profile.editA11y)
         }
-        .accessibilityIdentifier("profile.avatar")
     }
 
     private var nameAndEducation: some View {
@@ -639,5 +653,24 @@ private struct ProfileRequestsHubView: View {
             .contentShape(RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
         }
         .buttonStyle(PressableStyle())
+    }
+}
+
+/// Sayfa yukarıdan aşağı çekildiğinde fotoğraf hafifçe büyür, bırakınca yerine
+/// döner (en fazla %15). Çekme miktarı gözlenen bir nesnede; yalnızca bu
+/// görünüm yeniden çiziliyor.
+@Observable
+private final class PullAmount {
+    var amount: CGFloat = 0
+}
+
+private struct PullStretch<Content: View>: View {
+    let pull: PullAmount
+    @ViewBuilder let content: Content
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        let olcek = reduceMotion ? 1 : 1 + min(pull.amount, 150) / 1000
+        content.scaleEffect(olcek, anchor: .bottom)
     }
 }
