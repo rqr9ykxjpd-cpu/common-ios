@@ -277,15 +277,19 @@ struct PlacesWallView: View {
         HStack(spacing: 6) {
             if let ozet, sayi > 0 {
                 HStack(spacing: -7) {
-                    ForEach(Array(ozet.avatarURLs.prefix(3).enumerated()), id: \.offset) { _, url in
+                    // Kişiye göre kimlik: biri gelince yüzü küçükten büyüyerek
+                    // sıraya katılıyor, gidince küçülüp çıkıyor.
+                    ForEach(Array(ozet.avatarURLs.prefix(3)), id: \.self) { url in
                         ProfileMedia(url: url, data: nil)
                             .frame(width: 20, height: 20).clipShape(Circle())
                             .overlay(Circle().stroke(BondTheme.surface, lineWidth: 1.5))
+                            .transition(.scale(scale: 0.3).combined(with: .opacity))
                     }
-                    ForEach(Array(ozet.avatarAssetNames.prefix(3).enumerated()), id: \.offset) { _, name in
+                    ForEach(Array(ozet.avatarAssetNames.prefix(3)), id: \.self) { name in
                         ProfileMedia(url: nil, data: nil, assetName: name)
                             .frame(width: 20, height: 20).clipShape(Circle())
                             .overlay(Circle().stroke(BondTheme.surface, lineWidth: 1.5))
+                            .transition(.scale(scale: 0.3).combined(with: .opacity))
                     }
                 }
                 Text(L10n.Places.peopleHere(sayi))
@@ -298,7 +302,7 @@ struct PlacesWallView: View {
                     .foregroundStyle(BondTheme.muted)
             }
         }
-        .animation(BondTheme.Motion.snappy, value: sayi)
+        .animation(reduceMotion ? nil : BondTheme.Motion.bouncy, value: sayi)
         .accessibilityLabel(sayi > 0 ? L10n.Places.peopleHere(sayi) : L10n.Places.nobodyHere)
     }
 
@@ -311,10 +315,18 @@ struct PlacesWallView: View {
         } label: {
             ZStack {
                 // Both labels participate in layout, so neither state resizes it.
-                Text(L10n.Places.youAreHere).hidden()
+                HStack(spacing: 4) {
+                    Image(systemName: "mappin").font(.system(size: 12, weight: .bold))
+                    Text(L10n.Places.youAreHere)
+                }
+                .hidden()
                 Text(L10n.Places.imHere).hidden()
-                Text(isHere ? L10n.Places.youAreHere : L10n.Places.imHere)
-                    .opacity(isUpdating ? 0 : 1)
+                HStack(spacing: 4) {
+                    // "Buradasın" olunca küçük iğne yukarıdan düşüp yere oturuyor.
+                    if isHere { DroppingPin() }
+                    Text(isHere ? L10n.Places.youAreHere : L10n.Places.imHere)
+                }
+                .opacity(isUpdating ? 0 : 1)
                 if isUpdating { ProgressView().controlSize(.small) }
             }
                 .accessibilityElement(children: .ignore)
@@ -348,4 +360,35 @@ struct PlacesWallView: View {
         .disabled(isUpdating)
         .accessibilityIdentifier("place.presence.\(place.id)")
     }
+}
+
+/// "Buradasın" düğmesindeki iğne: belirdiği an yukarıdan düşer, yere değince
+/// hafifçe basılıp doğrulur. Satırın geri kalanı yerinden oynamaz.
+private struct DroppingPin: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var dropped = false
+
+    var body: some View {
+        Image(systemName: "mappin")
+            .font(.system(size: 12, weight: .bold))
+            .keyframeAnimator(initialValue: PinFrame(y: reduceMotion ? 0 : -14), trigger: dropped) { pin, frame in
+                pin.scaleEffect(x: 1, y: frame.squash, anchor: .bottom).offset(y: frame.y)
+            } keyframes: { _ in
+                KeyframeTrack(\.y) {
+                    CubicKeyframe(0, duration: 0.22)
+                    LinearKeyframe(0, duration: 0.3)
+                }
+                KeyframeTrack(\.squash) {
+                    LinearKeyframe(1, duration: 0.22)
+                    CubicKeyframe(0.7, duration: 0.07)
+                    SpringKeyframe(1, duration: 0.3, spring: .bouncy)
+                }
+            }
+            .onAppear { if !reduceMotion { dropped = true } }
+    }
+}
+
+private struct PinFrame {
+    var y: CGFloat
+    var squash: CGFloat = 1
 }
