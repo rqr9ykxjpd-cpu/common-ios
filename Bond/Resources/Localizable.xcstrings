@@ -2807,6 +2807,142 @@
         }
       }
     },
+    "composer.charactersLeft" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld characters left"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld karakter kaldı"
+          }
+        }
+      }
+    },
+    "composer.hint.announcement.1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Club meeting or event? Let everyone know."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kulüp toplantısı mı, etkinlik mi? Herkes duysun."
+          }
+        }
+      }
+    },
+    "composer.hint.moment.1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What happened on campus today?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kampüste bugün ne oldu?"
+          }
+        }
+      }
+    },
+    "composer.hint.moment.2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What made you smile on campus today?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bugün kampüste seni ne güldürdü?"
+          }
+        }
+      }
+    },
+    "composer.hint.notes.1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Summaries, past exams, slides… what are you sharing?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Özet, çıkmış sorular, slaytlar… ne paylaşıyorsun?"
+          }
+        }
+      }
+    },
+    "composer.hint.question.1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Which course, which professor? Ask away."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hangi ders, hangi hoca? Merak ettiğini sor."
+          }
+        }
+      }
+    },
+    "composer.hint.question.2" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Any free seats in the library? Someone knows."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kütüphanede boş yer var mı? Biri mutlaka bilir."
+          }
+        }
+      }
+    },
+    "composer.hint.story.1" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Where are you, what are you up to?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neredesin, ne yapıyorsun?"
+          }
+        }
+      }
+    },
     "composer.noPlace" : {
       "extractionState" : "manual",
       "localizations" : {

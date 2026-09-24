@@ -35,6 +35,11 @@ struct CreatePostView: View {
     @State private var isPreparingMedia = false
     @State private var myPostCount = 0
     @State private var addToProfile = false
+    /// Paylaşım bitti: düğme kısa bir an tike dönüp ekran öyle kapanıyor.
+    @State private var publishDone = false
+    /// Karakter sınırına her dayanışta artar; alan titrer.
+    @State private var limitBump = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(initialContentType: Int = 0, initialKind: PostKind = .moment) {
         _contentType = State(initialValue: ComposerContentType(rawValue: initialContentType) ?? .post)
@@ -42,6 +47,17 @@ struct CreatePostView: View {
     }
 
     private var isStory: Bool { contentType == .story }
+    private var captionLimit: Int { isStory ? TextLimit.story : TextLimit.post }
+    private var captionLength: Int { TextLimit.length(caption) }
+    private var counterVisible: Bool { CharacterCounter.isVisible(count: captionLength, limit: captionLimit) }
+    private var hints: [String] { isStory ? L10n.Composer.storyHints : kind.hints }
+
+    /// Sınırı aşan yazı kesilir; sunucu zaten reddederdi, en azından anında belli olsun.
+    private func enforceLimit() {
+        guard let kesik = TextLimit.clamp(caption, to: captionLimit) else { return }
+        caption = kesik
+        limitBump += 1
+    }
     private var cleanCaption: String { caption.trimmingCharacters(in: .whitespacesAndNewlines) }
     private var atPostLimit: Bool {
         guard !isStory, let cap = appState.tier.maxPosts else { return false }
@@ -65,6 +81,8 @@ struct CreatePostView: View {
                 }
             }
             .keyboardDoneButton()
+            .onChange(of: caption) { enforceLimit() }
+            .onChange(of: contentType) { enforceLimit() }
             .navigationTitle(isStory ? L10n.Composer.shareStory : L10n.Composer.sharePost)
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(isStory ? .hidden : .automatic, for: .navigationBar)
@@ -74,11 +92,13 @@ struct CreatePostView: View {
                     Button(L10n.Common.close) { dismiss() }
                         .disabled(isPublishing || isPreparingMedia)
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(atPostLimit ? L10n.Paywall.goPlus : (isStory ? L10n.Composer.publishStory : L10n.Composer.publishPost)) {
-                        publish()
-                    }
-                    .disabled(!canPublish || isPublishing)
+                // iOS 26'da çubuk düğmenin arkasına kendi camını koyuyor ve rengini
+                // kendisi seçiyor (sistem mavisi). Camı kapatıp düğmeyi biz çiziyoruz.
+                if #available(iOS 26.0, *) {
+                    ToolbarItem(placement: .confirmationAction) { publishButton }
+                        .sharedBackgroundVisibility(.hidden)
+                } else {
+                    ToolbarItem(placement: .confirmationAction) { publishButton }
                 }
             }
             .sheet(isPresented: $showBadgeCatalog) {
@@ -261,12 +281,26 @@ struct CreatePostView: View {
         VStack {
             Spacer()
             VStack(alignment: .leading, spacing: BondTheme.Space.md) {
-                TextField("", text: $caption, prompt: Text(L10n.Composer.storyPlaceholder).foregroundStyle(.white.opacity(0.55)), axis: .vertical)
+                TextField("", text: $caption, axis: .vertical)
                     .font(.system(size: 22, weight: .semibold))
                     .foregroundStyle(.white)
                     .lineLimit(1...4)
                     .textFieldStyle(.plain)
+                    .overlay(alignment: .topLeading) {
+                        if caption.isEmpty {
+                            RotatingPlaceholder(prompts: hints)
+                                .font(.system(size: 22, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.55))
+                        }
+                    }
+                    .accessibilityLabel(L10n.Composer.storyPlaceholder)
                     .shadow(color: .black.opacity(0.5), radius: 6, y: 1)
+                    .limitShake(trigger: limitBump)
+                if counterVisible {
+                    CharacterCounter(count: captionLength, limit: captionLimit)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .transition(.opacity)
+                }
                 HStack(spacing: 8) {
                     Menu {
                         Button(L10n.Composer.noPlace) { selectedPlace = nil }
@@ -361,9 +395,63 @@ struct CreatePostView: View {
 
     private var captionSection: some View {
         Section {
-            TextField(isStory ? L10n.Composer.storyPlaceholder : kind.placeholder, text: $caption, axis: .vertical)
-                .lineLimit(3...8)
+            VStack(alignment: .trailing, spacing: 6) {
+                TextField("", text: $caption, axis: .vertical)
+                    .lineLimit(3...8)
+                    // Boşken ipucu birkaç saniyede bir değişiyor; tür değişince
+                    // o türün ipuçlarına geçiyor.
+                    .overlay(alignment: .topLeading) {
+                        if caption.isEmpty {
+                            RotatingPlaceholder(prompts: hints)
+                                .foregroundStyle(Color(uiColor: .placeholderText))
+                        }
+                    }
+                    .accessibilityLabel(isStory ? L10n.Composer.storyPlaceholder : kind.placeholder)
+                    .limitShake(trigger: limitBump)
+                if counterVisible {
+                    CharacterCounter(count: captionLength, limit: captionLimit)
+                        .transition(.opacity.combined(with: .scale(scale: 0.7, anchor: .trailing)))
+                }
+            }
+            .animation(reduceMotion ? nil : .snappy(duration: 0.2), value: counterVisible)
         }
+    }
+
+    /// Yazı girilince turuncuyla dolan, paylaşırken dönen halkaya, bitince
+    /// tike dönüşen düğme.
+    private var publishButton: some View {
+        Button(action: publish) {
+            publishLabel
+                .font(.subheadline)
+                .foregroundStyle(canPublish || isPublishing || publishDone ? Color.white : Color(uiColor: .secondaryLabel))
+                .padding(.horizontal, 16)
+                .frame(minWidth: 76, minHeight: 36)
+                .background {
+                    Capsule().fill(canPublish || isPublishing || publishDone
+                                   ? BondTheme.upvote : Color(uiColor: .systemGray5))
+                }
+                .contentShape(Capsule())
+        }
+        .buttonStyle(PressableStyle())
+        .modifier(PublishButtonMotion(ready: canPublish, isPublishing: isPublishing,
+                                      done: publishDone, limitBump: limitBump))
+    }
+
+    private var publishLabel: some View {
+        ZStack {
+            Text(atPostLimit ? L10n.Paywall.goPlus : (isStory ? L10n.Composer.publishStory : L10n.Composer.publishPost))
+                .opacity(isPublishing || publishDone ? 0 : 1)
+            if isPublishing {
+                ProgressView().controlSize(.small).tint(.white)
+                    .transition(.opacity)
+            }
+            if publishDone {
+                Image(systemName: "checkmark")
+                    .font(.body.weight(.bold))
+                    .transition(.scale(scale: 0.3).combined(with: .opacity))
+            }
+        }
+        .fontWeight(.semibold)
     }
 
     /// Çip sırası `PostKind?` ister; composer'da nil = rozet seçilmemiş (`.moment`).
@@ -446,6 +534,12 @@ struct CreatePostView: View {
                 }
             }
             isPublishing = false
+            // Düğme bir an tike dönsün; ekran hemen kapanınca paylaşımın gerçekten
+            // gittiği hissedilmiyordu.
+            if ok, !reduceMotion {
+                publishDone = true
+                try? await Task.sleep(for: .milliseconds(550))
+            }
             if ok || appState.paywallVisible { dismiss() }
         }
     }
@@ -618,6 +712,7 @@ private struct ComposerPreview: View {
     var isVideo: Bool = false
     var isPreparing: Bool = false
     @State private var preview: UIImage?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Uç oranlar sınırlanıyor: panorama şeride, çok uzun ekran görüntüsü de bütün
     /// ekranı kaplayan bir sütuna dönüşmesin. Üst sınır 1.34, çünkü telefonun kendi
@@ -642,6 +737,7 @@ private struct ComposerPreview: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: height(for: preview.size))
                     .clipped()
+                    .transition(.scale(scale: 0.9).combined(with: .opacity))
                     .overlay {
                         if isVideo {
                             Image(systemName: "play.fill")
@@ -675,12 +771,10 @@ private struct ComposerPreview: View {
                     .scaleEffect(1.15)
             }
         }
-        .onChange(of: previewID, initial: true) { _, id in
-            if let imageData, id != "empty" {
-                preview = ImageCompression.imageForDisplay(imageData)
-            } else {
-                preview = nil
-            }
+        .onChange(of: previewID, initial: true) { eski, id in
+            let yeni = (imageData != nil && id != "empty") ? imageData.flatMap { ImageCompression.imageForDisplay($0) } : nil
+            // İlk açılışta hareket yok; sonradan seçilen fotoğraf küçükten büyüyerek oturur.
+            withAnimation(eski == id || reduceMotion ? nil : BondTheme.Motion.bouncy) { preview = yeni }
         }
     }
 }
@@ -698,5 +792,23 @@ private struct StoryChipLabel: View {
         .padding(.horizontal, 12)
         .frame(height: 34)
         .background(highlighted ? Color.white : Color.white.opacity(0.18), in: Capsule())
+    }
+}
+
+/// Paylaş düğmesinin durum geçişleri: hazır olunca, paylaşırken ve bitince.
+private struct PublishButtonMotion: ViewModifier {
+    let ready: Bool
+    let isPublishing: Bool
+    let done: Bool
+    let limitBump: Int
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        content
+            .disabled(!ready || isPublishing || done)
+            .animation(reduceMotion ? nil : BondTheme.Motion.bouncy, value: ready)
+            .animation(reduceMotion ? nil : .snappy(duration: 0.2), value: isPublishing)
+            .animation(reduceMotion ? nil : BondTheme.Motion.bouncy, value: done)
+            .sensoryFeedback(.warning, trigger: limitBump)
     }
 }

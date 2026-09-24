@@ -16,6 +16,22 @@ extension L10n {
         static var takePhoto: String { String(localized: "composer.takePhoto") }
         static var storyPlaceholder: String { String(localized: "composer.storyPlaceholder") }
         static var postPlaceholder: String { String(localized: "composer.postPlaceholder") }
+        static func charactersLeft(_ n: Int) -> String { L10n.format("composer.charactersLeft", Int64(n)) }
+        /// Boş alanda sırayla dönen ipuçları; ilk sıradaki türün asıl ipucu.
+        static var momentHints: [String] {
+            [postPlaceholder, String(localized: "composer.hint.moment.1"), String(localized: "composer.hint.moment.2")]
+        }
+        static var questionHints: [String] {
+            [L10n.PostKind.questionPlaceholder, String(localized: "composer.hint.question.1"),
+             String(localized: "composer.hint.question.2")]
+        }
+        static var announcementHints: [String] {
+            [L10n.PostKind.announcementPlaceholder, String(localized: "composer.hint.announcement.1")]
+        }
+        static var notesHints: [String] {
+            [L10n.PostKind.notesPlaceholder, String(localized: "composer.hint.notes.1")]
+        }
+        static var storyHints: [String] { [storyPlaceholder, String(localized: "composer.hint.story.1")] }
         static var noPlace: String { String(localized: "composer.noPlace") }
         static func placeOption(_ name: String, _ area: String) -> String {
             L10n.format("composer.placeOption", name, area)

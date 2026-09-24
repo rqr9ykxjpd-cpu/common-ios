@@ -185,6 +185,17 @@ enum PostKind: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
         }
     }
 
+    /// Yazı alanında sırayla dönen ipuçları. Ek ipucu yazılmamış türlerde tek ipucu kalır, dönmez.
+    var hints: [String] {
+        switch self {
+        case .moment: L10n.Composer.momentHints
+        case .question: L10n.Composer.questionHints
+        case .announcement: L10n.Composer.announcementHints
+        case .notes: L10n.Composer.notesHints
+        default: [placeholder]
+        }
+    }
+
     /// Filtre seçiliyken akış boşsa.
     var emptyTitle: String {
         switch self {
