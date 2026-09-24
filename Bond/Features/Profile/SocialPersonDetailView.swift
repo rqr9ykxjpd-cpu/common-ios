@@ -354,7 +354,8 @@ struct SocialPersonDetailView: View {
         withAnimation(reduceMotion ? nil : BondTheme.Motion.smooth) { showConnectedMoment = true }
         try? await Task.sleep(for: .milliseconds(reduceMotion ? 0 : 100))
         withAnimation(reduceMotion ? nil : BondTheme.Motion.bouncy) { avatarsTogether = true }
-        try? await Task.sleep(for: .milliseconds(reduceMotion ? 450 : 950))
+        // Halka, rozet ve yazı otursun diye biraz daha uzun; sonra sohbet.
+        try? await Task.sleep(for: .milliseconds(reduceMotion ? 450 : 1300))
         withAnimation(reduceMotion ? nil : BondTheme.Motion.smooth) { showConnectedMoment = false }
         conversationRoute = ConversationRoute(id: matchID)
     }
@@ -399,19 +400,58 @@ struct SocialPersonDetailView: View {
         ZStack {
             BondTheme.ink.opacity(0.35).ignoresSafeArea()
             VStack(spacing: BondTheme.Space.md) {
-                HStack(spacing: avatarsTogether ? -18 : 28) {
-                    ProfileMedia(url: nil, data: appState.avatarData, assetName: nil)
-                        .frame(width: 76, height: 76).clipShape(Circle())
-                        .overlay(Circle().stroke(BondTheme.paper, lineWidth: 3))
-                    ProfileMedia(url: details?.avatarURL ?? profile.imageURL, data: nil, assetName: profile.imageAssetName)
-                        .frame(width: 76, height: 76).clipShape(Circle())
-                        .overlay(Circle().stroke(BondTheme.paper, lineWidth: 3))
+                ZStack {
+                    // Fotoğraflar birleştiği an aralarından yayılıp sönen halka.
+                    Circle()
+                        .strokeBorder(BondTheme.upvote, lineWidth: 2)
+                        .frame(width: 76, height: 76)
+                        .keyframeAnimator(initialValue: MeetRing(), trigger: avatarsTogether) { ring, frame in
+                            ring.scaleEffect(frame.scale).opacity(frame.opacity)
+                        } keyframes: { _ in
+                            KeyframeTrack(\.scale) {
+                                LinearKeyframe(0.7, duration: 0.2)
+                                CubicKeyframe(2.3, duration: 0.7)
+                            }
+                            KeyframeTrack(\.opacity) {
+                                LinearKeyframe(0, duration: 0.2)
+                                MoveKeyframe(0.75)
+                                CubicKeyframe(0, duration: 0.7)
+                            }
+                        }
+                        .allowsHitTesting(false)
+                    HStack(spacing: avatarsTogether ? -18 : 28) {
+                        ProfileMedia(url: nil, data: appState.avatarData, assetName: nil)
+                            .frame(width: 76, height: 76).clipShape(Circle())
+                            .overlay(Circle().stroke(BondTheme.paper, lineWidth: 3))
+                        ProfileMedia(url: details?.avatarURL ?? profile.imageURL, data: nil, assetName: profile.imageAssetName)
+                            .frame(width: 76, height: 76).clipShape(Circle())
+                            .overlay(Circle().stroke(BondTheme.paper, lineWidth: 3))
+                    }
+                    // Birleşme noktasında beliren küçük bağlantı rozeti.
+                    Image(systemName: "link")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 30, height: 30)
+                        .background(BondTheme.upvote, in: Circle())
+                        .overlay(Circle().stroke(BondTheme.paper, lineWidth: 2.5))
+                        .offset(y: 34)
+                        .scaleEffect(avatarsTogether ? 1 : 0.2)
+                        .opacity(avatarsTogether ? 1 : 0)
+                        .animation(reduceMotion ? nil : BondTheme.Motion.bouncy.delay(0.22), value: avatarsTogether)
+                        .accessibilityHidden(true)
                 }
-                Text(L10n.Introduction.connected)
-                    .font(BondTheme.Typography.title2)
-                Text(L10n.Introduction.connectedBody)
-                    .font(BondTheme.Typography.subheadline)
-                    .foregroundStyle(.secondary)
+                .padding(.bottom, 10)
+                Group {
+                    Text(L10n.Introduction.connected)
+                        .font(BondTheme.Typography.title2)
+                    Text(L10n.Introduction.connectedBody)
+                        .font(BondTheme.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                // Yazı, fotoğraflar birleşince aşağıdan yükselerek geliyor.
+                .opacity(avatarsTogether || reduceMotion ? 1 : 0)
+                .offset(y: avatarsTogether || reduceMotion ? 0 : 10)
+                .animation(reduceMotion ? nil : BondTheme.Motion.smooth.delay(0.15), value: avatarsTogether)
             }
             .foregroundStyle(BondTheme.ink)
             .padding(BondTheme.Space.xl)
@@ -640,4 +680,10 @@ struct SocialPersonDetailView: View {
 
 struct ConversationRoute: Identifiable {
     let id: UUID
+}
+
+/// Bağlantı anındaki halkanın karesi; başta görünmez.
+private struct MeetRing {
+    var scale: CGFloat = 0.7
+    var opacity: Double = 0
 }

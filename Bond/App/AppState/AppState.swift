@@ -180,6 +180,8 @@ final class AppState {
     /// Az önce paylaşılanlar: Popüler sırada sıfır oyla dibe düşmesin, bir sonraki
     /// yüklemeye kadar tepede dursun. Kullanıcı paylaştığını görmeli.
     var justPublishedPostIDs: Set<UUID> = []
+    /// Az önce paylaşılan gönderi: akış, paylaşım ekranı kapanınca ona kayıp kısa bir an vurguluyor.
+    var lastPublishedPostID: UUID?
     /// Akış yüklenirken alınan "kaç kez gördü" fotoğrafı; sıralama buna bakar.
     /// Oturum içindeki görüntülemeler bir sonraki yüklemede devreye girer ki
     /// kaydırırken kartlar yer değiştirmesin.

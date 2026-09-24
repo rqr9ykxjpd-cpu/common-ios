@@ -206,6 +206,7 @@ extension AppState {
             }
             posts.insert(social, at: 0)
             justPublishedPostIDs.insert(social.id)
+            lastPublishedPostID = social.id
             // Başka rozete bakarken paylaşan kişi kendi gönderisini göremiyordu;
             // filtre uymuyorsa akış "Tümü"ye döner, gönderi en üstte.
             if let filter = selectedKindFilter, filter != kind {

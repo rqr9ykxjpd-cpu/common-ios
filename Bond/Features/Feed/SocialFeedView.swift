@@ -67,6 +67,8 @@ struct SocialFeedView: View {
     @State private var rankedIDs: [UUID] = []
     /// Akış ilk kez dolup yerine oturdu mu; oturduktan sonra `settleIn` kapanır.
     @State private var feedSettled = false
+    /// Paylaşım ekranı kapanınca kısa süre vurgulanan yeni gönderi.
+    @State private var glowPostID: UUID?
 
     private struct RankKey: Hashable {
         let ids: [UUID]
@@ -168,6 +170,15 @@ struct SocialFeedView: View {
                                         .onAppear { appState.markPostSeen(post.id) }
                                         Divider().opacity(0.35).padding(.vertical, 14)
                                     }
+                                    .background {
+                                        // Yeni gönderi yerine oturunca bir an sıcak bir zeminle parlar.
+                                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                            .fill(BondTheme.upvote.opacity(glowPostID == post.id ? 0.09 : 0))
+                                            .padding(.horizontal, 6)
+                                            .padding(.top, -8)
+                                            .padding(.bottom, 6)
+                                            .allowsHitTesting(false)
+                                    }
                                     .settleIn(index: index, active: !feedSettled)
                                 }
                             }
@@ -182,6 +193,20 @@ struct SocialFeedView: View {
                     }
                     .onAppear {
                         proxy.scrollTo("feed-top", anchor: .top)
+                    }
+                    .onChange(of: appState.lastPublishedPostID) { _, id in
+                        guard let id else { return }
+                        Task { @MainActor in
+                            // Paylaşım ekranının kapanmasını bekle; yoksa hareket onun arkasında kalıyor.
+                            try? await Task.sleep(for: .milliseconds(420))
+                            withAnimation(reduceMotion ? nil : BondTheme.Motion.smooth) {
+                                proxy.scrollTo("feed-top", anchor: .top)
+                            }
+                            guard !reduceMotion else { return }
+                            withAnimation(.easeOut(duration: 0.35)) { glowPostID = id }
+                            try? await Task.sleep(for: .milliseconds(1400))
+                            withAnimation(.easeInOut(duration: 0.9)) { glowPostID = nil }
+                        }
                     }
                     // Arka plandan dönüşte yeni gönderi varsa liste altından
                     // kaymasın; kullanıcı hazır olunca dokunur.
