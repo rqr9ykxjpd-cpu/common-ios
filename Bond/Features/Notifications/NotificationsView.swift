@@ -11,6 +11,9 @@ struct NotificationsView: View {
     @State private var showMeetingRequests = false
     @State private var conversationRoute: NotificationConversationRoute?
     @State private var pushAuthorizationStatus: UNAuthorizationStatus?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Liste ilk açılışta yerine oturdu mu; sonra `settleIn` kapanır.
+    @State private var listSettled = false
 
     var body: some View {
         NavigationStack {
@@ -27,20 +30,28 @@ struct NotificationsView: View {
                         notificationState
                     } else {
                         LazyVStack(spacing: 0) {
-                            ForEach(appState.notifications.sorted(by: { $0.createdAt > $1.createdAt })) { notification in
-                                Button { open(notification) } label: {
-                                    notificationRow(notification)
-                                }
-                                .buttonStyle(PressableStyle())
-                                .contextMenu {
-                                    if !notification.isRead {
-                                        Button(L10n.Notification.markRead) {
-                                            appState.markNotificationRead(notification.id)
+                            ForEach(Array(appState.notifications.sorted(by: { $0.createdAt > $1.createdAt }).enumerated()),
+                                    id: \.element.id) { index, notification in
+                                VStack(spacing: 0) {
+                                    Button { open(notification) } label: {
+                                        notificationRow(notification)
+                                    }
+                                    .buttonStyle(PressableStyle())
+                                    .contextMenu {
+                                        if !notification.isRead {
+                                            Button(L10n.Notification.markRead) {
+                                                appState.markNotificationRead(notification.id)
+                                            }
                                         }
                                     }
+                                    Divider().overlay(BondTheme.hairline)
                                 }
-                                Divider().overlay(BondTheme.hairline)
+                                .settleIn(index: index, active: !listSettled)
                             }
+                        }
+                        .task {
+                            try? await Task.sleep(for: .seconds(1.2))
+                            listSettled = true
                         }
                     }
                 }
@@ -51,6 +62,8 @@ struct NotificationsView: View {
             .background(BondTheme.paper.ignoresSafeArea())
             .refreshable { await appState.loadNotifications() }
             .task {
+                // İzin kartı en başta: listeden sonra gelince satırları aniden aşağı itiyordu.
+                await refreshPushAuthorizationStatus()
                 // Eski bildirimlerde sohbet kimliği olmayabilir. Liste görünmeden
                 // sohbetleri yükleyerek kişi bazlı güvenli fallback'i hazır tutuyoruz.
                 // Bildirimler zaten akışta yüklüyse burada tekrar çekmek, satıra
@@ -64,10 +77,14 @@ struct NotificationsView: View {
                 }
                 // Listeye bakmak = görüldü. Satıra basmadan kapanınca rozet
                 // "1" diye kalıyordu; açılınca hepsini okundu sayıyoruz.
+                // Yeniler önce bir an vurgulu görünsün, sonra renkleri yumuşakça
+                // sönsün; ekran kapanırsa uyku kesilir ve hemen okundu sayılır.
                 if appState.unreadNotificationCount > 0 {
-                    appState.markAllNotificationsRead()
+                    if !reduceMotion { try? await Task.sleep(for: .seconds(1.4)) }
+                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.8)) {
+                        appState.markAllNotificationsRead()
+                    }
                 }
-                await refreshPushAuthorizationStatus()
             }
             .navigationTitle(L10n.Notification.title)
             .toolbar {
@@ -210,9 +227,16 @@ struct NotificationsView: View {
                     .fill(BondTheme.violet)
                     .frame(width: 9, height: 9)
                     .padding(.top, 6)
+                    .transition(.scale(scale: 0.2).combined(with: .opacity))
             }
         }
         .padding(.vertical, BondTheme.Space.md)
+        // Okunmamış satırın hafif mor zemini; okununca söner.
+        .background {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(BondTheme.violet.opacity(notification.isRead ? 0 : 0.06))
+                .padding(.horizontal, -10)
+        }
         .contentShape(Rectangle())
     }
 
