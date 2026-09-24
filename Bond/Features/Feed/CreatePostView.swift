@@ -52,19 +52,14 @@ struct CreatePostView: View {
     private var counterVisible: Bool { CharacterCounter.isVisible(count: captionLength, limit: captionLimit) }
     private var hints: [String] { isStory ? L10n.Composer.storyHints : kind.hints }
 
-    /// Sınırı aşan yazı kesilir; sunucu zaten reddederdi, en azından anında belli olsun.
-    private func enforceLimit() {
-        guard let kesik = TextLimit.clamp(caption, to: captionLimit) else { return }
-        caption = kesik
-        limitBump += 1
-    }
+    private var captionFits: Bool { TextLimit.fits(caption, captionLimit) }
     private var cleanCaption: String { caption.trimmingCharacters(in: .whitespacesAndNewlines) }
     private var atPostLimit: Bool {
         guard !isStory, let cap = appState.tier.maxPosts else { return false }
         return myPostCount >= cap
     }
     private var canPublish: Bool {
-        guard !isPreparingMedia else { return false }
+        guard !isPreparingMedia, captionFits else { return false }
         if atPostLimit { return true }
         return isStory ? imageData != nil : (imageData != nil || !cleanCaption.isEmpty)
     }
@@ -81,8 +76,9 @@ struct CreatePostView: View {
                 }
             }
             .keyboardDoneButton()
-            .onChange(of: caption) { enforceLimit() }
-            .onChange(of: contentType) { enforceLimit() }
+            .onChange(of: caption) { eski, yeni in
+                if TextLimit.crossed(from: eski, to: yeni, captionLimit) { limitBump += 1 }
+            }
             .navigationTitle(isStory ? L10n.Composer.shareStory : L10n.Composer.sharePost)
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(isStory ? .hidden : .automatic, for: .navigationBar)

@@ -20,8 +20,8 @@ struct ConversationView: View {
     @State private var messagePendingReport: UUID?
     @FocusState private var focused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// Her gönderişte artar; gönder düğmesindeki ok yukarı fırlayıp geri gelir.
-    @State private var sendCount = 0
+    /// Mesaj sınırına her dayanışta artar; yazma alanı titrer.
+    @State private var limitBump = 0
 
     private var conversation: Conversation? { appState.conversations.first { $0.id == conversationID } }
 
@@ -330,38 +330,15 @@ struct ConversationView: View {
                     .focused($focused)
                     .padding(.horizontal, 14).padding(.vertical, 12)
                     .background(BondTheme.ink.opacity(0.055), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                Button { send() } label: {
-                    // Düzenlerken ok tike dönüşüyor: düğmenin bu kez yeni mesaj
-                    // değil düzeltme göndereceği ikondan belli.
-                    Image(systemName: editingMessage == nil ? "arrow.up" : "checkmark")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(BondTheme.paper)
-                        .contentTransition(.symbolEffect(.replace))
-                        // Gönderince ok yukarı fırlayıp alttan geri geliyor.
-                        .keyframeAnimator(initialValue: SendLaunch(), trigger: sendCount) { icon, frame in
-                            icon.offset(y: frame.y).opacity(frame.opacity)
-                        } keyframes: { _ in
-                            KeyframeTrack(\.y) {
-                                CubicKeyframe(-30, duration: 0.16)
-                                MoveKeyframe(22)
-                                SpringKeyframe(0, duration: 0.34, spring: .snappy)
-                            }
-                            KeyframeTrack(\.opacity) {
-                                LinearKeyframe(0, duration: 0.16)
-                                MoveKeyframe(0)
-                                LinearKeyframe(1, duration: 0.2)
-                            }
-                        }
-                        .frame(width: 44, height: 44)
-                        .background(canSend ? BondTheme.ink : BondTheme.ink.opacity(0.22), in: Circle())
-                        .clipShape(Circle())
-                        // Yazı yokken düğme biraz geride duruyor; ilk harfle öne çıkıyor.
-                        .scaleEffect(canSend || reduceMotion ? 1 : 0.86)
-                }
-                .accessibilityLabel(editingMessage == nil ? L10n.Common.send : L10n.Common.edit)
-                .disabled(!canSend)
-                .buttonStyle(PressableStyle())
-                .animation(reduceMotion ? nil : BondTheme.Motion.bouncy, value: canSend)
+                    .composerLimit(text: $draft, limit: TextLimit.message, bump: $limitBump)
+                // Düzenlerken ok tike dönüşüyor: düğmenin bu kez yeni mesaj
+                // değil düzeltme göndereceği ikondan belli.
+                SendArrowButton(
+                    canSend: canSend,
+                    isEditing: editingMessage != nil,
+                    accessibilityLabel: editingMessage == nil ? L10n.Common.send : L10n.Common.edit,
+                    action: send
+                )
             }
             .padding(.horizontal, 12).padding(.vertical, 10)
         }
@@ -371,7 +348,9 @@ struct ConversationView: View {
         .overlay(alignment: .top) { Rectangle().fill(BondTheme.hairline).frame(height: 0.5) }
     }
 
-    private var canSend: Bool { !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    private var canSend: Bool {
+        !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && TextLimit.fits(draft, TextLimit.message)
+    }
 
     /// Yanıt ve düzenleme şeridi yazma alanının üstünden kayarak açılıp kapanıyor.
     private var stripTransition: AnyTransition {
@@ -398,7 +377,6 @@ struct ConversationView: View {
         }
         draft = ""
         replyingTo = nil
-        if !reduceMotion { sendCount += 1 }
         Haptics.impact(.light)
         Task { await appState.send(body, in: conversationID, replyTo: reply) }
     }
@@ -659,12 +637,6 @@ private struct MessageBubble: View {
                 if shouldReply { reply() }
             }
     }
-}
-
-/// Gönder okunun fırlama karesi.
-private struct SendLaunch {
-    var y: CGFloat = 0
-    var opacity: Double = 1
 }
 
 private extension Alignment {

@@ -45,18 +45,22 @@ enum TextLimit {
 
     static func length(_ text: String) -> Int { text.unicodeScalars.count }
 
-    /// Sınırı aşan kısmı sondan, bütün karakterler halinde keser (emojiyi ortadan bölmez).
-    static func clamp(_ text: String, to limit: Int) -> String? {
-        guard length(text) > limit else { return nil }
-        var kesik = text
-        while length(kesik) > limit, !kesik.isEmpty { kesik.removeLast() }
-        return kesik
+    static func fits(_ text: String, _ limit: Int) -> Bool { length(text) <= limit }
+
+    /// Yazı bu değişiklikle sınırı yeni mi aştı? Titreme ve uyarı titreşimi
+    /// yalnızca aşıldığı an bir kez; aşıkken yazmaya devam etmek her harfte titretmesin.
+    ///
+    /// Yazıyı kendimiz kısaltmıyoruz: alanın içeriğini programla değiştirmek
+    /// imleci metnin ortasına atlatıyor, sonraki harfler yanlış yere giriyordu.
+    /// Aşan kısım kırmızı eksi sayaçla gösteriliyor, gönder düğmesi kapanıyor.
+    static func crossed(from old: String, to new: String, _ limit: Int) -> Bool {
+        fits(old, limit) && !fits(new, limit)
     }
 }
 
 /// Sınıra yaklaşınca beliren kalan karakter sayısı. Rakam kayarak azalır;
-/// son %10'da turuncu, sınırda kırmızı. Sınırdan uzakken hiç görünmez —
-/// sürekli duran bir sayaç yazan kişiyi gereksiz yere tedirgin eder.
+/// son %10'da turuncu, sınır aşılınca kırmızı eksi. Sınırdan uzakken hiç
+/// görünmez — sürekli duran bir sayaç yazan kişiyi gereksiz yere tedirgin eder.
 struct CharacterCounter: View {
     let count: Int
     let limit: Int
@@ -68,8 +72,8 @@ struct CharacterCounter: View {
     }
 
     var body: some View {
-        let kalan = max(limit - count, 0)
-        let renk: Color = kalan == 0 ? BondTheme.coral
+        let kalan = limit - count
+        let renk: Color = kalan < 0 ? BondTheme.coral
             : (Double(kalan) <= Double(limit) * 0.1 ? BondTheme.burntOrange : BondTheme.muted)
         Text("\(kalan)")
             .font(.caption.weight(.semibold))
@@ -77,7 +81,7 @@ struct CharacterCounter: View {
             .foregroundStyle(renk)
             .contentTransition(.numericText(value: Double(kalan)))
             .animation(.snappy(duration: 0.2), value: kalan)
-            .accessibilityLabel(L10n.Composer.charactersLeft(kalan))
+            .accessibilityLabel(L10n.Composer.charactersLeft(max(kalan, 0)))
     }
 }
 
@@ -106,4 +110,92 @@ struct LimitShake: ViewModifier {
 
 extension View {
     func limitShake(trigger: Int) -> some View { modifier(LimitShake(trigger: trigger)) }
+
+    /// Yuvarlak yazma alanları (sohbet, yorum) için: sınıra yaklaşınca alanın
+    /// sağ altında kalan sayıyı gösterir, sınır aşıldığı an alanı titretir.
+    /// Gönder düğmesini kapatmak çağıranın işi (`TextLimit.fits`).
+    func composerLimit(text: Binding<String>, limit: Int, bump: Binding<Int>) -> some View {
+        modifier(ComposerLimit(text: text, limit: limit, bump: bump))
+    }
+}
+
+private struct ComposerLimit: ViewModifier {
+    @Binding var text: String
+    let limit: Int
+    @Binding var bump: Int
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        let sayi = TextLimit.length(text)
+        let gorunur = CharacterCounter.isVisible(count: sayi, limit: limit)
+        content
+            .overlay(alignment: .bottomTrailing) {
+                if gorunur {
+                    CharacterCounter(count: sayi, limit: limit)
+                        .padding(.horizontal, 6)
+                        .background(.background, in: Capsule())
+                        .offset(x: -10, y: 9)
+                        .transition(.opacity.combined(with: .scale(scale: 0.7)))
+                }
+            }
+            .animation(reduceMotion ? nil : .snappy(duration: 0.2), value: gorunur)
+            .limitShake(trigger: bump)
+            .sensoryFeedback(.warning, trigger: bump)
+            .onChange(of: text) { eski, yeni in
+                if TextLimit.crossed(from: eski, to: yeni, limit) { bump += 1 }
+            }
+    }
+}
+
+/// Sohbet ve yorumlardaki yuvarlak gönder düğmesi. Yazı yokken biraz geride
+/// ve soluk; ilk harfle öne çıkıp dolar. Gönderince ok yukarı fırlayıp alttan
+/// geri gelir. Düzenlerken ok tike dönüşür, fırlamaz.
+struct SendArrowButton: View {
+    let canSend: Bool
+    var isEditing = false
+    let accessibilityLabel: String
+    let action: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var launches = 0
+
+    var body: some View {
+        Button {
+            guard canSend else { return }
+            if !isEditing, !reduceMotion { launches += 1 }
+            action()
+        } label: {
+            Image(systemName: isEditing ? "checkmark" : "arrow.up")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(BondTheme.paper)
+                .contentTransition(.symbolEffect(.replace))
+                .keyframeAnimator(initialValue: SendLaunch(), trigger: launches) { icon, frame in
+                    icon.offset(y: frame.y).opacity(frame.opacity)
+                } keyframes: { _ in
+                    KeyframeTrack(\.y) {
+                        CubicKeyframe(-30, duration: 0.16)
+                        MoveKeyframe(22)
+                        SpringKeyframe(0, duration: 0.34, spring: .snappy)
+                    }
+                    KeyframeTrack(\.opacity) {
+                        LinearKeyframe(0, duration: 0.16)
+                        MoveKeyframe(0)
+                        LinearKeyframe(1, duration: 0.2)
+                    }
+                }
+                .frame(width: 44, height: 44)
+                .background(canSend ? BondTheme.ink : BondTheme.ink.opacity(0.22), in: Circle())
+                .clipShape(Circle())
+                .scaleEffect(canSend || reduceMotion ? 1 : 0.86)
+        }
+        .accessibilityLabel(accessibilityLabel)
+        .disabled(!canSend)
+        .buttonStyle(PressableStyle())
+        .animation(reduceMotion ? nil : BondTheme.Motion.bouncy, value: canSend)
+    }
+}
+
+/// Gönder okunun fırlama karesi.
+private struct SendLaunch {
+    var y: CGFloat = 0
+    var opacity: Double = 1
 }

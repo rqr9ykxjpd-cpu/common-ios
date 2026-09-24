@@ -6,6 +6,8 @@ struct CommentsView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let postID: UUID
     @State private var draft = ""
+    /// Yorum sınırına her dayanışta artar; yazma alanı titrer.
+    @State private var limitBump = 0
     @State private var commentToDelete: SocialComment?
     /// Kurucu: "Oy ekle…" hedefi ve alert'teki sayı.
     @State private var boostTarget: SocialComment?
@@ -15,7 +17,9 @@ struct CommentsView: View {
     @FocusState private var focused: Bool
 
     private var post: SocialPost? { appState.posts.first { $0.id == postID } }
-    private var canSend: Bool { !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    private var canSend: Bool {
+        !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && TextLimit.fits(draft, TextLimit.comment)
+    }
 
     var body: some View {
         NavigationStack {
@@ -242,16 +246,8 @@ struct CommentsView: View {
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
                 .background(BondTheme.ink.opacity(0.055), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-            Button { send() } label: {
-                Image(systemName: "arrow.up")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(BondTheme.paper)
-                    .frame(width: 44, height: 44)
-                    .background(canSend ? BondTheme.ink : BondTheme.ink.opacity(0.22), in: Circle())
-            }
-            .disabled(!canSend)
-            .buttonStyle(PressableStyle())
-            .accessibilityLabel(L10n.Comments.sendA11y)
+                .composerLimit(text: $draft, limit: TextLimit.comment, bump: $limitBump)
+            SendArrowButton(canSend: canSend, accessibilityLabel: L10n.Comments.sendA11y, action: send)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
