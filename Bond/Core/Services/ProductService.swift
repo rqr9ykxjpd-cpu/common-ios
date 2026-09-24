@@ -129,6 +129,8 @@ protocol ProductService: Sendable {
     /// Hesabı askıya alır ya da geri açar.
     func setAccountActive(_ profileID: UUID, active: Bool) async throws
     func messageStream() -> AsyncStream<RealtimeMessage>
+    /// Sohbette "yazıyor…" için anlık sinyal kanalı; oturum yoksa nil.
+    func typingChannel(matchID: UUID) -> (any TypingChannel)?
     /// Gönderiye oy: +1 yukarı, -1 aşağı, 0 geri al.
     func setPostVote(_ postID: UUID, value: Int) async throws
     /// Kurucu: gönderiye oy ekler (eksi geri alır); yeni boost'u döndürür.
@@ -301,6 +303,7 @@ struct UnconfiguredProductService: ProductService {
     func moderatorDeletePost(_ postID: UUID) async throws { try fail() }
     func setAccountActive(_ profileID: UUID, active: Bool) async throws { try fail() }
     func messageStream() -> AsyncStream<RealtimeMessage> { AsyncStream { $0.finish() } }
+    func typingChannel(matchID: UUID) -> (any TypingChannel)? { nil }
     func setPostVote(_ postID: UUID, value: Int) async throws { try fail() }
     func boostPost(_ postID: UUID, extra: Int) async throws -> Int { try fail() }
     func boostComment(_ commentID: UUID, extra: Int) async throws -> Int { try fail() }

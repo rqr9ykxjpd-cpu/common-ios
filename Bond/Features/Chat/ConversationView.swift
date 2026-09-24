@@ -22,6 +22,11 @@ struct ConversationView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Mesaj sınırına her dayanışta artar; yazma alanı titrer.
     @State private var limitBump = 0
+    /// Karşı taraf şu an yazıyor mu (son sinyalden 4 sn sonra söner).
+    @State private var otherIsTyping = false
+    @State private var typingChannel: (any TypingChannel)?
+    @State private var lastTypingPing = Date.distantPast
+    @State private var typingHideTask: Task<Void, Never>?
 
     private var conversation: Conversation? { appState.conversations.first { $0.id == conversationID } }
 
@@ -76,13 +81,32 @@ struct ConversationView: View {
                                     removal: .scale(scale: 0.85).combined(with: .opacity)
                                 ))
                             }
+                            if otherIsTyping {
+                                TypingBubble()
+                                    .id("typing-indicator")
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .transition(.scale(scale: 0.5, anchor: .bottomLeading).combined(with: .opacity))
+                            }
                         }
                         .padding(.horizontal, 16)
                         .padding(.vertical, 18)
                     }
                     .scrollDismissesKeyboard(.interactively)
                     .onAppear { scrollToBottom(proxy, conversation: conversation, animated: false) }
-                    .onChange(of: conversation.messages.count) { _, _ in scrollToBottom(proxy, conversation: conversation, animated: true) }
+                    .onChange(of: conversation.messages.count) { _, _ in
+                        // Karşıdan mesaj geldiyse "yazıyor" balonu yerini mesaja bırakır.
+                        if conversation.messages.last?.isMine == false {
+                            typingHideTask?.cancel()
+                            withAnimation(reduceMotion ? nil : BondTheme.Motion.smooth) { otherIsTyping = false }
+                        }
+                        scrollToBottom(proxy, conversation: conversation, animated: true)
+                    }
+                    .onChange(of: otherIsTyping) { _, yaziyor in
+                        guard yaziyor else { return }
+                        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.25)) {
+                            proxy.scrollTo("typing-indicator", anchor: .bottom)
+                        }
+                    }
                 }
                 composer
             } else {
@@ -110,6 +134,22 @@ struct ConversationView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { sohbetAracCubugu }
         .onAppear { appState.markConversationRead(conversationID) }
+        // "Yazıyor…": sohbet açıkken karşı tarafın sinyallerini dinle, ekran
+        // kapanınca kanalı kapat. Kayıt tutulmuyor; sinyal anlık.
+        .task(id: conversationID) {
+            guard let kanal = appState.typingChannel(for: conversationID) else { return }
+            typingChannel = kanal
+            for await _ in kanal.signals { showOtherTyping() }
+            await kanal.close()
+        }
+        .onChange(of: draft) { _, yeni in
+            // Her harfte değil, yazarken en fazla 2,5 saniyede bir sinyal.
+            guard !yeni.isEmpty, editingMessage == nil,
+                  Date().timeIntervalSince(lastTypingPing) > 2.5 else { return }
+            lastTypingPing = .now
+            let kanal = typingChannel
+            Task { await kanal?.ping() }
+        }
         .confirmationDialog(L10n.Common.report, isPresented: Binding(
             get: { messagePendingReport != nil },
             set: { if !$0 { messagePendingReport = nil } }
@@ -399,6 +439,16 @@ struct ConversationView: View {
         Haptics.impact(.light)
     }
 
+    private func showOtherTyping() {
+        withAnimation(reduceMotion ? nil : BondTheme.Motion.bouncy) { otherIsTyping = true }
+        typingHideTask?.cancel()
+        typingHideTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(4))
+            guard !Task.isCancelled else { return }
+            withAnimation(reduceMotion ? nil : BondTheme.Motion.smooth) { otherIsTyping = false }
+        }
+    }
+
     private func scrollToBottom(_ proxy: ScrollViewProxy, conversation: Conversation, animated: Bool) {
         guard let id = conversation.messages.last?.id else { return }
         if animated { withAnimation(.easeOut(duration: 0.25)) { proxy.scrollTo(id, anchor: .bottom) } }
@@ -648,5 +698,44 @@ private extension Alignment {
         case .bottomTrailing: .bottomTrailing
         default: .center
         }
+    }
+}
+
+/// Karşı taraf yazarken beliren balon: üç nokta sırayla hafifçe yükselip iner.
+/// Yalnızca göründüğü sürece çiziliyor; "Hareketi Azalt" açıksa noktalar durur.
+private struct TypingBubble: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        TimelineView(.animation(paused: reduceMotion)) { context in
+            let t = context.date.timeIntervalSinceReferenceDate
+            HStack(spacing: 5) {
+                ForEach(0..<3, id: \.self) { i in
+                    dot(wave: Self.wave(at: t, index: i))
+                }
+            }
+        }
+        .padding(.horizontal, 15)
+        .padding(.vertical, 14)
+        .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(BondTheme.hairline))
+        .accessibilityElement()
+        .accessibilityLabel(L10n.Chat.typing)
+    }
+
+    /// 0…1 arası: noktanın o anki yüksekliği; her nokta bir öncekinden biraz geride.
+    private static func wave(at time: TimeInterval, index: Int) -> Double {
+        let faz: Double = time * 2 * Double.pi / 1.2 - Double(index) * 0.7
+        return max(0, sin(faz))
+    }
+
+    private func dot(wave: Double) -> some View {
+        let opaklik: Double = reduceMotion ? 0.7 : 0.45 + 0.55 * wave
+        let yukseklik: CGFloat = reduceMotion ? 0 : CGFloat(-3.5 * wave)
+        return Circle()
+            .fill(BondTheme.muted)
+            .frame(width: 7, height: 7)
+            .opacity(opaklik)
+            .offset(y: yukseklik)
     }
 }

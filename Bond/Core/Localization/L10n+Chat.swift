@@ -33,6 +33,8 @@ extension L10n {
         static var replying: String { String(localized: "chat.replying") }
         static var cancelReply: String { String(localized: "chat.cancelReply") }
         static var placeholder: String { String(localized: "chat.placeholder") }
+        /// Karşı taraf yazarken beliren üç noktalı balonun erişilebilirlik adı.
+        static var typing: String { String(localized: "chat.typing") }
         static var edited: String { String(localized: "chat.edited") }
         static var reply: String { String(localized: "chat.reply") }
         static var sendHeart: String { String(localized: "chat.sendHeart") }

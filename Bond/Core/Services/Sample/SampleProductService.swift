@@ -80,6 +80,12 @@ struct SampleProductService: ProductService {
     func setStoryLiked(_ storyID: UUID, liked: Bool) async throws { await store.setStoryLiked(storyID, liked: liked) }
     func isStoryLiked(_ storyID: UUID) async throws -> Bool { await store.isStoryLiked(storyID) }
     func messageStream() -> AsyncStream<RealtimeMessage> { AsyncStream { $0.finish() } }
+    /// Örnek veride karşı taraf yok. `-typing` ile açılırsa sohbet açıldıktan
+    /// kısa süre sonra birkaç saniye "yazıyor" sinyali gelir: göstergeyi
+    /// sunucusuz doğrulamak için.
+    func typingChannel(matchID: UUID) -> (any TypingChannel)? {
+        ProcessInfo.processInfo.arguments.contains("-typing") ? SampleTypingChannel() : nil
+    }
     func unmatch(_ matchID: UUID) async throws { await store.removeConversation(matchID) }
 
     // Akış
@@ -345,6 +351,30 @@ extension BackendNotification {
             actorAvatarURL: actorAvatarURL, matchID: matchID, isRead: isRead, createdAt: createdAt
         )
     }
+}
+
+
+/// Açıldıktan 1,5 sn sonra 5 sn boyunca "yazıyor" sinyali verir.
+final class SampleTypingChannel: TypingChannel, @unchecked Sendable {
+    let signals: AsyncStream<Void>
+    private let task: Task<Void, Never>
+
+    init() {
+        let (stream, continuation) = AsyncStream<Void>.makeStream()
+        signals = stream
+        task = Task {
+            try? await Task.sleep(for: .seconds(1.5))
+            for _ in 0..<3 {
+                guard !Task.isCancelled else { break }
+                continuation.yield(())
+                try? await Task.sleep(for: .seconds(1.7))
+            }
+            continuation.finish()
+        }
+    }
+
+    func ping() async {}
+    func close() async { task.cancel() }
 }
 
 #endif

@@ -1240,6 +1240,23 @@
         }
       }
     },
+    "chat.typing" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Typing…"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yazıyor…"
+          }
+        }
+      }
+    },
     "chat.reactionFailed" : {
       "extractionState" : "manual",
       "localizations" : {

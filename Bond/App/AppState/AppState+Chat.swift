@@ -293,6 +293,11 @@ extension AppState {
         }
     }
 
+    /// Sohbet ekranının "yazıyor…" kanalı; oturum yoksa nil.
+    func typingChannel(for conversationID: UUID) -> (any TypingChannel)? {
+        service.typingChannel(matchID: conversationID)
+    }
+
     func send(_ body: String, in conversationID: UUID, replyTo: MessageReply? = nil) async {
         let cleanBody = body.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanBody.isEmpty,
