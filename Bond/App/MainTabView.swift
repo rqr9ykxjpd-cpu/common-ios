@@ -16,16 +16,10 @@ struct MainTabView: View {
                 .tabItem { Label(L10n.CampusNavigation.places, systemImage: "mappin.and.ellipse") }
                 .tag(1)
             PremiumMatchesView(showsCloseButton: false)
-                .tabItem {
-                    // Yeni mesaj/istek gelince ikon bir kez sekiyor: rozet
-                    // rakamı küçük, hareket göz ucuyla fark ediliyor.
-                    Label {
-                        Text(L10n.CampusNavigation.chats)
-                    } icon: {
-                        Image(systemName: "bubble.left.and.bubble.right")
-                            .symbolEffect(.bounce, options: .nonRepeating, value: appState.chatActivityCount)
-                    }
-                }
+                // Sekme simgesine eklenen efektler (zıplama vb.) çubuğa taşınmıyor:
+                // iOS alt çubuğu yalnızca simgeyi ve yazıyı alıyor. Yeni mesajı rozet
+                // gösteriyor; seçim animasyonunu iOS 26'nın cam çubuğu kendisi yapıyor.
+                .tabItem { Label(L10n.CampusNavigation.chats, systemImage: "bubble.left.and.bubble.right") }
                 .badge(appState.chatActivityCount)
                 .tag(2)
             SocialProfileView()
