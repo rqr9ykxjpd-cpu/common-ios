@@ -109,6 +109,7 @@ struct MessageRequestsView: View {
             Image(systemName: "tray")
                 .font(.system(size: 30, weight: .light))
                 .foregroundStyle(BondTheme.muted)
+                .idleFloat()
             Text(L10n.Chat.noRequests)
                 .font(BondTheme.Typography.headline)
             Text(L10n.Chat.noRequestsBody)

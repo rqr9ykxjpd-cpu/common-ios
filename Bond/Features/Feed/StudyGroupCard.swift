@@ -36,9 +36,17 @@ struct StudyGroupCard: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 10) {
                 Button { openProfile(group.host) } label: {
-                    ProfileMedia(url: group.host.imageURL, data: nil, assetName: group.host.imageAssetName)
-                        .frame(width: 40, height: 40)
-                        .clipShape(Circle())
+                    // Başlamasına bir saatten az kalınca fotoğrafın etrafında
+                    // zamanla dolan halka; son 10 dakikada hafifçe atar. Halka
+                    // kendi alanında: fotoğrafın dışına taşınca kenardan kesiliyordu.
+                    ZStack {
+                        // Atarken %7 büyüyor; çevresinde o kadar pay var.
+                        StartCountdownRing(startsAt: group.startsAt, diameter: 44)
+                        ProfileMedia(url: group.host.imageURL, data: nil, assetName: group.host.imageAssetName)
+                            .frame(width: 36, height: 36)
+                            .clipShape(Circle())
+                    }
+                    .frame(width: 48, height: 48)
                 }
                 .buttonStyle(.plain)
                 .zoomSource(id: "grup-\(group.id)-\(group.host.id)", in: zoomNamespace)

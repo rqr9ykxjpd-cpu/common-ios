@@ -268,6 +268,7 @@ struct PremiumMatchesView: View {
             Image(systemName: "message")
                 .font(.system(size: 22))
                 .foregroundStyle(BondTheme.muted)
+                .idleFloat()
             Text(L10n.Chat.emptyTitle)
                 .font(.system(size: 15, weight: .semibold))
             Text(L10n.Chat.emptyBody)

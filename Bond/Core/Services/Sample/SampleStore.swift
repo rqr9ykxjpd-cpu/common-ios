@@ -68,7 +68,10 @@ actor SampleStore {
             StudyGroup(
                 id: UUID(), host: host,
                 place: places.first(where: { $0.name == "Merkez Kütüphane" }) ?? places[0],
-                startsAt: Date().addingTimeInterval(3600), note: "Veri Yapıları vize tekrarı",
+                // `-groupsoon`: 8 dk sonra başlıyor; yaklaşan saat halkasını ve son
+                // 10 dakikadaki atışını sunucusuz görmek için.
+                startsAt: Date().addingTimeInterval(ProcessInfo.processInfo.arguments.contains("-groupsoon") ? 480 : 3600),
+                note: "Veri Yapıları vize tekrarı",
                 capacity: 5, members: [SampleData.profiles[2], SampleData.profiles[3]],
                 createdAt: Date().addingTimeInterval(-1200), isMine: false, joined: false,
                 spotPhotoURL: nil, spotPhotoAt: nil

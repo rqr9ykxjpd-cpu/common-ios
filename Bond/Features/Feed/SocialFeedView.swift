@@ -69,6 +69,8 @@ struct SocialFeedView: View {
     @State private var feedSettled = false
     /// Paylaşım ekranı kapanınca kısa süre vurgulanan yeni gönderi.
     @State private var glowPostID: UUID?
+    /// Okunmamış bildirim sayısı her arttığında artar; zil bir kez sallanır.
+    @State private var bellRings = 0
 
     private struct RankKey: Hashable {
         let ids: [UUID]
@@ -592,6 +594,11 @@ struct SocialFeedView: View {
                 // kenar clip yüzünden kırmızı daire yarım görünüyordu. İkonun
                 // etrafında boşluk bırakıp rozeti bu alanın içinde tutuyoruz.
                 Image(systemName: "bell")
+                    // Yeni bildirim geldiği an zil bir kez sallanır; okununca sallanmaz.
+                    .symbolEffect(.wiggle, options: .nonRepeating, value: bellRings)
+                    .onChange(of: appState.unreadNotificationCount) { eski, yeni in
+                        if yeni > eski, !reduceMotion { bellRings += 1 }
+                    }
                     .padding(.top, 5)
                     .padding(.trailing, 7)
                     .overlay(alignment: .topTrailing) {
@@ -844,6 +851,8 @@ private struct StoryRing: View {
         Circle()
             .strokeBorder(ringStyle, style: StrokeStyle(lineWidth: 3, lineCap: .round))
             .frame(width: size, height: size)
+            // İzlenmemiş halkada yavaşça dönen ince ışık: göz yeni hikâyeye gider.
+            .overlay { if !viewed { RingGlint() } }
             .scaleEffect(breathed || viewed || reduceMotion ? 1 : 0.86)
             .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: viewed)
             .onAppear {

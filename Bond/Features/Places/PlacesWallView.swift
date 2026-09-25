@@ -292,6 +292,8 @@ struct PlacesWallView: View {
                             .transition(.scale(scale: 0.3).combined(with: .opacity))
                     }
                 }
+                // "Şu an burada" hissi: yanında nefes alan yeşil nokta.
+                LiveDot(size: 6)
                 Text(L10n.Places.peopleHere(sayi))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(BondTheme.ink)
