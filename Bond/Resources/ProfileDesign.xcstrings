@@ -65,22 +65,6 @@
         }
       }
     },
-    "requestHint": {
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eşleşme isteği için bu bilgi alanını sağa sürükle."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Drag this information area right to request a match."
-          }
-        }
-      }
-    },
     "releaseHint": {
       "localizations": {
         "tr": {
@@ -93,22 +77,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Release to try the request. Drag back to cancel."
-          }
-        }
-      }
-    },
-    "requestAction": {
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eşleşme isteğini dene"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Try match request"
           }
         }
       }

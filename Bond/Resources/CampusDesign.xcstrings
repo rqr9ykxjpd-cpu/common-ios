@@ -497,22 +497,6 @@
         }
       }
     },
-    "cardMatchHint": {
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eşleşmek için her iki tarafın da eşleşme göndermesi gerekir."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A match needs both of you to send a match request."
-          }
-        }
-      }
-    },
     "cardRequestSentHint": {
       "localizations": {
         "tr": {
@@ -749,22 +733,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Couldn’t send the request."
-          }
-        }
-      }
-    },
-    "rightSwipeCTA": {
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eşleşme gönder"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Send match request"
           }
         }
       }

@@ -37,7 +37,6 @@ extension L10n {
         static var nextPhoto: String { String(localized: "nextPhoto", table: "CampusDesign") }
         static var previousPhoto: String { String(localized: "previousPhoto", table: "CampusDesign") }
         static var cardSwipeHint: String { String(localized: "cardSwipeHint", table: "CampusDesign") }
-        static var cardMatchHint: String { String(localized: "cardMatchHint", table: "CampusDesign") }
         static var cardRequestSentHint: String { String(localized: "cardRequestSentHint", table: "CampusDesign") }
         static var cardSwipeHintSelf: String { String(localized: "cardSwipeHintSelf", table: "CampusDesign") }
         static var swipeRequestStamp: String { String(localized: "swipeRequestStamp", table: "CampusDesign") }
@@ -49,7 +48,6 @@ extension L10n {
         static var rightSwipeUndoFailed: String { String(localized: "rightSwipeUndoFailed", table: "CampusDesign") }
         static var rightSwipeMatched: String { String(localized: "rightSwipeMatched", table: "CampusDesign") }
         static var rightSwipeFailed: String { String(localized: "rightSwipeFailed", table: "CampusDesign") }
-        static var rightSwipeCTA: String { String(localized: "rightSwipeCTA", table: "CampusDesign") }
         static func photoIndex(_ current: Int, of total: Int) -> String {
             String(format: String(localized: "photoIndex", table: "CampusDesign"), locale: L10n.appLocale, Int64(current), Int64(total))
         }
