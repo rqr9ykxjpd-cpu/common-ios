@@ -14,6 +14,10 @@ struct MessageRequestsView: View {
     /// Kabul edilince açılacak sohbet.
     @State private var acilacakSohbet: UUID?
     @State private var islemdeki: UUID?
+    /// Satırdaki "…" menüsünden şikayet edilecek ya da engellenecek istek.
+    /// Tanımadığın biri yazdığında bunun için profiline girmek gerekmesin.
+    @State private var sikayetEdilecek: MessageRequest?
+    @State private var engellenecek: MessageRequest?
 
     private var istekler: [MessageRequest] { appState.pendingMessageRequests }
 
@@ -43,6 +47,37 @@ struct MessageRequestsView: View {
             .navigationTitle(L10n.Chat.requestsTitle)
             .navigationDestination(item: $acilacakSohbet) { id in
                 ConversationView(conversationID: id)
+            }
+            .confirmationDialog(
+                L10n.Common.report,
+                isPresented: Binding(get: { sikayetEdilecek != nil }, set: { if !$0 { sikayetEdilecek = nil } }),
+                titleVisibility: .visible,
+                presenting: sikayetEdilecek
+            ) { istek in
+                ForEach(ReportReason.allCases) { reason in
+                    Button(reason.title) {
+                        appState.report(istek.profile, reason: reason)
+                        sikayetEdilecek = nil
+                    }
+                }
+                Button(L10n.Common.cancel, role: .cancel) { sikayetEdilecek = nil }
+            }
+            .confirmationDialog(
+                L10n.Chat.blockConfirm(engellenecek?.profile.name ?? L10n.Common.someone),
+                isPresented: Binding(get: { engellenecek != nil }, set: { if !$0 { engellenecek = nil } }),
+                titleVisibility: .visible,
+                presenting: engellenecek
+            ) { istek in
+                Button(L10n.Common.block, role: .destructive) {
+                    engellenecek = nil
+                    appState.block(istek.profile)
+                    // Engellemek istekleri temizlemiyor; istek de kalıcı olarak reddedilsin
+                    // ki liste yenilenince geri gelmesin.
+                    Task { await appState.declineMessageRequest(istek.id) }
+                }
+                Button(L10n.Common.cancel, role: .cancel) { engellenecek = nil }
+            } message: { _ in
+                Text(L10n.Chat.blockBody)
             }
     }
 
@@ -90,6 +125,7 @@ struct MessageRequestsView: View {
         return VStack(alignment: .leading, spacing: BondTheme.Space.md) {
             // Kime ait olduğu profil kartına gitmeden anlaşılmalı: kabul kararı
             // yalnızca mesaja değil, kişiye de bakılarak veriliyor.
+            HStack(spacing: 4) {
             NavigationLink {
                 SocialPersonDetailView(profile: istek.profile, place: nil)
             } label: {
@@ -118,6 +154,19 @@ struct MessageRequestsView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(PressableStyle())
+
+                Menu {
+                    Button(L10n.Common.report, systemImage: "flag") { sikayetEdilecek = istek }
+                    Button(L10n.Common.block, systemImage: "hand.raised", role: .destructive) { engellenecek = istek }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(BondTheme.muted)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .accessibilityLabel(L10n.Common.options)
+            }
 
             Text(istek.body)
                 .font(BondTheme.Typography.body)
