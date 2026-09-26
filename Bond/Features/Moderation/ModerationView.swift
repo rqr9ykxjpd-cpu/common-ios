@@ -15,23 +15,37 @@ struct ModerationView: View {
     @State private var geriAcilacak: ModerationReport?
     @State private var askiyaAlinacak: ModerationReport?
     @State private var contentToRemove: ModerationReport?
+    /// 0: içerik şikâyetleri, 1: "Sorun bildir" ile gelenler.
+    @State private var sekme = 0
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: BondTheme.Space.lg) {
-                    Text(appState.pendingReports.isEmpty
-                         ? L10n.Moderation.noneWaiting
-                         : L10n.Moderation.waitingCount(appState.pendingReports.count))
-                        .font(.system(size: 13))
-                        .foregroundStyle(appState.pendingReports.isEmpty ? BondTheme.muted : BondTheme.coral)
-                    if appState.reports.isEmpty, appState.isLoadingReports {
-                        yukleniyor
-                    } else if appState.reports.isEmpty {
-                        bosDurum
+                    Picker(L10n.Moderation.title, selection: $sekme) {
+                        Text(L10n.ProblemReport.tabReports).tag(0)
+                        Text(appState.openProblemCount > 0
+                             ? "\(L10n.ProblemReport.tabProblems) (\(appState.openProblemCount))"
+                             : L10n.ProblemReport.tabProblems).tag(1)
+                    }
+                    .pickerStyle(.segmented)
+
+                    if sekme == 0 {
+                        Text(appState.pendingReports.isEmpty
+                             ? L10n.Moderation.noneWaiting
+                             : L10n.Moderation.waitingCount(appState.pendingReports.count))
+                            .font(.system(size: 13))
+                            .foregroundStyle(appState.pendingReports.isEmpty ? BondTheme.muted : BondTheme.coral)
+                        if appState.reports.isEmpty, appState.isLoadingReports {
+                            yukleniyor
+                        } else if appState.reports.isEmpty {
+                            bosDurum
+                        } else {
+                            bolum(L10n.Moderation.pending, appState.pendingReports)
+                            bolum(L10n.Moderation.closed, appState.reports.filter { $0.handledAt != nil })
+                        }
                     } else {
-                        bolum(L10n.Moderation.pending, appState.pendingReports)
-                        bolum(L10n.Moderation.closed, appState.reports.filter { $0.handledAt != nil })
+                        sorunlar
                     }
                 }
                 .padding(.horizontal, BondTheme.Space.lg)
@@ -282,4 +296,65 @@ struct ModerationView: View {
         default: L10n.Moderation.resultClear
         }
     }
+
+    // MARK: - Sorunlar
+
+    @ViewBuilder private var sorunlar: some View {
+        if appState.problemReports.isEmpty {
+            AppEmptyState(
+                systemImage: "exclamationmark.bubble",
+                title: L10n.ProblemReport.emptyTitle,
+                message: L10n.ProblemReport.emptyBody
+            )
+        } else {
+            Text(appState.openProblemCount == 0
+                 ? L10n.ProblemReport.emptyTitle
+                 : L10n.ProblemReport.openCount(appState.openProblemCount))
+                .font(.footnote)
+                .foregroundStyle(appState.openProblemCount == 0 ? BondTheme.muted : BondTheme.coral)
+            ForEach(appState.problemReports) { sorun in
+                sorunKarti(sorun)
+            }
+        }
+    }
+
+    private func sorunKarti(_ sorun: ProblemReport) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(sorun.reporterUsername.map { "@\($0)" } ?? sorun.reporterName ?? L10n.ProblemReport.anonymous)
+                    .font(.subheadline.weight(.semibold))
+                Spacer(minLength: 8)
+                Text(sorun.createdAt.relativeTurkish)
+                    .font(.caption)
+                    .foregroundStyle(BondTheme.muted)
+            }
+            Text(sorun.message)
+                .font(.body)
+                .fixedSize(horizontal: false, vertical: true)
+                .textSelection(.enabled)
+            if !sorun.contextLine.isEmpty {
+                Text(sorun.contextLine)
+                    .font(.caption)
+                    .foregroundStyle(BondTheme.muted)
+            }
+            if sorun.isOpen {
+                Button(L10n.ProblemReport.close) {
+                    Task { await appState.closeProblemReport(sorun.id) }
+                }
+                .font(.footnote.weight(.semibold))
+                .buttonStyle(.bordered)
+                .tint(BondTheme.ink)
+            } else {
+                Label(L10n.ProblemReport.closed, systemImage: "checkmark")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(BondTheme.muted)
+            }
+        }
+        .padding(BondTheme.Space.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
+        .opacity(sorun.isOpen ? 1 : 0.6)
+        .animation(.smooth(duration: 0.25), value: sorun.isOpen)
+    }
+
 }

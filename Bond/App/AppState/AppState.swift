@@ -150,6 +150,9 @@ final class AppState {
 
     /// Cevap bekleyen şikayetler.
     var pendingReports: [ModerationReport] { reports.filter { $0.handledAt == nil } }
+    /// "Sorun bildir" ile gelenler; yalnızca kurucu/moderatör yükler.
+    var problemReports: [ProblemReport] = []
+    var openProblemCount: Int { problemReports.filter(\.isOpen).count }
 
     /// Cevap bekleyen gelen istekler. Rozet ve liste bunu kullanıyor.
     var pendingMessageRequests: [MessageRequest] {

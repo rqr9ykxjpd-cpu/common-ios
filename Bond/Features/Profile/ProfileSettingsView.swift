@@ -41,13 +41,17 @@ struct ProfileSettingsView: View {
                 }
                 Section(L10n.Profile.yourAccount) {
                     if appState.isModerator {
+                        // Rozet: bekleyen şikâyetler + açık "Sorun bildir" kayıtları.
+                        let bekleyen = appState.pendingReports.count + appState.openProblemCount
                         settingsButton(
-                            icon: appState.pendingReports.isEmpty ? "shield" : "shield.fill",
+                            icon: bekleyen == 0 ? "shield" : "shield.fill",
                             title: L10n.Profile.reports,
                             detail: appState.pendingReports.isEmpty
-                                ? L10n.Profile.reportsHint
+                                ? (appState.openProblemCount > 0
+                                   ? L10n.ProblemReport.openCount(appState.openProblemCount)
+                                   : L10n.Profile.reportsHint)
                                 : L10n.Profile.reportsWaiting(appState.pendingReports.count),
-                            badge: appState.pendingReports.count
+                            badge: bekleyen
                         ) {
                             showModeration = true
                         }

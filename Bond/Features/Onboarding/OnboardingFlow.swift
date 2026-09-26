@@ -5,6 +5,7 @@ struct OnboardingFlow: View {
     @Environment(AppState.self) private var appState
     let step: AppState.OnboardingStep
     @State private var showSignOutConfirmation = false
+    @State private var showProblemReport = false
 
     var body: some View {
         @Bindable var appState = appState
@@ -12,13 +13,13 @@ struct OnboardingFlow: View {
             BondTheme.paper.ignoresSafeArea()
             VStack(spacing: 0) {
                 if step != .ready {
-                    OnboardingHeader(step: step) {
+                    OnboardingHeader(step: step, back: {
                         if step == .identity {
                             showSignOutConfirmation = true
                         } else {
                             appState.goBack(from: step)
                         }
-                    }
+                    }, report: { showProblemReport = true })
                 }
                 Group {
                     switch step {
@@ -42,6 +43,9 @@ struct OnboardingFlow: View {
         .scrollDismissesKeyboard(.interactively)
         .dismissesKeyboardOnTap()
         .keyboardDoneButton()
+        .sheet(isPresented: $showProblemReport) {
+            ProblemReportView(screen: "Kayıt")
+        }
         .alert(L10n.Profile.signOutConfirm, isPresented: $showSignOutConfirmation) {
             Button(L10n.Common.cancel, role: .cancel) {}
             Button(L10n.Profile.signOut, role: .destructive) {
@@ -56,6 +60,8 @@ struct OnboardingFlow: View {
 private struct OnboardingHeader: View {
     let step: AppState.OnboardingStep
     let back: () -> Void
+    /// Kayıtta takılan kullanıcı buradan yazabilsin.
+    let report: () -> Void
 
     private var progress: CGFloat {
         let countable = CGFloat(AppState.OnboardingStep.allCases.count - 1)
@@ -78,7 +84,16 @@ private struct OnboardingHeader: View {
                 Spacer()
                 Wordmark(compact: true)
                 Spacer()
-                Color.clear.frame(width: 44, height: 44)
+                Button(action: report) {
+                    Image(systemName: "exclamationmark.bubble")
+                        .font(.system(size: 17, weight: .regular))
+                        .foregroundStyle(BondTheme.ink)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(PressableStyle())
+                .accessibilityLabel(L10n.ProblemReport.button)
+                .accessibilityIdentifier("onboarding.reportProblem")
             }
 
             ProgressView(value: progress)

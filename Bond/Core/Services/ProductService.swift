@@ -133,6 +133,11 @@ protocol ProductService: Sendable {
     func fetchReports() async throws -> [ModerationReport]
     /// Şikayeti kapatır.
     func resolveReport(_ reportID: UUID, resolution: String) async throws
+    /// "Sorun bildir": uygulamayla ilgili bir sorunu kurucuya iletir.
+    func reportProblem(_ message: String, context: [String: String]) async throws
+    /// Kurucu/moderatör: bildirilen sorunlar (açıklar önce).
+    func fetchProblemReports() async throws -> [ProblemReport]
+    func closeProblemReport(_ id: UUID) async throws
     /// Moderatör olarak içerik kaldırır.
     func moderatorDeletePost(_ postID: UUID) async throws
     /// Hesabı askıya alır ya da geri açar.
@@ -313,6 +318,9 @@ struct UnconfiguredProductService: ProductService {
     func reportContent(_ target: ReportTarget, reason: ReportReason, details: String?) async throws { try fail() }
     func fetchReports() async throws -> [ModerationReport] { try fail() }
     func resolveReport(_ reportID: UUID, resolution: String) async throws { try fail() }
+    func reportProblem(_ message: String, context: [String: String]) async throws { try fail() }
+    func fetchProblemReports() async throws -> [ProblemReport] { try fail() }
+    func closeProblemReport(_ id: UUID) async throws { try fail() }
     func moderatorDeletePost(_ postID: UUID) async throws { try fail() }
     func setAccountActive(_ profileID: UUID, active: Bool) async throws { try fail() }
     func messageStream() -> AsyncStream<RealtimeMessage> { AsyncStream { $0.finish() } }

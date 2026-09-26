@@ -1,0 +1,294 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "button": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report a problem"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sorun bildir"
+          }
+        }
+      }
+    },
+    "title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report a problem"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sorun bildir"
+          }
+        }
+      }
+    },
+    "subtitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What happened? If you write the screen and the steps, we can fix it faster."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ne oldu? Hangi ekranda, ne yaparken olduğunu yazarsan daha hızlı düzeltiriz."
+          }
+        }
+      }
+    },
+    "placeholder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For example: The feed doesn’t load when I open the app."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Örneğin: Uygulamayı açınca akış yüklenmiyor."
+          }
+        }
+      }
+    },
+    "attached": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attached automatically: %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otomatik eklenir: %@"
+          }
+        }
+      }
+    },
+    "send": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gönder"
+          }
+        }
+      }
+    },
+    "sent": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thanks, we got your report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teşekkürler, bildirimini aldık"
+          }
+        }
+      }
+    },
+    "failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t send your report. Try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirim gönderilemedi. Tekrar dene."
+          }
+        }
+      }
+    },
+    "tooShort": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write a little more so we can understand."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anlayabilmemiz için biraz daha yaz."
+          }
+        }
+      }
+    },
+    "rateLimited": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You’ve sent several reports. Try again in an hour."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Birkaç bildirim gönderdin. Bir saat sonra tekrar dene."
+          }
+        }
+      }
+    },
+    "tabReports": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reports"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şikâyetler"
+          }
+        }
+      }
+    },
+    "tabProblems": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Problems"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sorunlar"
+          }
+        }
+      }
+    },
+    "emptyTitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No problems reported"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirilen sorun yok"
+          }
+        }
+      }
+    },
+    "emptyBody": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reports from “Report a problem” appear here."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“Sorun bildir” ile gelenler burada görünür."
+          }
+        }
+      }
+    },
+    "close": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark as handled"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çözüldü olarak kapat"
+          }
+        }
+      }
+    },
+    "closed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Handled"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapatıldı"
+          }
+        }
+      }
+    },
+    "openCount": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld open problems"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld açık sorun"
+          }
+        }
+      }
+    },
+    "anonymous": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account not set up yet"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profili henüz yok"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

@@ -353,6 +353,39 @@ actor SampleStore {
         blocked.removeAll { $0.id == profileID }
     }
 
+    /// Örnek "Sorun bildir" kayıtları: kurucunun Sorunlar listesi boş durmasın.
+    private var problems: [ProblemReport] = [
+        ProblemReport(
+            id: UUID(), message: "Story atarken video 15 saniyeyi geçince uyarı çıkıyor ama kırpma ekranı açılmıyor.",
+            createdAt: .now.addingTimeInterval(-3_600), handledAt: nil,
+            reporterName: "Ece", reporterUsername: "ece",
+            contextLine: "1.0 (6) · iOS 26.0 · iPhone15,3 · Akış"
+        ),
+        ProblemReport(
+            id: UUID(), message: "Kütüphanede Buradayım dedim ama listede görünmüyorum.",
+            createdAt: .now.addingTimeInterval(-86_400), handledAt: .now.addingTimeInterval(-40_000),
+            reporterName: "Arda", reporterUsername: "arda",
+            contextLine: "1.0 (6) · iOS 18.6 · iPhone13,2 · Kim nerede"
+        ),
+    ]
+
+    func addProblem(_ message: String, context: [String: String]) {
+        problems.insert(ProblemReport(
+            id: UUID(), message: message, createdAt: .now, handledAt: nil,
+            reporterName: draft.name, reporterUsername: draft.username,
+            contextLine: ProblemReportContext.line(from: context)
+        ), at: 0)
+    }
+
+    func allProblems() -> [ProblemReport] {
+        problems.sorted { ($0.isOpen ? 0 : 1, -$0.createdAt.timeIntervalSince1970) < ($1.isOpen ? 0 : 1, -$1.createdAt.timeIntervalSince1970) }
+    }
+
+    func closeProblem(_ id: UUID) {
+        guard let i = problems.firstIndex(where: { $0.id == id }) else { return }
+        problems[i].handledAt = .now
+    }
+
     func allReports() -> [ModerationReport] {
         reports.map { rapor in
             var kopya = rapor

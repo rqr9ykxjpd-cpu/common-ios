@@ -178,6 +178,11 @@ struct SampleProductService: ProductService {
         try await store.resolveReport(reportID, resolution: resolution)
     }
     func moderatorDeletePost(_ postID: UUID) async throws { await store.removePost(postID) }
+    func reportProblem(_ message: String, context: [String: String]) async throws {
+        await store.addProblem(message, context: context)
+    }
+    func fetchProblemReports() async throws -> [ProblemReport] { await store.allProblems() }
+    func closeProblemReport(_ id: UUID) async throws { await store.closeProblem(id) }
     func setAccountActive(_ profileID: UUID, active: Bool) async throws {
         await store.setAccountActive(profileID, active: active)
     }

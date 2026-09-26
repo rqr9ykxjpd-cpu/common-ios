@@ -12,6 +12,7 @@ struct SocialProfileView: View {
     @State private var showComposer = false
     @State private var showEditor = false
     @State private var showCardStudio = false
+    @State private var showProblemReport = false
     @State private var showSettings = false
     @State private var showSaved = false
     @State private var showVisits = false
@@ -67,11 +68,21 @@ struct SocialProfileView: View {
             .navigationTitle(L10n.Tabs.profile)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                // Sorun bildirmek herkes için bir dokunuş uzakta; ayarların içinde
+                // kaybolmasın diye dişlinin yanında.
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showProblemReport = true } label: { Image(systemName: "exclamationmark.bubble") }
+                        .accessibilityLabel(L10n.ProblemReport.button)
+                        .accessibilityIdentifier("profile.reportProblem")
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showSettings = true } label: { Image(systemName: "gearshape") }
                         .accessibilityLabel(L10n.Profile.moreSettings)
                         .accessibilityIdentifier("profile.settings")
                 }
+            }
+            .sheet(isPresented: $showProblemReport) {
+                ProblemReportView(screen: "Profil")
             }
             .task(id: appState.currentUserID) { await reload() }
             .refreshable { await reload() }

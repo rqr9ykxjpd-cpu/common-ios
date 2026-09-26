@@ -11,6 +11,35 @@ extension AppState {
         } catch {
             showError(error, fallback: L10n.Moderation.loadFailed)
         }
+        // Sorunlar ayrı yükleniyor: biri başarısız olursa öteki yine gelsin.
+        if let sorunlar = try? await service.fetchProblemReports() {
+            problemReports = sorunlar
+        }
+    }
+
+    /// "Sorun bildir". Başarılıysa `true`; hata metni ekranda gösteriliyor.
+    func reportProblem(_ message: String, screen: String) async -> Bool {
+        do {
+            try await service.reportProblem(message, context: ProblemReportContext.current(screen: screen))
+            show(L10n.ProblemReport.sent)
+            Haptics.success()
+            return true
+        } catch {
+            showError(ProblemReportError.from(error) ?? error, fallback: L10n.ProblemReport.failed)
+            return false
+        }
+    }
+
+    func closeProblemReport(_ id: UUID) async {
+        do {
+            try await service.closeProblemReport(id)
+            if let i = problemReports.firstIndex(where: { $0.id == id }) {
+                problemReports[i].handledAt = .now
+            }
+            Haptics.success()
+        } catch {
+            showError(error, fallback: L10n.Moderation.closeFailed)
+        }
     }
 
     /// Şikayeti kapatır; istenirse önce içeriği kaldırır ya da hesabı askıya alır.
