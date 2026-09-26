@@ -111,10 +111,9 @@ struct PaywallView: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text(L10n.Paywall.specialNote.replacingOccurrences(of: "\n", with: " "))
-                .font(.custom("BradleyHandITCTT-Bold", size: 16, relativeTo: .callout))
-                .foregroundStyle(BondTheme.burntOrange)
-                .rotationEffect(.degrees(-0.7))
+            Text(L10n.Paywall.specialNote)
+                .font(.footnote)
+                .foregroundStyle(BondTheme.muted)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 2)
         }

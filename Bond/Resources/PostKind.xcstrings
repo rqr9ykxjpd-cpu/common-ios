@@ -134,13 +134,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "pick a badge here first"
+            "value" : "Pick a badge here first."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "önce buradan bir rozet seç"
+            "value" : "Önce buradan bir rozet seç."
           }
         }
       }

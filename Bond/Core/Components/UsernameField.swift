@@ -25,6 +25,9 @@ struct UsernameField: View {
     /// Sunucu kontrolü; `true` uygun.
     let check: (String) async throws -> Bool
     var font: Font = BondTheme.Typography.body
+    /// Ekran açılınca alan odaklansın, klavye açılsın: "buraya yazıyorum" hemen anlaşılsın.
+    var autofocus = false
+    @FocusState private var odak: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -40,6 +43,7 @@ struct UsernameField: View {
                     .autocorrectionDisabled()
                     .keyboardType(.asciiCapable)
                     .accessibilityLabel(L10n.Username.title)
+                    .focused($odak)
                 statusIcon
             }
             .frame(minHeight: 32)
@@ -57,6 +61,12 @@ struct UsernameField: View {
             if duzgun != yeni { text = duzgun }
         }
         .task(id: text) { await verify(text) }
+        .task {
+            guard autofocus else { return }
+            // Sheet yerine oturmadan klavye açılınca sunum takılıyordu.
+            try? await Task.sleep(for: .milliseconds(450))
+            odak = true
+        }
     }
 
     private func verify(_ aday: String) async {

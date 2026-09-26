@@ -16,6 +16,12 @@
     "·" : {
 
     },
+    "@" : {
+
+    },
+    "@%@" : {
+
+    },
     "**%@**  %@" : {
       "localizations" : {
         "tr" : {
@@ -1738,13 +1744,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "JOIN CLUB"
+            "value" : "Join club"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "KULÜBE KATIL"
+            "value" : "Kulübe katıl"
           }
         }
       }
@@ -1772,13 +1778,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "LEAVE CLUB"
+            "value" : "Leave club"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "KULÜPTEN AYRIL"
+            "value" : "Kulüpten ayrıl"
           }
         }
       }
@@ -3407,13 +3413,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "USE"
+            "value" : "Use"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "KULLAN"
+            "value" : "Kullan"
           }
         }
       }
@@ -4200,23 +4206,6 @@
         }
       }
     },
-    "error.offlineBanner" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No internet connection"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "İnternet bağlantısı yok"
-          }
-        }
-      }
-    },
     "error.offline" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4230,6 +4219,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "İnternet bağlantın yok gibi görünüyor."
+          }
+        }
+      }
+    },
+    "error.offlineBanner" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No internet connection"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İnternet bağlantısı yok"
           }
         }
       }
@@ -6197,9 +6203,6 @@
           }
         }
       }
-    },
-    "İsteğin gönderildi" : {
-
     },
     "legal.privacy" : {
       "extractionState" : "manual",
@@ -8291,13 +8294,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "GO PLUS"
+            "value" : "Go Plus"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PLUS’A GEÇ"
+            "value" : "Plus’a geç"
           }
         }
       }
@@ -8308,13 +8311,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "GO PRO"
+            "value" : "Go Pro"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PRO’A GEÇ"
+            "value" : "Pro’ya geç"
           }
         }
       }
@@ -8665,13 +8668,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "to see this you need to be one of\nour special members"
+            "value" : "These features are for Plus and Pro members."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "bu verilere erişmek için özel\nkullanıcılarımızdan olmalısın"
+            "value" : "Bu özellikler Plus ve Pro üyelerine açık."
           }
         }
       }
@@ -9005,13 +9008,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "I’M HERE"
+            "value" : "I’m here"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "BURADAYIM"
+            "value" : "Buradayım"
           }
         }
       }
@@ -9028,7 +9031,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "BURADAYIM?"
+            "value" : "Buradayım?"
           }
         }
       }
@@ -9412,13 +9415,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "YOU’RE HERE"
+            "value" : "You’re here"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "BURADASIN"
+            "value" : "Buradasın"
           }
         }
       }
@@ -9463,13 +9466,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "promise, you’ll hear it from us first ☺"
+            "value" : "Promise, you’ll hear it from us first."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "söz, sana ilk biz haber vereceğiz ☺"
+            "value" : "Söz, sana ilk biz haber vereceğiz."
           }
         }
       }
@@ -9701,13 +9704,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "APPEARANCE"
+            "value" : "Appearance"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "GÖRÜNÜM"
+            "value" : "Görünüm"
           }
         }
       }
@@ -10086,13 +10089,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "EDIT"
+            "value" : "Edit"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DÜZENLE"
+            "value" : "Düzenle"
           }
         }
       }
@@ -11106,13 +11109,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "SHARE SOMETHING"
+            "value" : "Share something"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "BİR ŞEY PAYLAŞ"
+            "value" : "Bir şey paylaş"
           }
         }
       }
@@ -11174,13 +11177,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "SIGN OUT"
+            "value" : "Sign out"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OTURUMU KAPAT"
+            "value" : "Oturumu kapat"
           }
         }
       }
@@ -12031,40 +12034,6 @@
         }
       }
     },
-    "story.replyRequestSent" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Request sent"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "İsteğin gönderildi"
-          }
-        }
-      }
-    },
-    "story.replySent" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reply sent"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Yanıt gönderildi"
-          }
-        }
-      }
-    },
     "story.missing" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12248,6 +12217,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "İstek gönder…"
+          }
+        }
+      }
+    },
+    "story.replyRequestSent" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request sent"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İsteğin gönderildi"
+          }
+        }
+      }
+    },
+    "story.replySent" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reply sent"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yanıt gönderildi"
           }
         }
       }
@@ -13357,6 +13360,74 @@
         }
       }
     },
+    "username.chooseBody" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type the name you want to appear with @ on your profile. 3–20 characters: letters, numbers, dots and underscores. You can change it later in Edit profile."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profilinde @ ile görünecek adı yaz. 3–20 karakter: harf, rakam, nokta ve alt çizgi. Sonra profil düzenlemeden değiştirebilirsin."
+          }
+        }
+      }
+    },
+    "username.chooseSave" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue with this username"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu adla devam et"
+          }
+        }
+      }
+    },
+    "username.chooseTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set your username"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kullanıcı adını belirle"
+          }
+        }
+      }
+    },
+    "username.chosen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your username is saved"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kullanıcı adın kaydedildi"
+          }
+        }
+      }
+    },
     "username.hint" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13404,74 +13475,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bu kullanıcı adı alınmış"
-          }
-        }
-      }
-    },
-    "username.chooseTitle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Set your username"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kullanıcı adını belirle"
-          }
-        }
-      }
-    },
-    "username.chooseBody" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Type the name you want to appear with @ on your profile. 3–20 characters: letters, numbers, dots and underscores. You can change it later in Edit profile."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Profilinde @ ile görünecek adı yaz. 3–20 karakter: harf, rakam, nokta ve alt çizgi. Sonra profil düzenlemeden değiştirebilirsin."
-          }
-        }
-      }
-    },
-    "username.chooseSave" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Continue with this username"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bu adla devam et"
-          }
-        }
-      }
-    },
-    "username.chosen" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your username is saved"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kullanıcı adın kaydedildi"
           }
         }
       }
@@ -13904,9 +13907,6 @@
         }
       }
     },
-    "Yanıt gönderildi" : {
-
-    },
     "year.first" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -14008,6 +14008,9 @@
           }
         }
       }
+    },
+    "YÜ" : {
+
     }
   },
   "version" : "1.0"

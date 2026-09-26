@@ -47,9 +47,8 @@ struct PlanWelcomeView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityAddTraits(.isHeader)
                     Text(L10n.ProfileHome.planPrivate)
-                        .font(.custom("BradleyHandITCTT-Bold", size: 16, relativeTo: .callout))
-                        .foregroundStyle(BondTheme.burntOrange)
-                        .rotationEffect(.degrees(-0.7))
+                        .font(.subheadline)
+                        .foregroundStyle(BondTheme.muted)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .opacity(detailsIn ? 1 : 0)

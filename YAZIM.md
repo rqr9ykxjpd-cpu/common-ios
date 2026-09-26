@@ -26,6 +26,10 @@ bir terim burada yoksa ekle, sonra kullan.
   "Bir sorun oluştu", "Buluşma istekleri". Özel adlar (bölüm adları, Kullanım
   Koşulları, Gizlilik Politikası) ve Apple'ın kendi düğme metni ("Apple ile Devam
   Et") ile yan yana duran "Google ile Devam Et" istisna.
+- **Düğmeler cümle düzeninde.** "Kulübe katıl", "Pro’ya geç", "Buradayım". Büyük
+  harf yalnızca küçük üst başlıklarda (ÇALIŞMA GRUPLARI, PAKET İÇERİĞİ).
+- **El yazısı yok.** Notlar uygulamanın kendi yazı tipinde, küçük ve gri.
+  (İstisna: kurucu unvan satırı.)
 - **Sen dili.** Kullanıcıya "sen" diye hitap edilir, kısa ve sakin. "Lütfen"
   yalnızca kullanıcıdan bir şey istenirken.
 - **Ünlem yok.** Yalnızca karşılamada ("Hoş geldin!").
@@ -35,7 +39,7 @@ bir terim burada yoksa ekle, sonra kullan.
 - **Tipografi.** Kesme işareti tipografik (’), üç nokta tek karakter (…), aralık
   ve açıklama için uzun tire (—), ayırıcı olarak orta nokta (·).
 - **Sayılar.** Metne gömülmez, `%lld` ile gelir; çoğul biçimi tabloda tanımlanır.
-- **Emoji yok.** El yazısı notlardaki ☺ bilinçli, onlar dışında kullanılmaz.
+- **Emoji yok.**
 - **İngilizce karşılık.** Her yeni anahtarın `en` çevirisi de yazılır. Kaynak dil
   İngilizce; yalnızca biçim anahtarları (`%@ · %@` gibi) çevirisiz kalabilir.
 

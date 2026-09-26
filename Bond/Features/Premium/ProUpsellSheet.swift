@@ -40,9 +40,8 @@ struct ProUpsellSheet: View {
                     .lineSpacing(3)
 
                 Text(L10n.Premium.viewCountsNote)
-                    .font(.custom("BradleyHandITCTT-Bold", size: 17))
-                    .foregroundStyle(BondTheme.acid.opacity(0.85))
-                    .rotationEffect(.degrees(-1.5))
+                    .font(.footnote)
+                    .foregroundStyle(BondTheme.muted)
                     .padding(.top, 2)
 
                 Spacer(minLength: 0)

@@ -136,8 +136,8 @@
     },
     "planPrivate": {
       "localizations": {
-        "tr": { "stringUnit": { "state": "translated", "value": "merak etme, planını yalnızca sen görürsün" } },
-        "en": { "stringUnit": { "state": "translated", "value": "don’t worry, only you can see your plan" } }
+        "tr": { "stringUnit": { "state": "translated", "value": "Planını yalnızca sen görürsün." } },
+        "en": { "stringUnit": { "state": "translated", "value": "Only you can see your plan." } }
       }
     },
     "requestsIntro": {

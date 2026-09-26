@@ -22,9 +22,9 @@ struct UsernameChoiceView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            UsernameField(text: $username, status: $status) { aday in
+            UsernameField(text: $username, status: $status, check: { aday in
                 try await appState.isUsernameAvailable(aday)
-            }
+            }, autofocus: true)
             .padding(BondTheme.Space.md)
             .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
 
@@ -39,7 +39,7 @@ struct UsernameChoiceView: View {
             } label: {
                 HStack(spacing: 8) {
                     if saving { ProgressView().tint(BondTheme.onAccent) }
-                    Text(L10n.Username.chooseSave).fontWeight(.semibold)
+                    Text(L10n.Common.save).fontWeight(.semibold)
                 }
                 .foregroundStyle(BondTheme.onAccent)
                 .frame(maxWidth: .infinity, minHeight: 54)

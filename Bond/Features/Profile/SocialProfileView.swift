@@ -369,9 +369,8 @@ struct SocialProfileView: View {
             }
 
             Text(L10n.ProfileHome.planPrivate)
-                .font(.custom("BradleyHandITCTT-Bold", size: 15, relativeTo: .footnote))
-                .foregroundStyle(BondTheme.burntOrange)
-                .rotationEffect(.degrees(-0.5))
+                .font(.footnote)
+                .foregroundStyle(BondTheme.muted)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }

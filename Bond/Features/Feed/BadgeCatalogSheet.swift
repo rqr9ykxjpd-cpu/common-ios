@@ -156,9 +156,9 @@ struct PickBadgeHint: View {
                 .font(.system(size: 16, weight: .bold))
                 .padding(.top, 1)
             Text(L10n.PostKind.pickBadgeHint)
-                .font(.custom("BradleyHandITCTT-Bold", size: 17, relativeTo: .callout))
+                .font(.footnote)
         }
-        .foregroundStyle(BondTheme.burntOrange)
+        .foregroundStyle(BondTheme.muted)
         .padding(.horizontal, BondTheme.Space.lg + 4)
         .accessibilityElement(children: .combine)
     }
