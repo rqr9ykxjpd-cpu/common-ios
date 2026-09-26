@@ -51,7 +51,7 @@
     },
     "contentReport.removeBody" : {
       "localizations" : {
-        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bu işlem şikâyete konu olan gönderiyi, story'yi, yorumu veya mesajı kaldırır. Geri alınamaz." } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bu işlem şikâyete konu olan gönderiyi, story’yi, yorumu veya mesajı kaldırır. Geri alınamaz." } },
         "en" : { "stringUnit" : { "state" : "translated", "value" : "This removes the exact reported post, story, comment or message. It cannot be undone." } }
       }
     },

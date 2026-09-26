@@ -167,7 +167,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "What's being talked about today."
+            "value" : "What’s being talked about today."
           }
         },
         "tr" : {
@@ -234,7 +234,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Where, when, what's on."
+            "value" : "Where, when, what’s on."
           }
         },
         "tr" : {
@@ -775,7 +775,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Genel Kültür"
+            "value" : "Genel kültür"
           }
         }
       }
@@ -809,7 +809,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Film/Dizi"
+            "value" : "Film/dizi"
           }
         }
       }
@@ -945,7 +945,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gerçek Bir Hayat Hikayesi"
+            "value" : "Gerçek bir hayat hikâyesi"
           }
         }
       }
@@ -1062,7 +1062,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Galerimden Fotoğraflar/Videolar"
+            "value" : "Galerimden fotoğraflar/videolar"
           }
         }
       }
@@ -1112,7 +1112,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bilim ve Teknoloji"
+            "value" : "Bilim ve teknoloji"
           }
         }
       }
@@ -1156,7 +1156,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "What's the announcement? Add place and time if any."
+            "value" : "What’s the announcement? Add place and time if any."
           }
         },
         "tr" : {
@@ -1172,7 +1172,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "What's on your mind about %@?"
+            "value" : "What’s on your mind about %@?"
           }
         },
         "tr" : {

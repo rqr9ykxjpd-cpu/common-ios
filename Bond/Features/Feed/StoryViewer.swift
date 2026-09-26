@@ -440,7 +440,7 @@ struct StoryViewer: View {
                 // Kendi story'ne yanıt yazma alanı çıkıyordu.
                 EmptyView()
             } else if replySent {
-                Label(conversation(with: story.author) == nil ? "İsteğin gönderildi" : "Yanıt gönderildi",
+                Label(conversation(with: story.author) == nil ? L10n.Story.replyRequestSent : L10n.Story.replySent,
                       systemImage: "checkmark.circle.fill")
                     .font(.system(size: 15, weight: .bold)).foregroundStyle(BondTheme.onCanvasDark)
                     .frame(maxWidth: .infinity, alignment: .center).frame(height: 46)

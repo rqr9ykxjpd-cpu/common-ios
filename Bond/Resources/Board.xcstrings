@@ -1058,7 +1058,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Açık şikayet"
+            "value" : "Açık şikâyet"
           }
         }
       }
@@ -1692,7 +1692,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eşleşen kimse yok"
+            "value" : "Sonuç yok"
           }
         }
       }

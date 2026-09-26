@@ -310,7 +310,7 @@
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hayalet mod: Kampüste görünmezsin"
+            "value": "Hayalet mod: kampüste görünmezsin"
           }
         },
         "en": {
@@ -508,7 +508,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Request sent. You'll be notified in Chats when it's accepted."
+            "value": "Request sent. You’ll be notified in Chats when it’s accepted."
           }
         }
       }
@@ -684,7 +684,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Couldn't undo — the connection may already exist."
+            "value": "Couldn’t undo — the connection may already exist."
           }
         }
       }

@@ -6,13 +6,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You're on Plus."
+            "value": "You’re on Plus."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Artık Plus'tasın."
+            "value": "Artık Plus’tasın."
           }
         }
       }
@@ -22,13 +22,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You're on Pro."
+            "value": "You’re on Pro."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Artık Pro'dasın."
+            "value": "Artık Pro’dasın."
           }
         }
       }
@@ -156,7 +156,7 @@
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Plus ve Pro'ya özel"
+            "value": "Plus ve Pro’ya özel"
           }
         }
       }
@@ -182,7 +182,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Couldn't change the icon. Try again."
+            "value": "Couldn’t change the icon. Try again."
           }
         },
         "tr": {

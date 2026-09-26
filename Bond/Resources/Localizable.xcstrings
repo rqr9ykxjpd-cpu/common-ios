@@ -582,7 +582,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn't undo — the connection may already exist."
+            "value" : "Couldn’t undo — the connection may already exist."
           }
         },
         "tr" : {
@@ -962,7 +962,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gönder'e basınca eski metnin yerine geçer"
+            "value" : "Gönder’e basınca eski metnin yerine geçer"
           }
         }
       }
@@ -979,7 +979,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Düzenleme ve silme Plus'a özel"
+            "value" : "Düzenleme ve silme Plus’a özel"
           }
         }
       }
@@ -1387,7 +1387,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Şikayet gönderilemedi."
+            "value" : "Şikâyet gönderilemedi."
           }
         }
       }
@@ -2019,7 +2019,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Yorum yaz..."
+            "value" : "Yorum yaz…"
           }
         }
       }
@@ -2138,7 +2138,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Devam Et"
+            "value" : "Devam et"
           }
         }
       }
@@ -3243,7 +3243,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Story'e kısa bir not ekle…"
+            "value" : "Story’ye kısa bir not ekle…"
           }
         }
       }
@@ -3628,7 +3628,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "That's not a university address. Use your school's .edu.tr address."
+            "value" : "That’s not a university address. Use your school’s .edu.tr address."
           }
         },
         "tr" : {
@@ -3781,7 +3781,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn't send the link."
+            "value" : "Couldn’t send the link."
           }
         },
         "tr" : {
@@ -3804,7 +3804,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ gelen kutusunu kontrol et. Bağlantıya dokununca Common'a dön; rozetin hazır olur."
+            "value" : "%@ gelen kutusunu kontrol et. Bağlantıya dokununca Common’a dön; rozetin hazır olur."
           }
         }
       }
@@ -3832,7 +3832,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enter the address your university gave you. We'll send a link; tapping it verifies your profile."
+            "value" : "Enter the address your university gave you. We’ll send a link; tapping it verifies your profile."
           }
         },
         "tr" : {
@@ -4416,7 +4416,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bir Sorun Oluştu"
+            "value" : "Bir sorun oluştu"
           }
         }
       }
@@ -4783,7 +4783,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn't save your vote."
+            "value" : "Couldn’t save your vote."
           }
         },
         "tr" : {
@@ -5180,7 +5180,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hikâyen"
+            "value" : "Story’n"
           }
         }
       }
@@ -6451,7 +6451,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Buluşma İstekleri"
+            "value" : "Buluşma istekleri"
           }
         }
       }
@@ -6553,7 +6553,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Şikayet kapatılamadı."
+            "value" : "Şikâyet kapatılamadı."
           }
         }
       }
@@ -6570,7 +6570,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hiç şikayet yok"
+            "value" : "Hiç şikâyet yok"
           }
         }
       }
@@ -6587,7 +6587,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Biri bir hesabı şikayet ettiğinde burada göreceksin."
+            "value" : "Biri bir hesabı şikâyet ettiğinde burada göreceksin."
           }
         }
       }
@@ -6620,7 +6620,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Şikayetler yüklenemedi."
+            "value" : "Şikâyetler yüklenemedi."
           }
         }
       }
@@ -6637,7 +6637,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Şikayetler yükleniyor…"
+            "value" : "Şikâyetler yükleniyor…"
           }
         }
       }
@@ -6671,7 +6671,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bekleyen şikayet yok"
+            "value" : "Bekleyen şikâyet yok"
           }
         }
       }
@@ -6782,7 +6782,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The post is removed from everyone's feed. This can't be undone."
+            "value" : "The post is removed from everyone’s feed. This can’t be undone."
           }
         },
         "tr" : {
@@ -6855,7 +6855,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ tekrar uygulamaya girebilecek ve Kampüste görünecek."
+            "value" : "%@ tekrar uygulamaya girebilecek ve kampüste görünecek."
           }
         }
       }
@@ -6906,7 +6906,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Şikayet eden: %@"
+            "value" : "Şikâyet eden: %@"
           }
         }
       }
@@ -7001,13 +7001,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A suspended account disappears from On Campus, its profile is hidden and it can't post. You can restore it from Reports."
+            "value" : "A suspended account disappears from On Campus, its profile is hidden and it can’t post. You can restore it from Reports."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Askıya alınan hesap Kampüste çıkmaz, profili görünmez ve yeni içerik paylaşamaz. Şikayetler ekranından geri açabilirsin."
+            "value" : "Askıya alınan hesap kampüste çıkmaz, profili görünmez ve yeni içerik paylaşamaz. Şikâyetler ekranından geri açabilirsin."
           }
         }
       }
@@ -7051,7 +7051,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn't suspend the account."
+            "value" : "Couldn’t suspend the account."
           }
         },
         "tr" : {
@@ -7074,7 +7074,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Askıya alınan hesap Kampüste çıkmaz, profili görünmez ve yeni içerik paylaşamaz. Buradan geri açabilirsin."
+            "value" : "Askıya alınan hesap kampüste çıkmaz, profili görünmez ve yeni içerik paylaşamaz. Buradan geri açabilirsin."
           }
         }
       }
@@ -7091,7 +7091,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Şikayetler"
+            "value" : "Şikâyetler"
           }
         }
       }
@@ -7125,7 +7125,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld şikayet bekliyor"
+            "value" : "%lld şikâyet bekliyor"
           }
         }
       }
@@ -7227,7 +7227,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Common'daki son hareketler"
+            "value" : "Common’daki son hareketler"
           }
         }
       }
@@ -7442,7 +7442,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Don't miss a reply"
+            "value" : "Don’t miss a reply"
           }
         },
         "tr" : {
@@ -7533,7 +7533,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ story'ni beğendi"
+            "value" : "%@ story’ni beğendi"
           }
         }
       }
@@ -7669,7 +7669,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Devam Et · %lld/%lld"
+            "value" : "Devam et · %lld/%lld"
           }
         }
       }
@@ -7720,7 +7720,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Common'a Gir"
+            "value" : "Common’a gir"
           }
         }
       }
@@ -8161,7 +8161,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hayalet mod (Kampüste)"
+            "value" : "Hayalet mod"
           }
         }
       }
@@ -8178,7 +8178,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Story'yi duraklatma"
+            "value" : "Story’yi duraklatma"
           }
         }
       }
@@ -8229,7 +8229,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Story'mi kim kaç kez izledi"
+            "value" : "Story’mi kim kaç kez izledi"
           }
         }
       }
@@ -8280,7 +8280,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PLUS'A GEÇ"
+            "value" : "PLUS’A GEÇ"
           }
         }
       }
@@ -8297,7 +8297,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PRO'A GEÇ"
+            "value" : "PRO’A GEÇ"
           }
         }
       }
@@ -9276,7 +9276,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Who's where?"
+            "value" : "Who’s where?"
           }
         },
         "tr" : {
@@ -9741,7 +9741,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kendinden ve kampüs hayatından kısaca bahset..."
+            "value" : "Kendinden ve kampüs hayatından kısaca bahset…"
           }
         }
       }
@@ -9801,7 +9801,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You haven't blocked anyone"
+            "value" : "You haven’t blocked anyone"
           }
         },
         "tr" : {
@@ -9849,7 +9849,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn't load your blocked list."
+            "value" : "Couldn’t load your blocked list."
           }
         },
         "tr" : {
@@ -9905,7 +9905,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tanış'ta karşı tarafın gördüğü hali — buradan düzenleyebilirsin"
+            "value" : "Tanış’ta karşı tarafın gördüğü hali — buradan düzenleyebilirsin"
           }
         }
       }
@@ -10109,7 +10109,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hikâyeni düzenle"
+            "value" : "Story’ni düzenle"
           }
         }
       }
@@ -10262,7 +10262,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Açık — Kampüste görünmüyorsun; hangi story’yi kaç kez izlediğin de gizli"
+            "value" : "Açık — kampüste görünmüyorsun; hangi story’yi kaç kez izlediğin de gizli"
           }
         }
       }
@@ -10908,7 +10908,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Şikayetler"
+            "value" : "Şikâyetler"
           }
         }
       }
@@ -10925,7 +10925,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gelen şikayetleri buradan yönetiyorsun"
+            "value" : "Gelen şikâyetleri buradan yönetiyorsun"
           }
         }
       }
@@ -10942,7 +10942,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld şikayet bekliyor"
+            "value" : "%lld şikâyet bekliyor"
           }
         }
       }
@@ -11316,7 +11316,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sorun, öneri veya şikayet için bize yaz"
+            "value" : "Sorun, öneri veya şikâyet için bize yaz"
           }
         }
       }
@@ -11376,7 +11376,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn't unblock."
+            "value" : "Couldn’t unblock."
           }
         },
         "tr" : {
@@ -11907,7 +11907,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Story'yi sil"
+            "value" : "Story’yi sil"
           }
         }
       }
@@ -11924,7 +11924,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Story'yi sil?"
+            "value" : "Story’yi sil?"
           }
         }
       }
@@ -11975,7 +11975,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Story'yi beğen"
+            "value" : "Story’yi beğen"
           }
         }
       }
@@ -12009,7 +12009,41 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Story'ler yüklenemedi."
+            "value" : "Story’ler yüklenemedi."
+          }
+        }
+      }
+    },
+    "story.replyRequestSent" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request sent"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İsteğin gönderildi"
+          }
+        }
+      }
+    },
+    "story.replySent" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reply sent"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yanıt gönderildi"
           }
         }
       }
@@ -12111,7 +12145,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duraklatma Plus'ta"
+            "value" : "Duraklatma Plus’ta"
           }
         }
       }
@@ -12179,7 +12213,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%2$lld story'nin %1$lld.'si"
+            "value" : "%2$lld story’nin %1$lld.'si"
           }
         }
       }
@@ -12196,7 +12230,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "İstek gönder..."
+            "value" : "İstek gönder…"
           }
         }
       }
@@ -12213,7 +12247,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ kişisine yanıtla..."
+            "value" : "%@ kişisine yanıtla…"
           }
         }
       }
@@ -12349,7 +12383,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Story'yi kimlerin gördüğü yüklenemedi."
+            "value" : "Story’yi kimlerin gördüğü yüklenemedi."
           }
         }
       }
@@ -13278,7 +13312,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn't check right now; it will be checked again when you save."
+            "value" : "Couldn’t check right now; it will be checked again when you save."
           }
         },
         "tr" : {
@@ -13329,7 +13363,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "3–20 characters: letters, numbers, dots and underscores. It can't start or end with a dot."
+            "value" : "3–20 characters: letters, numbers, dots and underscores. It can’t start or end with a dot."
           }
         },
         "tr" : {
@@ -13638,7 +13672,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Common brings together your university's feed, study groups, and communities."
+            "value" : "Common brings together your university’s feed, study groups, and communities."
           }
         },
         "tr" : {
@@ -13729,7 +13763,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bağlantı Gönder"
+            "value" : "Bağlantı gönder"
           }
         }
       }

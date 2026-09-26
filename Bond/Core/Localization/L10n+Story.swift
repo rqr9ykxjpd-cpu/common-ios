@@ -18,6 +18,8 @@ extension L10n {
         static var replyPlaceholder: String { String(localized: "story.replyPlaceholder") }
         static var sendRequest: String { String(localized: "story.sendRequest") }
         static var requestHint: String { String(localized: "story.requestHint") }
+        static var replyRequestSent: String { String(localized: "story.replyRequestSent") }
+        static var replySent: String { String(localized: "story.replySent") }
         static func replyTo(_ name: String) -> String {
             L10n.format("story.replyTo", name)
         }

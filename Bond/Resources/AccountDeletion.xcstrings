@@ -41,13 +41,13 @@
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Apple ile doğrulama yapamıyorsan hesabını yine silebilirsin. Bu durumda Apple ile giriş iznini ayrıca kaldırman gerekir: Ayarlar > adın > Apple ile Giriş Yap > Common (eski adı Bond) > Sil. Apple'ın güncel adımları aşağıdaki bağlantıda."
+            "value": "Apple ile doğrulama yapamıyorsan hesabını yine silebilirsin. Bu durumda Apple ile giriş iznini ayrıca kaldırman gerekir: Ayarlar > adın > Apple ile Giriş Yap > Common (eski adı Bond) > Sil. Apple’ın güncel adımları aşağıdaki bağlantıda."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "If you cannot verify with Apple, you can still delete your account. You must then remove its Apple permission yourself: Settings > your name > Sign in with Apple > Common (formerly Bond) > Delete. Apple's current instructions are linked below."
+            "value": "If you cannot verify with Apple, you can still delete your account. You must then remove its Apple permission yourself: Settings > your name > Sign in with Apple > Common (formerly Bond) > Delete. Apple’s current instructions are linked below."
           }
         }
       }
@@ -64,7 +64,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Delete account; I'll remove Apple permission"
+            "value": "Delete account; I’ll remove Apple permission"
           }
         }
       }
