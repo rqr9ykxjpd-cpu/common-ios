@@ -7,6 +7,7 @@ extension L10n {
         static var identitySubtitle: String { String(localized: "onboarding.identitySubtitle") }
         static var name: String { String(localized: "onboarding.name") }
         static var namePlaceholder: String { String(localized: "onboarding.namePlaceholder") }
+        static var defaultDisplayName: String { String(localized: "onboarding.defaultDisplayName") }
         static var department: String { String(localized: "onboarding.department") }
         static var departmentPlaceholder: String { String(localized: "onboarding.departmentPlaceholder") }
         static var birthDate: String { String(localized: "onboarding.birthDate") }
@@ -25,7 +26,7 @@ extension L10n {
         static var photoEyebrow: String { String(localized: "onboarding.photoEyebrow") }
         static var photoTitle: String { String(localized: "onboarding.photoTitle") }
         static var photoSubtitle: String { String(localized: "onboarding.photoSubtitle") }
-        static var photoRequired: String { String(localized: "onboarding.photoRequired") }
+        static var photoOptional: String { String(localized: "onboarding.photoOptional") }
         static var pickPhoto: String { String(localized: "onboarding.pickPhoto") }
         static var changePhoto: String { String(localized: "onboarding.changePhoto") }
         static var verified: String { String(localized: "onboarding.verified") }
@@ -36,7 +37,6 @@ extension L10n {
         static var readySubtitle: String { String(localized: "onboarding.readySubtitle") }
         static var enter: String { String(localized: "onboarding.enter") }
         static var saveFailed: String { String(localized: "onboarding.saveFailed") }
-        static var needPhoto: String { String(localized: "onboarding.needPhoto") }
         static var photoUploadFailed: String { String(localized: "onboarding.photoUploadFailed") }
     }
 }

@@ -7,6 +7,12 @@
     "  ·  " : {
 
     },
+    " %@" : {
+
+    },
+    " %@  " : {
+
+    },
     "·" : {
 
     },
@@ -82,6 +88,16 @@
     },
     "%lld" : {
 
+    },
+    "%lld / %lld" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld / %2$lld"
+          }
+        }
+      }
     },
     "%lld/220" : {
 
@@ -556,6 +572,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "common"
+          }
+        }
+      }
+    },
+    "campusDesign.rightSwipeUndoFailed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't undo — the connection may already exist."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geri alınamadı; bağlantı çoktan kurulmuş olabilir."
+          }
+        }
+      }
+    },
+    "campusDesign.rightSwipeUndone" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request undone"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İstek geri alındı"
           }
         }
       }
@@ -1240,23 +1290,6 @@
         }
       }
     },
-    "chat.typing" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Typing…"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Yazıyor…"
-          }
-        }
-      }
-    },
     "chat.reactionFailed" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1559,6 +1592,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "İkiniz de %@ ve %@ ile ilgileniyorsunuz."
+          }
+        }
+      }
+    },
+    "chat.typing" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Typing…"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yazıyor…"
           }
         }
       }
@@ -2263,57 +2313,6 @@
         }
       }
     },
-    "common.undo" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Undo"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Geri al"
-          }
-        }
-      }
-    },
-    "campusDesign.rightSwipeUndone" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Request undone"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "İstek geri alındı"
-          }
-        }
-      }
-    },
-    "campusDesign.rightSwipeUndoFailed" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Couldn't undo — the connection may already exist."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Geri alınamadı; bağlantı çoktan kurulmuş olabilir."
-          }
-        }
-      }
-    },
     "common.ok" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2569,6 +2568,23 @@
         }
       }
     },
+    "common.undo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Undo"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geri al"
+          }
+        }
+      }
+    },
     "common.yalovaUniversity" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2807,23 +2823,6 @@
         }
       }
     },
-    "composer.galleryFull" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your profile gallery is full"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Profil galerin dolu"
-          }
-        }
-      }
-    },
     "composer.charactersLeft" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2837,6 +2836,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld karakter kaldı"
+          }
+        }
+      }
+    },
+    "composer.galleryFull" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your profile gallery is full"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profil galerin dolu"
           }
         }
       }
@@ -3483,6 +3499,414 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Psikoloji"
+          }
+        }
+      }
+    },
+    "edu.alreadyUsed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That address is already used by another account."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu adres başka bir hesapta kullanılıyor."
+          }
+        }
+      }
+    },
+    "edu.badge" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Student"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öğrenci"
+          }
+        }
+      }
+    },
+    "edu.cardAction" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verify"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doğrula"
+          }
+        }
+      }
+    },
+    "edu.cardBody" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirm your school address to get the Student badge."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Okul adresinle profiline Öğrenci rozeti gelir."
+          }
+        }
+      }
+    },
+    "edu.cardTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verify your student email"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öğrenci e-postanı doğrula"
+          }
+        }
+      }
+    },
+    "edu.changeAddress" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change address"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adresi değiştir"
+          }
+        }
+      }
+    },
+    "edu.checkNow" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tapped it, check now"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dokundum, kontrol et"
+          }
+        }
+      }
+    },
+    "edu.notAllowedDomain" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That's not a university address. Use your school's .edu.tr address."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu bir üniversite adresi değil. Okulunun .edu.tr adresini kullan."
+          }
+        }
+      }
+    },
+    "edu.notNow" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not now"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şimdi değil"
+          }
+        }
+      }
+    },
+    "edu.pendingBody" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the link we sent to %@."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ adresine gelen bağlantıya dokun."
+          }
+        }
+      }
+    },
+    "edu.pendingTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link sent"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bağlantı gönderildi"
+          }
+        }
+      }
+    },
+    "edu.placeholder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "address@….edu.tr"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "adres@….edu.tr"
+          }
+        }
+      }
+    },
+    "edu.rateLimited" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Too many attempts. Try again in a few minutes."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çok sık denedin. Birkaç dakika sonra tekrar dene."
+          }
+        }
+      }
+    },
+    "edu.resend" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resend"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeniden gönder"
+          }
+        }
+      }
+    },
+    "edu.resendIn" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resend (%llds)"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeniden gönder (%lld sn)"
+          }
+        }
+      }
+    },
+    "edu.send" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send link"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bağlantı gönder"
+          }
+        }
+      }
+    },
+    "edu.sendFailed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't send the link."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bağlantı gönderilemedi."
+          }
+        }
+      }
+    },
+    "edu.sentBody" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check the inbox of %@. Tap the link, then come back to Common — your badge will be ready."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ gelen kutusunu kontrol et. Bağlantıya dokununca Common'a dön; rozetin hazır olur."
+          }
+        }
+      }
+    },
+    "edu.sentTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link sent"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bağlantı gönderildi"
+          }
+        }
+      }
+    },
+    "edu.sheetHint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter the address your university gave you. We'll send a link; tapping it verifies your profile."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Üniversitenin sana verdiği adresi yaz. Bir bağlantı gönderelim; dokununca profilin doğrulanır."
+          }
+        }
+      }
+    },
+    "edu.sheetTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Student email"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öğrenci e-postası"
+          }
+        }
+      }
+    },
+    "edu.stillPending" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not verified yet. If you tapped the link, give it a few seconds."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Henüz doğrulanmadı. Bağlantıya dokunduysan birkaç saniye bekle."
+          }
+        }
+      }
+    },
+    "edu.verifiedLine" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Student email verified"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öğrenci e-postası doğrulandı"
+          }
+        }
+      }
+    },
+    "edu.verifiedToast" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Student email verified ✓"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öğrenci e-postan doğrulandı ✓"
           }
         }
       }
@@ -4438,6 +4862,23 @@
         }
       }
     },
+    "feed.newPosts" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld new posts"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld yeni gönderi"
+          }
+        }
+      }
+    },
     "feed.notificationsA11y" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4723,23 +5164,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nerede tanışabiliriz?"
-          }
-        }
-      }
-    },
-    "feed.newPosts" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld new posts"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld yeni gönderi"
           }
         }
       }
@@ -7239,13 +7663,30 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Finish profile · %lld/%lld"
+            "value" : "Continue · %lld/%lld"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Profili Tamamla · %lld/%lld"
+            "value" : "Devam Et · %lld/%lld"
+          }
+        }
+      }
+    },
+    "onboarding.defaultDisplayName" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Common student"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Common öğrencisi"
           }
         }
       }
@@ -7307,13 +7748,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Who are you?"
+            "value" : "Build your profile"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sen kimsin?"
+            "value" : "Profilini oluştur"
           }
         }
       }
@@ -7324,13 +7765,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Keep the first impression simple. You can change all of this later."
+            "value" : "If Apple or Google shared your name, it is already filled in. The display name is optional; add your department and date of birth to continue."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "İlk izlenimi sade tut. Bunların hepsini daha sonra değiştirebilirsin."
+            "value" : "Apple ya da Google adını paylaştıysa alan zaten dolu gelir. Görünen ad isteğe bağlı; bölümünü ve doğum tarihini ekleyerek devam et."
           }
         }
       }
@@ -7341,13 +7782,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Not a profile.\nA short portrait."
+            "value" : "First, the basics."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Profil değil,\nkısa bir portre."
+            "value" : "Önce temel bilgiler."
           }
         }
       }
@@ -7358,13 +7799,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Shared frequencies"
+            "value" : "Personalize your profile"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ortak frekanslar"
+            "value" : "Profilini kişiselleştir"
           }
         }
       }
@@ -7375,13 +7816,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pick at least %lld, up to %lld. Shared interests show on your profile."
+            "value" : "Choose at least %lld and up to %lld interests. Shared ones appear on profiles."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "En az %lld tane seç, %lld taneye kadar ekleyebilirsin. Ortak ilgiler profilinde görünür."
+            "value" : "En az %lld, en fazla %lld ilgi alanı seç. Ortak olanlar profillerde görünür."
           }
         }
       }
@@ -7392,13 +7833,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Leave a hint\nfor the chat."
+            "value" : "Choose your interests."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sohbete bir\nipucu bırak."
+            "value" : "İlgilerini seç."
           }
         }
       }
@@ -7426,13 +7867,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your name"
+            "value" : "Display name (optional)"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Adın"
+            "value" : "Görünen ad (isteğe bağlı)"
           }
         }
       }
@@ -7443,30 +7884,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "e.g. Deniz"
+            "value" : "Your name or a nickname"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "örneğin Deniz"
-          }
-        }
-      }
-    },
-    "onboarding.needPhoto" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choose a profile photo to continue."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Devam etmek için bir profil fotoğrafı seçmelisin."
+            "value" : "Adın ya da bir rumuz"
           }
         }
       }
@@ -7488,19 +7912,19 @@
         }
       }
     },
-    "onboarding.photoRequired" : {
+    "onboarding.photoOptional" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A profile photo is required to continue."
+            "value" : "A photo is optional. You can add one from your profile later."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Devam etmek için bir profil fotoğrafı gerekli."
+            "value" : "Fotoğraf isteğe bağlı. Daha sonra profilinden ekleyebilirsin."
           }
         }
       }
@@ -7511,13 +7935,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choose a recent photo where your face is clear. You can change it later."
+            "value" : "Add a recent photo where your face is clear, or continue without one. You can change it later."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Yüzünün net göründüğü güncel bir fotoğraf seç. Sonradan değiştirebilirsin."
+            "value" : "İstersen yüzünün net göründüğü güncel bir fotoğraf ekle. Daha sonra profilinden değiştirebilirsin."
           }
         }
       }
@@ -7528,13 +7952,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Complete your profile\nwith a photo."
+            "value" : "Add a photo."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Profilini fotoğrafınla\ntamamla."
+            "value" : "Bir fotoğraf ekle."
           }
         }
       }
@@ -7579,13 +8003,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The campus feed, new people, and new chats are waiting."
+            "value" : "You can now join your campus feed, study groups, and communities."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kampüsün akışı, yeni insanlar ve yeni sohbetler seni bekliyor."
+            "value" : "Artık kampüs akışına, çalışma gruplarına ve topluluklara katılabilirsin."
           }
         }
       }
@@ -7613,13 +8037,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verified"
+            "value" : "Profile ready"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Doğrulandı"
+            "value" : "Profilin hazır"
           }
         }
       }
@@ -7630,13 +8054,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Welcome,\n%@."
+            "value" : "Welcome, %@."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hoş geldin,\n%@."
+            "value" : "Hoş geldin, %@."
           }
         }
       }
@@ -10149,737 +10573,6 @@
         }
       }
     },
-    "studyGroup.spotShow" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show my spot"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Yerimi göster"
-          }
-        }
-      }
-    },
-    "studyGroup.spotRetake" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retake"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Yeniden çek"
-          }
-        }
-      }
-    },
-    "studyGroup.spotHint" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Take a photo that shows where you are: the table, floor, window."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nerede olduğunu belli eden bir fotoğraf çek: masa, kat, pencere."
-          }
-        }
-      }
-    },
-    "studyGroup.spotBeforeWindow" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Once it starts, you can show your spot with a photo."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Başlayınca yerini fotoğrafla gösterebilirsin."
-          }
-        }
-      }
-    },
-    "studyGroup.spotWaiting" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The host will show their spot with a photo once it starts."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ev sahibi başlayınca yerini fotoğrafla gösterecek."
-          }
-        }
-      }
-    },
-    "studyGroup.spotMembersOnly" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The spot photo is visible to members."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Yer fotoğrafı katılanlara açık."
-          }
-        }
-      }
-    },
-    "studyGroup.spotHere" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ is here · %@"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ burada · %@"
-          }
-        }
-      }
-    },
-    "studyGroup.spotShared" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your spot was shared; members were notified."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Yerin paylaşıldı; katılanlara bildirim gitti."
-          }
-        }
-      }
-    },
-    "studyGroup.spotFailed" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Couldn’t share the photo."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fotoğraf paylaşılamadı."
-          }
-        }
-      }
-    },
-    "studyGroup.spotWindowClosed" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The photo can be shared only from 15 minutes before the start until the end."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fotoğraf yalnızca başlangıçtan 15 dk önce ile bitiş arasında paylaşılabilir."
-          }
-        }
-      }
-    },
-    "studyGroup.memberReminderTitle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your study group starts in 15 minutes"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Çalışma grubun 15 dakika sonra"
-          }
-        }
-      }
-    },
-    "studyGroup.memberReminderBody" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ · with %2$@."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ · %2$@ ile buluşuyorsun."
-          }
-        }
-      }
-    },
-    "studyGroup.reminderTitle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your study group is starting"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Çalışma grubun başlıyor"
-          }
-        }
-      }
-    },
-    "studyGroup.reminderBody" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ — show your spot with a photo so members can find you."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ — yerini fotoğrafla göster, katılanlar seni bulsun."
-          }
-        }
-      }
-    },
-    "studyGroup.spotViewerTitle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The host is here"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ev sahibi burada"
-          }
-        }
-      }
-    },
-    "studyGroup.now" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Now"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Şimdi"
-          }
-        }
-      }
-    },
-    "studyGroup.pickTime" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pick a time"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Saat seç"
-          }
-        }
-      }
-    },
-    "profile.upgradeTitle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Common Plus and Pro"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Common Plus ve Pro"
-          }
-        }
-      }
-    },
-    "profile.upgradeHint" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Subscriptions: remove connection, meetup and post limits."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abonelikler: bağlantı, buluşma ve gönderi sınırlarını kaldır."
-          }
-        }
-      }
-    },
-    "edu.cardTitle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verify your student email"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Öğrenci e-postanı doğrula"
-          }
-        }
-      }
-    },
-    "edu.cardBody" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Confirm your school address to get the Student badge."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Okul adresinle profiline Öğrenci rozeti gelir."
-          }
-        }
-      }
-    },
-    "edu.cardAction" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verify"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Doğrula"
-          }
-        }
-      }
-    },
-    "edu.pendingTitle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Link sent"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bağlantı gönderildi"
-          }
-        }
-      }
-    },
-    "edu.pendingBody" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tap the link we sent to %@."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ adresine gelen bağlantıya dokun."
-          }
-        }
-      }
-    },
-    "edu.sheetTitle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Student email"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Öğrenci e-postası"
-          }
-        }
-      }
-    },
-    "edu.sheetHint" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enter the address your university gave you. We'll send a link; tapping it verifies your profile."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Üniversitenin sana verdiği adresi yaz. Bir bağlantı gönderelim; dokununca profilin doğrulanır."
-          }
-        }
-      }
-    },
-    "edu.placeholder" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "address@….edu.tr"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "adres@….edu.tr"
-          }
-        }
-      }
-    },
-    "edu.send" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Send link"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bağlantı gönder"
-          }
-        }
-      }
-    },
-    "edu.sentTitle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Link sent"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bağlantı gönderildi"
-          }
-        }
-      }
-    },
-    "edu.sentBody" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Check the inbox of %@. Tap the link, then come back to Common — your badge will be ready."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ gelen kutusunu kontrol et. Bağlantıya dokununca Common'a dön; rozetin hazır olur."
-          }
-        }
-      }
-    },
-    "edu.resend" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Resend"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Yeniden gönder"
-          }
-        }
-      }
-    },
-    "edu.resendIn" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Resend (%llds)"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Yeniden gönder (%lld sn)"
-          }
-        }
-      }
-    },
-    "edu.changeAddress" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Change address"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adresi değiştir"
-          }
-        }
-      }
-    },
-    "edu.checkNow" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "I tapped it, check now"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dokundum, kontrol et"
-          }
-        }
-      }
-    },
-    "edu.stillPending" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Not verified yet. If you tapped the link, give it a few seconds."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Henüz doğrulanmadı. Bağlantıya dokunduysan birkaç saniye bekle."
-          }
-        }
-      }
-    },
-    "edu.notAllowedDomain" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "That's not a university address. Use your school's .edu.tr address."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bu bir üniversite adresi değil. Okulunun .edu.tr adresini kullan."
-          }
-        }
-      }
-    },
-    "edu.alreadyUsed" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "That address is already used by another account."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bu adres başka bir hesapta kullanılıyor."
-          }
-        }
-      }
-    },
-    "edu.rateLimited" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Too many attempts. Try again in a few minutes."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Çok sık denedin. Birkaç dakika sonra tekrar dene."
-          }
-        }
-      }
-    },
-    "edu.sendFailed" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Couldn't send the link."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bağlantı gönderilemedi."
-          }
-        }
-      }
-    },
-    "edu.verifiedToast" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Student email verified ✓"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Öğrenci e-postan doğrulandı ✓"
-          }
-        }
-      }
-    },
-    "edu.badge" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Student"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Öğrenci"
-          }
-        }
-      }
-    },
-    "edu.verifiedLine" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Student email verified"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Öğrenci e-postası doğrulandı"
-          }
-        }
-      }
-    },
-    "edu.notNow" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Not now"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Şimdi değil"
-          }
-        }
-      }
-    },
     "profile.needMatchToChat" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11762,6 +11455,40 @@
         }
       }
     },
+    "profile.upgradeHint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subscriptions: remove connection, meetup and post limits."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonelikler: bağlantı, buluşma ve gönderi sınırlarını kaldır."
+          }
+        }
+      }
+    },
+    "profile.upgradeTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Common Plus and Pro"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Common Plus ve Pro"
+          }
+        }
+      }
+    },
     "profile.verified" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12168,6 +11895,40 @@
         }
       }
     },
+    "story.ageHours" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lldh"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld sa"
+          }
+        }
+      }
+    },
+    "story.ageMinutes" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lldm"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld dk"
+          }
+        }
+      }
+    },
     "story.delete" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12368,40 +12129,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Duraklatıldı"
-          }
-        }
-      }
-    },
-    "story.ageMinutes" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lldm"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld dk"
-          }
-        }
-      }
-    },
-    "story.ageHours" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lldh"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld sa"
           }
         }
       }
@@ -13035,6 +12762,40 @@
         }
       }
     },
+    "studyGroup.memberReminderBody" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · with %2$@."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@ ile buluşuyorsun."
+          }
+        }
+      }
+    },
+    "studyGroup.memberReminderTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your study group starts in 15 minutes"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çalışma grubun 15 dakika sonra"
+          }
+        }
+      }
+    },
     "studyGroup.mine" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13065,6 +12826,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ne çalışacaksın? (örn. Veri Yapıları vize)"
+          }
+        }
+      }
+    },
+    "studyGroup.now" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şimdi"
+          }
+        }
+      }
+    },
+    "studyGroup.pickTime" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a time"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saat seç"
           }
         }
       }
@@ -13103,6 +12898,40 @@
         }
       }
     },
+    "studyGroup.reminderBody" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ — show your spot with a photo so members can find you."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ — yerini fotoğrafla göster, katılanlar seni bulsun."
+          }
+        }
+      }
+    },
+    "studyGroup.reminderTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your study group is starting"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çalışma grubun başlıyor"
+          }
+        }
+      }
+    },
     "studyGroup.sectionTitle" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13116,6 +12945,193 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Çalışma grupları"
+          }
+        }
+      }
+    },
+    "studyGroup.spotBeforeWindow" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Once it starts, you can show your spot with a photo."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Başlayınca yerini fotoğrafla gösterebilirsin."
+          }
+        }
+      }
+    },
+    "studyGroup.spotFailed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t share the photo."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotoğraf paylaşılamadı."
+          }
+        }
+      }
+    },
+    "studyGroup.spotHere" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is here · %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ burada · %@"
+          }
+        }
+      }
+    },
+    "studyGroup.spotHint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Take a photo that shows where you are: the table, floor, window."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nerede olduğunu belli eden bir fotoğraf çek: masa, kat, pencere."
+          }
+        }
+      }
+    },
+    "studyGroup.spotMembersOnly" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The spot photo is visible to members."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yer fotoğrafı katılanlara açık."
+          }
+        }
+      }
+    },
+    "studyGroup.spotRetake" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retake"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeniden çek"
+          }
+        }
+      }
+    },
+    "studyGroup.spotShared" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your spot was shared; members were notified."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yerin paylaşıldı; katılanlara bildirim gitti."
+          }
+        }
+      }
+    },
+    "studyGroup.spotShow" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show my spot"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yerimi göster"
+          }
+        }
+      }
+    },
+    "studyGroup.spotViewerTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The host is here"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ev sahibi burada"
+          }
+        }
+      }
+    },
+    "studyGroup.spotWaiting" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The host will show their spot with a photo once it starts."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ev sahibi başlayınca yerini fotoğrafla gösterecek."
+          }
+        }
+      }
+    },
+    "studyGroup.spotWindowClosed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The photo can be shared only from 15 minutes before the start until the end."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotoğraf yalnızca başlangıçtan 15 dk önce ile bitiş arasında paylaşılabilir."
           }
         }
       }
@@ -13401,13 +13417,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Join events, build projects, pick up new skills."
+            "value" : "Library, canteen, dining hall… See who’s where on campus."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Etkinliklere katıl, proje yap, yeni beceriler kazan."
+            "value" : "Kütüphane, kantin, yemekhane… Kampüste kim nerede, gör."
           }
         }
       }
@@ -13418,13 +13434,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Grow through clubs"
+            "value" : "Who’s where"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kulüplerde kendini geliştir"
+            "value" : "Kim nerede"
           }
         }
       }
@@ -13435,13 +13451,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Meet on campus, face to face."
+            "value" : "Study together, join your club, never miss an event."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kampüste buluş, yüz yüze gel."
+            "value" : "Birlikte çalış, kulübüne katıl, etkinlikleri kaçırma."
           }
         }
       }
@@ -13452,13 +13468,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Take it offline"
+            "value" : "Study groups and clubs"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sohbeti gerçek hayata taşı"
+            "value" : "Çalışma grupları ve kulüpler"
           }
         }
       }
@@ -13469,13 +13485,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your campus day belongs in the feed."
+            "value" : "Questions, lecture notes, announcements, and events."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kampüsteki günün akışta görünsün."
+            "value" : "Sorular, ders notları, duyurular ve etkinlikler."
           }
         }
       }
@@ -13486,13 +13502,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Share moments"
+            "value" : "Feed"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Anlarını paylaş"
+            "value" : "Akış"
           }
         }
       }
@@ -13537,13 +13553,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "campus starts with you."
+            "value" : "Common brings together your university's feed, study groups, and communities."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "kampüs seninle başlar."
+            "value" : "Common, okulunun gündemini, çalışma gruplarını ve toplulukları bir araya getirir."
           }
         }
       }
@@ -13554,13 +13570,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Campus life, all in one place."
+            "value" : "The common ground for your campus."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kampüs hayatı tek yerde."
+            "value" : "Kampüsün ortak alanı."
           }
         }
       }

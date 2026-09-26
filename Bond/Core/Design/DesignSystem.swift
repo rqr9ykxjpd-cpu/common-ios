@@ -242,6 +242,7 @@ enum NavigationBarStyle {
 struct Wordmark: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var compact = false
+    var size: CGFloat? = nil
 
     @State private var belirdi = false
 
@@ -260,7 +261,7 @@ struct Wordmark: View {
                                value: belirdi)
             }
         }
-        .font(.system(size: compact ? 18 : 23, weight: .bold, design: .serif))
+        .font(.system(size: size ?? (compact ? 18 : 23), weight: .bold, design: .serif))
         .tracking(-0.6)
         .foregroundStyle(BondTheme.ink)
         .fixedSize()

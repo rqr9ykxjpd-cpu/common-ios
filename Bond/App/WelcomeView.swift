@@ -21,34 +21,30 @@ struct WelcomeView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                Text(L10n.Brand.wordmark)
-                    .font(.system(size: 34, weight: .bold, design: .serif))
-                    .tracking(-0.8)
-                    .foregroundStyle(BondTheme.ink)
-                    .accessibilityAddTraits(.isHeader)
+                Wordmark(size: 30)
 
-                VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
+                VStack(alignment: .leading, spacing: BondTheme.Space.md) {
                     Text(L10n.Welcome.headline)
-                        .editorialTitle(38)
+                        .editorialTitle(40)
                         .foregroundStyle(BondTheme.ink)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityAddTraits(.isHeader)
 
                     Text(L10n.Welcome.handNote)
-                        .font(.custom("BradleyHandITCTT-Bold", size: 18, relativeTo: .callout))
-                        .foregroundStyle(BondTheme.burntOrange)
-                        .rotationEffect(.degrees(-0.7))
+                        .font(BondTheme.Typography.body)
+                        .foregroundStyle(BondTheme.muted)
+                        .lineSpacing(3)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(.top, BondTheme.Space.lg)
+                .padding(.top, BondTheme.Space.xxl)
                 .opacity(appeared ? 1 : 0)
                 .offset(y: appeared || reduceMotion ? 0 : 10)
                 .animation(reduceMotion ? nil : BondTheme.Motion.smooth.delay(0.04), value: appeared)
 
-                VStack(spacing: BondTheme.Space.md) {
+                VStack(spacing: 0) {
                     ForEach(Array(welcomeFeatures.enumerated()), id: \.offset) { index, feature in
                         WelcomeFeatureRow(
-                            systemImage: feature.systemImage,
+                            index: index + 1,
                             title: feature.title,
                             detail: feature.detail
                         )
@@ -60,7 +56,7 @@ struct WelcomeView: View {
                         )
                     }
                 }
-                .padding(.top, BondTheme.Space.xxl)
+                .padding(.top, 40)
             }
             .padding(.horizontal, BondTheme.Space.lg)
             .padding(.top, BondTheme.Space.xl)
@@ -88,11 +84,11 @@ struct WelcomeView: View {
         }
     }
 
-    private var welcomeFeatures: [(systemImage: String, title: String, detail: String)] {
+    private var welcomeFeatures: [(title: String, detail: String)] {
         [
-            ("text.below.photo", L10n.Welcome.featureShareTitle, L10n.Welcome.featureShareBody),
-            ("person.3", L10n.Welcome.featureClubsTitle, L10n.Welcome.featureClubsBody),
-            ("mappin.and.ellipse", L10n.Welcome.featureOfflineTitle, L10n.Welcome.featureOfflineBody),
+            (L10n.Welcome.featureShareTitle, L10n.Welcome.featureShareBody),
+            (L10n.Welcome.featureClubsTitle, L10n.Welcome.featureClubsBody),
+            (L10n.Welcome.featureOfflineTitle, L10n.Welcome.featureOfflineBody),
         ]
     }
 
@@ -160,7 +156,7 @@ struct WelcomeView: View {
 
             legalConsent
         }
-        .animation(.smooth(duration: 0.25), value: isSigningIn)
+        .animation(reduceMotion ? nil : .smooth(duration: 0.25), value: isSigningIn)
         .padding(.horizontal, BondTheme.Space.lg)
         .padding(.top, BondTheme.Space.md)
         .padding(.bottom, BondTheme.Space.md)
@@ -448,23 +444,24 @@ struct EmailSignInSheet: View {
 }
 
 private struct WelcomeFeatureRow: View {
-    let systemImage: String
+    let index: Int
     let title: String
     let detail: String
 
     var body: some View {
-        HStack(alignment: .center, spacing: BondTheme.Space.md) {
-            Image(systemName: systemImage)
-                .font(.system(size: 17, weight: .semibold))
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(BondTheme.ink)
-                .frame(width: 42, height: 42)
-                .background(BondTheme.surface, in: Circle())
+        HStack(alignment: .firstTextBaseline, spacing: BondTheme.Space.md) {
+            Text(String(format: "%02d", index))
+                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                .tracking(0.4)
+                .foregroundStyle(BondTheme.burntOrange)
+                .frame(width: 24, alignment: .leading)
                 .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(BondTheme.Typography.headline)
+                    .font(BondTheme.Typography.footnote.weight(.semibold))
+                    .textCase(.uppercase)
+                    .tracking(0.7)
                     .foregroundStyle(BondTheme.ink)
                     .fixedSize(horizontal: false, vertical: true)
                 Text(detail)
@@ -475,7 +472,12 @@ private struct WelcomeFeatureRow: View {
 
             Spacer(minLength: 0)
         }
-        .frame(minHeight: 48)
+        .padding(.vertical, 14)
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(BondTheme.hairline.opacity(0.8))
+                .frame(height: 0.5)
+        }
         .accessibilityElement(children: .combine)
     }
 }

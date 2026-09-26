@@ -52,7 +52,7 @@ struct SocialPersonDetailView: View {
     private var kurucu: Bool { (details?.badge ?? profile.badge) == .founder }
 
     private func cipZemini(paylasilan: Bool) -> Color {
-        if paylasilan { return BondTheme.acid.opacity(0.5) }
+        if paylasilan { return BondTheme.burntOrange.opacity(0.14) }
         return kurucu ? BondTheme.ember.opacity(0.12) : BondTheme.ink.opacity(0.055)
     }
 
@@ -136,11 +136,14 @@ struct SocialPersonDetailView: View {
         } message: {
             Text(L10n.Moderation.suspendAccountBody)
         }
-        .navigationTitle(profile.name)
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .presentationCornerRadius(28)
         .presentationDragIndicator(.visible)
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                Wordmark(compact: true)
+            }
             if showsClose {
                 ToolbarItem(placement: .topBarLeading) {
                     Button { dismiss() } label: { Image(systemName: "xmark") }
@@ -201,8 +204,10 @@ struct SocialPersonDetailView: View {
             VStack(alignment: .leading, spacing: 8) {
                 if !ortak.isEmpty {
                     Text(L10n.Profile.sharedInterests(ortak.count))
-                        .font(.system(size: 11, weight: .bold)).tracking(0.7)
-                        .foregroundStyle(BondTheme.violet)
+                        .font(.system(size: 11, weight: .bold))
+                        .textCase(.uppercase)
+                        .tracking(0.7)
+                        .foregroundStyle(BondTheme.burntOrange)
                 }
                 FlowLayout(spacing: 7) {
                     ForEach(hepsi, id: \.self) { interest in
@@ -224,7 +229,10 @@ struct SocialPersonDetailView: View {
         } else if !galleryPhotos.isEmpty {
             // Fotoğrafı sürüklemek fotoğrafı çevirir. Kartın bağlan/kapat jesti
             // fotoğrafın dışında: isim bloğu ve alt bilgiler.
-            ProfileGalleryStack(photos: galleryPhotos)
+            VStack(alignment: .leading, spacing: BondTheme.Space.md) {
+                profileSectionTitle(L10n.Profile.photos)
+                ProfileGalleryStack(photos: galleryPhotos)
+            }
         }
     }
 
@@ -464,7 +472,7 @@ struct SocialPersonDetailView: View {
     /// Kaydırılan kart: başlık, fotoğraf destesi, gönderiler, hakkında.
     private var cardBody: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: BondTheme.Space.lg) {
+            VStack(alignment: .leading, spacing: 28) {
                 identityHeader
                 gallery
                 personPosts
@@ -483,7 +491,7 @@ struct SocialPersonDetailView: View {
 
                 if !profile.bio.trimmed.isEmpty {
                     VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
-                        Text(L10n.CampusDesign.about).font(.headline)
+                        profileSectionTitle(L10n.CampusDesign.about)
                         Text(profile.bio).font(.body).lineSpacing(4)
                     }
                 }
@@ -492,8 +500,8 @@ struct SocialPersonDetailView: View {
                 meetHere
             }
             .foregroundStyle(BondTheme.ink)
-            .padding(.horizontal, BondTheme.Space.md)
-            .padding(.top, BondTheme.Space.sm)
+            .padding(.horizontal, BondTheme.Space.lg)
+            .padding(.top, BondTheme.Space.md)
             .padding(.bottom, BondTheme.Space.xl)
         }
         .accessibilityAction(named: L10n.Introduction.send) {
@@ -503,56 +511,20 @@ struct SocialPersonDetailView: View {
     }
 
     private var identityHeader: some View {
-        VStack(spacing: BondTheme.Space.sm) {
-            ProfileMedia(
-                url: details?.avatarURL ?? profile.imageURL,
-                data: nil,
-                assetName: profile.imageAssetName
-            )
-            .frame(width: 96, height: 96)
-            .clipShape(Circle())
-            .accessibilityHidden(true)
-
-            VStack(spacing: 4) {
-                Text(profile.name)
-                    .font(BondTheme.Typography.title2)
-                    .multilineTextAlignment(.center)
-                if !isMe, !isMatched {
-                    // İki durum ayrı görünüm; blurReplace biri erirken öteki belirir.
-                    Group {
-                        if alreadySwiped {
-                            Text(L10n.CampusDesign.cardRequestSentHint)
-                                .font(.subheadline.weight(.medium))
-                                .foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
-                        } else {
-                            // Yönler doğru: sol ok + sola kaydır kapat | sağa kaydır bağlan + sağ ok.
-                            HStack(spacing: 8) {
-                                Image(systemName: "arrow.left").font(.caption2.weight(.bold))
-                                Text(L10n.Introduction.swipeHintLeft).font(.footnote.weight(.medium))
-                                Text("·").foregroundStyle(BondTheme.hairline)
-                                Text(L10n.Introduction.swipeHintRight).font(.footnote.weight(.medium))
-                                Image(systemName: "arrow.right").font(.caption2.weight(.bold))
-                            }
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 12).padding(.vertical, 7)
-                            .background(BondTheme.surface, in: Capsule())
-                            .multilineTextAlignment(.center)
-                        }
-                    }
-                    .transition(.blurReplace)
-                    .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: alreadySwiped)
+        VStack(alignment: .leading, spacing: 18) {
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .top, spacing: 18) {
+                    identityPortrait
+                    identityCopy
                 }
-                ProfileEducationLine(
-                    department: profile.department,
-                    university: profile.university,
-                    year: profile.year,
-                    font: BondTheme.Typography.subheadline
-                )
-                .foregroundStyle(.secondary)
-                ProfileBadgeLabel(badge: details?.badge ?? profile.badge)
+
+                VStack(alignment: .leading, spacing: BondTheme.Space.md) {
+                    identityPortrait
+                    identityCopy
+                }
             }
-            .frame(maxWidth: .infinity)
+
+            connectionCue
 
             if kurucu {
                 FounderCredLine()
@@ -561,15 +533,103 @@ struct SocialPersonDetailView: View {
         }
     }
 
+    private var identityPortrait: some View {
+        ProfileMedia(
+            url: details?.avatarURL ?? profile.imageURL,
+            data: nil,
+            assetName: profile.imageAssetName
+        )
+        .frame(width: 112, height: 140)
+        .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous)
+                .stroke(BondTheme.hairline.opacity(0.8), lineWidth: 0.5)
+        }
+        .accessibilityHidden(true)
+    }
+
+    private var identityCopy: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(profile.name)
+                .editorialTitle(36)
+                .fixedSize(horizontal: false, vertical: true)
+
+            ProfileEducationLine(
+                department: profile.department,
+                university: profile.university,
+                year: profile.year,
+                font: BondTheme.Typography.footnote
+            )
+            .foregroundStyle(BondTheme.muted)
+
+            ProfileBadgeLabel(badge: details?.badge ?? profile.badge)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 4)
+    }
+
+    @ViewBuilder private var connectionCue: some View {
+        if !isMe, !isMatched {
+            VStack(alignment: .leading, spacing: 0) {
+                Group {
+                    if alreadySwiped {
+                        Label(L10n.CampusDesign.cardRequestSentHint, systemImage: "paperplane.fill")
+                            .foregroundStyle(BondTheme.burntOrange)
+                    } else {
+                        ViewThatFits(in: .horizontal) {
+                            HStack(spacing: 8) {
+                                Label(L10n.Introduction.swipeHintLeft, systemImage: "arrow.left")
+                                Text("·").foregroundStyle(BondTheme.hairline)
+                                Label(L10n.Introduction.swipeHintRight, systemImage: "arrow.right")
+                            }
+                            VStack(alignment: .leading, spacing: 8) {
+                                Label(L10n.Introduction.swipeHintLeft, systemImage: "arrow.left")
+                                Label(L10n.Introduction.swipeHintRight, systemImage: "arrow.right")
+                            }
+                        }
+                        .foregroundStyle(BondTheme.muted)
+                    }
+                }
+                .font(BondTheme.Typography.footnote.weight(.semibold))
+                .transition(.blurReplace)
+                .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: alreadySwiped)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 12)
+            .overlay(alignment: .top) {
+                Rectangle().fill(BondTheme.hairline.opacity(0.8)).frame(height: 0.5)
+            }
+            .overlay(alignment: .bottom) {
+                Rectangle().fill(BondTheme.hairline.opacity(0.8)).frame(height: 0.5)
+            }
+        }
+    }
+
+    private func profileSectionTitle(_ title: String) -> some View {
+        Text(title)
+            .font(BondTheme.Typography.footnote.weight(.semibold))
+            .textCase(.uppercase)
+            .tracking(0.7)
+            .foregroundStyle(BondTheme.ink)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, 14)
+            .overlay(alignment: .top) {
+                Rectangle().fill(BondTheme.hairline.opacity(0.8)).frame(height: 0.5)
+            }
+    }
+
     @ViewBuilder private var actions: some View {
         if isMe {
             EmptyView()
         } else if isMatched {
             Button { openConversation() } label: {
                 Label(L10n.Introduction.openChat, systemImage: "message")
-                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .font(BondTheme.Typography.body.weight(.semibold))
+                    .foregroundStyle(BondTheme.onAccent)
+                    .frame(maxWidth: .infinity, minHeight: 54)
+                    .background(BondTheme.acid, in: Capsule())
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(PressableStyle())
             .sensoryFeedback(.selection, trigger: conversationRoute?.id)
         } else if kurucu {
             // Kurucuya herkes doğrudan yazabilir; bağlantı isteği beklenmez.
@@ -578,10 +638,10 @@ struct SocialPersonDetailView: View {
                     Task { await openFounderChat() }
                 } label: {
                     Label(L10n.Profile.sendMessage, systemImage: "message.fill")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(BondTheme.paper)
-                        .frame(maxWidth: .infinity, minHeight: 48)
-                        .background(BondTheme.ink, in: RoundedRectangle(cornerRadius: 14))
+                        .font(BondTheme.Typography.body.weight(.semibold))
+                        .foregroundStyle(BondTheme.onAccent)
+                        .frame(maxWidth: .infinity, minHeight: 54)
+                        .background(BondTheme.acid, in: Capsule())
                 }
                 .buttonStyle(PressableStyle())
                 .disabled(isOpeningFounderChat)
@@ -653,8 +713,7 @@ struct SocialPersonDetailView: View {
         let posts = details?.posts ?? []
         if !posts.isEmpty {
             VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
-                Text(L10n.Profile.theirPostsCaps)
-                    .font(.headline)
+                profileSectionTitle(L10n.Profile.theirPostsCaps)
                 ForEach(posts) { post in
                     ProfilePostRow(post: post)
                 }

@@ -18,33 +18,40 @@ extension AppState {
         isFinishingOnboarding = true
         defer { isFinishingOnboarding = false }
         onboardingFailure = nil
+
+        // Sign in with Apple adı yalnızca ilk yetkilendirmede döndürür. Kullanıcıdan
+        // Apple'ın zaten sağladığı bilgiyi yeniden istememek için görünen ad isteğe
+        // bağlıdır; veritabanındaki zorunlu alanı kişisel olmayan bir varsayılanla
+        // doldururuz. Kullanıcı bunu profilinden dilediği zaman değiştirebilir.
+        let chosenName = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Varsayılan ad yalnızca kaydedilen kopyaya yazılıyor. Taslağa yazınca kayıt
+        // başarısız olup kullanıcı geri döndüğünde alanda "Common öğrencisi" kalıyordu.
+        var kaydedilecek = draft
+        if chosenName.isEmpty {
+            kaydedilecek.name = L10n.Onboarding.defaultDisplayName
+        }
         do {
-            try await service.saveProfile(draft)
+            try await service.saveProfile(kaydedilecek)
         } catch {
             let message = UserFacingError.message(error, fallback: L10n.Onboarding.saveFailed)
             onboardingFailure = message
             showError(message)
             return
         }
+        draft.name = kaydedilecek.name
 
-        // Fotoğraf zorunlu olduğu için yükleme hatası artık "sonra hallederiz" değil:
-        // fotoğrafsız içeri alırsak zorunluluk kâğıt üstünde kalır. Kullanıcı bu ekranda
-        // kalıp tekrar deniyor — profil sunucuya yazılmış olsa da yeniden kaydetmek
-        // aynı satırı güncellediği için zararsız.
-        guard let avatarData else {
-            let message = L10n.Onboarding.needPhoto
-            onboardingFailure = message
-            showError(message)
-            withAnimation(BondTheme.Motion.easing) { route = .onboarding(.photo) }
-            return
-        }
-        do {
-            avatarURL = try await service.updateAvatar(avatarData)
-        } catch {
-            let message = UserFacingError.message(error, fallback: L10n.Onboarding.photoUploadFailed)
-            onboardingFailure = message
-            showError(message)
-            return
+        // Profil fotoğrafı isteğe bağlıdır. Kullanıcı bir fotoğraf seçtiyse yüklemeyi
+        // deneriz; yükleme başarısız olduğunda kayıt akışını kilitlemeyiz. Yerel veriyi
+        // temizleyip kullanıcıya profilinden daha sonra tekrar deneyebileceğini bildiren
+        // hata mesajını gösteririz.
+        if let avatarData {
+            do {
+                avatarURL = try await service.updateAvatar(avatarData)
+            } catch {
+                self.avatarData = nil
+                let message = UserFacingError.message(error, fallback: L10n.Onboarding.photoUploadFailed)
+                showError(message)
+            }
         }
 
         persistSession()
@@ -64,8 +71,7 @@ extension AppState {
         onboardingFailure = nil
         withAnimation(.smooth(duration: 0.55)) { route = .app }
         await startPushRegistration()
-        let name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        show(name.isEmpty ? L10n.Auth.welcome : L10n.Auth.welcomeName(name))
+        show(chosenName.isEmpty ? L10n.Auth.welcome : L10n.Auth.welcomeName(chosenName))
     }
 
     func goBack(from step: OnboardingStep) {
