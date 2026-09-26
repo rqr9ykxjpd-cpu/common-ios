@@ -44,6 +44,10 @@ struct SampleProductService: ProductService {
     func isUsernameAvailable(_ candidate: String) async throws -> Bool { await store.isUsernameAvailable(candidate) }
     func claimUsername(_ candidate: String) async throws { try await store.claimUsername(candidate) }
     func setCardTheme(_ theme: CardTheme) async throws { await store.setCardTheme(theme) }
+    func usernameNeedsChoice() async throws -> Bool {
+        guard ProcessInfo.processInfo.arguments.contains("-choosename") else { return false }
+        return !(await store.usernameChosen)
+    }
 
     // Öğrenci e-postası: `-edu none|pending|verified` ile başlangıç durumu seçilir
     // (bkz. BondApp); bağlantı isteği durumu "bekliyor"a çevirir, eşitleme doğrular.

@@ -69,6 +69,11 @@ extension SupabaseProductService {
         return CardTheme(server: rows.first?.cardTheme)
     }
 
+    func usernameNeedsChoice() async throws -> Bool {
+        guard currentUserID != nil else { throw BackendServiceError.missingSession }
+        return try await client.rpc("username_needs_choice").execute().value
+    }
+
     func setCardTheme(_ theme: CardTheme) async throws {
         guard currentUserID != nil else { throw BackendServiceError.missingSession }
         try await client.rpc("set_my_card_theme", params: CardThemeParams(theme: theme.serverValue)).execute()

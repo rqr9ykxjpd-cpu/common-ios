@@ -9,5 +9,9 @@ extension L10n {
         static var taken: String { String(localized: "username.taken") }
         static var invalid: String { String(localized: "username.invalid") }
         static var checkFailed: String { String(localized: "username.checkFailed") }
+        static var chooseTitle: String { String(localized: "username.chooseTitle") }
+        static var chooseBody: String { String(localized: "username.chooseBody") }
+        static var chooseSave: String { String(localized: "username.chooseSave") }
+        static var chosen: String { String(localized: "username.chosen") }
     }
 }

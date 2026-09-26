@@ -18,6 +18,28 @@ extension AppState {
         )
     }
 
+    /// Eski hesaplara ve Build 5 ile açılanlara kullanıcı adı otomatik verildi;
+    /// bir kez sorup onaylatıyoruz. Okunamazsa sormuyoruz.
+    func checkUsernameChoice() async {
+        needsUsernameChoice = (try? await service.usernameNeedsChoice()) ?? false
+    }
+
+    /// Seçme ekranından: adı alır (aynı ad da olabilir, onay yerine geçer).
+    func chooseUsername(_ candidate: String) async -> Bool {
+        do {
+            try await service.claimUsername(candidate)
+            draft.username = candidate
+            persistAccount()
+            needsUsernameChoice = false
+            show(L10n.Username.chosen)
+            Haptics.success()
+            return true
+        } catch {
+            showError(UsernameError.from(error) ?? error, fallback: L10n.Username.checkFailed)
+            return false
+        }
+    }
+
     /// Profil kartının rengini kaydeder. Başarılıysa taslağa da yazar ki kendi
     /// kartın ve düzenleyici hemen yeni renkle açılsın.
     @discardableResult

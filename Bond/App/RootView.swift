@@ -17,6 +17,11 @@ struct RootView: View {
         }
     }
 
+    private var isInApp: Bool {
+        if case .app = appState.route { return true }
+        return false
+    }
+
     var body: some View {
         Group {
             if appState.hasPendingAppleRevokedDeletion {
@@ -54,6 +59,18 @@ struct RootView: View {
         .task {
             await appState.restoreBackendSession()
             await appState.handleAppleCredentialRevocation()
+        }
+        // Kullanıcı adı otomatik verilmiş hesaplara bir kez sorulur.
+        .task(id: isInApp) {
+            if isInApp { await appState.checkUsernameChoice() }
+        }
+        .sheet(isPresented: Binding(
+            get: { isInApp && appState.needsUsernameChoice },
+            set: { if !$0 { appState.needsUsernameChoice = false } }
+        )) {
+            UsernameChoiceView()
+                .presentationDetents([.medium, .large])
+                .presentationCornerRadius(28)
         }
         // Ürünler ve haklar açılışta okunuyor: aboneliği başka cihazda alan ya
         // da uygulamayı silip kuran kullanıcı, paywall'a hiç uğramadan

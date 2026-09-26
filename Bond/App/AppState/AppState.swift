@@ -109,6 +109,8 @@ final class AppState {
     var messageRequestsError: String?
     /// Buluşma istekleri yüklenemediyse ekranda satır içinde gösterilir.
     var meetingRequestsError: String?
+    /// Kullanıcı adı otomatik verildiyse bir kez "Kullanıcı adını seç" ekranı açılır.
+    var needsUsernameChoice = false
     var placesError: String?
     var conversations: [Conversation] = []
     /// Engellediğin kişiler; ayarlardaki liste için.

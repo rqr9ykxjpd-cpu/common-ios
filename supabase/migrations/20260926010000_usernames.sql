@@ -16,6 +16,10 @@
 begin;
 
 alter table public.profiles add column if not exists username text;
+-- Kullanıcı adını kendisi seçtiyse ne zaman. Otomatik verilenlerde (eski
+-- hesaplar, Build 5 ile açılanlar) boş; uygulama bir kez "Kullanıcı adını
+-- seç" ekranı gösteriyor.
+alter table public.profiles add column if not exists username_claimed_at timestamptz;
 
 -- Biçim kontrolü. Kısıt da bunu kullanıyor; doğrudan güncelleme yolları
 -- (avatar gibi) satırı yeniden doğruladığı için herkes çalıştırabilmeli.
@@ -159,7 +163,7 @@ begin
   if exists (select 1 from public.profiles p where p.username = istenen and p.id <> hesap) then
     raise exception 'USERNAME_TAKEN';
   end if;
-  update public.profiles set username = istenen where id = hesap;
+  update public.profiles set username = istenen, username_claimed_at = now() where id = hesap;
   if not found then raise exception 'PROFILE_MISSING'; end if;
   return istenen;
 exception
@@ -168,5 +172,21 @@ end;
 $$;
 revoke all on function public.claim_my_username(text) from public, anon;
 grant execute on function public.claim_my_username(text) to authenticated;
+
+-- Kullanıcı adı otomatik mi verildi? `true` ise uygulama seçme ekranını gösterir.
+create or replace function public.username_needs_choice()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select coalesce(
+    (select p.username_claimed_at is null from public.profiles p where p.id = auth.uid()),
+    false
+  );
+$$;
+revoke all on function public.username_needs_choice() from public, anon;
+grant execute on function public.username_needs_choice() to authenticated;
 
 commit;

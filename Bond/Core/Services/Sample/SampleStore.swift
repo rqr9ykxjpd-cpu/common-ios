@@ -550,7 +550,11 @@ actor SampleStore {
         guard Username.isValid(aday) else { throw UsernameError.invalid }
         guard !takenUsernames.contains(aday) else { throw UsernameError.taken }
         draft.username = aday
+        usernameChosen = true
     }
+
+    /// Örnek modda kullanıcı adı seçme ekranı bir kez görünsün diye.
+    private(set) var usernameChosen = false
 
     func setCardTheme(_ theme: CardTheme) { draft.cardTheme = theme }
 

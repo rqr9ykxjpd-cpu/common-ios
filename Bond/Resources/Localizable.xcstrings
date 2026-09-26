@@ -13408,6 +13408,74 @@
         }
       }
     },
+    "username.chooseTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set your username"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kullanıcı adını belirle"
+          }
+        }
+      }
+    },
+    "username.chooseBody" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type the name you want to appear with @ on your profile. 3–20 characters: letters, numbers, dots and underscores. You can change it later in Edit profile."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profilinde @ ile görünecek adı yaz. 3–20 karakter: harf, rakam, nokta ve alt çizgi. Sonra profil düzenlemeden değiştirebilirsin."
+          }
+        }
+      }
+    },
+    "username.chooseSave" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue with this username"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu adla devam et"
+          }
+        }
+      }
+    },
+    "username.chosen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your username is saved"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kullanıcı adın kaydedildi"
+          }
+        }
+      }
+    },
     "username.title" : {
       "extractionState" : "manual",
       "localizations" : {
