@@ -119,4 +119,17 @@ struct PlanFeature: Identifiable, Sendable {
         PlanFeature(id: 8, label: L10n.Paywall.featureViewCounts) { $0.canSeeStoryViewCounts ? L10n.Paywall.yes : L10n.Paywall.no },
         PlanFeature(id: 9, label: L10n.Paywall.featureGhost) { $0.hasGhostMode ? L10n.Paywall.yes : L10n.Paywall.no }
     ]
+
+    /// Satırın simgesi; paywall tablosu ve satın alma sonrası ekran aynısını kullanıyor.
+    var symbol: String {
+        switch id {
+        case 2: "rectangle.stack"
+        case 3: "mappin.and.ellipse"
+        case 5: "eye"
+        case 7: "pencil"
+        case 8: "chart.bar"
+        case 9: "eye.slash"
+        default: "checkmark"
+        }
+    }
 }

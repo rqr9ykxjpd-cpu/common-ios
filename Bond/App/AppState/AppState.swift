@@ -385,6 +385,9 @@ final class AppState {
     var debugSlowStories = false
     /// `-plan pro`: paywall'da ön seçili paket (abonelik inceleme ekran görüntüsü için).
     var debugPaywallPlan: SubscriptionTier?
+    /// `-prowelcome plus|pro` (`-paywall` ile): paywall satın alma sonrası hoş
+    /// geldin ekranıyla açılır. Örnek modda gerçek satın alma yapılamıyor.
+    var debugPlanWelcome: SubscriptionTier?
     var opensProNote = false
     /// `-onboarding <adım>` ile açıldığında oturum geri yüklemesi rotayı ezmesin diye.
     /// Yalnızca geliştirme derlemesinde var.
@@ -509,6 +512,9 @@ final class AppState {
         if cihaz > sunucu {
             await subscriptions.refreshEntitlements(forceSync: true)
         }
+        // Abonelik bittiyse altın simge klasiğe döner. Yalnızca burada: sunucu
+        // yanıt verdi ve cihaz da hak görmüyor. Ağ hatasında dokunulmuyor.
+        await AppIconChoice.resetIfLapsed(tier: tier)
     }
 
     /// Profil/gönderi görseli. İmzalı URL GET başarısız olursa Storage indirmesi dener.

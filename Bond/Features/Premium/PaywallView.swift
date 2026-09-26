@@ -20,11 +20,34 @@ struct PaywallView: View {
     private var currentTier: SubscriptionTier { appState.tier }
     @State private var alertMessage: String?
     @State private var legalDocument: LegalDocumentRoute?
+    /// Satın alma bitince paywall kapanmıyor, hoş geldin ekranına dönüşüyor.
+    @State private var welcomed: SubscriptionTier?
+    @State private var welcomedFrom: SubscriptionTier = .free
 
     private var busy: Bool { store.purchasingTier != nil || store.isRestoring }
     private var tierColumnWidth: CGFloat { textSize.isAccessibilitySize ? 64 : 56 }
 
     var body: some View {
+        Group {
+            if let welcomed {
+                PlanWelcomeView(tier: welcomed, previous: welcomedFrom) { dismiss() }
+                    .transition(.opacity)
+            } else {
+                paywall
+            }
+        }
+        .animation(reduceMotion ? nil : .smooth(duration: 0.35), value: welcomed)
+#if DEBUG
+        .onAppear {
+            if let plan = appState.debugPlanWelcome {
+                welcomedFrom = .free
+                welcomed = plan
+            }
+        }
+#endif
+    }
+
+    private var paywall: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: BondTheme.Space.md) {
@@ -151,7 +174,7 @@ struct PaywallView: View {
                     .lineLimit(2)
                     .minimumScaleFactor(0.82)
             } icon: {
-                Image(systemName: featureSymbol(feature.id))
+                Image(systemName: feature.symbol)
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
@@ -331,18 +354,6 @@ struct PaywallView: View {
         return "\(feature.label.replacingOccurrences(of: "\n", with: " ")), \(values)"
     }
 
-    private func featureSymbol(_ id: Int) -> String {
-        switch id {
-        case 2: "rectangle.stack"
-        case 3: "mappin.and.ellipse"
-        case 5: "eye"
-        case 7: "pencil"
-        case 8: "chart.bar"
-        case 9: "eye.slash"
-        default: "checkmark"
-        }
-    }
-
     @ViewBuilder private var legalLinks: some View {
         Button(store.isRestoring ? L10n.Paywall.restoring : L10n.Paywall.restore) {
             Task { await restore() }
@@ -361,11 +372,18 @@ struct PaywallView: View {
     }
 
     private func purchase() async {
+        let onceki = currentTier
         switch await store.purchase(selectedTier) {
         case .success(let kademe):
             Haptics.success()
-            dismiss()
             Task { await appState.confirmPlanWithServer(expecting: kademe) }
+            // Hak henüz görünmediyse (RevenueCat gecikmesi) eskisi gibi kapanır.
+            if kademe > onceki {
+                welcomedFrom = onceki
+                welcomed = kademe
+            } else {
+                dismiss()
+            }
         case .cancelled:
             break
         case .pending:

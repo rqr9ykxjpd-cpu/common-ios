@@ -69,7 +69,7 @@ struct PlusGoldTile: View {
             .padding(BondTheme.Space.compact)
             .frame(maxWidth: .infinity, minHeight: minHeight, alignment: .leading)
             .background(PlusGold.gradient, in: shape)
-            .overlay { shine }
+            .overlay { GoldSheen(progress: sweep, shape: shape) }
             .overlay(alignment: .topTrailing) { sparkles }
             .contentShape(shape)
         }
@@ -79,23 +79,6 @@ struct PlusGoldTile: View {
 
     private var shape: RoundedRectangle {
         RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous)
-    }
-
-    /// Çapraz ışık bandı; kutunun dışına taşmaz.
-    private var shine: some View {
-        GeometryReader { geo in
-            LinearGradient(
-                colors: [.white.opacity(0), .white.opacity(0.7), .white.opacity(0)],
-                startPoint: .leading, endPoint: .trailing
-            )
-            .frame(width: geo.size.width * 0.4, height: geo.size.height * 2)
-            .rotationEffect(.degrees(20))
-            .offset(x: sweep * geo.size.width * 1.1 + geo.size.width * 0.3, y: -geo.size.height / 2)
-        }
-        .clipShape(shape)
-        .blendMode(.plusLighter)
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
     }
 
     /// Köşede iki küçük yıldız: ışıkla birlikte belirip söner.
@@ -138,6 +121,30 @@ struct PlusGoldTile: View {
             }
             try? await Task.sleep(for: .seconds(4.5))
         } while invites
+    }
+}
+
+/// Altın yüzeyin üstünden geçen çapraz ışık bandı; şeklin dışına taşmaz.
+/// `progress` -1'de bant solda ve görünmez, 1'de sağdan çıkmış. Profil
+/// kutucuğu ve satın alma sonrası üyelik kartı aynı ışığı kullanıyor.
+struct GoldSheen<S: Shape>: View {
+    let progress: CGFloat
+    let shape: S
+
+    var body: some View {
+        GeometryReader { geo in
+            LinearGradient(
+                colors: [.white.opacity(0), .white.opacity(0.7), .white.opacity(0)],
+                startPoint: .leading, endPoint: .trailing
+            )
+            .frame(width: geo.size.width * 0.4, height: geo.size.height * 2)
+            .rotationEffect(.degrees(20))
+            .offset(x: progress * geo.size.width * 1.1 + geo.size.width * 0.3, y: -geo.size.height / 2)
+        }
+        .clipShape(shape)
+        .blendMode(.plusLighter)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 
