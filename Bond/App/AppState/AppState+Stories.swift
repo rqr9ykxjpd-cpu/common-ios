@@ -17,7 +17,14 @@ extension AppState {
                 return story.replacingAuthor(story.author.withBadge(myBadge))
             }
         } catch {
-            showError(error, fallback: L10n.Story.loadFailed)
+            // Story şeridi akışla birlikte yükleniyor; bağlantı yoksa akışın kendi
+            // satır içi hatası zaten görünüyor. Burada ayrıca modal uyarı açmak
+            // kullanıcıya aynı sorunu ikinci kez söylüyordu. Eldeki story'ler
+            // kalır, bir sonraki yenilemede yeniden denenir.
+            guard !isCancellation(error) else { return }
+            #if DEBUG
+            print("Story'ler yüklenemedi: \(error)")
+            #endif
         }
     }
 

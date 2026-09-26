@@ -87,16 +87,8 @@ struct MessageRequestsView: View {
             VStack(spacing: 0) { ForEach(0..<3, id: \.self) { _ in SkeletonRow() } }
                 .padding(.horizontal, BondTheme.Space.lg)
         } else if let error = appState.messageRequestsError {
-            ContentUnavailableView {
-                Label(L10n.Errors.title, systemImage: "wifi.exclamationmark")
-            } description: {
-                Text(error)
-            } actions: {
-                Button(L10n.Common.retry) {
-                    Task { await appState.loadMessageRequests() }
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(BondTheme.acid)
+            ScreenFailureView(message: error) {
+                Task { await appState.loadMessageRequests() }
             }
         } else {
             bosDurum

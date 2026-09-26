@@ -166,22 +166,14 @@ struct NotificationsView: View {
             VStack(spacing: 0) { ForEach(0..<4, id: \.self) { _ in SkeletonRow() } }
                 .padding(.horizontal, BondTheme.Space.lg)
         } else if let error = appState.notificationsError {
-            ContentUnavailableView {
-                Label(L10n.Errors.title, systemImage: "wifi.exclamationmark")
-            } description: {
-                Text(error)
-            } actions: {
-                Button(L10n.Common.retry) {
-                    Task { await appState.loadNotifications() }
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(BondTheme.acid)
+            ScreenFailureView(message: error) {
+                Task { await appState.loadNotifications() }
             }
         } else {
-            ContentUnavailableView(
-                L10n.Notification.empty,
+            AppEmptyState(
                 systemImage: "bell",
-                description: Text(L10n.Notification.emptyBody)
+                title: L10n.Notification.empty,
+                message: L10n.Notification.emptyBody
             )
         }
     }

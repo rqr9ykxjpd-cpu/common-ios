@@ -15,10 +15,10 @@ struct BlockedProfilesView: View {
     var body: some View {
         List {
             if appState.blockedProfiles.isEmpty {
-                ContentUnavailableView(
-                    L10n.Profile.blockedEmpty,
+                AppEmptyState(
                     systemImage: "hand.raised",
-                    description: Text(L10n.Profile.blockedEmptyHint)
+                    title: L10n.Profile.blockedEmpty,
+                    message: L10n.Profile.blockedEmptyHint
                 )
                 .listRowBackground(Color.clear)
             } else {

@@ -123,6 +123,14 @@ extension AppState {
         let generation = feedLoadGeneration
         let userID = currentUserID
         isLoadingFeed = true
+#if DEBUG
+        // `-feedloading`: akış iskeletini örnek modda görmek için ilk yükleme 3 sn sürer.
+        if debugSlowFeed {
+            debugSlowFeed = false
+            posts = []
+            try? await Task.sleep(for: .seconds(3))
+        }
+#endif
         defer {
             if generation == feedLoadGeneration {
                 isLoadingFeed = false

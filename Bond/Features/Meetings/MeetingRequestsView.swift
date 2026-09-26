@@ -34,11 +34,16 @@ struct MeetingRequestsView: View {
                 .padding(.horizontal, BondTheme.Space.lg)
                 .padding(.vertical, BondTheme.Space.md)
 
-                if requests.isEmpty {
-                    ContentUnavailableView(
-                        selectedSegment == 0 ? L10n.Meetings.noIncoming : L10n.Meetings.noOutgoing,
+                if requests.isEmpty, let error = appState.meetingRequestsError {
+                    ScreenFailureView(message: error) {
+                        Task { await appState.loadMeetingRequests() }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if requests.isEmpty {
+                    AppEmptyState(
                         systemImage: "cup.and.saucer",
-                        description: Text(selectedSegment == 0 ? L10n.Meetings.noIncomingBody : L10n.Meetings.noOutgoingBody)
+                        title: selectedSegment == 0 ? L10n.Meetings.noIncoming : L10n.Meetings.noOutgoing,
+                        message: selectedSegment == 0 ? L10n.Meetings.noIncomingBody : L10n.Meetings.noOutgoingBody
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {

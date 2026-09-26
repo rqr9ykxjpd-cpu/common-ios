@@ -92,6 +92,8 @@ struct BondApp: App {
             if let i = arguments.firstIndex(of: "-prowelcome"), i + 1 < arguments.count {
                 state.debugPlanWelcome = ["plus": SubscriptionTier.plus, "pro": .pro][arguments[i + 1]]
             }
+            if arguments.contains("-feedloading") { state.debugSlowFeed = true }
+            if arguments.contains("-offline") { state.network.debugForceOffline = true }
             if arguments.contains("-pronote") { state.opensProNote = true }
             // `-badge founder`: kurucuya özel ekranları görmek için.
             if let i = arguments.firstIndex(of: "-badge"), i + 1 < arguments.count {

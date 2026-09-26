@@ -100,9 +100,9 @@ struct CampusClubsView: View {
                 Task { await appState.loadClubs() }
             }
         } else {
-            ContentUnavailableView(
-                L10n.CampusNavigation.emptyClubs,
-                systemImage: "person.3"
+            AppEmptyState(
+                systemImage: "person.3",
+                title: L10n.CampusNavigation.emptyClubs
             )
         }
     }

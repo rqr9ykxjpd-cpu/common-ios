@@ -13,8 +13,14 @@ extension AppState {
     func loadMeetingRequests(silently: Bool = false) async {
         do {
             meetingRequests = try await service.fetchMeetingRequests()
+            meetingRequestsError = nil
         } catch {
-            if !silently { showError(error, fallback: L10n.Meetings.loadFailed) }
+            guard !isCancellation(error) else { return }
+            // Modal uyarı yerine buluşma ekranında satır içinde; arka plandaki
+            // sessiz yenilemeler ekranda bir şey değiştirmez.
+            if !silently {
+                meetingRequestsError = UserFacingError.message(error, fallback: L10n.Meetings.loadFailed)
+            }
         }
     }
     func sendMeetingRequest(to profile: StudentProfile, at place: CampusPlace) {

@@ -151,8 +151,9 @@ struct SocialFeedView: View {
                             }
                             if visiblePosts.isEmpty, appState.isLoadingFeed || !appState.hasFinishedFeedLoad {
                                 // Yüklenirken "Akış henüz boş" yazıyordu; kullanıcı
-                                // gönderisinin silindiğini sanabiliyordu.
-                                AppLoadingView(message: L10n.Feed.loading)
+                                // gönderisinin silindiğini sanabiliyordu. İskelet,
+                                // kartların nerede belireceğini önceden gösteriyor.
+                                FeedSkeleton()
                             } else if visiblePosts.isEmpty && appState.feedError == nil {
                                 feedEmptyState
                             } else {
@@ -506,15 +507,7 @@ struct SocialFeedView: View {
                 // duruyordu. Yer tutucu daireler, gelmekte olduğunu gösteriyor.
                 if appState.stories.isEmpty, appState.isLoadingStories {
                     ForEach(0..<3, id: \.self) { _ in
-                        VStack(spacing: 6) {
-                            Circle()
-                                .fill(BondTheme.ink.opacity(0.07))
-                                .frame(width: 70, height: 70)
-                                .overlay { ProgressView().tint(BondTheme.muted).scaleEffect(0.7) }
-                            Capsule()
-                                .fill(BondTheme.ink.opacity(0.07))
-                                .frame(width: 40, height: 9)
-                        }
+                        StoryBubbleSkeleton(ring: storyRing, cell: storyCell)
                     }
                 }
                 ForEach(appState.stories.filter { !$0.isMine }) { story in

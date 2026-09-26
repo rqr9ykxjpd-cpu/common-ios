@@ -81,6 +81,15 @@ enum UserFacingError {
         return contentMessage(String(describing: error).lowercased())
     }
 
+    /// Hata cihazın bağlantısızlığından mı? Çevrimdışı şeridi görünürken bu
+    /// hatalar için ayrıca uyarı açılmıyor.
+    static func isConnectivity(_ error: Error) -> Bool {
+        let urlError = (error as? URLError)
+            ?? (error as NSError).underlyingErrors.compactMap { $0 as? URLError }.first
+        guard let code = urlError?.code else { return false }
+        return [.notConnectedToInternet, .networkConnectionLost, .dataNotAllowed, .timedOut].contains(code)
+    }
+
     /// Ağ katmanı. Bunlar en sık görülen hatalar ve çözümü kullanıcıda.
     private static func connectionMessage(_ error: Error) -> String? {
         let urlError: URLError?

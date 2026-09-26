@@ -144,22 +144,14 @@ struct PlacesWallView: View {
                 }
             }
         } else if let error = appState.placesError {
-            ContentUnavailableView {
-                Label(L10n.Places.loadFailedTitle, systemImage: "wifi.exclamationmark")
-            } description: {
-                Text(error)
-            } actions: {
-                Button(L10n.Common.retry) {
-                    Task { await appState.loadPlaces() }
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(BondTheme.acid)
+            ScreenFailureView(title: L10n.Places.loadFailedTitle, message: error) {
+                Task { await appState.loadPlaces() }
             }
         } else {
-            ContentUnavailableView(
-                L10n.Places.emptyTitle,
+            AppEmptyState(
                 systemImage: "mappin.slash",
-                description: Text(L10n.Places.emptyBody)
+                title: L10n.Places.emptyTitle,
+                message: L10n.Places.emptyBody
             )
         }
     }

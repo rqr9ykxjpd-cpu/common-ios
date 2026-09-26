@@ -90,6 +90,22 @@ struct RootView: View {
                 Text(error.text)
             }
         }
+        // Bağlantı yokken sebebi tek yerde, altta sekme çubuğunun hemen üstündeki
+        // ince bir şeritte söylüyoruz; üstte başlığın ve düğmelerin üstüne biniyordu.
+        .overlay(alignment: .bottom) {
+            if appState.network.isOffline {
+                OfflineBanner()
+                    .safeAreaPadding(.bottom)
+                    .padding(.bottom, 72)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: appState.network.isOffline)
+        // Bağlantı dönünce kaçanları bir kez getiriyoruz; kullanıcı elle yenilemesin.
+        .onChange(of: appState.network.isOffline) { oncesi, simdi in
+            guard oncesi, !simdi, case .app = appState.route else { return }
+            Task { await appState.refreshAfterForeground() }
+        }
         .overlay(alignment: .top) {
             if let toast = appState.toast, toast.kind == .info {
                 AppToast(message: toast)

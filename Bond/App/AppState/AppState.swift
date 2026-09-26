@@ -107,6 +107,8 @@ final class AppState {
     var conversationsError: String?
     var notificationsError: String?
     var messageRequestsError: String?
+    /// Buluşma istekleri yüklenemediyse ekranda satır içinde gösterilir.
+    var meetingRequestsError: String?
     var placesError: String?
     var conversations: [Conversation] = []
     /// Engellediğin kişiler; ayarlardaki liste için.
@@ -212,6 +214,9 @@ final class AppState {
     /// dinleyicisi açılışta başlayıp hiç kapanmamalı.
     let subscriptions = SubscriptionStore()
 
+    /// İnternet bağlantısı; üstteki çevrimdışı şeridi ve susturulan uyarılar için.
+    let network = NetworkMonitor()
+
     /// Hayalet mod (yalnızca Pro): açıkken profil ziyaretleri ve story
     /// izlemeleri kaydedilmiyor. İstemci göndermese de sunucu `ghost_mode`
     /// kolonuna bakıp isteği yutuyor — aksi halde uygulamayı kurcalayan
@@ -262,6 +267,9 @@ final class AppState {
     /// artık gereksiz.
     func showError(_ error: Error, fallback: String) {
         guard !isCancellation(error) else { return }
+        // Bağlantı yokken sebebi üstteki şerit söylüyor; her başarısız istek
+        // için ayrıca "Tamam"lı uyarı açmak kullanıcıyı boğuyordu.
+        if network.isOffline, UserFacingError.isConnectivity(error) { return }
         // Sunucu bir sınırı reddettiğinde ham hata göstermek yerine ne olduğunu
         // anlatan ekranı açıyoruz. Hata metnine değil koda bakıyoruz; metin
         // değişebilir, kod değişmez.
@@ -388,6 +396,8 @@ final class AppState {
     /// `-prowelcome plus|pro` (`-paywall` ile): paywall satın alma sonrası hoş
     /// geldin ekranıyla açılır. Örnek modda gerçek satın alma yapılamıyor.
     var debugPlanWelcome: SubscriptionTier?
+    /// `-feedloading`: ilk akış yüklemesi 3 sn sürer (iskelet kontrolü).
+    var debugSlowFeed = false
     var opensProNote = false
     /// `-onboarding <adım>` ile açıldığında oturum geri yüklemesi rotayı ezmesin diye.
     /// Yalnızca geliştirme derlemesinde var.

@@ -425,6 +425,8 @@ struct AppSurface<Content: View>: View {
     }
 }
 
+/// Uygulamanın tek boş ekran kalıbı. Sistemin `ContentUnavailableView`'u yerine
+/// bu kullanılıyor ki boş ekranlar her yerde aynı yazı ve simge ölçüsünde dursun.
 struct AppEmptyState: View {
     var systemImage: String
     var title: String
@@ -435,9 +437,9 @@ struct AppEmptyState: View {
     var body: some View {
         VStack(spacing: BondTheme.Space.md) {
             Image(systemName: systemImage)
-                .font(.system(size: 34, weight: .regular))
+                .font(.largeTitle.weight(.regular))
                 .foregroundStyle(BondTheme.icon)
-                .frame(width: 44, height: 44)
+                .frame(minWidth: 44, minHeight: 44)
             Text(title)
                 .font(BondTheme.Typography.title3)
                 .multilineTextAlignment(.center)
@@ -450,7 +452,7 @@ struct AppEmptyState: View {
             if let actionTitle, let action {
                 Button(actionTitle, action: action)
                     .font(BondTheme.Typography.body.weight(.medium))
-                    .foregroundStyle(BondTheme.violet)
+                    .foregroundStyle(BondTheme.ink)
                     .frame(minHeight: 44)
             }
         }
@@ -498,7 +500,9 @@ struct Skeleton: View {
 
     var body: some View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .fill(BondTheme.surface)
+            // `surface` beyaz zeminde neredeyse görünmüyordu; mürekkebin çok açığı
+            // iki modda da seçiliyor.
+            .fill(BondTheme.ink.opacity(0.07))
             .frame(height: height)
             .overlay {
                 GeometryReader { geo in

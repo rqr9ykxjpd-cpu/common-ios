@@ -13,19 +13,19 @@ struct PlacePeopleView: View {
         NavigationStack {
             List {
                 if isLoading {
-                    ProgressView()
-                        .frame(maxWidth: .infinity)
-                        .listRowSeparator(.hidden)
+                    ForEach(0..<4, id: \.self) { _ in
+                        SkeletonRow().listRowSeparator(.hidden)
+                    }
                 } else if let loadError {
                     ScreenFailureView(message: loadError) {
                         Task { await reload() }
                     }
                     .listRowSeparator(.hidden)
                 } else if people.isEmpty {
-                    ContentUnavailableView(
-                        L10n.Places.emptyHere,
+                    AppEmptyState(
                         systemImage: "person.2.slash",
-                        description: Text(L10n.Places.emptyHereHint)
+                        title: L10n.Places.emptyHere,
+                        message: L10n.Places.emptyHereHint
                     )
                     .listRowSeparator(.hidden)
                 } else {

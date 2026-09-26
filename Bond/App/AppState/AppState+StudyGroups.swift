@@ -89,8 +89,12 @@ extension AppState {
             // bekleyen "15 dk sonra başlıyor" bildirimi de düşsün.
             await pruneStudyGroupReminders(keeping: Set(katildiklarim.map(\.id)))
         } catch {
+            // Gruplar akışın bir bölümü; bağlantı sorununu akışın satır içi hatası
+            // gösteriyor. Modal uyarı yok; liste bir sonraki yenilemede tazelenir.
             guard !isCancellation(error) else { return }
-            if !silently { showError(error, fallback: L10n.StudyGroup.loadFailed) }
+            #if DEBUG
+            print("Çalışma grupları yüklenemedi (sessiz: \(silently)): \(error)")
+            #endif
         }
     }
 

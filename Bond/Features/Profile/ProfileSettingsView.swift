@@ -343,10 +343,10 @@ struct ProfileVisitorsView: View {
         NavigationStack {
             Group {
                 if appState.profileVisits.isEmpty {
-                    ContentUnavailableView(
-                        L10n.Profile.noVisitors,
+                    AppEmptyState(
                         systemImage: "eye",
-                        description: Text(L10n.Profile.noVisitorsBody)
+                        title: L10n.Profile.noVisitors,
+                        message: L10n.Profile.noVisitorsBody
                     )
                 } else {
                     List(appState.profileVisits) { visit in
@@ -406,10 +406,10 @@ struct ProfileSavedPostsView: View {
         NavigationStack {
             Group {
                 if appState.savedPosts.isEmpty {
-                    ContentUnavailableView(
-                        L10n.Profile.noSaved,
+                    AppEmptyState(
                         systemImage: "bookmark",
-                        description: Text(L10n.Profile.noSavedBody)
+                        title: L10n.Profile.noSaved,
+                        message: L10n.Profile.noSavedBody
                     )
                 } else {
                     List(appState.savedPosts) { post in

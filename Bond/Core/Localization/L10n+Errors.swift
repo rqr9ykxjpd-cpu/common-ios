@@ -6,6 +6,7 @@ extension L10n {
         static var configMissing: String { String(localized: "error.configMissing") }
         static var missingSession: String { String(localized: "error.missingSession") }
         static var offline: String { String(localized: "error.offline") }
+        static var offlineBanner: String { String(localized: "error.offlineBanner") }
         static var timedOut: String { String(localized: "error.timedOut") }
         static var connectionLost: String { String(localized: "error.connectionLost") }
         static var hostUnreachable: String { String(localized: "error.hostUnreachable") }

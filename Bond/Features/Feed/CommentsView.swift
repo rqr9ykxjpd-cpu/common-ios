@@ -31,12 +31,12 @@ struct CommentsView: View {
                             // bağlamsız kalmasın. Reddit'in post sayfası gibi.
                             postHeader(post)
                             if post.comments.isEmpty {
-                                ContentUnavailableView(
-                                    post.repliesAreAnswers ? L10n.Board.answersEmpty : L10n.Comments.empty,
+                                AppEmptyState(
                                     systemImage: "bubble.left.and.bubble.right",
-                                    description: Text(post.repliesAreAnswers ? L10n.Board.answersEmptyBody : L10n.Comments.emptyBody)
+                                    title: post.repliesAreAnswers ? L10n.Board.answersEmpty : L10n.Comments.empty,
+                                    message: post.repliesAreAnswers ? L10n.Board.answersEmptyBody : L10n.Comments.emptyBody
                                 )
-                                .padding(.top, 40)
+                                .padding(.top, BondTheme.Space.md)
                             } else {
                                 ForEach(post.rankedComments) { comment in
                                     commentRow(comment, post: post)
@@ -51,7 +51,7 @@ struct CommentsView: View {
                     .scrollDismissesKeyboard(.interactively)
                     .safeAreaInset(edge: .bottom, spacing: 0) { composer }
                 } else {
-                    ContentUnavailableView(L10n.Comments.missingPost, systemImage: "exclamationmark.bubble")
+                    AppEmptyState(systemImage: "exclamationmark.bubble", title: L10n.Comments.missingPost)
                 }
             }
             .background(BondTheme.paper.ignoresSafeArea())
