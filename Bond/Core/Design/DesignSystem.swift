@@ -243,14 +243,20 @@ struct Wordmark: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var compact = false
     var size: CGFloat? = nil
+    /// Her değiştiğinde harflerin içinden bir kez turuncu bir ışık geçer
+    /// (akış yenilendiğinde). Açılışta da harfler belirdikten sonra bir kez.
+    var shine = 0
 
     @State private var belirdi = false
+    /// 0: ışık solda, görünmez; 1: sağdan çıkmış.
+    @State private var isik: CGFloat = 0
+    @State private var isikGorunur = false
 
     private var harfler: [(index: Int, karakter: Character)] {
         Array(L10n.Brand.wordmark).enumerated().map { ($0.offset, $0.element) }
     }
 
-    var body: some View {
+    private var harfDizisi: some View {
         HStack(spacing: 0) {
             ForEach(harfler, id: \.index) { harf in
                 Text(String(harf.karakter))
@@ -263,13 +269,46 @@ struct Wordmark: View {
         }
         .font(.system(size: size ?? (compact ? 18 : 23), weight: .bold, design: .serif))
         .tracking(-0.6)
-        .foregroundStyle(BondTheme.ink)
-        .fixedSize()
-        // Harf harf bölündüğü için sesli okuyucu "c-o-m-m-o-n" demesin.
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(L10n.Brand.wordmark)
-        .accessibilityAddTraits(.isHeader)
-        .onAppear { belirdi = true }
+    }
+
+    var body: some View {
+        harfDizisi
+            .foregroundStyle(BondTheme.ink)
+            // Işık yalnızca harflerin içinde görünür; harf şeklinde maskeleniyor.
+            .overlay {
+                GeometryReader { geo in
+                    let bant = geo.size.width * 0.55
+                    LinearGradient(
+                        colors: [BondTheme.burntOrange.opacity(0), BondTheme.burntOrange, BondTheme.burntOrange.opacity(0)],
+                        startPoint: .leading, endPoint: .trailing
+                    )
+                    .frame(width: bant)
+                    .offset(x: -bant + isik * (geo.size.width + bant))
+                }
+                .mask(harfDizisi)
+                .opacity(isikGorunur ? 1 : 0)
+                .allowsHitTesting(false)
+            }
+            .fixedSize()
+            // Harf harf bölündüğü için sesli okuyucu "c-o-m-m-o-n" demesin.
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(L10n.Brand.wordmark)
+            .accessibilityAddTraits(.isHeader)
+            .onAppear { belirdi = true }
+            .task(id: shine) { await parla(ilk: shine == 0) }
+    }
+
+    private func parla(ilk: Bool) async {
+        guard IdleMotion.allowed(reduceMotion: reduceMotion) else { return }
+        // Açılışta harfler yerine otursun, sonra ışık geçsin.
+        try? await Task.sleep(for: .milliseconds(ilk ? 900 : 150))
+        guard !Task.isCancelled else { return }
+        var sifirla = Transaction()
+        sifirla.disablesAnimations = true
+        withTransaction(sifirla) { isik = 0; isikGorunur = true }
+        withAnimation(.easeInOut(duration: 0.9)) { isik = 1 }
+        try? await Task.sleep(for: .milliseconds(950))
+        withTransaction(sifirla) { isikGorunur = false }
     }
 }
 

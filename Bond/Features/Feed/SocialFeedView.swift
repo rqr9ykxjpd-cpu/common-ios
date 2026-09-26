@@ -3,6 +3,8 @@ import SwiftUI
 struct SocialFeedView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Akış yenilenince logonun parlaması için sayaç.
+    @State private var wordmarkShine = 0
     @State private var showStoryComposer = false
     @State private var showPostComposer = false
     /// Boş durumdan "ilk soruyu sen sor" ile açılınca composer o türle başlar.
@@ -193,6 +195,8 @@ struct SocialFeedView: View {
                         await appState.loadFeed()
                         await appState.loadStories()
                         await appState.loadStudyGroups(silently: true)
+                        // Yenilenince logonun içinden bir kez ışık geçer: "tazelendi".
+                        wordmarkShine += 1
                     }
                     .onAppear {
                         proxy.scrollTo("feed-top", anchor: .top)
@@ -579,7 +583,7 @@ struct SocialFeedView: View {
         // metnine yazı tipi verilemediği için logo değil etiket gibi duruyordu.
         // `.principal` öğesi olarak kendi görünümünü taşıyabiliyor.
         ToolbarItem(placement: .principal) {
-            Wordmark()
+            Wordmark(shine: wordmarkShine)
         }
         ToolbarItem(placement: .topBarTrailing) {
             Button { showNotifications = true } label: {
