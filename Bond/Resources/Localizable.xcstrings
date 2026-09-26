@@ -7674,23 +7674,6 @@
         }
       }
     },
-    "onboarding.defaultDisplayName" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Common student"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Common öğrencisi"
-          }
-        }
-      }
-    },
     "onboarding.department" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7765,13 +7748,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "If Apple or Google shared your name, it is already filled in. The display name is optional; add your department and date of birth to continue."
+            "value" : "Pick the username shown on your profile, then add your department and date of birth."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Apple ya da Google adını paylaştıysa alan zaten dolu gelir. Görünen ad isteğe bağlı; bölümünü ve doğum tarihini ekleyerek devam et."
+            "value" : "Profilinde görünecek kullanıcı adını seç, bölümünü ve doğum tarihini ekle."
           }
         }
       }
@@ -7874,23 +7857,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Görünen ad (isteğe bağlı)"
-          }
-        }
-      }
-    },
-    "onboarding.namePlaceholder" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your name or a nickname"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adın ya da bir rumuz"
           }
         }
       }
@@ -13285,6 +13251,125 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pro"
+          }
+        }
+      }
+    },
+    "username.available" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Available"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uygun"
+          }
+        }
+      }
+    },
+    "username.checkFailed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't check right now; it will be checked again when you save."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şu an kontrol edilemedi; kaydederken tekrar denenecek."
+          }
+        }
+      }
+    },
+    "username.checking" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checking…"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kontrol ediliyor…"
+          }
+        }
+      }
+    },
+    "username.hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shown on your profile with @. 3–20 characters: letters, numbers, dots and underscores."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profilinde @ ile görünür. 3–20 karakter: harf, rakam, nokta ve alt çizgi."
+          }
+        }
+      }
+    },
+    "username.invalid" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3–20 characters: letters, numbers, dots and underscores. It can't start or end with a dot."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3–20 karakter; harf, rakam, nokta ve alt çizgi. Nokta ile başlayıp bitemez."
+          }
+        }
+      }
+    },
+    "username.taken" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This username is taken"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu kullanıcı adı alınmış"
+          }
+        }
+      }
+    },
+    "username.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Username"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kullanıcı adı"
           }
         }
       }

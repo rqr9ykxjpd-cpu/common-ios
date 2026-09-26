@@ -101,6 +101,10 @@ protocol ProductService: Sendable {
     /// Sunucudaki profil. Kullanıcının profili henüz yoksa `nil` döner — giriş akışı
     /// bu ayrımı kullanıp kullanıcıyı boş uygulamaya değil onboarding'e yönlendirir.
     func fetchMyProfile() async throws -> ProfileDraft?
+    /// Kullanıcı adı başkasında değilse ve kurala uyuyorsa `true` (kendi mevcut adın da uygun).
+    func isUsernameAvailable(_ candidate: String) async throws -> Bool
+    /// Kullanıcı adını alır; alınmışsa `UsernameError.taken`. Profil önceden kaydedilmiş olmalı.
+    func claimUsername(_ candidate: String) async throws
     /// Apple'ın imzaladığı satın alma belgesini sunucuya iletir. Sunucu belgeyi
     /// Apple'a doğrulatıp kademeyi kendisi yazıyor; istemcinin "ben Pro oldum"
     /// demesi tek başına hiçbir şey değiştirmiyor.
@@ -283,6 +287,8 @@ struct UnconfiguredProductService: ProductService {
     func deletePost(_ postID: UUID) async throws { try fail() }
     func deleteComment(_ commentID: UUID) async throws { try fail() }
     func fetchMyProfile() async throws -> ProfileDraft? { try fail() }
+    func isUsernameAvailable(_ candidate: String) async throws -> Bool { try fail() }
+    func claimUsername(_ candidate: String) async throws { try fail() }
     func fetchEduStatus() async throws -> EduVerificationStatus { try fail() }
     func fetchEduDomains() async throws -> [String] { try fail() }
     func requestEduVerification(email: String) async throws { try fail() }
@@ -391,4 +397,6 @@ struct PersonDetails: Sendable {
     /// eziyordu — bir ağ hıçkırığı kurucu rozetini sessizce siliyordu.
     var badge: ProfileBadge?
     var posts: [BackendPost]
+    /// @ olmadan. Eski hesaplarda ya da okunamazsa `nil`.
+    var username: String? = nil
 }

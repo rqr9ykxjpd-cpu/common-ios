@@ -554,6 +554,13 @@ struct SocialPersonDetailView: View {
                 .editorialTitle(36)
                 .fixedSize(horizontal: false, vertical: true)
 
+            if let username = details?.username, !username.isEmpty {
+                Text("@" + username)
+                    .font(BondTheme.Typography.footnote.weight(.medium))
+                    .foregroundStyle(BondTheme.muted)
+                    .lineLimit(1)
+            }
+
             ProfileEducationLine(
                 department: profile.department,
                 university: profile.university,
@@ -693,7 +700,8 @@ struct SocialPersonDetailView: View {
             guard !Task.isCancelled else { return }
             details = PersonProfileData(interests: fetched.interests, galleryURLs: fetched.galleryURLs,
                                         avatarURL: fetched.avatarURL, badge: fetched.badge,
-                                        posts: appState.posts.filter { $0.author.id == profile.id })
+                                        posts: appState.posts.filter { $0.author.id == profile.id },
+                                        username: fetched.username)
             detailsError = nil
         } catch {
             guard !appState.isCancellation(error) else { return }

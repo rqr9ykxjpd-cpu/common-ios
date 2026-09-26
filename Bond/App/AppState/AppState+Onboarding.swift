@@ -19,16 +19,15 @@ extension AppState {
         defer { isFinishingOnboarding = false }
         onboardingFailure = nil
 
-        // Sign in with Apple adı yalnızca ilk yetkilendirmede döndürür. Kullanıcıdan
-        // Apple'ın zaten sağladığı bilgiyi yeniden istememek için görünen ad isteğe
-        // bağlıdır; veritabanındaki zorunlu alanı kişisel olmayan bir varsayılanla
-        // doldururuz. Kullanıcı bunu profilinden dilediği zaman değiştirebilir.
+        // Gerçek ad kayıtta sorulmuyor (Guideline 4: Apple ile girişten sonra adı
+        // tekrar isteme). Sağlayıcı ad verdiyse o görünür; vermediyse görünen ad
+        // olarak kullanıcı adı. Kullanıcı ikisini de profilinden değiştirebilir.
         let chosenName = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        // Varsayılan ad yalnızca kaydedilen kopyaya yazılıyor. Taslağa yazınca kayıt
-        // başarısız olup kullanıcı geri döndüğünde alanda "Common öğrencisi" kalıyordu.
+        // Yalnızca kaydedilen kopyaya yazılıyor; kayıt başarısız olursa taslak
+        // değişmemiş kalıyor.
         var kaydedilecek = draft
         if chosenName.isEmpty {
-            kaydedilecek.name = L10n.Onboarding.defaultDisplayName
+            kaydedilecek.name = draft.username
         }
         do {
             try await service.saveProfile(kaydedilecek)
@@ -39,6 +38,21 @@ extension AppState {
             return
         }
         draft.name = kaydedilecek.name
+
+        // Kullanıcı adı profil satırı açıldıktan sonra alınabiliyor. Kayıt ekranında
+        // "uygun" görünse de arada başkası almış olabilir; o zaman o ekrana dönülür.
+        do {
+            try await service.claimUsername(draft.username)
+        } catch {
+            let message = (error as? UsernameError)?.errorDescription
+                ?? UserFacingError.message(error, fallback: L10n.Onboarding.saveFailed)
+            onboardingFailure = message
+            showError(message)
+            if error is UsernameError {
+                withAnimation(BondTheme.Motion.easing) { route = .onboarding(.identity) }
+            }
+            return
+        }
 
         // Profil fotoğrafı isteğe bağlıdır. Kullanıcı bir fotoğraf seçtiyse yüklemeyi
         // deneriz; yükleme başarısız olduğunda kayıt akışını kilitlemeyiz. Yerel veriyi

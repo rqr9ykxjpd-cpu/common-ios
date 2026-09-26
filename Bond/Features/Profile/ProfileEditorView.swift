@@ -17,9 +17,16 @@ struct ProfileEditorView: View {
     @State private var loaded = false
     @State private var showDiscardAlert = false
     @State private var myPostCount = 0
+    @State private var usernameStatus: UsernameStatus = .idle
 
+    /// Kullanıcı adı değişmediyse kontrol beklenmez.
+    private var usernameOK: Bool {
+        draft.username == appState.draft.username || usernameStatus.allowsSave
+    }
+
+    /// Görünen ad isteğe bağlı: boşsa kullanıcı adı görünür (AppState.saveProfile).
     private var valid: Bool {
-        !draft.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        usernameOK &&
         !draft.department.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         draft.bio.count <= 220 &&
         draft.interests.count >= 3
@@ -190,7 +197,7 @@ struct ProfileEditorView: View {
     /// kullanıcıya aratıyordu.
     private var missingFields: [String] {
         var missing: [String] = []
-        if draft.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { missing.append(L10n.Profile.needName) }
+        if !usernameOK { missing.append(L10n.Username.title) }
         if draft.department.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { missing.append(L10n.Profile.needDepartment) }
         if draft.interests.count < InterestCatalog.minimumSelection {
             missing.append(L10n.Profile.needMoreInterests(InterestCatalog.minimumSelection - draft.interests.count))
@@ -296,7 +303,20 @@ struct ProfileEditorView: View {
         AppSurface {
             VStack(alignment: .leading, spacing: 18) {
                 AppSectionHeader(title: L10n.Profile.basics)
-                ProfileTextField(title: L10n.Profile.needName, text: $draft.name)
+                VStack(alignment: .leading, spacing: 7) {
+                    Text(L10n.Username.title)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(BondTheme.muted)
+                    UsernameField(
+                        text: $draft.username,
+                        status: $usernameStatus,
+                        check: { aday in try await appState.isUsernameAvailable(aday) },
+                        font: .system(size: 16, weight: .medium)
+                    )
+                    .padding(.horizontal, 12).padding(.vertical, 8)
+                    .background(BondTheme.ink.opacity(0.045), in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface))
+                }
+                ProfileTextField(title: L10n.Onboarding.name, text: $draft.name)
                 ProfileTextField(title: L10n.Profile.needDepartment, text: $draft.department)
                 DatePicker(L10n.Profile.birthDate, selection: $draft.birthDate, in: ...AgeLimit.latestBirthDate, displayedComponents: .date)
                     .font(.system(size: 14, weight: .medium))

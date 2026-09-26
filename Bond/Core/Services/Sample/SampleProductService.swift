@@ -41,6 +41,8 @@ struct SampleProductService: ProductService {
     func fetchMyPlan() async throws -> SubscriptionTier { .free }
 
     func fetchMyProfile() async throws -> ProfileDraft? { hasProfile ? await store.myDraft() : nil }
+    func isUsernameAvailable(_ candidate: String) async throws -> Bool { await store.isUsernameAvailable(candidate) }
+    func claimUsername(_ candidate: String) async throws { try await store.claimUsername(candidate) }
 
     // Öğrenci e-postası: `-edu none|pending|verified` ile başlangıç durumu seçilir
     // (bkz. BondApp); bağlantı isteği durumu "bekliyor"a çevirir, eşitleme doğrular.
@@ -144,7 +146,8 @@ struct SampleProductService: ProductService {
             galleryURLs: kisi?.galleryImageURLs ?? [],
             avatarURL: kisi?.imageURL,
             badge: kisi?.badge,
-            posts: []
+            posts: [],
+            username: kisi.map { Username.normalize($0.name) }
         )
     }
 

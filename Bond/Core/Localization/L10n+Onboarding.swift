@@ -6,8 +6,6 @@ extension L10n {
         static var identityTitle: String { String(localized: "onboarding.identityTitle") }
         static var identitySubtitle: String { String(localized: "onboarding.identitySubtitle") }
         static var name: String { String(localized: "onboarding.name") }
-        static var namePlaceholder: String { String(localized: "onboarding.namePlaceholder") }
-        static var defaultDisplayName: String { String(localized: "onboarding.defaultDisplayName") }
         static var department: String { String(localized: "onboarding.department") }
         static var departmentPlaceholder: String { String(localized: "onboarding.departmentPlaceholder") }
         static var birthDate: String { String(localized: "onboarding.birthDate") }

@@ -212,6 +212,12 @@ struct SocialProfileView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(displayName).font(.title2.bold())
                 .fixedSize(horizontal: false, vertical: true)
+            if !appState.draft.username.isEmpty {
+                Text("@" + appState.draft.username)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(BondTheme.muted)
+                    .lineLimit(1)
+            }
             Text([appState.draft.department, AcademicYear.display(appState.draft.year)]
                 .filter { !$0.isEmpty }.joined(separator: " · "))
                 .font(.subheadline).foregroundStyle(.secondary)

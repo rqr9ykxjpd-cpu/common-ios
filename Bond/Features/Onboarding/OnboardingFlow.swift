@@ -119,12 +119,19 @@ private struct StepScaffold<Content: View, Footer: View>: View {
 }
 
 private struct IdentityStep: View {
+    @Environment(AppState.self) private var appState
     @Binding var draft: ProfileDraft
     let submit: () -> Void
+    @State private var usernameStatus: UsernameStatus = .idle
 
-    /// Apple/Google'ın verdiği adı tekrar yazmak zorunlu değil. Kullanıcı isterse
-    /// görünen adını değiştirebilir; ilerlemek için yalnızca kampüs bilgisi gerekir.
-    var valid: Bool { !draft.department.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    /// Gerçek ad hiç sorulmuyor: Apple ile girişten sonra adı tekrar istemek
+    /// App Review Guideline 4'e takılıyordu (Apple adı yalnızca ilk girişte
+    /// veriyor). Sağlayıcı ad verdiyse sessizce kaydediliyor; burada yalnızca
+    /// uygulamaya özel kullanıcı adı var ve öneriyle dolu geliyor.
+    var valid: Bool {
+        usernameStatus.allowsSave
+            && !draft.department.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
 
     var body: some View {
         StepScaffold(
@@ -132,7 +139,7 @@ private struct IdentityStep: View {
             title: L10n.Onboarding.identityTitle,
             subtitle: L10n.Onboarding.identitySubtitle,
             content: VStack(spacing: 0) {
-                OnboardingField(label: L10n.Onboarding.name, placeholder: L10n.Onboarding.namePlaceholder, text: $draft.name)
+                usernameSection
                 OnboardingField(label: L10n.Onboarding.department, placeholder: L10n.Onboarding.departmentPlaceholder, text: $draft.department)
                 VStack(alignment: .leading, spacing: 12) {
                     Text(L10n.Onboarding.birthDate)
@@ -158,6 +165,30 @@ private struct IdentityStep: View {
             },
             footer: PrimaryEditorialButton(title: L10n.Common.continue_, enabled: valid, action: submit)
         )
+        .onAppear {
+            if draft.username.isEmpty {
+                draft.username = Username.suggestion(from: draft.name)
+            }
+        }
+    }
+
+    private var usernameSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(L10n.Username.title)
+                .font(BondTheme.Typography.footnote.weight(.semibold))
+                .textCase(.uppercase)
+                .tracking(0.7)
+                .foregroundStyle(BondTheme.ink)
+            UsernameField(text: $draft.username, status: $usernameStatus) { aday in
+                try await appState.isUsernameAvailable(aday)
+            }
+        }
+        .padding(.vertical, 16)
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(BondTheme.hairline.opacity(0.8))
+                .frame(height: 0.5)
+        }
     }
 }
 

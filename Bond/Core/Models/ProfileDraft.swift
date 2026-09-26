@@ -2,6 +2,9 @@ import Foundation
 
 struct ProfileDraft: Equatable, Codable {
     var name = ""
+    /// Uygulamaya özel kullanıcı adı (@ olmadan). Kayıtta gerçek ad yerine bu
+    /// isteniyor; bkz. `Username`. Sunucudaki `profiles.username`.
+    var username = ""
     var birthDate = Calendar.current.date(byAdding: .year, value: -21, to: .now) ?? .now
     var university = "YÜ"
     var department = ""
@@ -16,7 +19,7 @@ struct ProfileDraft: Equatable, Codable {
     var ghostMode: Bool? = nil
 
     private enum CodingKeys: String, CodingKey {
-        case name, birthDate, university, department, year, bio, interests, badge
+        case name, username, birthDate, university, department, year, bio, interests, badge
     }
 
     init() {}
@@ -24,6 +27,7 @@ struct ProfileDraft: Equatable, Codable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         name = try container.decodeIfPresent(String.self, forKey: .name) ?? ""
+        username = try container.decodeIfPresent(String.self, forKey: .username) ?? ""
         birthDate = try container.decodeIfPresent(Date.self, forKey: .birthDate) ?? (Calendar.current.date(byAdding: .year, value: -21, to: .now) ?? .now)
         university = try container.decodeIfPresent(String.self, forKey: .university) ?? "YÜ"
         department = try container.decodeIfPresent(String.self, forKey: .department) ?? ""
@@ -60,6 +64,8 @@ struct PersonProfileData {
     /// bkz. `PersonDetails.badge`.
     var badge: ProfileBadge?
     var posts: [SocialPost]
+    /// @ olmadan; bkz. `PersonDetails.username`.
+    var username: String? = nil
 }
 
 /// Hangi sınıra takılındı. Paywall'daki başlık buna göre değişiyor:

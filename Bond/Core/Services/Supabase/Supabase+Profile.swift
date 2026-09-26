@@ -48,7 +48,34 @@ extension SupabaseProductService {
         draft.badge = await myBadge()
         draft.interests = Set(row.interests)
         draft.ghostMode = row.ghostMode
+        // Kullanıcı adı `get_my_profile`'da yok (eski sürümler o fonksiyonu
+        // kullanıyor, dönüşünü değiştirmiyoruz); kendi satırından ayrıca okunuyor.
+        draft.username = (try? await myUsername()) ?? ""
         return draft
+    }
+
+    private func myUsername() async throws -> String {
+        guard let userID = currentUserID else { throw BackendServiceError.missingSession }
+        let rows: [UsernameRow] = try await client
+            .from("profiles")
+            .select("username")
+            .eq("id", value: userID)
+            .limit(1)
+            .execute()
+            .value
+        return rows.first?.username ?? ""
+    }
+
+    func isUsernameAvailable(_ candidate: String) async throws -> Bool {
+        try await client.rpc("username_available", params: UsernameParams(candidate: candidate)).execute().value
+    }
+
+    func claimUsername(_ candidate: String) async throws {
+        do {
+            try await client.rpc("claim_my_username", params: UsernameParams(candidate: candidate)).execute()
+        } catch {
+            throw UsernameError.from(error) ?? error
+        }
     }
 
     func fetchMyProfilePhotos() async throws -> ProfilePhotosResult {
@@ -295,6 +322,15 @@ extension SupabaseProductService {
             .execute()
             .value
         async let badgeTask = badges(for: [profileID])[profileID]
+        // Ayrı sorgu: avatar sorgusuna eklenseydi, sütunu henüz olmayan bir
+        // sunucuda avatar da gelmezdi.
+        async let usernameTask: [UsernameRow] = (try? await client
+            .from("profiles")
+            .select("username")
+            .eq("id", value: profileID)
+            .limit(1)
+            .execute()
+            .value) ?? []
 
         let interestRows = await interestRowsTask
         let photoRows = await photoRowsTask
@@ -306,7 +342,8 @@ extension SupabaseProductService {
             galleryURLs: photoRows.compactMap { urls[$0.storagePath] },
             avatarURL: media?.avatarPath.flatMap { urls[$0] },
             badge: await badgeTask,
-            posts: []
+            posts: [],
+            username: await usernameTask.first?.username
         )
     }
 

@@ -1114,3 +1114,11 @@ struct ExpiredStoryRow: Decodable {
     }
 }
 
+
+struct UsernameParams: Encodable {
+    let candidate: String
+}
+
+struct UsernameRow: Decodable {
+    let username: String?
+}

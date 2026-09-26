@@ -52,6 +52,7 @@ enum SampleData {
     static var myDraft: ProfileDraft {
         var draft = ProfileDraft()
         draft.name = me.name
+        draft.username = "cem"
         draft.birthDate = Calendar.current.date(byAdding: .year, value: -me.age, to: .now) ?? .now
         draft.university = me.university
         draft.department = me.department

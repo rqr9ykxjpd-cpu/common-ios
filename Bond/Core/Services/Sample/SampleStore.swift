@@ -537,6 +537,21 @@ actor SampleStore {
 
     func save(_ newDraft: ProfileDraft) { draft = newDraft }
 
+    /// Örnek veride başkalarının kullanıcı adları; "alınmış" uyarısını denemek için.
+    private var takenUsernames: Set<String> { ["ece", "mina", "defne", "duru", "arda"] }
+
+    func isUsernameAvailable(_ candidate: String) -> Bool {
+        let aday = candidate.lowercased()
+        return Username.isValid(aday) && !takenUsernames.contains(aday)
+    }
+
+    func claimUsername(_ candidate: String) throws {
+        let aday = candidate.lowercased()
+        guard Username.isValid(aday) else { throw UsernameError.invalid }
+        guard !takenUsernames.contains(aday) else { throw UsernameError.taken }
+        draft.username = aday
+    }
+
     func replaceGalleryCount(_ count: Int) {
         galleryPhotoCount = min(count, CampusLimits.maxGalleryPhotos)
     }

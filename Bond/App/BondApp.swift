@@ -80,6 +80,11 @@ struct BondApp: App {
                 state.opensProfileOf = .some(ad)
             }
             if arguments.contains("-paywall") { state.opensPaywall = true }
+            // `-username ece`: kayıt ekranındaki kullanıcı adı alanını bu değerle
+            // açar ("alınmış" uyarısını denemek için; örnek veride ece alınmış).
+            if let i = arguments.firstIndex(of: "-username"), i + 1 < arguments.count {
+                state.draft.username = arguments[i + 1]
+            }
             if arguments.contains("-storyslow") { state.debugSlowStories = true }
             if let i = arguments.firstIndex(of: "-plan"), i + 1 < arguments.count {
                 state.debugPaywallPlan = ["plus": SubscriptionTier.plus, "pro": .pro][arguments[i + 1]]

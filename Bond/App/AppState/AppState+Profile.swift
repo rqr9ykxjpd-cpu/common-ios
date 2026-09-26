@@ -12,7 +12,8 @@ extension AppState {
             galleryURLs: uzak.galleryURLs,
             avatarURL: uzak.avatarURL,
             badge: uzak.badge,
-            posts: []
+            posts: [],
+            username: uzak.username
         )
     }
 
@@ -51,8 +52,21 @@ extension AppState {
     }
 
     func saveProfile(_ updatedDraft: ProfileDraft, avatar: Data?, gallery: [Data]) async -> Bool {
+        var updatedDraft = updatedDraft
+        // Görünen ad boş bırakıldıysa kullanıcı adı görünür; sunucuda ad zorunlu.
+        if updatedDraft.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            updatedDraft.name = updatedDraft.username
+        }
         do {
+            // Önce kullanıcı adı: alınmışsa hiçbir şey yarım kaydedilmesin.
+            // Düzenleme ekranında profil satırı zaten var.
+            if updatedDraft.username != draft.username {
+                try await service.claimUsername(updatedDraft.username)
+            }
             try await service.saveProfile(updatedDraft)
+        } catch let error as UsernameError {
+            showError(error.errorDescription ?? L10n.Profile.saveFailed)
+            return false
         } catch {
             showError(error, fallback: L10n.Profile.saveFailed)
             return false
@@ -147,5 +161,10 @@ extension AppState {
         guard !(ghostMode && tier.hasGhostMode) else { return }
         guard profile.id != currentUserID else { return }
         Task { try? await service.recordProfileVisit(profile.id) }
+    }
+
+    /// Kayıt ve profil düzenleme ekranındaki anlık kontrol.
+    func isUsernameAvailable(_ candidate: String) async throws -> Bool {
+        try await service.isUsernameAvailable(candidate)
     }
 }
