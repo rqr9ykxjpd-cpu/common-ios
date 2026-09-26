@@ -105,6 +105,8 @@ protocol ProductService: Sendable {
     func isUsernameAvailable(_ candidate: String) async throws -> Bool
     /// Kullanıcı adını alır; alınmışsa `UsernameError.taken`. Profil önceden kaydedilmiş olmalı.
     func claimUsername(_ candidate: String) async throws
+    /// Profil kartının rengini kaydeder; klasik sunucuda `nil` olarak saklanır.
+    func setCardTheme(_ theme: CardTheme) async throws
     /// Apple'ın imzaladığı satın alma belgesini sunucuya iletir. Sunucu belgeyi
     /// Apple'a doğrulatıp kademeyi kendisi yazıyor; istemcinin "ben Pro oldum"
     /// demesi tek başına hiçbir şey değiştirmiyor.
@@ -289,6 +291,7 @@ struct UnconfiguredProductService: ProductService {
     func fetchMyProfile() async throws -> ProfileDraft? { try fail() }
     func isUsernameAvailable(_ candidate: String) async throws -> Bool { try fail() }
     func claimUsername(_ candidate: String) async throws { try fail() }
+    func setCardTheme(_ theme: CardTheme) async throws { try fail() }
     func fetchEduStatus() async throws -> EduVerificationStatus { try fail() }
     func fetchEduDomains() async throws -> [String] { try fail() }
     func requestEduVerification(email: String) async throws { try fail() }
@@ -399,4 +402,6 @@ struct PersonDetails: Sendable {
     var posts: [BackendPost]
     /// @ olmadan. Eski hesaplarda ya da okunamazsa `nil`.
     var username: String? = nil
+    /// Kartın rengi. Okunamazsa `nil`; kart klasik görünür.
+    var cardTheme: CardTheme? = nil
 }

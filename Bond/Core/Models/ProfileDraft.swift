@@ -17,9 +17,11 @@ struct ProfileDraft: Equatable, Codable {
     /// Sunucudaki `profiles.ghost_mode`. UserDefaults'a yazılmaz; hayalet
     /// tercihi `AppState.ghostMode` üzerinden gider.
     var ghostMode: Bool? = nil
+    /// Profil kartının rengi; sunucudaki `profiles.card_theme`. Bkz. `CardTheme`.
+    var cardTheme: CardTheme = .classic
 
     private enum CodingKeys: String, CodingKey {
-        case name, username, birthDate, university, department, year, bio, interests, badge
+        case name, username, birthDate, university, department, year, bio, interests, badge, cardTheme
     }
 
     init() {}
@@ -35,6 +37,8 @@ struct ProfileDraft: Equatable, Codable {
         bio = try container.decodeIfPresent(String.self, forKey: .bio) ?? ""
         interests = try container.decodeIfPresent(Set<String>.self, forKey: .interests) ?? []
         badge = try container.decodeIfPresent(ProfileBadge.self, forKey: .badge) ?? .none
+        // Tanınmayan bir değer bütün taslağı bozmasın diye metin olarak okunuyor.
+        cardTheme = CardTheme(server: try container.decodeIfPresent(String.self, forKey: .cardTheme))
     }
 
     var age: Int {
@@ -66,6 +70,8 @@ struct PersonProfileData {
     var posts: [SocialPost]
     /// @ olmadan; bkz. `PersonDetails.username`.
     var username: String? = nil
+    /// bkz. `PersonDetails.cardTheme`.
+    var cardTheme: CardTheme? = nil
 }
 
 /// Hangi sınıra takılındı. Paywall'daki başlık buna göre değişiyor:

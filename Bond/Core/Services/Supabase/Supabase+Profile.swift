@@ -51,7 +51,27 @@ extension SupabaseProductService {
         // Kullanıcı adı `get_my_profile`'da yok (eski sürümler o fonksiyonu
         // kullanıyor, dönüşünü değiştirmiyoruz); kendi satırından ayrıca okunuyor.
         draft.username = (try? await myUsername()) ?? ""
+        // Kart rengi de ayrı okunuyor: sütun henüz olmayan bir sunucuda
+        // kullanıcı adı okumasını bozmasın.
+        draft.cardTheme = (try? await cardTheme(of: currentUserID)) ?? .classic
         return draft
+    }
+
+    private func cardTheme(of profileID: UUID?) async throws -> CardTheme {
+        guard let profileID else { throw BackendServiceError.missingSession }
+        let rows: [CardThemeRow] = try await client
+            .from("profiles")
+            .select("card_theme")
+            .eq("id", value: profileID)
+            .limit(1)
+            .execute()
+            .value
+        return CardTheme(server: rows.first?.cardTheme)
+    }
+
+    func setCardTheme(_ theme: CardTheme) async throws {
+        guard currentUserID != nil else { throw BackendServiceError.missingSession }
+        try await client.rpc("set_my_card_theme", params: CardThemeParams(theme: theme.serverValue)).execute()
     }
 
     private func myUsername() async throws -> String {
@@ -331,6 +351,7 @@ extension SupabaseProductService {
             .limit(1)
             .execute()
             .value) ?? []
+        async let themeTask = try? cardTheme(of: profileID)
 
         let interestRows = await interestRowsTask
         let photoRows = await photoRowsTask
@@ -343,7 +364,8 @@ extension SupabaseProductService {
             avatarURL: media?.avatarPath.flatMap { urls[$0] },
             badge: await badgeTask,
             posts: [],
-            username: await usernameTask.first?.username
+            username: await usernameTask.first?.username,
+            cardTheme: await themeTask
         )
     }
 

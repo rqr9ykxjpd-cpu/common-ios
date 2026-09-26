@@ -11,7 +11,7 @@ struct SocialProfileView: View {
     @State private var pull = PullAmount()
     @State private var showComposer = false
     @State private var showEditor = false
-    @State private var showMyCard = false
+    @State private var showCardStudio = false
     @State private var showSettings = false
     @State private var showSaved = false
     @State private var showVisits = false
@@ -78,10 +78,8 @@ struct SocialProfileView: View {
             .fullScreenCover(isPresented: $showEditor) {
                 NavigationStack { ProfileEditorView() }
             }
-            .fullScreenCover(isPresented: $showMyCard) {
-                NavigationStack {
-                    ProfilePhotoStackView(profile: appState.currentUserProfile, showsClose: true)
-                }
+            .fullScreenCover(isPresented: $showCardStudio) {
+                CardStudioView()
             }
             .sheet(isPresented: $showSettings) { ProfileSettingsView() }
             .sheet(isPresented: $showSaved) { ProfileSavedPostsView() }
@@ -249,8 +247,10 @@ struct SocialProfileView: View {
     }
 
     private var previewButton: some View {
-        compactAction(title: L10n.ProfileHome.publicPreview, icon: "eye", primary: false) { showMyCard = true }
-            .accessibilityIdentifier("profile.viewCard")
+        // Eskiden yalnızca önizleme açıyordu ("Dışarıdan gör"); önizleme artık
+        // düzenleyicinin içinde, kartın rengi de oradan seçiliyor.
+        compactAction(title: L10n.CardStudio.editCard, icon: "paintpalette", primary: false) { showCardStudio = true }
+            .accessibilityIdentifier("profile.editCard")
     }
 
     private var shareButton: some View {

@@ -13,8 +13,26 @@ extension AppState {
             avatarURL: uzak.avatarURL,
             badge: uzak.badge,
             posts: [],
-            username: uzak.username
+            username: uzak.username,
+            cardTheme: uzak.cardTheme
         )
+    }
+
+    /// Profil kartının rengini kaydeder. Başarılıysa taslağa da yazar ki kendi
+    /// kartın ve düzenleyici hemen yeni renkle açılsın.
+    @discardableResult
+    func saveCardTheme(_ theme: CardTheme) async -> Bool {
+        do {
+            try await service.setCardTheme(theme)
+            draft.cardTheme = theme
+            persistAccount()
+            show(L10n.CardStudio.saved)
+            Haptics.success()
+            return true
+        } catch {
+            showError(error, fallback: L10n.CardStudio.failed)
+            return false
+        }
     }
 
     func personPosts(for profileID: UUID) async -> [SocialPost] {

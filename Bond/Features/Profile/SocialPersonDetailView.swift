@@ -8,7 +8,10 @@ struct SocialPersonDetailView: View {
     /// kendi geri düğmesini koyuyor; buna ek olarak bir tane daha eklemek
     /// yan yana iki geri düğmesi bırakıyordu.
     var showsClose = false
+    /// "Kartını düzenle"deki canlı önizleme: kaydedilmemiş rengi göstermek için.
+    var themeOverride: CardTheme? = nil
     @Environment(AppState.self) private var appState
+    @Environment(\.colorScheme) private var systemScheme
     @Environment(\.dismiss) private var dismiss
     @State private var conversationRoute: ConversationRoute?
     @State private var isOpeningFounderChat = false
@@ -33,6 +36,13 @@ struct SocialPersonDetailView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var cardLifted: Bool { cardDragging || cardFlying }
+    /// Kartın rengi: önizleme > sunucudaki > (kendi kartımsa) taslaktaki.
+    private var theme: CardTheme {
+        themeOverride ?? details?.cardTheme ?? (isMe ? appState.draft.cardTheme : .classic)
+    }
+    /// Kart kendi şemasını alıyor; kartın açtığı sayfalar (sohbet vb.) almıyor,
+    /// çünkü sheet'ler bu değiştiricinin dışında bağlı.
+    private var cardScheme: ColorScheme { theme.scheme ?? systemScheme }
     /// 100pt eşiğe göre 0…1. Etiket opaklığı ve gölge buradan.
     private var swipeProgress: CGFloat { min(abs(cardOffset) / 100, 1) }
     private var swipingRight: Bool { cardOffset > 0 }
@@ -64,14 +74,16 @@ struct SocialPersonDetailView: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             // Kart kalkınca altındaki masa görünür.
-            (cardLifted ? BondTheme.surface : BondTheme.paper)
+            (cardLifted ? BondTheme.surface : theme.background)
                 .ignoresSafeArea()
                 .animation(BondTheme.Motion.smooth, value: cardLifted)
+                .animation(BondTheme.Motion.smooth, value: theme)
 
             cardBody
                 .overlay(alignment: .topLeading) { swipeStamp(right: false) }
                 .overlay(alignment: .topTrailing) { swipeStamp(right: true) }
-                .background(BondTheme.paper)
+                .background(theme.background)
+                .animation(BondTheme.Motion.smooth, value: theme)
                 .clipShape(RoundedRectangle(cornerRadius: cardLifted ? 28 : 0, style: .continuous))
                 .shadow(color: .black.opacity(0.18 * swipeProgress), radius: 24, y: 12)
                 .offset(x: cardOffset)
@@ -90,6 +102,7 @@ struct SocialPersonDetailView: View {
                     .transition(.opacity)
             }
         }
+        .environment(\.colorScheme, cardScheme)
         .safeAreaInset(edge: .bottom) {
             if !isMe {
                 VStack(spacing: 8) {
@@ -122,7 +135,8 @@ struct SocialPersonDetailView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(BondTheme.paper)
+                .background(theme.background)
+                .environment(\.colorScheme, cardScheme)
             }
         }
         .confirmationDialog(L10n.Moderation.suspendAccount, isPresented: $showSuspendConfirmation, titleVisibility: .visible) {
@@ -701,7 +715,7 @@ struct SocialPersonDetailView: View {
             details = PersonProfileData(interests: fetched.interests, galleryURLs: fetched.galleryURLs,
                                         avatarURL: fetched.avatarURL, badge: fetched.badge,
                                         posts: appState.posts.filter { $0.author.id == profile.id },
-                                        username: fetched.username)
+                                        username: fetched.username, cardTheme: fetched.cardTheme)
             detailsError = nil
         } catch {
             guard !appState.isCancellation(error) else { return }

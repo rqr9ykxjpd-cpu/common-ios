@@ -552,6 +552,20 @@ actor SampleStore {
         draft.username = aday
     }
 
+    func setCardTheme(_ theme: CardTheme) { draft.cardTheme = theme }
+
+    /// Örnek kişilerin kart renkleri: başkasının renkli kartını da görebilmek için.
+    func cardTheme(for profileID: UUID, name: String?) -> CardTheme {
+        if profileID == SampleData.me.id { return draft.cardTheme }
+        return switch name {
+        case "Ece": .lavender
+        case "Mina": .navy
+        case "Defne": .sage
+        case nil: draft.cardTheme
+        default: .classic
+        }
+    }
+
     func replaceGalleryCount(_ count: Int) {
         galleryPhotoCount = min(count, CampusLimits.maxGalleryPhotos)
     }

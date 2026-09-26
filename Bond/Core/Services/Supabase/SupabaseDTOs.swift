@@ -1122,3 +1122,12 @@ struct UsernameParams: Encodable {
 struct UsernameRow: Decodable {
     let username: String?
 }
+
+struct CardThemeRow: Decodable {
+    let cardTheme: String?
+    enum CodingKeys: String, CodingKey { case cardTheme = "card_theme" }
+}
+
+struct CardThemeParams: Encodable {
+    let theme: String?
+}
