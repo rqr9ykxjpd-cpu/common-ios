@@ -631,12 +631,14 @@ struct MessageRow: Decodable {
     let body: String
     let replyToID: UUID?
     let reaction: String?
+    let senderReaction: String?
     let createdAt: Date
     let readAt: Date?
     let editedAt: Date?
 
     enum CodingKeys: String, CodingKey {
         case id, body, reaction
+        case senderReaction = "sender_reaction"
         case matchID = "match_id"
         case senderID = "sender_id"
         case replyToID = "reply_to_id"
@@ -651,7 +653,8 @@ struct MessageRow: Decodable {
                 MessageReply(messageID: $0.id, authorName: $0.senderID == currentUserID ? L10n.Common.you : peerName, body: $0.body)
             }
         }
-        return Message(id: id, body: body, isMine: senderID == currentUserID, sentAt: createdAt, reaction: reaction, editedAt: editedAt, replyTo: reply)
+        return Message(id: id, body: body, isMine: senderID == currentUserID, sentAt: createdAt, reaction: reaction,
+                       senderReaction: senderReaction, editedAt: editedAt, replyTo: reply)
     }
 }
 

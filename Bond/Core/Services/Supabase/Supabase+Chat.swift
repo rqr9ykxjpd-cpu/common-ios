@@ -19,7 +19,7 @@ extension SupabaseProductService {
         for match in matches {
             let rows: [MessageRow] = try await client
                 .from("messages")
-                .select("id,match_id,sender_id,body,reply_to_id,reaction,created_at,read_at,edited_at")
+                .select("id,match_id,sender_id,body,reply_to_id,reaction,sender_reaction,created_at,read_at,edited_at")
                 .eq("match_id", value: match.id)
                 .order("created_at", ascending: true)
                 .execute()
@@ -50,7 +50,7 @@ extension SupabaseProductService {
         let row: MessageRow = try await client
             .from("messages")
             .insert(payload)
-            .select("id,match_id,sender_id,body,reply_to_id,reaction,created_at,read_at,edited_at")
+            .select("id,match_id,sender_id,body,reply_to_id,reaction,sender_reaction,created_at,read_at,edited_at")
             .single()
             .execute()
             .value
@@ -159,7 +159,8 @@ extension SupabaseProductService {
                                     continuation.yield(RealtimeMessage(
                                         matchID: row.matchID, id: row.id, senderID: row.senderID,
                                         body: row.body, replyToID: row.replyToID,
-                                        reaction: row.reaction, createdAt: row.createdAt
+                                        reaction: row.reaction, senderReaction: row.senderReaction,
+                                        createdAt: row.createdAt
                                     ))
                                 }
                             }
@@ -169,7 +170,8 @@ extension SupabaseProductService {
                                     continuation.yield(RealtimeMessage(
                                         matchID: row.matchID, id: row.id, senderID: row.senderID,
                                         body: row.body, replyToID: row.replyToID,
-                                        reaction: row.reaction, createdAt: row.createdAt
+                                        reaction: row.reaction, senderReaction: row.senderReaction,
+                                        createdAt: row.createdAt
                                     ))
                                 }
                             }

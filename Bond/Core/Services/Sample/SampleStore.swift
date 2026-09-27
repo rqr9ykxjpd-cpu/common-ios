@@ -156,7 +156,7 @@ actor SampleStore {
     func setReaction(_ messageID: UUID, reaction: String?) {
         for index in conversations.indices {
             guard let messageIndex = conversations[index].messages.firstIndex(where: { $0.id == messageID }) else { continue }
-            conversations[index].messages[messageIndex].reaction = reaction
+            conversations[index].messages[messageIndex].myReaction = reaction
             return
         }
     }

@@ -25,6 +25,7 @@ struct RealtimeMessage: Sendable {
     let body: String
     let replyToID: UUID?
     let reaction: String?
+    let senderReaction: String?
     let createdAt: Date
 }
 

@@ -11,20 +11,36 @@ struct Message: Identifiable, Hashable, Codable {
     var body: String
     let isMine: Bool
     let sentAt: Date
+    /// Mesajı **alan** kişinin tepkisi (sunucuda `reaction`).
     var reaction: String?
+    /// Mesajı **gönderenin** kendi mesajına tepkisi (sunucuda `sender_reaction`).
+    /// Eskiden tek alan vardı ve kimin koyduğu tutulmuyordu: karşı tarafın
+    /// tepkisini de kaldırabiliyordun, iki kişi tepki verince biri siliniyordu.
+    var senderReaction: String?
     /// Doluysa mesaj sonradan düzenlenmiş; arayüz "düzenlendi" yazıyor.
     var editedAt: Date?
     let replyTo: MessageReply?
 
-    init(id: UUID = UUID(), body: String, isMine: Bool, sentAt: Date, reaction: String? = nil, editedAt: Date? = nil, replyTo: MessageReply? = nil) {
+    init(id: UUID = UUID(), body: String, isMine: Bool, sentAt: Date, reaction: String? = nil,
+         senderReaction: String? = nil, editedAt: Date? = nil, replyTo: MessageReply? = nil) {
         self.id = id
         self.body = body
         self.isMine = isMine
         self.sentAt = sentAt
         self.reaction = reaction
+        self.senderReaction = senderReaction
         self.editedAt = editedAt
         self.replyTo = replyTo
     }
+
+    /// Benim bu mesaja tepkim; yalnızca bunu değiştirebilirim.
+    var myReaction: String? {
+        get { isMine ? senderReaction : reaction }
+        set { if isMine { senderReaction = newValue } else { reaction = newValue } }
+    }
+
+    /// Karşı tarafın bu mesaja tepkisi; yalnızca gösterilir.
+    var theirReaction: String? { isMine ? reaction : senderReaction }
 }
 
 struct Conversation: Identifiable, Hashable {

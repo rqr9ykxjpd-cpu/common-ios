@@ -567,26 +567,45 @@ private struct MessageBubble: View {
                     }
                 }
 
-                if let reaction = message.reaction {
-                    Button { react(reaction) } label: {
-                        Text(reaction)
-                            .font(.subheadline)
-                            .padding(.horizontal, 10)
-                            .frame(minHeight: 44)
-                            .background(BondTheme.surface, in: Capsule())
-                            .overlay(Capsule().stroke(BondTheme.hairline))
+                // İki taraf da tepki verebilir; ikisi yan yana. Karşı tarafınki yalnızca
+                // gösterilir, seninkine dokununca kalkar.
+                if message.theirReaction != nil || message.myReaction != nil {
+                    HStack(spacing: 4) {
+                        if let theirs = message.theirReaction {
+                            reactionPill(theirs, mine: false)
+                                .accessibilityLabel(L10n.ChatReactions.theirs(theirs))
+                                .transition(reactionTransition)
+                                .id("karsi-\(theirs)")
+                        }
+                        if let mine = message.myReaction {
+                            Button { react(mine) } label: { reactionPill(mine, mine: true) }
+                                .buttonStyle(PressableStyle())
+                                .accessibilityLabel(L10n.Chat.removeReaction(mine))
+                                .transition(reactionTransition)
+                                .id("benim-\(mine)")
+                        }
                     }
-                    .buttonStyle(PressableStyle())
-                    .accessibilityLabel(L10n.Chat.removeReaction(reaction))
-                    // Tepki balonun köşesinden fırlıyor; değişince yenisi yerine oturuyor.
-                    .transition(.scale(scale: 0.3, anchor: message.isMine ? .topTrailing : .topLeading)
-                        .combined(with: .opacity))
-                    .id(reaction)
                 }
             }
-            .animation(reduceMotion ? nil : BondTheme.Motion.bouncy, value: message.reaction)
+            .animation(reduceMotion ? nil : BondTheme.Motion.bouncy, value: message.theirReaction)
+            .animation(reduceMotion ? nil : BondTheme.Motion.bouncy, value: message.myReaction)
             if !message.isMine { Spacer(minLength: 62) }
         }
+    }
+
+    /// Tepki balonun köşesinden fırlıyor; değişince yenisi yerine oturuyor.
+    private var reactionTransition: AnyTransition {
+        .scale(scale: 0.3, anchor: message.isMine ? .topTrailing : .topLeading).combined(with: .opacity)
+    }
+
+    /// Senin tepkin hafif koyu çerçeveli: dokunulabilir olduğu anlaşılsın.
+    private func reactionPill(_ emoji: String, mine: Bool) -> some View {
+        Text(emoji)
+            .font(.subheadline)
+            .padding(.horizontal, 10)
+            .frame(minHeight: 44)
+            .background(BondTheme.surface, in: Capsule())
+            .overlay(Capsule().stroke(mine ? BondTheme.ink.opacity(0.35) : BondTheme.hairline, lineWidth: mine ? 1.2 : 1))
     }
 
     private var actionsAlignment: Alignment {
@@ -605,7 +624,7 @@ private struct MessageBubble: View {
                     Text(reaction)
                         .font(.system(size: 19))
                         .frame(width: 38, height: 38)
-                        .background(message.reaction == reaction ? BondTheme.violet.opacity(0.14) : .clear, in: Circle())
+                        .background(message.myReaction == reaction ? BondTheme.violet.opacity(0.14) : .clear, in: Circle())
                 }
                 .buttonStyle(PressableStyle())
                 .accessibilityLabel(L10n.Chat.addReaction(reaction))

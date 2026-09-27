@@ -29,9 +29,11 @@ extension AppState {
         // Aynı mesaj güncellenmiş olabilir (tepki eklendi/kaldırıldı). Eskiden
         // yinelenen sayılıp atlanıyordu, o yüzden karşı taraf tepkiyi göremiyordu.
         if let mevcut = conversations[index].messages.firstIndex(where: { $0.id == payload.id }) {
-            if conversations[index].messages[mevcut].reaction != payload.reaction {
+            let eski = conversations[index].messages[mevcut]
+            if eski.reaction != payload.reaction || eski.senderReaction != payload.senderReaction {
                 withAnimation(.snappy) {
                     conversations[index].messages[mevcut].reaction = payload.reaction
+                    conversations[index].messages[mevcut].senderReaction = payload.senderReaction
                 }
             }
             return
@@ -43,7 +45,8 @@ extension AppState {
             }
         }
         let isMine = payload.senderID == currentUserID
-        let message = Message(id: payload.id, body: payload.body, isMine: isMine, sentAt: payload.createdAt, reaction: payload.reaction, replyTo: replyTo)
+        let message = Message(id: payload.id, body: payload.body, isMine: isMine, sentAt: payload.createdAt,
+                              reaction: payload.reaction, senderReaction: payload.senderReaction, replyTo: replyTo)
         withAnimation(.snappy) { conversations[index].messages.append(message) }
         conversations[index].updatedAt = message.sentAt
         if !isMine {
@@ -368,9 +371,10 @@ extension AppState {
     func react(to messageID: UUID, in conversationID: UUID, with reaction: String) {
         guard let conversationIndex = conversations.firstIndex(where: { $0.id == conversationID }),
               let messageIndex = conversations[conversationIndex].messages.firstIndex(where: { $0.id == messageID }) else { return }
-        let previous = conversations[conversationIndex].messages[messageIndex].reaction
+        // Yalnızca kendi tepkin değişir; karşı tarafınkine dokunulmaz.
+        let previous = conversations[conversationIndex].messages[messageIndex].myReaction
         let updated = previous == reaction ? nil : reaction
-        conversations[conversationIndex].messages[messageIndex].reaction = updated
+        conversations[conversationIndex].messages[messageIndex].myReaction = updated
         Task {
             do {
                 try await service.setMessageReaction(messageID: messageID, reaction: updated)
@@ -378,7 +382,7 @@ extension AppState {
             } catch {
                 guard let refreshedConversation = conversations.firstIndex(where: { $0.id == conversationID }),
                       let refreshedMessage = conversations[refreshedConversation].messages.firstIndex(where: { $0.id == messageID }) else { return }
-                conversations[refreshedConversation].messages[refreshedMessage].reaction = previous
+                conversations[refreshedConversation].messages[refreshedMessage].myReaction = previous
                 showError(error, fallback: L10n.Chat.reactionFailed)
             }
         }
