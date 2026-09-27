@@ -19,6 +19,8 @@ struct CardStudioView: View {
     @State private var saving = false
     @State private var showPreview = false
     @State private var showProfileEditor = false
+    /// Seçili kart telefonla birlikte hafifçe döner.
+    @State private var tilt = DeviceTilt()
 
     private var saved: CardTheme { appState.draft.cardTheme }
     private var hasChanges: Bool { selected != saved }
@@ -54,6 +56,11 @@ struct CardStudioView: View {
         }
         .environment(\.colorScheme, .dark)
         .interactiveDismissDisabled(saving)
+        .task {
+            guard IdleMotion.allowed(reduceMotion: reduceMotion) else { return }
+            tilt.start()
+        }
+        .onDisappear { tilt.stop() }
         .onAppear {
             guard !didLoad else { return }
             selected = saved
@@ -113,9 +120,13 @@ struct CardStudioView: View {
                             year: appState.draft.year,
                             avatarURL: appState.avatarURL,
                             avatarData: appState.avatarData,
-                            avatarAsset: appState.currentUserProfile.imageAssetName
+                            avatarAsset: appState.currentUserProfile.imageAssetName,
+                            glare: theme == selected ? tilt.x : nil
                         )
                         .frame(width: genislik, height: genislik * 1.36)
+                        // Yalnızca ortadaki kart eğilir; komşular kaydırmayla dönüyor.
+                        .rotation3DEffect(.degrees(theme == selected ? tilt.y * 6 : 0), axis: (x: 1, y: 0, z: 0), perspective: 0.6)
+                        .rotation3DEffect(.degrees(theme == selected ? -tilt.x * 6 : 0), axis: (x: 0, y: 1, z: 0), perspective: 0.6)
                         .scrollTransition(.interactive, axis: .horizontal) { card, phase in
                             card
                                 .scaleEffect(phase.isIdentity ? 1 : 0.88)
@@ -234,6 +245,8 @@ private struct StudioIDCard: View {
     let avatarURL: URL?
     let avatarData: Data?
     let avatarAsset: String?
+    /// -1…1: telefonun yatay eğimi; ışık buna göre kayar. `nil` = ışık yok.
+    var glare: Double? = nil
 
     private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 28, style: .continuous) }
     private var scheme: ColorScheme { theme.scheme ?? .light }
@@ -305,6 +318,22 @@ private struct StudioIDCard: View {
                 shape
                     .inset(by: 10)
                     .strokeBorder(BondTheme.ink.opacity(0.22), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+            }
+        }
+        .overlay {
+            if let glare {
+                GeometryReader { geo in
+                    // İnce, hafif bir yansıma: açık kartı beyazlatıp soldurmasın.
+                    LinearGradient(
+                        colors: [.white.opacity(0), .white.opacity(scheme == .dark ? 0.12 : 0.16), .white.opacity(0)],
+                        startPoint: .leading, endPoint: .trailing
+                    )
+                    .frame(width: geo.size.width * 0.38, height: geo.size.height * 1.6)
+                    .rotationEffect(.degrees(24))
+                    .offset(x: geo.size.width * (0.3 + CGFloat(glare) * 0.5), y: -geo.size.height * 0.3)
+                }
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
             }
         }
         .clipShape(shape)
