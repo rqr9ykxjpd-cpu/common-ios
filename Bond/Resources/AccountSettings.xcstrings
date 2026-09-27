@@ -1,0 +1,54 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "changeTitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change your username"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kullanıcı adını değiştir"
+          }
+        }
+      }
+    },
+    "changeBody": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shown on your profile with @. 3–20 characters: letters, numbers, dots and underscores."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profilinde @ ile görünür. 3–20 karakter: harf, rakam, nokta ve alt çizgi."
+          }
+        }
+      }
+    },
+    "rowHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The name shown with @ on your profile"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profilinde @ ile görünen ad"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

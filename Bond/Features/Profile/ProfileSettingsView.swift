@@ -13,6 +13,7 @@ struct ProfileSettingsView: View {
     @State private var showTerms = false
     @State private var showPrivacy = false
     @State private var showSignOutAlert = false
+    @State private var showUsernameEditor = false
     @State private var showDeleteAccountAlert = false
     @State private var showAppleDeleteAccount = false
 
@@ -40,6 +41,15 @@ struct ProfileSettingsView: View {
                     }
                 }
                 Section(L10n.Profile.yourAccount) {
+                    settingsButton(
+                        icon: "at",
+                        title: L10n.Username.title,
+                        detail: L10n.AccountSettings.rowHint,
+                        trailing: appState.draft.username.isEmpty ? nil : "@" + appState.draft.username
+                    ) {
+                        showUsernameEditor = true
+                    }
+                    .accessibilityIdentifier("settings.username")
                     if appState.isModerator {
                         // Rozet: bekleyen şikâyetler + açık "Sorun bildir" kayıtları.
                         let bekleyen = appState.pendingReports.count + appState.openProblemCount
@@ -266,6 +276,17 @@ struct ProfileSettingsView: View {
                         blocks: LegalDocumentRoute.gizlilik.blocks
                     )
                 }
+            }
+            .sheet(isPresented: $showUsernameEditor) {
+                UsernameChoiceView(mode: .change)
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+                    .presentationCornerRadius(28)
+            }
+            // Çıkış ya da hesap silme bitince uygulama karşılama ekranına dönüyor;
+            // bu sayfa onun üstünde açık kalıyordu ve elle aşağı çekmek gerekiyordu.
+            .onChange(of: appState.route) { _, yeni in
+                if yeni != .app { dismiss() }
             }
             .alert(L10n.Profile.signOutConfirm, isPresented: $showSignOutAlert) {
                 Button(L10n.Common.cancel, role: .cancel) {}
