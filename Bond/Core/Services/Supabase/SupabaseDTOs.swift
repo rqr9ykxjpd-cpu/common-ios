@@ -703,6 +703,16 @@ struct MessageReactionParams: Encodable {
         case messageID = "message_uuid"
         case reaction
     }
+
+    // Tepkiyi kaldırmak `reaction: null` göndermek demek. Otomatik kodlama nil
+    // alanı hiç yazmıyor; sunucu fonksiyonu bu parametreyi zorunlu beklediği
+    // için "fonksiyon bulunamadı" dönüyor ve kullanıcı "Bir sorun oluştu"
+    // görüyordu. Nil açıkça null olarak yazılıyor.
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(messageID, forKey: .messageID)
+        if let reaction { try c.encode(reaction, forKey: .reaction) } else { try c.encodeNil(forKey: .reaction) }
+    }
 }
 
 struct PurchasePayload: Encodable {
@@ -961,7 +971,19 @@ struct BroadcastParams: Encodable {
     enum CodingKeys: String, CodingKey { case title, body; case testOnly = "test_only" }
 }
 struct BoostParams: Encodable { let target: UUID; let extra: Int }
-struct PinParams: Encodable { let target: UUID; let slot: Int? }
+struct PinParams: Encodable {
+    let target: UUID
+    let slot: Int?
+
+    enum CodingKeys: String, CodingKey { case target, slot }
+
+    /// Sabitlemeyi kaldırmak = null; alan atlanırsa sunucu fonksiyonu bulunamıyor.
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(target, forKey: .target)
+        if let slot { try c.encode(slot, forKey: .slot) } else { try c.encodeNil(forKey: .slot) }
+    }
+}
 
 struct RightSwipeParams: Encodable {
     let subject: UUID
@@ -1130,4 +1152,12 @@ struct CardThemeRow: Decodable {
 
 struct CardThemeParams: Encodable {
     let theme: String?
+
+    enum CodingKeys: String, CodingKey { case theme }
+
+    /// Klasik = null; alan atlanırsa sunucu fonksiyonu bulunamıyor (bkz. MessageReactionParams).
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        if let theme { try c.encode(theme, forKey: .theme) } else { try c.encodeNil(forKey: .theme) }
+    }
 }
