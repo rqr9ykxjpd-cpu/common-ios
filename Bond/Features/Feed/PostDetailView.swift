@@ -76,8 +76,9 @@ struct PostDetailView: View {
         .background(BondTheme.paper.ignoresSafeArea())
         .navigationTitle(L10n.Board.postTitle)
         .navigationBarTitleDisplayMode(.inline)
-        // Yazma alanı en altta; sekme çubuğu onun altında kalmasın.
-        .toolbar(.hidden, for: .tabBar)
+        // Sekme çubuğu açık kalıyor (X'teki gibi); yazma alanı onun üstünde.
+        // Gizleyip geri açmak iOS 26'da çubuğun camını bozuyordu: dönüşte
+        // seçili sekme okunmuyordu.
         .toolbar {
             if showsClose {
                 ToolbarItem(placement: .topBarTrailing) {
