@@ -225,7 +225,6 @@ struct PlacesWallView: View {
         }
         .padding(12)
         .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
-        .shadow(color: .black.opacity(0.06), radius: 12, y: 4)
     }
 
     private func entranceIsHidden(_ place: CampusPlace) -> Bool {
@@ -235,7 +234,12 @@ struct PlacesWallView: View {
     private func placeLink(_ place: CampusPlace, filtered: Bool) -> some View {
         Button { selectedPeoplePlace = place } label: {
             HStack(spacing: 12) {
-                Image(systemName: "mappin.and.ellipse").font(.title3)
+                // Her satırda aynı iğne bilgi taşımıyordu; yerin türü adından.
+                Image(systemName: PlaceIcon.symbol(for: place.name))
+                    .font(.system(size: 16, weight: .medium))
+                    .frame(width: 38, height: 38)
+                    .background(BondTheme.paper, in: Circle())
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(place.name).font(.body.weight(.medium))
                         .lineLimit(usesStackedPlaceRows ? nil : 2)
@@ -325,18 +329,21 @@ struct PlacesWallView: View {
             }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(isHere ? L10n.Places.hideVisibility : L10n.Places.imHere)
-                .font(.subheadline.weight(.semibold))
+                .font(.footnote.weight(.semibold))
                 .multilineTextAlignment(.center)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .allowsTightening(true)
-                .frame(width: usesStackedPlaceRows ? nil : 120)
-                .frame(minHeight: 44)
+                .padding(.horizontal, 14)
+                .frame(minHeight: 34)
                 .frame(maxWidth: usesStackedPlaceRows ? .infinity : nil)
                 .foregroundStyle(isHere ? BondTheme.paper : BondTheme.ink)
-                // Kart surface; kapsül paper ki kartın üstünde okunsun.
+                // Kart surface; kapsül paper ki kartın üstünde okunsun. Listede
+                // yalnızca bulunduğun yer dolu: göz tek bir şeye gider.
                 .background(isHere ? BondTheme.ink : BondTheme.paper, in: Capsule())
                 .contentTransition(.opacity)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.pressable)
         .tint(isHere ? BondTheme.paper : BondTheme.ink)
