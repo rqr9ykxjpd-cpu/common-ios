@@ -12,6 +12,8 @@ struct CardStudioView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Stüdyonun dışındaki (sistemin) tema; önizleme bununla açılıyor.
+    @Environment(\.colorScheme) private var systemScheme
     @State private var selected: CardTheme = .classic
     /// Kaydırma konumu; `selected` ile eşitleniyor.
     @State private var scrolled: CardTheme?
@@ -72,7 +74,9 @@ struct CardStudioView: View {
             selected = yeni
             Haptics.selection()
         }
-        .fullScreenCover(isPresented: $showPreview) {
+        // Başkaları kartı sheet olarak görüyor; önizleme de öyle açılsın ki
+        // üst çubuk, düğmeler ve köşeler birebir aynı olsun.
+        .sheet(isPresented: $showPreview) {
             NavigationStack {
                 SocialPersonDetailView(
                     profile: appState.currentUserProfile,
@@ -81,6 +85,9 @@ struct CardStudioView: View {
                     themeOverride: selected
                 )
             }
+            // Stüdyo koyu olduğu için sayfa (üst çubuk, düğmelerin camı) da koyu
+            // açılıyordu; önizleme başkalarının gördüğü gibi sistemin temasında.
+            .preferredColorScheme(systemScheme)
         }
         .fullScreenCover(isPresented: $showProfileEditor) {
             NavigationStack { ProfileEditorView() }
@@ -313,9 +320,8 @@ private struct StudioIDCard: View {
         .foregroundStyle(BondTheme.ink)
         .background {
             ZStack {
-                zemin
-                StudioStripes()
-                    .stroke(BondTheme.ink.opacity(scheme == .dark ? 0.06 : 0.035), lineWidth: 10)
+                // Klasik düz, renkliler çizgili (bkz. CardThemeSurface).
+                if theme == .classic { zemin } else { CardThemeSurface(theme: theme) }
                 shape
                     .inset(by: 10)
                     .strokeBorder(BondTheme.ink.opacity(0.22), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
@@ -340,20 +346,5 @@ private struct StudioIDCard: View {
         .clipShape(shape)
         .shadow(color: .black.opacity(0.35), radius: 24, y: 14)
         .environment(\.colorScheme, scheme)
-    }
-}
-
-/// Kartın zeminindeki çapraz çizgiler.
-private struct StudioStripes: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        let aralik: CGFloat = 26
-        var x = -rect.height
-        while x < rect.width + rect.height {
-            path.move(to: CGPoint(x: x, y: rect.maxY))
-            path.addLine(to: CGPoint(x: x + rect.height, y: rect.minY))
-            x += aralik
-        }
-        return path
     }
 }

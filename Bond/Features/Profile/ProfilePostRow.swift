@@ -4,6 +4,9 @@ import SwiftUI
 /// içinde caption, tarih ve varsa küçük kare.
 struct ProfilePostRow: View {
     let post: SocialPost
+    /// Tarihin rengi. Renkli profil kartında sistemin ikincil tonu zemine
+    /// karışıyordu; kart kendi ikincil yazı rengini veriyor.
+    var dateColor: Color? = nil
 
     var body: some View {
         HStack(alignment: .top, spacing: BondTheme.Space.md) {
@@ -24,7 +27,7 @@ struct ProfilePostRow: View {
                 }
                 Text(post.createdAt.relativeTurkish)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(dateColor.map { AnyShapeStyle($0) } ?? AnyShapeStyle(.secondary))
             }
             Spacer(minLength: 0)
         }

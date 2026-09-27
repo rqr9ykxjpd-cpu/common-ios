@@ -46,16 +46,18 @@ struct EduStudentChip: View {
 struct FounderCredLine: View {
     /// Kartta 17; kendi profilinde ad sütunu dar, 15.
     var size: CGFloat = 17
+    /// Renkli kartta kırmızı zemine karışıyor; orada kartın mürekkebi.
+    var color: Color = BondTheme.ember
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(L10n.Badge.founderCredRoles)
                 .font(.custom("Noteworthy-Bold", size: size))
-                .foregroundStyle(BondTheme.ember.opacity(0.9))
+                .foregroundStyle(color.opacity(0.9))
 
             Text(L10n.Badge.founderCredFocus)
                 .font(.custom("Noteworthy-Bold", size: size))
-                .foregroundStyle(BondTheme.ember)
+                .foregroundStyle(color)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
@@ -70,11 +72,14 @@ struct FounderContactCard: View {
     private static let phoneDisplay = "+90 546 875 85 73"
     private static let phoneURL = URL(string: "tel:+905468758573")
 
+    /// "Ofis" başlığının rengi; renkli kartta kartın ikincil yazısı.
+    var secondary: Color = BondTheme.muted
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(L10n.Badge.founderOffice)
                 .font(.custom("Noteworthy-Light", size: 17))
-                .foregroundStyle(BondTheme.muted)
+                .foregroundStyle(secondary)
                 .accessibilityAddTraits(.isHeader)
 
             // L şeklinde, elle çizilmiş ok → adres.
@@ -115,6 +120,8 @@ struct ProfileEducationLine: View {
     var university: String? = nil
     var year: String? = nil
     var font: Font = .system(size: 15, weight: .semibold)
+    /// Bölüm, yıl ve ayraçların rengi; renkli kartta kartın ikincil yazısı.
+    var color: Color = BondTheme.muted
     /// `true` iken üniversite adı ink + bold. (Açık ad artık gösterilmiyor; kısa kod kalıyor.)
     var highlightUniversity = false
 
@@ -142,34 +149,53 @@ struct ProfileEducationLine: View {
             Text("🎓")
                 .font(.system(size: 14))
                 .accessibilityHidden(true)
-            educationText
-                .fixedSize(horizontal: false, vertical: true)
+            // Sığarsa tek satır. Sığmazsa bölüm bir satır, okul ve yıl bir
+            // satır: kendiliğinden sarınca satır sonunda "·" kalıyordu.
+            ViewThatFits(in: .horizontal) {
+                educationText(departmentParts, rest)
+                    .fixedSize()
+                VStack(alignment: .leading, spacing: 2) {
+                    educationText(departmentParts, [])
+                        .fixedSize(horizontal: false, vertical: true)
+                    if !rest.isEmpty {
+                        educationText([], rest)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityParts.joined(separator: ", "))
     }
 
-    private var educationText: Text {
+    /// Okul ve yıl.
+    private var rest: [(String, Bool)] {
+        var parts: [(String, Bool)] = []
+        if let universityLabel { parts.append((universityLabel, highlightUniversity)) }
+        if let yearLabel { parts.append((yearLabel, false)) }
+        return parts
+    }
+
+    private func educationText(_ department: [String], _ rest: [(String, Bool)]) -> Text {
         var result = Text("")
         var needsSep = false
 
         func append(_ value: String, emphasized: Bool = false) {
             if needsSep {
-                result = result + Text("  ·  ").font(font).foregroundStyle(BondTheme.muted)
+                result = result + Text("  ·  ").font(font).foregroundStyle(color)
             }
             if emphasized {
                 result = result + Text(value)
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(BondTheme.ink)
             } else {
-                result = result + Text(value).font(font).foregroundStyle(BondTheme.muted)
+                result = result + Text(value).font(font).foregroundStyle(color)
             }
             needsSep = true
         }
 
-        for part in departmentParts { append(part) }
-        if let universityLabel { append(universityLabel, emphasized: highlightUniversity) }
-        if let yearLabel { append(yearLabel) }
+        for part in department { append(part) }
+        for (part, emphasized) in rest { append(part, emphasized: emphasized) }
         return result
     }
 }

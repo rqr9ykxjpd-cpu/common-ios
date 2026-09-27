@@ -598,6 +598,7 @@ actor SampleStore {
         case "Ece": .lavender
         case "Mina": .navy
         case "Defne": .sage
+        case "Duru": .terracotta
         case nil: draft.cardTheme
         default: .classic
         }

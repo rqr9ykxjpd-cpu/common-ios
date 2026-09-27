@@ -25,6 +25,10 @@ struct SocialPersonDetailView: View {
     // Kart kaydırma. Sağ = bağlantı isteği, sol = kapat. Fotoğraf destesi
     // yatay pan almıyor; bu jest kartın tamamına ait.
     @State private var cardOffset: CGFloat = 0
+    @State private var kartKoken: CGPoint = .zero
+    /// İlk açılışlardaki kıpırdama sürerken `true`.
+    @State private var cardPeeking = false
+    @AppStorage("kartKaydirmaIpucu") private var swipePeekCount = 0
     @State private var cardDragging = false
     @State private var cardFlying = false
     @State private var showsUndo = false
@@ -34,8 +38,20 @@ struct SocialPersonDetailView: View {
     @State private var showConnectedMoment = false
     @State private var avatarsTogether = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
 
+    /// Kart elde: altındaki masa görünür.
     private var cardLifted: Bool { cardDragging || cardFlying }
+    /// Köşeler yuvarlanıp gölge düşüyor. Kıpırdamada masa değişmiyor: bir
+    /// ipucu için zeminin bir anlığına koyulaşması fazla sertti.
+    private var cardDetached: Bool { cardLifted || cardPeeking }
+    /// Alt şeridin içeriği var mı. Bağlı olmayan birinde boş kalıyordu ve
+    /// zemini kart kalkınca altta küçük bir kare olarak görünüyordu.
+    private var hasBottomBar: Bool { !isMe && (isMatched || kurucu || showsUndo) }
+    /// Zemin, kart ve alt şeridin çizgilerini hizalayan ortak düzlem.
+    private static let sayfaDuzlemi = "kartSayfasi"
+    /// Çizgili şeridin kartın üst kenarından aşağı uzunluğu.
+    private static let seritBoyu: CGFloat = 150
     /// Kartın rengi: önizleme > (kendi kartımsa) taslaktaki > hızlı okunan >
     /// ayrıntılarla gelen. Kendi kartında taslak önde: az önce kaydettiğin renk
     /// sunucudan dönmesini beklemeden görünsün.
@@ -66,6 +82,9 @@ struct SocialPersonDetailView: View {
     private var kurucu: Bool { (details?.badge ?? profile.badge) == .founder }
 
     private func cipZemini(paylasilan: Bool) -> Color {
+        // Renkli kartta turuncu zemin kartın rengine karışıyor (kiremitte hiç
+        // görünmüyordu); ortak ilgi orada daha koyu bir mürekkep tonu.
+        if theme != .classic { return BondTheme.ink.opacity(paylasilan ? 0.16 : 0.07) }
         if paylasilan { return BondTheme.burntOrange.opacity(0.14) }
         return kurucu ? BondTheme.ember.opacity(0.12) : BondTheme.ink.opacity(0.055)
     }
@@ -78,18 +97,35 @@ struct SocialPersonDetailView: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             // Kart kalkınca altındaki masa görünür.
-            (cardLifted ? BondTheme.surface : theme.background)
+            Group {
+                if cardLifted {
+                    BondTheme.surface
+                } else {
+                    AlignedCardThemeSurface(theme: theme, space: Self.sayfaDuzlemi, fadeOut: Self.seritBoyu)
+                }
+            }
                 .ignoresSafeArea()
                 .animation(BondTheme.Motion.smooth, value: cardLifted)
-                .animation(BondTheme.Motion.smooth, value: theme)
 
+            // Renk geçişi animasyonsuz: yazının rengi (şema) anında dönüyor,
+            // zemin yavaş dönerse bir an beyaz üstüne beyaz yazı kalıyordu.
             cardBody
                 .overlay(alignment: .topLeading) { swipeStamp(right: false) }
                 .overlay(alignment: .topTrailing) { swipeStamp(right: true) }
-                .background(theme.background)
-                .animation(BondTheme.Motion.smooth, value: theme)
-                .clipShape(RoundedRectangle(cornerRadius: cardLifted ? 28 : 0, style: .continuous))
-                .shadow(color: .black.opacity(0.18 * swipeProgress), radius: 24, y: 12)
+                // Çizgiler kartın başında bir şerit olarak kalıyor ve yazıya
+                // varmadan sönüyor: tam kartta küçük yazılar desenin içinde
+                // kayboluyordu.
+                .background(CardThemeSurface(theme: theme, origin: kartKoken, fadeOut: Self.seritBoyu))
+                // Kartın durduğu yer; çizgiler zeminle ve alt şeritle aynı
+                // ızgarada. Kaydırılırken ölçülmüyor: çizgiler kartla gitsin.
+                .onGeometryChange(for: CGPoint.self) {
+                    $0.frame(in: .named(Self.sayfaDuzlemi)).origin
+                } action: { yeni in
+                    if cardOffset == 0 { kartKoken = yeni }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: cardDetached ? 28 : 0, style: .continuous))
+                // Kıpırdamada masa kartla aynı renk; kartı ayıran gölge.
+                .shadow(color: .black.opacity(0.18 * max(swipeProgress, cardPeeking ? 0.7 : 0)), radius: 24, y: 12)
                 .offset(x: cardOffset)
                 // Tinder'daki gibi: kart yatay çekildikçe alt köşesinden döner.
                 .rotationEffect(.degrees(max(-12, min(12, cardOffset / 14))), anchor: .bottom)
@@ -108,7 +144,7 @@ struct SocialPersonDetailView: View {
         }
         .environment(\.colorScheme, cardScheme)
         .safeAreaInset(edge: .bottom) {
-            if !isMe {
+            if hasBottomBar {
                 VStack(spacing: 8) {
                     // Yanlışlıkla sağa kaydırmak kolay; istek gittikten sonra kısa
                     // süre geri alınabilsin. Bilgi şeridi kart sayfasının arkasında
@@ -143,6 +179,7 @@ struct SocialPersonDetailView: View {
                 .environment(\.colorScheme, cardScheme)
             }
         }
+        .coordinateSpace(.named(Self.sayfaDuzlemi))
         .confirmationDialog(L10n.Moderation.suspendAccount, isPresented: $showSuspendConfirmation, titleVisibility: .visible) {
             Button(L10n.Moderation.suspendAccount, role: .destructive) {
                 Task {
@@ -160,13 +197,17 @@ struct SocialPersonDetailView: View {
         .presentationDragIndicator(.visible)
         .toolbar {
             ToolbarItem(placement: .principal) {
+                // Araç çubuğu sayfanın ortamını almıyor; koyu kartta yazı
+                // koyu kalıp kayboluyordu.
                 Wordmark(compact: true)
+                    .environment(\.colorScheme, cardScheme)
             }
             if showsClose {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button { dismiss() } label: { Image(systemName: "xmark") }
+                    Button { dismiss() } label: { cardBarGlyph("xmark") }
                         .accessibilityLabel(L10n.Common.close)
                 }
+                .withoutSharedGlass()
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
@@ -188,9 +229,10 @@ struct SocialPersonDetailView: View {
                         }
                     }
                 } label: {
-                    Image(systemName: "ellipsis")
+                    cardBarGlyph("ellipsis")
                 }
             }
+            .withoutSharedGlass()
         }
         .confirmationDialog(
             L10n.Chat.blockConfirm(profile.name),
@@ -212,6 +254,7 @@ struct SocialPersonDetailView: View {
             await reloadDetails()
             await renk
         }
+        .task(id: profile.id) { await peekSwipeIfNeeded() }
         .fullScreenCover(item: $conversationRoute) { route in
             NavigationStack { ConversationView(conversationID: route.id, showsClose: true) }
         }
@@ -228,7 +271,7 @@ struct SocialPersonDetailView: View {
                         .font(.system(size: 11, weight: .bold))
                         .textCase(.uppercase)
                         .tracking(0.7)
-                        .foregroundStyle(BondTheme.burntOrangeText)
+                        .foregroundStyle(theme == .classic ? BondTheme.burntOrangeText : BondTheme.ink)
                 }
                 FlowLayout(spacing: 7) {
                     ForEach(hepsi, id: \.self) { interest in
@@ -493,15 +536,18 @@ struct SocialPersonDetailView: View {
     /// Kaydırılan kart: başlık, fotoğraf destesi, gönderiler, hakkında.
     private var cardBody: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
+            VStack(alignment: .leading, spacing: 22) {
                 identityHeader
                 gallery
+                // İlgi alanları fotoğrafların hemen altında: kişiye bakınca
+                // ikinci soru "neyle uğraşıyor", en altta kalınca görülmüyordu.
+                interestList
                 personPosts
 
                 if let visiblePlace {
                     Label(visiblePlace.name, systemImage: "mappin.and.ellipse")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.secondaryText)
                 }
 
                 if let detailsError {
@@ -517,7 +563,6 @@ struct SocialPersonDetailView: View {
                     }
                 }
 
-                interestList
                 meetHere
             }
             .foregroundStyle(BondTheme.ink)
@@ -531,15 +576,35 @@ struct SocialPersonDetailView: View {
         }
     }
 
+    /// Üst çubuktaki kapat ve menü düğmeleri. Sistemin camı sayfayı açan
+    /// ekranın temasını alıyor (koyu stüdyodan açılınca koyu cam, koyu simge);
+    /// düğme bu yüzden zeminini kartın renginden kendisi çiziyor.
+    private func cardBarGlyph(_ systemName: String) -> some View {
+        Image(systemName: systemName)
+            .font(.system(size: 16, weight: .semibold))
+            .foregroundStyle(BondTheme.ink)
+            .frame(width: 44, height: 44)
+            .background {
+                Circle()
+                    .fill(theme == .classic ? BondTheme.surface : BondTheme.ink.opacity(0.1))
+                    .shadow(color: .black.opacity(theme == .classic ? 0.08 : 0), radius: 8, y: 2)
+            }
+            .contentShape(Circle())
+            .environment(\.colorScheme, cardScheme)
+    }
+
     private var identityHeader: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .top, spacing: 18) {
+        VStack(alignment: .leading, spacing: 14) {
+            // Ad fotoğrafın yanında kalıyor: uzun ad küçülüp iki satıra iniyor.
+            // Eskiden sığmayınca fotoğrafın altına düşüyor, kocaman bir satır
+            // ve boşluk bırakıyordu. Alt alta düzen yalnızca çok büyük yazıda.
+            if typeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: BondTheme.Space.md) {
                     identityPortrait
                     identityCopy
                 }
-
-                VStack(alignment: .leading, spacing: BondTheme.Space.md) {
+            } else {
+                HStack(alignment: .top, spacing: 16) {
                     identityPortrait
                     identityCopy
                 }
@@ -548,19 +613,21 @@ struct SocialPersonDetailView: View {
             connectionCue
 
             if kurucu {
-                FounderCredLine()
-                FounderContactCard()
+                FounderCredLine(color: theme == .classic ? BondTheme.ember : BondTheme.ink)
+                FounderContactCard(secondary: theme.secondaryText)
             }
         }
     }
 
     private var identityPortrait: some View {
+        // Kendi kartında uygulamadaki fotoğraf: az önce değiştirdiysen yenisi,
+        // sunucudan dönmesini beklemeden.
         ProfileMedia(
-            url: details?.avatarURL ?? profile.imageURL,
-            data: nil,
+            url: isMe ? (appState.avatarURL ?? details?.avatarURL ?? profile.imageURL) : (details?.avatarURL ?? profile.imageURL),
+            data: isMe ? appState.avatarData : nil,
             assetName: profile.imageAssetName
         )
-        .frame(width: 112, height: 140)
+        .frame(width: 96, height: 120)
         .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous)
@@ -570,15 +637,17 @@ struct SocialPersonDetailView: View {
     }
 
     private var identityCopy: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 6) {
             Text(profile.name)
-                .editorialTitle(36)
+                .editorialTitle(30)
+                .lineLimit(2)
+                .minimumScaleFactor(0.7)
                 .fixedSize(horizontal: false, vertical: true)
 
             if let username = details?.username, !username.isEmpty {
                 Text("@" + username)
                     .font(BondTheme.Typography.footnote.weight(.medium))
-                    .foregroundStyle(BondTheme.muted)
+                    .foregroundStyle(theme.secondaryText)
                     .lineLimit(1)
             }
 
@@ -586,14 +655,14 @@ struct SocialPersonDetailView: View {
                 department: profile.department,
                 university: profile.university,
                 year: profile.year,
-                font: BondTheme.Typography.footnote
+                font: BondTheme.Typography.footnote,
+                color: theme.secondaryText
             )
-            .foregroundStyle(BondTheme.muted)
 
             ProfileBadgeLabel(badge: details?.badge ?? profile.badge)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.top, 4)
+        .padding(.top, 2)
     }
 
     @ViewBuilder private var connectionCue: some View {
@@ -604,33 +673,70 @@ struct SocialPersonDetailView: View {
                         Label(L10n.CampusDesign.cardRequestSentHint, systemImage: "paperplane.fill")
                             .foregroundStyle(BondTheme.burntOrangeText)
                     } else {
-                        ViewThatFits(in: .horizontal) {
-                            HStack(spacing: 8) {
-                                Label(L10n.Introduction.swipeHintLeft, systemImage: "arrow.left")
-                                Text("·").foregroundStyle(BondTheme.hairline)
-                                Label(L10n.Introduction.swipeHintRight, systemImage: "arrow.right")
-                            }
-                            VStack(alignment: .leading, spacing: 8) {
-                                Label(L10n.Introduction.swipeHintLeft, systemImage: "arrow.left")
-                                Label(L10n.Introduction.swipeHintRight, systemImage: "arrow.right")
-                            }
-                        }
-                        .foregroundStyle(BondTheme.muted)
+                        swipeGuide
                     }
                 }
-                .font(BondTheme.Typography.footnote.weight(.semibold))
+                .font(BondTheme.Typography.caption.weight(.medium))
                 .transition(.blurReplace)
                 .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: alreadySwiped)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 12)
-            .overlay(alignment: .top) {
-                Rectangle().fill(BondTheme.hairline.opacity(0.8)).frame(height: 0.5)
-            }
-            .overlay(alignment: .bottom) {
-                Rectangle().fill(BondTheme.hairline.opacity(0.8)).frame(height: 0.5)
-            }
         }
+    }
+
+    /// Yön ipucu: "Kapat" kartın sol kenarında, "Bağlan" sağında; hangi yöne
+    /// kaydırılacağını yeri söylüyor. Kart sürüklenirken gittiği taraf
+    /// koyulaşıp oku o yöne itiyor, öbür taraf soluyor: ipucu parmağı izliyor.
+    private var swipeGuide: some View {
+        let sol = cardOffset < 0 ? swipeProgress : 0
+        let sag = cardOffset > 0 && allowsMatchRequest ? swipeProgress : 0
+        return HStack(spacing: 0) {
+            swipeGuideSide(right: false, active: sol, dimmed: sag)
+            Spacer(minLength: BondTheme.Space.md)
+            swipeGuideSide(right: true, active: sag, dimmed: sol)
+        }
+        .font(BondTheme.Typography.footnote.weight(.semibold))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(L10n.Introduction.swipeHintRight), \(L10n.Introduction.swipeHintLeft)")
+    }
+
+    private func swipeGuideSide(right: Bool, active: CGFloat, dimmed: CGFloat) -> some View {
+        // Bağlan, klasik kartta istek damgasıyla aynı turuncu; renkli kartta
+        // turuncu zemine karışacağı için kartın mürekkebi.
+        let vurgu = right && theme == .classic ? BondTheme.burntOrangeText : BondTheme.ink
+        return HStack(spacing: 8) {
+            if !right { swipeGuideArrow("arrow.left") }
+            Text(right ? L10n.Introduction.connect : L10n.Introduction.close)
+            if right { swipeGuideArrow("arrow.right") }
+        }
+        .foregroundStyle(active > 0.05 ? vurgu : theme.secondaryText)
+        .opacity(1 - 0.55 * Double(dimmed))
+        .offset(x: (right ? 1 : -1) * 6 * active)
+        .animation(BondTheme.Motion.snappy, value: active > 0.05)
+    }
+
+    private func swipeGuideArrow(_ systemName: String) -> some View {
+        Image(systemName: systemName)
+            .font(.system(size: 10, weight: .bold))
+            .frame(width: 24, height: 24)
+            .overlay(Circle().strokeBorder(.foreground.opacity(0.35), lineWidth: 1))
+    }
+
+    /// İlk birkaç açılışta kart bir kez sağa kıpırdayıp geri oturuyor: yazıyı
+    /// okumadan da kartın kaydığı anlaşılsın. Üç kez; sonra bir daha yok.
+    private func peekSwipeIfNeeded() async {
+        guard !reduceMotion, swipePeekCount < 3 else { return }
+        try? await Task.sleep(for: .milliseconds(900))
+        guard !Task.isCancelled, allowsMatchRequest, !cardDragging, !cardFlying, cardOffset == 0 else { return }
+        swipePeekCount += 1
+        cardPeeking = true
+        withAnimation(.spring(duration: 0.4, bounce: 0.15)) { cardOffset = 28 }
+        try? await Task.sleep(for: .milliseconds(380))
+        if !cardDragging {
+            withAnimation(.spring(duration: 0.55, bounce: 0.35)) { cardOffset = 0 }
+            try? await Task.sleep(for: .milliseconds(450))
+        }
+        cardPeeking = false
     }
 
     private func profileSectionTitle(_ title: String) -> some View {
@@ -642,7 +748,7 @@ struct SocialPersonDetailView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.top, 14)
             .overlay(alignment: .top) {
-                Rectangle().fill(BondTheme.hairline.opacity(0.8)).frame(height: 0.5)
+                Rectangle().fill(theme.rule).frame(height: 0.5)
             }
     }
 
@@ -675,7 +781,7 @@ struct SocialPersonDetailView: View {
                 .disabled(isOpeningFounderChat)
                 Text(L10n.Profile.messageFounderHint)
                     .font(.system(size: 11))
-                    .foregroundStyle(BondTheme.muted)
+                    .foregroundStyle(theme.secondaryText)
             }
         }
         // Bağlantı isteği düğme değil, kartı sağa kaydırmak. VoiceOver için
@@ -710,7 +816,7 @@ struct SocialPersonDetailView: View {
                 if pendingRequest == nil {
                     Text(L10n.Profile.noNotifyIfIgnored)
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.secondaryText)
                 }
             }
         }
@@ -747,7 +853,7 @@ struct SocialPersonDetailView: View {
             VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
                 profileSectionTitle(L10n.Profile.theirPostsCaps)
                 ForEach(posts) { post in
-                    ProfilePostRow(post: post)
+                    ProfilePostRow(post: post, dateColor: theme.secondaryText)
                 }
             }
         }
@@ -777,4 +883,17 @@ struct ConversationRoute: Identifiable {
 private struct MeetRing {
     var scale: CGFloat = 0.7
     var opacity: Double = 0
+}
+
+private extension ToolbarContent {
+    /// iOS 26'da çubuk düğmesinin ortak cam zemini kaldırılıyor; öncesinde
+    /// zaten yok.
+    @ToolbarContentBuilder
+    func withoutSharedGlass() -> some ToolbarContent {
+        if #available(iOS 26.0, *) {
+            sharedBackgroundVisibility(.hidden)
+        } else {
+            self
+        }
+    }
 }
