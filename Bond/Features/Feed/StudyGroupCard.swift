@@ -58,7 +58,7 @@ struct StudyGroupCard: View {
                         if group.isMine {
                             Text(L10n.StudyGroup.mine)
                                 .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(BondTheme.burntOrange)
+                                .foregroundStyle(BondTheme.burntOrangeText)
                         }
                     }
                     // Tek Text: dar kartta (yatay şerit) yer adı kesilmek yerine

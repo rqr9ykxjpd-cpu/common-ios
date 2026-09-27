@@ -53,12 +53,19 @@ enum BondTheme {
     static let ember = adaptive(light: "D70015", dark: "FF453A")
     /// Seyrek, editoryal vurgu. Ana CTA veya durum rengi değil; el yazısı gibi
     /// karakter anlarında kullanılır. Siyah-beyaz kimliği bozmayan koyu turuncu.
-    static let burntOrange = adaptive(light: "C45A18", dark: "E47A32")
+    ///
+    /// Açık zeminde koyu kaldığı için kahverengi görünüyordu; dolgu, halka ve
+    /// simgelerde daha canlı ton. Küçük yazı için yeterli kontrastı yok
+    /// (beyazda 3.45:1), yazılar `burntOrangeText` kullanır.
+    static let burntOrange = adaptive(light: "E0661F", dark: "F07F3C")
+    /// Turuncu yazı: beyazda 4.35:1, koyu zeminde okunur. Önceki imza tonu.
+    static let burntOrangeText = adaptive(light: "C45A18", dark: "E47A32")
 
     /// Gönderi türü renkleri — anlam taşıyan tek renk kullanımı. Rozette %12
     /// zemin + tam ton yazı; başka yerde kullanılmaz ki siyah-beyaz kimlik kalsın.
     static let tintQuestion = adaptive(light: "2563EB", dark: "60A5FA")
-    static let tintAnnouncement = burntOrange
+    // Duyuru rozeti yazı olarak da kullanılıyor; okunur ton.
+    static let tintAnnouncement = burntOrangeText
     static let tintNotes = adaptive(light: "15803D", dark: "4ADE80")
     /// ▲ etkin oy: Reddit'in turuncusuna selam; sistemdeki editoryal vurguyla aynı ton.
     static let upvote = burntOrange

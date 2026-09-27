@@ -166,7 +166,7 @@ private struct AppToast: View {
                     action()
                 }
                 .font(BondTheme.Typography.footnote.weight(.bold))
-                .foregroundStyle(BondTheme.burntOrange)
+                .foregroundStyle(BondTheme.burntOrangeText)
                 .buttonStyle(.plain)
                 .frame(minHeight: 44)
             }

@@ -88,7 +88,7 @@ struct FounderUsersView: View {
                             .font(.system(size: 9, weight: .bold))
                             .padding(.horizontal, 5).padding(.vertical, 2)
                             .background(BondTheme.burntOrange.opacity(0.15), in: Capsule())
-                            .foregroundStyle(BondTheme.burntOrange)
+                            .foregroundStyle(BondTheme.burntOrangeText)
                     }
                     if !user.isActive {
                         Text(L10n.Board.userFrozen.uppercased())

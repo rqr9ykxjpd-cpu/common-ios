@@ -120,7 +120,7 @@ struct SocialPersonDetailView: View {
                             Button { Task { await undoConnect() } } label: {
                                 Text(L10n.Common.undo)
                                     .font(.footnote.weight(.bold))
-                                    .foregroundStyle(BondTheme.burntOrange)
+                                    .foregroundStyle(BondTheme.burntOrangeText)
                                     .padding(.horizontal, 12)
                                     .frame(minHeight: 36)
                             }
@@ -221,7 +221,7 @@ struct SocialPersonDetailView: View {
                         .font(.system(size: 11, weight: .bold))
                         .textCase(.uppercase)
                         .tracking(0.7)
-                        .foregroundStyle(BondTheme.burntOrange)
+                        .foregroundStyle(BondTheme.burntOrangeText)
                 }
                 FlowLayout(spacing: 7) {
                     ForEach(hepsi, id: \.self) { interest in
@@ -595,7 +595,7 @@ struct SocialPersonDetailView: View {
                 Group {
                     if alreadySwiped {
                         Label(L10n.CampusDesign.cardRequestSentHint, systemImage: "paperplane.fill")
-                            .foregroundStyle(BondTheme.burntOrange)
+                            .foregroundStyle(BondTheme.burntOrangeText)
                     } else {
                         ViewThatFits(in: .horizontal) {
                             HStack(spacing: 8) {

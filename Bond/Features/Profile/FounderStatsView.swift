@@ -452,7 +452,7 @@ struct FounderStatsView: View {
                                 Spacer()
                                 Text(L10n.Board.announcementRecipients(a.recipients))
                                     .font(.caption.weight(.semibold))
-                                    .foregroundStyle(BondTheme.burntOrange)
+                                    .foregroundStyle(BondTheme.burntOrangeText)
                             }
                             if !a.body.isEmpty {
                                 Text(a.body).font(.footnote).foregroundStyle(BondTheme.ink).lineLimit(2)

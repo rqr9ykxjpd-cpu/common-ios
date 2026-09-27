@@ -453,7 +453,7 @@ private struct WelcomeFeatureRow: View {
             Text(String(format: "%02d", index))
                 .font(.system(size: 11, weight: .semibold, design: .monospaced))
                 .tracking(0.4)
-                .foregroundStyle(BondTheme.burntOrange)
+                .foregroundStyle(BondTheme.burntOrangeText)
                 .frame(width: 24, alignment: .leading)
                 .accessibilityHidden(true)
 

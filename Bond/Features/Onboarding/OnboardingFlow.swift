@@ -310,7 +310,7 @@ private struct ReadyStep: View {
             .font(BondTheme.Typography.footnote.weight(.semibold))
             .textCase(.uppercase)
             .tracking(0.7)
-            .foregroundStyle(BondTheme.burntOrange)
+            .foregroundStyle(BondTheme.burntOrangeText)
 
             Text(name.isEmpty ? L10n.Onboarding.welcomePlain : L10n.Onboarding.welcomeName(name))
                 .editorialTitle(40)

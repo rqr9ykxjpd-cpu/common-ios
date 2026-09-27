@@ -125,7 +125,7 @@ struct EduVerificationSheet: View {
                !appState.eduDomains.isEmpty, !EduEmailCheck.isAllowed(trimmed, domains: appState.eduDomains) {
                 Text(L10n.Edu.notAllowedDomain)
                     .font(.footnote)
-                    .foregroundStyle(BondTheme.burntOrange)
+                    .foregroundStyle(BondTheme.burntOrangeText)
                     .fixedSize(horizontal: false, vertical: true)
                     .transition(.opacity)
             }
@@ -177,7 +177,7 @@ struct EduVerificationSheet: View {
             if showStillPending {
                 Text(L10n.Edu.stillPending)
                     .font(.footnote)
-                    .foregroundStyle(BondTheme.burntOrange)
+                    .foregroundStyle(BondTheme.burntOrangeText)
                     .fixedSize(horizontal: false, vertical: true)
                     .transition(.opacity)
             }
