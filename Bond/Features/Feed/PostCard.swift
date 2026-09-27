@@ -110,7 +110,7 @@ struct PostCard: View {
                                 .layoutPriority(1)
                             if let icon = post.author.badge.systemImage {
                                 Image(systemName: icon)
-                                    .font(.system(size: 11, weight: .semibold))
+                                    .font(.caption2.weight(.semibold))
                                     .foregroundStyle(post.author.badge == .founder ? BondTheme.ember : BondTheme.icon)
                                     .accessibilityLabel(post.author.badge.title ?? "")
                             }
@@ -211,7 +211,7 @@ struct PostCard: View {
                 }
                 if !post.caption.trimmed.isEmpty {
                     Text(post.caption)
-                        .font(.system(size: 17, weight: hasImage ? .medium : .semibold))
+                        .font(.body.weight(hasImage ? .medium : .semibold))
                         .lineSpacing(4)
                         .lineLimit(6)
                         .multilineTextAlignment(.leading)
@@ -280,7 +280,7 @@ struct PostCard: View {
             Button { showComments = true } label: {
                 HStack(spacing: 5) {
                     Image(systemName: "bubble.left")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.footnote.weight(.semibold))
                     Text(replyCountText)
                         .font(.footnote.weight(.semibold))
                 }
@@ -296,13 +296,13 @@ struct PostCard: View {
 
             ShareLink(item: "\(post.author.name): \(post.caption)") {
                 Image(systemName: "paperplane")
-                    .font(.system(size: 17, weight: .regular))
+                    .font(.body.weight(.regular))
                     .frame(width: 36, height: 36)
             }
             .accessibilityLabel(L10n.Feed.share)
             Button(action: toggleSaved) {
                 Image(systemName: post.saved ? "bookmark.fill" : "bookmark")
-                    .font(.system(size: 17, weight: .regular))
+                    .font(.body.weight(.regular))
                     .frame(width: 36, height: 36)
                     .contentTransition(.symbolEffect(.replace))
             }

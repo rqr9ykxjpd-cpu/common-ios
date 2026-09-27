@@ -118,18 +118,22 @@ enum BondTheme {
     ///
     /// Değerler iOS'un varsayılan punto karşılıkları; varsayılan boyuttaki
     /// görünüm birebir aynı kaldı, yalnızca büyümesi durdu.
+    /// Yazı ölçeği. iOS metin stilleri: varsayılan boyutları bu tokenların
+    /// eski sabit değerleriyle birebir aynı (34/28/22/20/17/15/17/16/13/12),
+    /// yani görünüm değişmiyor; fark, kullanıcının "Metin boyutu" ayarına uyması.
     enum Typography {
-        static var largeTitle: Font { .system(size: 34, weight: .semibold) }
-        static var title: Font { .system(size: 28, weight: .semibold) }
-        static var title2: Font { .system(size: 22, weight: .semibold) }
-        static var title3: Font { .system(size: 20, weight: .semibold) }
-        static var heading: Font { .system(size: 20, weight: .semibold) }
-        static var headline: Font { .system(size: 17, weight: .semibold) }
-        static var subheadline: Font { .system(size: 15) }
-        static var body: Font { .system(size: 17) }
-        static var callout: Font { .system(size: 16) }
-        static var footnote: Font { .system(size: 13) }
-        static var caption: Font { .system(size: 12) }
+        static var largeTitle: Font { .largeTitle.weight(.semibold) }
+        static var title: Font { .title.weight(.semibold) }
+        static var title2: Font { .title2.weight(.semibold) }
+        static var title3: Font { .title3.weight(.semibold) }
+        static var heading: Font { .title3.weight(.semibold) }
+        static var headline: Font { .headline }
+        static var subheadline: Font { .subheadline }
+        static var body: Font { .body }
+        static var callout: Font { .callout }
+        static var footnote: Font { .footnote }
+        static var caption: Font { .caption }
+        static var caption2: Font { .caption2 }
     }
 }
 

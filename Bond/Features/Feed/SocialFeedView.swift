@@ -387,7 +387,7 @@ struct SocialFeedView: View {
                         Text("\(groups.count)").contentTransition(.numericText())
                     }
                 }
-                .font(.system(size: 13, weight: .semibold))
+                .font(.footnote.weight(.semibold))
                 .foregroundStyle(BondTheme.muted)
                 .textCase(.uppercase)
                 .kerning(0.6)
@@ -429,7 +429,7 @@ struct SocialFeedView: View {
                             // Çok grupta noktalar taşar; "3 / 12" sayacı.
                             let sira = (groups.firstIndex { $0.id == aktif } ?? 0) + 1
                             Text("\(sira) / \(groups.count)")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(.caption.weight(.semibold))
                                 .foregroundStyle(BondTheme.muted)
                                 .contentTransition(.numericText())
                         }
@@ -457,7 +457,7 @@ struct SocialFeedView: View {
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: appState.feedSort.systemImage)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(appState.feedSort == .popular ? BondTheme.burntOrange : BondTheme.muted)
                 Text(appState.feedSort.title)
                     .font(.footnote.weight(.semibold))
@@ -519,7 +519,7 @@ struct SocialFeedView: View {
                                 }
                                 if let place = story.place {
                                     Image(systemName: "mappin.circle.fill")
-                                        .font(.system(size: 13))
+                                        .font(.footnote)
                                         .foregroundStyle(.white, BondTheme.violet)
                                         .offset(x: storyAvatar / 2.6, y: storyAvatar / 2.6)
                                         .accessibilityLabel(place.name)
@@ -529,7 +529,7 @@ struct SocialFeedView: View {
                             .contentShape(Circle())
                             VStack(spacing: 1) {
                                 Text(story.author.name)
-                                    .font(.system(size: 12, weight: story.viewed ? .medium : .bold))
+                                    .font(.caption.weight(story.viewed ? .medium : .bold))
                                     .foregroundStyle(BondTheme.ink.opacity(story.viewed ? 0.5 : 1))
                                     .lineLimit(1)
                                 if let place = story.place {
@@ -661,7 +661,7 @@ private struct AddStoryBubble: View {
 
                 Button(action: action) {
                     Image(systemName: "plus")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.caption2.weight(.bold))
                         .foregroundStyle(BondTheme.onAccent)
                         .frame(width: 19, height: 19)
                         .background(BondTheme.burntOrange, in: Circle())
@@ -671,7 +671,7 @@ private struct AddStoryBubble: View {
                 .accessibilityLabel(L10n.Composer.shareStory)
             }
             Text(L10n.Feed.yourStory)
-                .font(.system(size: 11, weight: .semibold))
+                .font(.caption2.weight(.semibold))
                 .foregroundStyle(BondTheme.ink)
         }
     }

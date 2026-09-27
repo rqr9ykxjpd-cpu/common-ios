@@ -40,6 +40,9 @@ struct RootView: View {
             }
         }
         .preferredColorScheme(resolvedColorScheme)
+        // Yazılar iPhone'un "Metin boyutu" ayarına uyuyor; en uç erişilebilirlik
+        // boyutlarında kartlar ve çipler taşmasın diye bir üst sınır.
+        .dynamicTypeSize(...DynamicTypeSize.accessibility2)
         // Klavye açıkken boşluğa dokununca kapanır; her ekranda ayrı ayrı bağlamak yerine tek yer.
         .background(KeyboardDismissOnTap())
         .transaction { transaction in

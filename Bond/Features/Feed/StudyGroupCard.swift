@@ -54,10 +54,10 @@ struct StudyGroupCard: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
-                        Text(group.host.name).font(.system(size: 15, weight: .semibold))
+                        Text(group.host.name).font(.subheadline.weight(.semibold))
                         if group.isMine {
                             Text(L10n.StudyGroup.mine)
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(.caption2.weight(.semibold))
                                 .foregroundStyle(BondTheme.burntOrangeText)
                         }
                     }
@@ -65,7 +65,7 @@ struct StudyGroupCard: View {
                     // ikinci satıra sarar, saat hep tam görünür.
                     (Text(Image(systemName: "mappin.and.ellipse")) + Text(" \(group.place.name)  ")
                         + Text(Image(systemName: "clock")) + Text(" \(group.hasStarted ? L10n.StudyGroup.started : whenText)"))
-                        .font(.system(size: 13))
+                        .font(.footnote)
                         .foregroundStyle(BondTheme.muted)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
@@ -78,7 +78,7 @@ struct StudyGroupCard: View {
                         }
                     } label: {
                         Image(systemName: "ellipsis")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.subheadline.weight(.semibold))
                             .foregroundStyle(BondTheme.muted)
                             .frame(width: 32, height: 32)
                             .contentShape(Rectangle())
@@ -88,7 +88,7 @@ struct StudyGroupCard: View {
 
             if !group.note.isEmpty {
                 Text(group.note)
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.callout.weight(.medium))
                     .foregroundStyle(BondTheme.ink)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -96,7 +96,7 @@ struct StudyGroupCard: View {
             HStack(spacing: 10) {
                 memberStack
                 Text(headcountText)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.footnote.weight(.medium))
                     .foregroundStyle(BondTheme.muted)
                     .contentTransition(.numericText())
                 Spacer(minLength: 8)
@@ -143,7 +143,7 @@ struct StudyGroupCard: View {
                     PhotosPicker(selection: $spotPickerItem, matching: .images) {
                         HStack(spacing: 6) {
                             if isSharingSpot { ProgressView().controlSize(.small) }
-                            else { Image(systemName: "camera.fill").font(.system(size: 13, weight: .semibold)) }
+                            else { Image(systemName: "camera.fill").font(.footnote.weight(.semibold)) }
                             Text(group.hasSpotPhoto ? L10n.StudyGroup.spotRetake : L10n.StudyGroup.spotShow)
                                 .font(.subheadline.weight(.semibold))
                         }
@@ -154,13 +154,13 @@ struct StudyGroupCard: View {
                     .disabled(isSharingSpot)
                     if !group.hasSpotPhoto {
                         Text(L10n.StudyGroup.spotHint)
-                            .font(.system(size: 12))
+                            .font(.caption)
                             .foregroundStyle(BondTheme.muted)
                     }
                 }
             } else if !group.hasStarted {
                 Label(L10n.StudyGroup.spotBeforeWindow, systemImage: "camera")
-                    .font(.system(size: 12))
+                    .font(.caption)
                     .foregroundStyle(BondTheme.muted)
             }
         } else if group.hasSpotPhoto {
@@ -168,12 +168,12 @@ struct StudyGroupCard: View {
                 spotThumbnail
             } else {
                 Label(L10n.StudyGroup.spotMembersOnly, systemImage: "lock.fill")
-                    .font(.system(size: 12))
+                    .font(.caption)
                     .foregroundStyle(BondTheme.muted)
             }
         } else if group.joined {
             Label(L10n.StudyGroup.spotWaiting, systemImage: "camera")
-                .font(.system(size: 12))
+                .font(.caption)
                 .foregroundStyle(BondTheme.muted)
         }
     }
@@ -186,15 +186,15 @@ struct StudyGroupCard: View {
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 VStack(alignment: .leading, spacing: 3) {
                     Text(L10n.StudyGroup.spotHere(group.host.name, group.spotPhotoAt.map { Self.saat.string(from: $0) } ?? ""))
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                         .foregroundStyle(BondTheme.ink)
                     Text(group.place.name)
-                        .font(.system(size: 12))
+                        .font(.caption)
                         .foregroundStyle(BondTheme.muted)
                 }
                 Spacer(minLength: 0)
                 Image(systemName: "arrow.up.left.and.arrow.down.right")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(BondTheme.muted)
             }
             .padding(8)
@@ -235,7 +235,7 @@ struct StudyGroupCard: View {
             }
             if fazla > 0 {
                 Text("+\(fazla)")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.caption2.weight(.bold))
                     .foregroundStyle(BondTheme.ink)
                     .frame(width: 28, height: 28)
                     .background(BondTheme.paper, in: Circle())

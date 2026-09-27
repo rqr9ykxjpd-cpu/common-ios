@@ -307,7 +307,7 @@ struct ProfileSettingsView: View {
                 Spacer(minLength: 0)
                 if let trailing {
                     Text(trailing)
-                        .font(.system(size: 16))
+                        .font(.callout)
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
                 }
@@ -329,7 +329,7 @@ struct ProfileSettingsView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                 Text(detail)
-                    .font(.system(size: 13))
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
             }
         } icon: {
@@ -369,19 +369,19 @@ struct ProfileVisitorsView: View {
                                 VStack(alignment: .leading, spacing: 3) {
                                     HStack(spacing: 5) {
                                         Text(visit.profile.name)
-                                            .font(.system(size: 17, weight: .semibold))
+                                            .font(.body.weight(.semibold))
                                         ProfileBadgeLabel(
                                             badge: visit.profile.badge,
                                             compact: true
                                         )
                                     }
                                     Text(DepartmentCatalog.display(visit.profile.department))
-                                        .font(.system(size: 15))
+                                        .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                 }
                                 Spacer(minLength: 0)
                                 Text(visit.visitedAt.relativeTurkish)
-                                    .font(.system(size: 12))
+                                    .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -428,9 +428,9 @@ struct ProfileSavedPostsView: View {
 
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(post.author.name)
-                                    .font(.system(size: 17, weight: .semibold))
+                                    .font(.body.weight(.semibold))
                                 Text(post.caption)
-                                    .font(.system(size: 15))
+                                    .font(.subheadline)
                                     .foregroundStyle(.secondary)
                                     .lineLimit(2)
                             }

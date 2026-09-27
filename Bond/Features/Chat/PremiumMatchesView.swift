@@ -246,13 +246,13 @@ struct PremiumMatchesView: View {
     private var emptyConversations: some View {
         VStack(spacing: BondTheme.Space.sm) {
             Image(systemName: "message")
-                .font(.system(size: 22))
+                .font(.title2)
                 .foregroundStyle(BondTheme.muted)
                 .idleFloat()
             Text(L10n.Chat.emptyTitle)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.subheadline.weight(.semibold))
             Text(L10n.Chat.emptyBody)
-                .font(.system(size: 13))
+                .font(.footnote)
                 .foregroundStyle(BondTheme.muted)
         }
         .frame(maxWidth: .infinity)

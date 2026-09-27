@@ -188,7 +188,7 @@ struct NotificationsView: View {
                         .clipShape(Circle())
                 } else {
                     Image(systemName: notification.kind.systemName)
-                        .font(.system(size: 20, weight: .semibold))
+                        .font(.title3.weight(.semibold))
                         .foregroundStyle(BondTheme.violet)
                         .frame(width: 54, height: 54)
                         .background(BondTheme.violet.opacity(0.1), in: Circle())

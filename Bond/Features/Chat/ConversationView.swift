@@ -114,15 +114,15 @@ struct ConversationView: View {
                 // cihazdan sonlandırılmış ya da liste henüz yüklenmemiş olabilir.
                 VStack(spacing: 14) {
                     Image(systemName: "bubble.left.and.exclamationmark.bubble.right")
-                        .font(.system(size: 34, weight: .light))
+                        .font(.largeTitle.weight(.light))
                         .foregroundStyle(BondTheme.icon)
                     Text(L10n.Chat.missing)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.callout.weight(.semibold))
                     Text(L10n.Chat.unmatchedMaybe)
-                        .font(.system(size: 13))
+                        .font(.footnote)
                         .foregroundStyle(BondTheme.muted)
                     Button(L10n.Common.goBack) { dismiss() }
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.footnote.weight(.semibold))
                         .foregroundStyle(BondTheme.violet)
                         .padding(.top, 4)
                 }
@@ -238,7 +238,7 @@ struct ConversationView: View {
                             .frame(width: 28, height: 28)
                             .clipShape(Circle())
                         Text(conversation.profile.name)
-                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            .font(.system(.callout, design: .rounded, weight: .semibold))
                     }
                     .foregroundStyle(BondTheme.ink)
                 }
@@ -285,7 +285,7 @@ struct ConversationView: View {
             HStack(spacing: 9) {
                 Image(systemName: "sparkles").foregroundStyle(BondTheme.violet)
                 Text(connectionText(for: shared))
-                    .font(.system(size: 12))
+                    .font(.caption)
                     .foregroundStyle(BondTheme.ink.opacity(0.65))
             }
             .padding(.horizontal, 13).padding(.vertical, 10)
@@ -317,10 +317,10 @@ struct ConversationView: View {
                         .frame(width: 3, height: 34)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(L10n.Chat.editing)
-                            .font(.system(size: 11, weight: .bold))
+                            .font(.caption2.weight(.bold))
                             .foregroundStyle(BondTheme.ink)
                         Text(L10n.Chat.editingHint)
-                            .font(.system(size: 12))
+                            .font(.caption)
                             .foregroundStyle(BondTheme.muted)
                             .lineLimit(1)
                     }
@@ -344,10 +344,10 @@ struct ConversationView: View {
                         .frame(width: 3, height: 34)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(replyingTo.isMine ? L10n.Chat.replyingToSelf : L10n.Chat.replying)
-                            .font(.system(size: 11, weight: .bold))
+                            .font(.caption2.weight(.bold))
                             .foregroundStyle(BondTheme.violet)
                         Text(replyingTo.body)
-                            .font(.system(size: 12))
+                            .font(.caption)
                             .foregroundStyle(BondTheme.muted)
                             .lineLimit(1)
                     }
@@ -365,7 +365,7 @@ struct ConversationView: View {
 
             HStack(alignment: .bottom, spacing: 9) {
                 TextField(L10n.Chat.placeholder, text: $draft, axis: .vertical)
-                    .font(.system(size: 15))
+                    .font(.subheadline)
                     .lineLimit(1...5)
                     .focused($focused)
                     .padding(.horizontal, 14).padding(.vertical, 12)
@@ -491,7 +491,7 @@ private struct MessageBubble: View {
                                 .font(.system(size: 10, weight: .bold))
                                 .foregroundStyle(message.isMine ? BondTheme.acid : BondTheme.violet)
                             Text(quoted.body)
-                                .font(.system(size: 11))
+                                .font(.caption2)
                                 .lineLimit(2)
                                 .foregroundStyle(message.isMine ? BondTheme.paper.opacity(0.66) : BondTheme.muted)
                         }
@@ -502,7 +502,7 @@ private struct MessageBubble: View {
                     }
 
                     Text(message.body)
-                        .font(.system(size: 15))
+                        .font(.subheadline)
                         .lineSpacing(3)
                     if message.editedAt != nil {
                         // Renk zaman damgasıyla aynı kuralı izliyor: kendi mesajın
@@ -531,7 +531,7 @@ private struct MessageBubble: View {
                 // kaydırırken balonu daraltıp yazıyı yeniden kırıyordu.
                 .background(alignment: .leading) {
                     Image(systemName: "arrowshape.turn.up.left.fill")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                         .foregroundStyle(BondTheme.violet)
                         .scaleEffect(replyArmed ? 1.2 : 0.8)
                         .frame(width: 44, height: 44)
@@ -570,7 +570,7 @@ private struct MessageBubble: View {
                 if let reaction = message.reaction {
                     Button { react(reaction) } label: {
                         Text(reaction)
-                            .font(.system(size: 14))
+                            .font(.subheadline)
                             .padding(.horizontal, 10)
                             .frame(minHeight: 44)
                             .background(BondTheme.surface, in: Capsule())
@@ -613,7 +613,7 @@ private struct MessageBubble: View {
             Rectangle().fill(BondTheme.hairline).frame(width: 1, height: 24)
             Button(action: reply) {
                 Image(systemName: "arrowshape.turn.up.left")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
                     .frame(width: 38, height: 38)
             }
             .buttonStyle(PressableStyle())
@@ -622,7 +622,7 @@ private struct MessageBubble: View {
             if !message.isMine {
                 Button(action: report) {
                     Image(systemName: "flag")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                         .frame(width: 38, height: 38)
                 }
                 .buttonStyle(PressableStyle())
@@ -634,7 +634,7 @@ private struct MessageBubble: View {
             if message.isMine, !canEdit {
                 Button(action: showPaywall) {
                     Image(systemName: "lock.fill")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                         .foregroundStyle(BondTheme.muted)
                         .frame(width: 38, height: 38)
                 }
@@ -645,7 +645,7 @@ private struct MessageBubble: View {
             if message.isMine, canEdit {
                 Button(action: edit) {
                     Image(systemName: "pencil")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                         .frame(width: 38, height: 38)
                 }
                 .buttonStyle(PressableStyle())
@@ -653,7 +653,7 @@ private struct MessageBubble: View {
 
                 Button(action: delete) {
                     Image(systemName: "trash")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                         .foregroundStyle(BondTheme.coral)
                         .frame(width: 38, height: 38)
                 }

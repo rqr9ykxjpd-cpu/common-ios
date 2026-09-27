@@ -70,7 +70,7 @@ struct ProfileEditorView: View {
             VStack(alignment: .leading, spacing: BondTheme.Space.xl) {
                 completionBanner
                 Text(L10n.Profile.publishNote)
-                    .font(.system(size: 12))
+                    .font(.caption)
                     .foregroundStyle(BondTheme.muted)
                 photos
                 basicInformation
@@ -165,17 +165,17 @@ struct ProfileEditorView: View {
             if !missingFields.isEmpty {
                 HStack(alignment: .top, spacing: 7) {
                     Image(systemName: "exclamationmark.circle.fill")
-                        .font(.system(size: 13))
+                        .font(.footnote)
                         .foregroundStyle(BondTheme.coral)
                     Text(missingFields.joined(separator: " · "))
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.caption.weight(.medium))
                         .foregroundStyle(BondTheme.ink.opacity(0.7))
                         .fixedSize(horizontal: false, vertical: true)
                     Spacer(minLength: 0)
                 }
             } else if !changed {
                 Text(L10n.Profile.allSaved)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.caption.weight(.medium))
                     .foregroundStyle(BondTheme.muted)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -221,7 +221,7 @@ struct ProfileEditorView: View {
                             .frame(width: 104, height: 128)
                             .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous))
                         Image(systemName: "photo.badge.plus")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.caption.weight(.bold))
                             .foregroundStyle(BondTheme.paper)
                             .frame(width: 30, height: 30)
                             .background(BondTheme.ink, in: Circle())
@@ -231,9 +231,9 @@ struct ProfileEditorView: View {
                 .buttonStyle(PressableStyle())
                 VStack(alignment: .leading, spacing: 8) {
                     Text(L10n.Profile.mainPhoto)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                     Text(L10n.Profile.mainPhotoHint)
-                        .font(.system(size: 13))
+                        .font(.footnote)
                         .foregroundStyle(BondTheme.muted)
                     // "Fotoğrafı kaldır" kaldırıldı: profil fotoğrafı kayıtta zorunlu
                     // tutuluyor, buradan silinebildiği sürece zorunluluk kâğıt üstünde
@@ -244,7 +244,7 @@ struct ProfileEditorView: View {
 
             PhotosPicker(selection: $galleryItems, maxSelectionCount: CampusLimits.maxGalleryPhotos, matching: .images) {
                 Label(galleryButtonTitle, systemImage: "photo.stack")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(BondTheme.ink)
                     .frame(maxWidth: .infinity).frame(height: 46)
                     .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface))
@@ -255,7 +255,7 @@ struct ProfileEditorView: View {
             // Galeri, profiline içerikten ulaşan kişilere ek bağlam verir.
             // Ana fotoğraf yorum ve sohbetlerdeki küçük avatar olarak kalır.
             Text(L10n.Profile.galleryHint)
-                .font(.system(size: 12))
+                .font(.caption)
                 .foregroundStyle(BondTheme.muted)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -305,13 +305,13 @@ struct ProfileEditorView: View {
                 AppSectionHeader(title: L10n.Profile.basics)
                 VStack(alignment: .leading, spacing: 7) {
                     Text(L10n.Username.title)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.caption.weight(.semibold))
                         .foregroundStyle(BondTheme.muted)
                     UsernameField(
                         text: $draft.username,
                         status: $usernameStatus,
                         check: { aday in try await appState.isUsernameAvailable(aday) },
-                        font: .system(size: 16, weight: .medium)
+                        font: .callout.weight(.medium)
                     )
                     .padding(.horizontal, 12).padding(.vertical, 8)
                     .background(BondTheme.ink.opacity(0.045), in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface))
@@ -319,7 +319,7 @@ struct ProfileEditorView: View {
                 ProfileTextField(title: L10n.Onboarding.name, text: $draft.name)
                 ProfileTextField(title: L10n.Profile.needDepartment, text: $draft.department)
                 DatePicker(L10n.Profile.birthDate, selection: $draft.birthDate, in: ...AgeLimit.latestBirthDate, displayedComponents: .date)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.subheadline.weight(.medium))
                     .environment(\.locale, L10n.appLocale)
                 Picker(L10n.Profile.year, selection: $draft.year) {
                     ForEach(AcademicYear.all, id: \.self) { Text(AcademicYear.display($0)).tag($0) }
@@ -337,16 +337,16 @@ struct ProfileEditorView: View {
                         .font(.system(size: 18, weight: .bold))
                     Spacer()
                     Text("\(draft.bio.count)/220")
-                        .font(.system(size: 12))
+                        .font(.caption)
                         .foregroundStyle(draft.bio.count > 220 ? BondTheme.coral : BondTheme.muted)
                 }
                 TextField(L10n.Profile.bioPlaceholder, text: $draft.bio, axis: .vertical)
-                    .font(.system(size: 15))
+                    .font(.subheadline)
                     .lineLimit(4...7)
                     .padding(12)
                     .background(BondTheme.ink.opacity(0.045), in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface))
                 Text(L10n.Profile.aboutOptional)
-                    .font(.system(size: 12))
+                    .font(.caption)
                     .foregroundStyle(BondTheme.muted)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -358,7 +358,7 @@ struct ProfileEditorView: View {
         return VStack(alignment: .leading, spacing: BondTheme.Space.md) {
             AppSectionHeader(title: L10n.Onboarding.interestsTitle)
             Text(L10n.Profile.interestCount(draft.interests.count, InterestCatalog.maximumSelection, InterestCatalog.minimumSelection))
-                .font(.system(size: 12))
+                .font(.caption)
                 .foregroundStyle(BondTheme.muted)
             ForEach(InterestCatalog.grouped, id: \.baslik) { grup in
                 VStack(alignment: .leading, spacing: 8) {
@@ -377,7 +377,7 @@ struct ProfileEditorView: View {
                                 else if !full { draft.interests.insert(interest) }
                             } label: {
                                 Text(InterestCatalog.displayName(interest))
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(.footnote.weight(.medium))
                                     .foregroundStyle(selected ? .white : BondTheme.ink)
                                     .padding(.horizontal, 12).frame(height: 34)
                                     .background(selected ? BondTheme.violet : BondTheme.surface, in: Capsule())
@@ -398,7 +398,7 @@ struct ProfileEditorView: View {
                 AppSectionHeader(title: L10n.Profile.accountSection)
                 readOnlyRow(L10n.Profile.account, appState.email.isEmpty ? L10n.Profile.notSignedIn : appState.email)
                 Text(L10n.Profile.lockedFields)
-                    .font(.system(size: 12)).foregroundStyle(BondTheme.muted)
+                    .font(.caption).foregroundStyle(BondTheme.muted)
             }
         }
     }
@@ -409,7 +409,7 @@ struct ProfileEditorView: View {
             Spacer()
             Text(value).fontWeight(.semibold)
         }
-        .font(.system(size: 13))
+        .font(.footnote)
     }
 
     private func loadOnce() {
@@ -494,10 +494,10 @@ private struct ProfileTextField: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
             Text(title)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(BondTheme.muted)
             TextField(title, text: $text)
-                .font(.system(size: 16, weight: .medium))
+                .font(.callout.weight(.medium))
                 .padding(.horizontal, 12).frame(height: 46)
                 .background(BondTheme.ink.opacity(0.045), in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface))
         }

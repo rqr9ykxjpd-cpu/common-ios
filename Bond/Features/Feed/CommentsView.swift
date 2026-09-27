@@ -121,7 +121,7 @@ struct CommentsView: View {
             }
             if !post.caption.trimmed.isEmpty {
                 Text(post.caption)
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.body.weight(.semibold))
                     .lineSpacing(4)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -153,7 +153,7 @@ struct CommentsView: View {
                         .fill(comment.isMine ? BondTheme.acid : BondTheme.violet.opacity(0.14))
                         .overlay {
                             Text(String(comment.author.prefix(1)).uppercased())
-                                .font(.system(size: 14, weight: .bold))
+                                .font(.subheadline.weight(.bold))
                                 .foregroundStyle(comment.isMine ? BondTheme.onAccent : BondTheme.ink)
                         }
                 }
@@ -163,13 +163,13 @@ struct CommentsView: View {
             VStack(alignment: .leading, spacing: 5) {
                 HStack(alignment: .firstTextBaseline) {
                     Text(comment.author)
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.subheadline.weight(.bold))
                     Text(comment.createdAt.relativeTurkish)
-                        .font(.system(size: 11))
+                        .font(.caption2)
                         .foregroundStyle(BondTheme.muted)
                 }
                 Text(comment.body)
-                    .font(.system(size: 14))
+                    .font(.subheadline)
                     .lineSpacing(3)
                     .fixedSize(horizontal: false, vertical: true)
                 // ▲ puan ▼ — kendi cevabına oy yok (sunucu da reddeder), kapsül sönük.
@@ -240,7 +240,7 @@ struct CommentsView: View {
     private var composer: some View {
         HStack(alignment: .bottom, spacing: 9) {
             TextField(post?.repliesAreAnswers == true ? L10n.Board.answerPlaceholder : L10n.Comments.placeholder, text: $draft, axis: .vertical)
-                .font(.system(size: 15))
+                .font(.subheadline)
                 .lineLimit(1...4)
                 .focused($focused)
                 .padding(.horizontal, 14)
