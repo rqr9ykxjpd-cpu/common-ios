@@ -691,10 +691,13 @@ struct SocialPersonDetailView: View {
                 // tek başına ikon burada fazla sessiz kalıyor.
                 HStack(spacing: BondTheme.Space.compact) {
                     MeetupCoffeeButton(sent: pendingRequest != nil, size: 52) { sendRequest() }
+                        .accessibilityLabel(pendingRequest == nil ? L10n.Profile.meetHere : L10n.Profile.requestSent)
                     Text(pendingRequest == nil ? L10n.Profile.meetHere : L10n.Profile.requestSent)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(BondTheme.ink)
                         .fixedSize(horizontal: false, vertical: true)
+                        // Düğme aynı metni okuyor; iki kez söylenmesin.
+                        .accessibilityHidden(true)
                 }
 
                 if pendingRequest == nil {
