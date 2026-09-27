@@ -12,6 +12,11 @@ struct WelcomeView: View {
     @State private var appeared = false
     @State private var currentAppleNonce: String?
     @State private var isSigningIn = false
+    /// İçerik alttaki giriş düğmelerinin arkasına taşıyorsa (iPad'deki iPhone
+    /// penceresi, küçük iPhone'lar) boşluklar ve başlık sıkışır. Eskiden üçüncü
+    /// madde düğme şeridinin arkasında yarıdan kesik duruyordu; Apple
+    /// inceleyicisinin iPad'de gördüğü ilk ekran buydu.
+    @State private var compact = false
 
     /// E-posta ile giriş App Store sürümünde kapalı. Debug'da da demo hesap
     /// yolu yok — gerçek Apple/Google oturumu kullanılır.
@@ -25,7 +30,7 @@ struct WelcomeView: View {
 
                 VStack(alignment: .leading, spacing: BondTheme.Space.md) {
                     Text(L10n.Welcome.headline)
-                        .editorialTitle(40)
+                        .editorialTitle(compact ? 32 : 40)
                         .foregroundStyle(BondTheme.ink)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityAddTraits(.isHeader)
@@ -36,7 +41,7 @@ struct WelcomeView: View {
                         .lineSpacing(3)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(.top, BondTheme.Space.xxl)
+                .padding(.top, compact ? BondTheme.Space.lg : BondTheme.Space.xxl)
                 .opacity(appeared ? 1 : 0)
                 .offset(y: appeared || reduceMotion ? 0 : 10)
                 .animation(reduceMotion ? nil : BondTheme.Motion.smooth.delay(0.04), value: appeared)
@@ -56,14 +61,20 @@ struct WelcomeView: View {
                         )
                     }
                 }
-                .padding(.top, 40)
+                .padding(.top, compact ? BondTheme.Space.lg : 40)
             }
             .padding(.horizontal, BondTheme.Space.lg)
-            .padding(.top, BondTheme.Space.xl)
+            .padding(.top, compact ? BondTheme.Space.md : BondTheme.Space.xl)
             .padding(.bottom, BondTheme.Space.xl)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .scrollBounceBehavior(.basedOnSize)
+        // Bir kez sıkışınca geri açılmıyor: iki düzen arasında gidip gelmesin.
+        .onScrollGeometryChange(for: Bool.self) { geo in
+            geo.contentSize.height > geo.containerSize.height + 1
+        } action: { _, tasiyor in
+            if tasiyor && !compact { compact = true }
+        }
         .background(BondTheme.paper.ignoresSafeArea())
         .safeAreaInset(edge: .bottom) {
             signInFooter
