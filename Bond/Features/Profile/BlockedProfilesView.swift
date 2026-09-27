@@ -69,10 +69,9 @@ struct BlockedProfilesView: View {
                     ProgressView()
                 } else {
                     Text(L10n.Profile.unblock)
-                        .font(.system(size: 13, weight: .bold))
                 }
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.secondaryCapsule)
             .disabled(calisiyor)
         }
         .padding(.vertical, 4)

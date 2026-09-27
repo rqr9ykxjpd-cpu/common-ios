@@ -54,7 +54,7 @@ struct BadgeCatalogSheet: View {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(BondTheme.muted)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                     .accessibilityLabel(L10n.Common.cancel)
                 }
             }

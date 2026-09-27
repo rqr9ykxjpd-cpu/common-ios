@@ -36,7 +36,7 @@ struct PlacePeopleView: View {
                             } label: {
                                 CampusPersonCard(profile: profile, showsDisclosure: false)
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.pressable)
                             if profile.id != appState.currentUserID {
                                 meetupButton(for: profile)
                             }

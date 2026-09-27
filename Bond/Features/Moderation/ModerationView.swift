@@ -341,9 +341,7 @@ struct ModerationView: View {
                 Button(L10n.ProblemReport.close) {
                     Task { await appState.closeProblemReport(sorun.id) }
                 }
-                .font(.footnote.weight(.semibold))
-                .buttonStyle(.bordered)
-                .tint(BondTheme.ink)
+                .buttonStyle(.secondaryCapsuleOnSurface)
             } else {
                 Label(L10n.ProblemReport.closed, systemImage: "checkmark")
                     .font(.caption.weight(.semibold))

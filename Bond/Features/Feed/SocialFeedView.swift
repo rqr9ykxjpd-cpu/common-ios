@@ -666,7 +666,7 @@ private struct AddStoryBubble: View {
                         .frame(width: 19, height: 19)
                         .background(BondTheme.burntOrange, in: Circle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
                 .offset(x: -1, y: -1)
                 .accessibilityLabel(L10n.Composer.shareStory)
             }

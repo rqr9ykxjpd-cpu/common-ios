@@ -48,7 +48,7 @@ struct StudyGroupCard: View {
                     }
                     .frame(width: 48, height: 48)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
                 .zoomSource(id: "grup-\(group.id)-\(group.host.id)", in: zoomNamespace)
                 .accessibilityLabel(group.host.name)
 
@@ -200,7 +200,7 @@ struct StudyGroupCard: View {
             .padding(8)
             .background(BondTheme.paper, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
         .accessibilityLabel(L10n.StudyGroup.spotViewerTitle)
         .transition(.scale(scale: 0.85).combined(with: .opacity))
     }
@@ -227,7 +227,7 @@ struct StudyGroupCard: View {
                         .clipShape(Circle())
                         .overlay(Circle().strokeBorder(BondTheme.surface, lineWidth: 2))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
                 .accessibilityLabel(kisi.name)
                 // Ev sahibi başlıkta zaten kaynak; aynı kimlik iki kez verilmesin.
                 .zoomSource(id: "grup-\(group.id)-\(kisi.id)", in: kisi.id == group.host.id ? nil : zoomNamespace)

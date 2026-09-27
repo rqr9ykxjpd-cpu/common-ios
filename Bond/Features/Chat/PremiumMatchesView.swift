@@ -137,8 +137,7 @@ struct PremiumMatchesView: View {
                                 Text(L10n.Chat.accept)
                             }.frame(minHeight: 44)
                         }
-                        .buttonStyle(.bordered)
-                        .tint(BondTheme.ink)
+                        .buttonStyle(.secondaryCapsule)
                         .disabled(acceptingIntroduction != nil)
                         .accessibilityIdentifier("chat.acceptIntroduction.\(person.id)")
                         Divider()
@@ -167,7 +166,7 @@ struct PremiumMatchesView: View {
                     .foregroundStyle(BondTheme.ink)
                     .frame(minHeight: 44)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
                 .accessibilityIdentifier("chat.acceptedIntroduction")
             }
         }

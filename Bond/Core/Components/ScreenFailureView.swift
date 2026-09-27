@@ -15,9 +15,7 @@ struct ScreenFailureView: View {
             Text(message).font(.callout).foregroundStyle(.secondary)
                 .multilineTextAlignment(compact ? .leading : .center)
             Button(L10n.Common.retry, action: retry)
-                .buttonStyle(.bordered)
-                .tint(BondTheme.ink)
-                .frame(minHeight: 44)
+                .buttonStyle(.secondaryCapsule)
         }
         .foregroundStyle(BondTheme.ink)
         .frame(maxWidth: .infinity, alignment: compact ? .leading : .center)

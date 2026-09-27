@@ -103,8 +103,7 @@ private struct MediaPlaceholder: View {
                 if let retry {
                     Text(kind.failureLabel).font(.callout).multilineTextAlignment(.center)
                     Button(L10n.Common.retry, action: retry)
-                        .buttonStyle(.bordered)
-                        .frame(minHeight: 44)
+                        .buttonStyle(.secondaryCapsule)
                 }
             }
             .foregroundStyle(BondTheme.ink)

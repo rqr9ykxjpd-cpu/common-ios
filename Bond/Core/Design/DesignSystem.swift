@@ -337,15 +337,11 @@ struct GrainOverlay: View {
     }
 }
 
-/// Eski basma stili; 25 yerde kullanılıyor. Gövdesi artık `PressableButtonStyle`
-/// ile aynı — tek yerden aynı his. Yeni kodda `.pressable` yaz.
+/// Eski adı; gövdesi `PressableButtonStyle` ile bire bir aynı, ayrı bir his
+/// olmasın diye ona yönleniyor. Yeni kodda `.pressable` yaz.
 struct PressableStyle: ButtonStyle {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.98 : 1)
-            .opacity(configuration.isPressed ? 0.82 : 1)
-            .animation(reduceMotion ? nil : BondTheme.Motion.snappy, value: configuration.isPressed)
+        PressableButtonStyle().makeBody(configuration: configuration)
     }
 }
 
@@ -509,28 +505,96 @@ struct AppEmptyState: View {
     }
 }
 
-/// Basınca hafifçe küçülüp solar, bırakınca spring ile geri gelir.
+/// Uygulamanın tek basma tepkisi.
 ///
-/// Uygulamadaki dokunulabilir kartlar ve düğmeler için tek basma tepkisi.
-/// `.plain` düğmelerde hiç tepki yoktu; `.bordered` olanlarda sistemin
-/// gri vurgusu vardı ve karta oturmuyordu. Reduce Motion açıkken ölçek
-/// değişmez, yalnızca solma kalır.
+/// Düğmenin boyuna göre davranıyor: küçük düğme ve çipler belirgin küçülüp
+/// bırakınca hafif yaylanarak döner; tam genişlik satır ve kartlar çok az
+/// küçülür ve hafifçe kararır (büyük bir satırın belirgin küçülmesi ekranı
+/// oynatıyordu). Eskiden her şey %2 küçülüp %82'ye soluyordu: küçük düğmede
+/// hissedilmiyor, siyah dolu düğmede "devre dışı kaldı" gibi görünüyordu.
+/// "Hareketi Azalt" açıkken ölçek değişmez, yalnızca kararma kalır.
 struct PressableButtonStyle: ButtonStyle {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    var scale: CGFloat = 0.98
+    /// Sabit ölçek; `nil` ise boyuta göre.
+    var scale: CGFloat? = nil
 
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed && !reduceMotion ? scale : 1)
-            .opacity(configuration.isPressed ? 0.82 : 1)
-            .animation(reduceMotion ? nil : BondTheme.Motion.snappy, value: configuration.isPressed)
+        PressableBody(configuration: configuration, fixedScale: scale)
     }
+}
+
+private struct PressableBody: View {
+    let configuration: ButtonStyleConfiguration
+    let fixedScale: CGFloat?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var genislik: CGFloat = 0
+
+    /// Bu genişliğin üstü "satır/kart" sayılıyor.
+    private static let buyukEsik: CGFloat = 240
+    private var buyuk: Bool { genislik > Self.buyukEsik }
+    private var hedefOlcek: CGFloat { fixedScale ?? (buyuk ? 0.985 : 0.96) }
+
+    var body: some View {
+        let basili = configuration.isPressed
+        configuration.label
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { genislik = $0 }
+            .scaleEffect(basili && !reduceMotion ? hedefOlcek : 1)
+            // Büyük yüzeyde küçülme az; basıldığı hafif kararmadan okunuyor.
+            .opacity(basili && (buyuk || reduceMotion) ? 0.88 : 1)
+            .animation(
+                reduceMotion ? nil : (basili ? .snappy(duration: 0.14) : .bouncy(duration: 0.38, extraBounce: 0.12)),
+                value: basili
+            )
+    }
+}
+
+/// İkincil eylem kapsülü ("Tekrar dene", "Kabul et", "Engeli kaldır").
+///
+/// Eskiden bu düğmelerde iOS'un gri `.bordered` kutusu vardı; uygulamanın
+/// kendi kapsülleriyle yan yana başka bir uygulamadan gelmiş gibi duruyordu.
+/// Yüzey kartın üstündeyse `onSurface` ile kâğıt zemin alır ki seçilsin.
+struct SecondaryCapsuleStyle: ButtonStyle {
+    var onSurface = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        SecondaryCapsuleBody(configuration: configuration, fill: onSurface ? BondTheme.paper : BondTheme.surface)
+    }
+}
+
+private struct SecondaryCapsuleBody: View {
+    let configuration: ButtonStyleConfiguration
+    let fill: Color
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.isEnabled) private var isEnabled
+
+    var body: some View {
+        let basili = configuration.isPressed
+        configuration.label
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(BondTheme.ink)
+            .padding(.horizontal, BondTheme.Space.md)
+            .frame(minHeight: 36)
+            .background(fill, in: Capsule())
+            .opacity(isEnabled ? 1 : 0.45)
+            .scaleEffect(basili && !reduceMotion ? 0.96 : 1)
+            .animation(
+                reduceMotion ? nil : (basili ? .snappy(duration: 0.14) : .bouncy(duration: 0.38, extraBounce: 0.12)),
+                value: basili
+            )
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+    }
+}
+
+extension ButtonStyle where Self == SecondaryCapsuleStyle {
+    static var secondaryCapsule: SecondaryCapsuleStyle { SecondaryCapsuleStyle() }
+    /// Yüzey (surface) rengindeki bir kartın üstünde.
+    static var secondaryCapsuleOnSurface: SecondaryCapsuleStyle { SecondaryCapsuleStyle(onSurface: true) }
 }
 
 extension ButtonStyle where Self == PressableButtonStyle {
     /// `Button { } label: { }.buttonStyle(.pressable)`
     static var pressable: PressableButtonStyle { PressableButtonStyle() }
-    /// Büyük kartlar için daha az ölçek; 0.97 tam ekran bir kartta fazla oynuyor.
+    /// Tam ekran kart gibi çok büyük yüzeyler için sabit, çok az ölçek.
     static var pressableCard: PressableButtonStyle { PressableButtonStyle(scale: 0.99) }
 }
 

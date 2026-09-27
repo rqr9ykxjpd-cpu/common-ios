@@ -242,7 +242,7 @@ struct ConversationView: View {
                     }
                     .foregroundStyle(BondTheme.ink)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
                 .accessibilityLabel(L10n.Feed.openProfile(conversation.profile.name))
             }
         }
