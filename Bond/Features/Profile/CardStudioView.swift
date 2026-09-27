@@ -161,13 +161,14 @@ struct CardStudioView: View {
 
     // MARK: - Renkler
 
+    /// Beşerli iki satır: üstte koyu, altta açık tonlar.
     private var swatches: some View {
-        HStack(spacing: 6) {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 5), spacing: 4) {
             ForEach(CardTheme.allCases) { theme in
                 swatch(theme)
             }
         }
-        .padding(.horizontal, BondTheme.Space.md)
+        .padding(.horizontal, BondTheme.Space.xl)
     }
 
     private func swatch(_ theme: CardTheme) -> some View {

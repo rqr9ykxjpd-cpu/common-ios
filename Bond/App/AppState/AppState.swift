@@ -111,6 +111,9 @@ final class AppState {
     var meetingRequestsError: String?
     /// Kullanıcı adı otomatik verildiyse bir kez "Kullanıcı adını seç" ekranı açılır.
     var needsUsernameChoice = false
+    /// Açılmış profil kartlarının rengi. Kart bir kez açılınca sonraki
+    /// açılışlarda doğrudan doğru renkte gelsin diye bellekte tutuluyor.
+    var cardThemes: [UUID: CardTheme] = [:]
     var placesError: String?
     var conversations: [Conversation] = []
     /// Engellediğin kişiler; ayarlardaki liste için.

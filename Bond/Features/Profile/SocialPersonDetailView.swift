@@ -36,9 +36,13 @@ struct SocialPersonDetailView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var cardLifted: Bool { cardDragging || cardFlying }
-    /// Kartın rengi: önizleme > sunucudaki > (kendi kartımsa) taslaktaki.
+    /// Kartın rengi: önizleme > (kendi kartımsa) taslaktaki > hızlı okunan >
+    /// ayrıntılarla gelen. Kendi kartında taslak önde: az önce kaydettiğin renk
+    /// sunucudan dönmesini beklemeden görünsün.
     private var theme: CardTheme {
-        themeOverride ?? details?.cardTheme ?? (isMe ? appState.draft.cardTheme : .classic)
+        if let themeOverride { return themeOverride }
+        if isMe { return appState.draft.cardTheme }
+        return appState.cardThemes[profile.id] ?? details?.cardTheme ?? .classic
     }
     /// Kart kendi şemasını alıyor; kartın açtığı sayfalar (sohbet vb.) almıyor,
     /// çünkü sheet'ler bu değiştiricinin dışında bağlı.
@@ -203,7 +207,10 @@ struct SocialPersonDetailView: View {
         }
         .task(id: profile.id) {
             appState.recordProfileVisit(profile)
+            // Renk ayrı ve önce: ayrıntılar fotoğrafları imzalamadan dönmüyor.
+            async let renk: Void = appState.loadCardTheme(for: profile.id)
             await reloadDetails()
+            await renk
         }
         .fullScreenCover(item: $conversationRoute) { route in
             NavigationStack { ConversationView(conversationID: route.id, showsClose: true) }

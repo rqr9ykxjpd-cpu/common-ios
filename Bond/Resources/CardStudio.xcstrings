@@ -288,6 +288,38 @@
           }
         }
       }
+    },
+    "raspberry": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raspberry"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ahududu"
+          }
+        }
+      }
+    },
+    "bubblegum": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pink"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pembe"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -69,6 +69,10 @@ extension SupabaseProductService {
         return CardTheme(server: rows.first?.cardTheme)
     }
 
+    func fetchCardTheme(_ profileID: UUID) async throws -> CardTheme {
+        try await cardTheme(of: profileID)
+    }
+
     func usernameNeedsChoice() async throws -> Bool {
         guard currentUserID != nil else { throw BackendServiceError.missingSession }
         return try await client.rpc("username_needs_choice").execute().value
@@ -441,3 +445,5 @@ private struct BlockRow: Decodable {
         case createdAt = "created_at"
     }
 }
+
+extension SupabaseProductService: CardThemeReading {}

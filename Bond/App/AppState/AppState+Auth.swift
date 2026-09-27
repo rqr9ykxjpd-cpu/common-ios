@@ -412,6 +412,7 @@ extension AppState {
         myBadge = .none
         serverPlan = .free
         tier = subscriptions.tier
+        cardThemes = [:]
 
         isFinishingOnboarding = false
         onboardingFailure = nil

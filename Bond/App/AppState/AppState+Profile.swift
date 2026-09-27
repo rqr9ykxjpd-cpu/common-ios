@@ -40,6 +40,13 @@ extension AppState {
         }
     }
 
+    /// Kartın rengini tek başına okur ve hatırlar (bkz. `CardThemeReading`).
+    func loadCardTheme(for profileID: UUID) async {
+        guard let okuyucu = service as? any CardThemeReading,
+              let tema = try? await okuyucu.fetchCardTheme(profileID) else { return }
+        cardThemes[profileID] = tema
+    }
+
     /// Profil kartının rengini kaydeder. Başarılıysa taslağa da yazar ki kendi
     /// kartın ve düzenleyici hemen yeni renkle açılsın.
     @discardableResult
@@ -47,6 +54,7 @@ extension AppState {
         do {
             try await service.setCardTheme(theme)
             draft.cardTheme = theme
+            cardThemes[currentUserID] = theme
             persistAccount()
             show(L10n.CardStudio.saved)
             Haptics.success()

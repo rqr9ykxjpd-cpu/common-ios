@@ -21,5 +21,7 @@ extension L10n {
         static var member: String { String(localized: "member", table: "CardStudio") }
         static var department: String { String(localized: "department", table: "CardStudio") }
         static var visibleNote: String { String(localized: "visibleNote", table: "CardStudio") }
+        static var raspberry: String { String(localized: "raspberry", table: "CardStudio") }
+        static var bubblegum: String { String(localized: "bubblegum", table: "CardStudio") }
     }
 }
