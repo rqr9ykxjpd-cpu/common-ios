@@ -362,7 +362,8 @@ extension BackendNotification {
     func copy(isRead: Bool) -> BackendNotification {
         BackendNotification(
             id: id, kind: kind, title: title, body: body, actorID: actorID, actorName: actorName,
-            actorAvatarURL: actorAvatarURL, matchID: matchID, isRead: isRead, createdAt: createdAt
+            actorAvatarURL: actorAvatarURL, matchID: matchID, isRead: isRead, createdAt: createdAt,
+            postID: postID
         )
     }
 }

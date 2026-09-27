@@ -1,10 +1,16 @@
 import SwiftUI
 
-struct CommentsView: View {
+/// Gönderi sayfası — Reddit ve X'teki gibi: akıştan sağdan itilerek açılır,
+/// gönderi üstte tam hâliyle (akıştaki kartın kendisi: oy, kaydet, paylaş,
+/// menü), altında cevaplar, en altta yazma alanı. Eskiden "Yorumlar" başlıklı
+/// bir sheet'ti; gönderi küçük bir özetti, fotoğrafı ve oyu yoktu.
+struct PostDetailView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let postID: UUID
+    /// Sheet olarak açıldıysa (kendi profilinden) sağ üstte "Bitti".
+    var showsClose = false
     @State private var draft = ""
     /// Yorum sınırına her dayanışta artar; yazma alanı titrer.
     @State private var limitBump = 0
@@ -15,6 +21,7 @@ struct CommentsView: View {
     /// Kurucu/moderatör: bu cevaba kim ne oy vermiş.
     @State private var votersTarget: SocialComment?
     @FocusState private var focused: Bool
+    @State private var selectedAuthor: StudentProfile?
 
     private var post: SocialPost? { appState.posts.first { $0.id == postID } }
     private var canSend: Bool {
@@ -22,123 +29,122 @@ struct CommentsView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if let post {
-                    ScrollView {
-                        LazyVStack(spacing: 0) {
-                            // Gönderi sayfası: soru üstte dursun ki cevaplar
-                            // bağlamsız kalmasın. Reddit'in post sayfası gibi.
-                            postHeader(post)
-                            if post.comments.isEmpty {
-                                AppEmptyState(
-                                    systemImage: "bubble.left.and.bubble.right",
-                                    title: post.repliesAreAnswers ? L10n.Board.answersEmpty : L10n.Comments.empty,
-                                    message: post.repliesAreAnswers ? L10n.Board.answersEmptyBody : L10n.Comments.emptyBody
-                                )
-                                .padding(.top, BondTheme.Space.md)
-                            } else {
-                                ForEach(post.rankedComments) { comment in
-                                    commentRow(comment, post: post)
-                                }
+        Group {
+            if let post {
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        PostCard(
+                            post: post,
+                            toggleLike: { appState.toggleLike(postID: post.id) },
+                            toggleSaved: { appState.toggleSaved(postID: post.id) },
+                            openProfile: { selectedAuthor = post.author },
+                            delete: {
+                                appState.deletePost(post.id)
+                                dismiss()
+                            },
+                            isDetail: true,
+                            onReply: { focused = true }
+                        )
+                        .padding(.top, BondTheme.Space.sm)
+                        .padding(.bottom, BondTheme.Space.lg)
+                        repliesHeader(post)
+                        if post.comments.isEmpty {
+                            AppEmptyState(
+                                systemImage: "bubble.left.and.bubble.right",
+                                title: post.repliesAreAnswers ? L10n.Board.answersEmpty : L10n.Comments.empty,
+                                message: post.repliesAreAnswers ? L10n.Board.answersEmptyBody : L10n.Comments.emptyBody
+                            )
+                            .padding(.top, BondTheme.Space.md)
+                            .padding(.horizontal, 20)
+                        } else {
+                            ForEach(post.rankedComments) { comment in
+                                commentRow(comment, post: post)
+                                    .padding(.horizontal, 20)
                             }
                         }
-                        .animation(reduceMotion ? nil : BondTheme.Motion.snappy,
-                                   value: post.rankedComments.map(\.id))
-                        .padding(.horizontal, BondTheme.Space.lg)
-                        .padding(.bottom, BondTheme.Space.xl)
                     }
-                    .scrollDismissesKeyboard(.interactively)
-                    .safeAreaInset(edge: .bottom, spacing: 0) { composer }
-                } else {
-                    AppEmptyState(systemImage: "exclamationmark.bubble", title: L10n.Comments.missingPost)
+                    .animation(reduceMotion ? nil : BondTheme.Motion.snappy,
+                               value: post.rankedComments.map(\.id))
+                    .padding(.bottom, BondTheme.Space.xl)
                 }
+                .scrollDismissesKeyboard(.interactively)
+                .safeAreaInset(edge: .bottom, spacing: 0) { composer }
+            } else {
+                AppEmptyState(systemImage: "exclamationmark.bubble", title: L10n.Comments.missingPost)
             }
-            .background(BondTheme.paper.ignoresSafeArea())
-            .navigationTitle(post?.repliesAreAnswers == true ? L10n.Board.answersTitle : L10n.Comments.title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+        }
+        .background(BondTheme.paper.ignoresSafeArea())
+        .navigationTitle(L10n.Board.postTitle)
+        .navigationBarTitleDisplayMode(.inline)
+        // Yazma alanı en altta; sekme çubuğu onun altında kalmasın.
+        .toolbar(.hidden, for: .tabBar)
+        .toolbar {
+            if showsClose {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(L10n.Common.done) { dismiss() }
                 }
             }
-            .confirmationDialog(L10n.Comments.deleteConfirm, isPresented: Binding(
-                get: { commentToDelete != nil },
-                set: { if !$0 { commentToDelete = nil } }
-            ), titleVisibility: .visible) {
-                Button(L10n.Comments.delete, role: .destructive) {
-                    guard let commentToDelete else { return }
-                    appState.deleteComment(commentToDelete.id, from: postID)
-                    self.commentToDelete = nil
+        }
+        .sheet(item: $selectedAuthor) { author in
+            NavigationStack {
+                ProfilePhotoStackView(profile: author)
+            }
+        }
+        .confirmationDialog(L10n.Comments.deleteConfirm, isPresented: Binding(
+            get: { commentToDelete != nil },
+            set: { if !$0 { commentToDelete = nil } }
+        ), titleVisibility: .visible) {
+            Button(L10n.Comments.delete, role: .destructive) {
+                guard let commentToDelete else { return }
+                appState.deleteComment(commentToDelete.id, from: postID)
+                self.commentToDelete = nil
+            }
+            Button(L10n.Common.cancel, role: .cancel) { commentToDelete = nil }
+        } message: {
+            Text(L10n.Feed.irreversible)
+        }
+        .alert(
+            L10n.Board.boostTitle,
+            isPresented: Binding(
+                get: { boostTarget != nil },
+                set: { if !$0 { boostTarget = nil } }
+            ),
+            presenting: boostTarget
+        ) { comment in
+            TextField(L10n.Board.boostPlaceholder, text: $boostInput)
+                .keyboardType(.numbersAndPunctuation)
+            Button(L10n.Board.boostApply) {
+                if let n = Int(boostInput.trimmed), n != 0 {
+                    appState.boostComment(postID: postID, commentID: comment.id, extra: n)
                 }
-                Button(L10n.Common.cancel, role: .cancel) { commentToDelete = nil }
-            } message: {
-                Text(L10n.Feed.irreversible)
+                boostInput = ""
             }
-            .alert(
-                L10n.Board.boostTitle,
-                isPresented: Binding(
-                    get: { boostTarget != nil },
-                    set: { if !$0 { boostTarget = nil } }
-                ),
-                presenting: boostTarget
-            ) { comment in
-                TextField(L10n.Board.boostPlaceholder, text: $boostInput)
-                    .keyboardType(.numbersAndPunctuation)
-                Button(L10n.Board.boostApply) {
-                    if let n = Int(boostInput.trimmed), n != 0 {
-                        appState.boostComment(postID: postID, commentID: comment.id, extra: n)
-                    }
-                    boostInput = ""
-                }
-                Button(L10n.Common.cancel, role: .cancel) { boostInput = "" }
-            } message: { comment in
-                Text(comment.boost > 0 ? "\(L10n.Board.boostPrompt)\n\(L10n.Board.boostCurrent(comment.boost))" : L10n.Board.boostPrompt)
-            }
-            .sheet(item: $votersTarget) { comment in
-                PostVotersView(target: .comment(comment.id))
-                    .presentationDetents([.medium, .large])
-                    .presentationDragIndicator(.visible)
-                    .presentationCornerRadius(28)
-            }
+            Button(L10n.Common.cancel, role: .cancel) { boostInput = "" }
+        } message: { comment in
+            Text(comment.boost > 0 ? "\(L10n.Board.boostPrompt)\n\(L10n.Board.boostCurrent(comment.boost))" : L10n.Board.boostPrompt)
+        }
+        .sheet(item: $votersTarget) { comment in
+            PostVotersView(target: .comment(comment.id))
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+                .presentationCornerRadius(28)
         }
     }
 
-    /// Gönderinin kendisi; kartla aynı bilgi, tam metin.
-    private func postHeader(_ post: SocialPost) -> some View {
-        VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
-            HStack(spacing: BondTheme.Space.sm) {
-                ProfileMedia(url: post.author.imageURL, data: nil, assetName: post.author.imageAssetName)
-                    .frame(width: 26, height: 26)
-                    .clipShape(Circle())
-                Text(post.author.name)
-                    .font(.subheadline.weight(.semibold))
-                Text(post.createdAt.relativeTurkish)
-                    .font(.caption)
-                    .foregroundStyle(BondTheme.muted)
-                Spacer()
-                if post.kind != .moment { PostKindBadge(kind: post.kind) }
-            }
-            if !post.caption.trimmed.isEmpty {
-                Text(post.caption)
-                    .font(.body.weight(.semibold))
-                    .lineSpacing(4)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            HStack(spacing: BondTheme.Space.md) {
-                Label(L10n.Board.voteCount(post.likeCount), systemImage: "arrow.up")
-                Label(
-                    post.repliesAreAnswers ? L10n.Board.answerCount(post.comments.count) : L10n.Board.commentCount(post.comments.count),
-                    systemImage: "bubble.left"
-                )
-            }
-            .font(.caption.weight(.semibold))
+    /// Cevapların başlığı ve kartla cevapları ayıran çizgi. Sayı kartın cevap
+    /// düğmesinde zaten yazıyor; burada tekrar etmiyor.
+    private func repliesHeader(_ post: SocialPost) -> some View {
+        Text(post.repliesAreAnswers ? L10n.Board.answersTitle : L10n.Comments.title)
+            .font(BondTheme.Typography.footnote.weight(.semibold))
+            .textCase(.uppercase)
+            .tracking(0.7)
             .foregroundStyle(BondTheme.muted)
-        }
-        .foregroundStyle(BondTheme.ink)
-        .padding(.top, BondTheme.Space.sm)
-        .padding(.bottom, BondTheme.Space.lg)
-        .overlay(alignment: .bottom) { Rectangle().fill(BondTheme.hairline).frame(height: 0.5) }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 20)
+            .padding(.top, BondTheme.Space.md)
+            .padding(.bottom, BondTheme.Space.xs)
+            .overlay(alignment: .top) { Rectangle().fill(BondTheme.hairline).frame(height: 0.5) }
+            .accessibilityAddTraits(.isHeader)
     }
 
     private func commentRow(_ comment: SocialComment, post: SocialPost) -> some View {

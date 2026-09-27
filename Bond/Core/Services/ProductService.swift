@@ -16,6 +16,8 @@ struct BackendNotification: Sendable {
     let matchID: UUID?
     let isRead: Bool
     let createdAt: Date
+    /// Yorum ve oy bildirimlerinin gönderisi; dokununca gönderi sayfası açılır.
+    var postID: UUID? = nil
 }
 
 struct RealtimeMessage: Sendable {

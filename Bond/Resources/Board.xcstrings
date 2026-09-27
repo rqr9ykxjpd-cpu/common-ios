@@ -1841,6 +1841,24 @@
         }
       }
     },
+    "post.title" : {
+      "comment" : "Gönderi sayfasının başlığı (Reddit/X gönderi sayfası).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Post"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gönderi"
+          }
+        }
+      }
+    },
     "sort.a11y" : {
       "localizations" : {
         "en" : {

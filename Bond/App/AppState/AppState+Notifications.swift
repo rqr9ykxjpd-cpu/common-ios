@@ -106,6 +106,7 @@ extension AppState {
             body: NotificationCopy.body(kind: backend.kind, actorName: actor?.name, serverTitle: backend.title, serverBody: backend.body),
             actor: actor,
             conversationID: backend.matchID,
+            postID: backend.postID,
             createdAt: backend.createdAt,
             isRead: backend.isRead
         )

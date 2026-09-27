@@ -10,6 +10,8 @@ struct NotificationsView: View {
     @State private var showMessageRequests = false
     @State private var showMeetingRequests = false
     @State private var conversationRoute: NotificationConversationRoute?
+    /// Yorum/oy bildirimi: gönderi sayfası bu yığına itilir (Reddit/X gibi).
+    @State private var openedPostID: UUID?
     @State private var pushAuthorizationStatus: UNAuthorizationStatus?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Liste ilk açılışta yerine oturdu mu; sonra `settleIn` kapanır.
@@ -94,6 +96,9 @@ struct NotificationsView: View {
             }
             .navigationDestination(isPresented: $showMessageRequests) {
                 MessageRequestsView()
+            }
+            .navigationDestination(item: $openedPostID) { id in
+                PostDetailView(postID: id)
             }
             .sheet(item: $selectedProfile) { profile in
                 NavigationStack {
@@ -247,6 +252,15 @@ struct NotificationsView: View {
                 // Eşleşme kimliği olmayan `message`, backend'de yanıt isteğidir.
                 showMessageRequests = true
             }
+            return
+        }
+
+        // Yorum ve oy gönderiye dairse gönderinin kendisi açılır. Gönderi akışta
+        // yüklü değilse (eski, silinmiş) eskisi gibi kişinin kartı.
+        if notification.kind == .comment || notification.kind == .like,
+           let postID = notification.postID,
+           appState.posts.contains(where: { $0.id == postID }) {
+            openedPostID = postID
             return
         }
 

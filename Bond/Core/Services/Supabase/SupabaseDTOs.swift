@@ -451,6 +451,7 @@ struct NotificationRow: Decodable {
     let body: String
     let actorID: UUID?
     let matchID: UUID?
+    let postID: UUID?
     let isRead: Bool
     let createdAt: Date
     let actor: NotificationActorRow?
@@ -459,6 +460,7 @@ struct NotificationRow: Decodable {
         case id, kind, title, body, actor
         case actorID = "actor_id"
         case matchID = "match_id"
+        case postID = "post_id"
         case isRead = "is_read"
         case createdAt = "created_at"
     }

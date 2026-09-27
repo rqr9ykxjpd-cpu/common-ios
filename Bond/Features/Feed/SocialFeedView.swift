@@ -17,6 +17,8 @@ struct SocialFeedView: View {
     @State private var showNotifications = false
     @State private var showPlacesWall = false
     @State private var selectedPostAuthor: StudentProfile?
+    /// Açık gönderi sayfası (Reddit/X gibi sağdan itilir).
+    @State private var openedPostID: UUID?
     /// Profil hangi avatardan açıldı: sayfa oradan büyür, kapanınca oraya döner.
     @State private var profileSourceID: String?
     @State private var showStudyGroupComposer = false
@@ -169,7 +171,8 @@ struct SocialFeedView: View {
                                                 selectedPostAuthor = post.author
                                             },
                                             delete: { appState.deletePost(post.id) },
-                                            zoomNamespace: profileZoom
+                                            zoomNamespace: profileZoom,
+                                            openPost: { openedPostID = post.id }
                                         )
                                         .onAppear { appState.markPostSeen(post.id) }
                                         Divider().opacity(0.35).padding(.vertical, 14)
@@ -246,6 +249,9 @@ struct SocialFeedView: View {
             // elle çizilmiş daireler kaldırıldı — sistem kendi zeminini veriyor.
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { akisAracCubugu }
+            .navigationDestination(item: $openedPostID) { id in
+                PostDetailView(postID: id)
+            }
             .sheet(isPresented: $showStoryComposer) {
                 CreatePostView(initialContentType: 1)
             }

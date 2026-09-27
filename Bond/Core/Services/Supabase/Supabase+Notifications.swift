@@ -6,7 +6,7 @@ extension SupabaseProductService {
         guard let userID = currentUserID else { throw BackendServiceError.missingSession }
         let rows: [NotificationRow] = try await client
             .from("notifications")
-            .select("id,kind,title,body,actor_id,match_id,is_read,created_at,actor:profiles!notifications_actor_id_fkey(name,avatar_path)")
+            .select("id,kind,title,body,actor_id,match_id,post_id,is_read,created_at,actor:profiles!notifications_actor_id_fkey(name,avatar_path)")
             .eq("user_id", value: userID)
             .order("created_at", ascending: false)
             .limit(50)
@@ -24,7 +24,8 @@ extension SupabaseProductService {
                 actorAvatarURL: row.actor?.avatarPath.flatMap { avatarURLs[$0] },
                 matchID: row.matchID,
                 isRead: row.isRead,
-                createdAt: row.createdAt
+                createdAt: row.createdAt,
+                postID: row.postID
             )
         }
     }

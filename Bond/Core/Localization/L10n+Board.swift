@@ -28,6 +28,7 @@ extension L10n {
         static var answersEmptyBody: String { String(localized: "answers.emptyBody", table: "Board") }
         static var topAnswer: String { String(localized: "answers.top", table: "Board") }
         static var openPost: String { String(localized: "post.open", table: "Board") }
+        static var postTitle: String { String(localized: "post.title", table: "Board") }
 
         // Kurucu araçları
         static var boostTitle: String { String(localized: "founder.boost", table: "Board") }

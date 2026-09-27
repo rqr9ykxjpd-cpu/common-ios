@@ -12,7 +12,16 @@ struct PostCard: View {
     let delete: () -> Void
     /// Akış verirse avatar, açılan kişi kartına zoom ile büyür.
     var zoomNamespace: Namespace.ID? = nil
+    /// Gönderi sayfasının başındaki hâli: tam metin, fotoğraf kendi oranında,
+    /// en iyi cevap özeti yok (cevaplar hemen altta).
+    var isDetail = false
+    /// Gönderi sayfasını açar (akış itiyor). Verilmezse sayfa sheet olarak açılır.
+    var openPost: (() -> Void)? = nil
+    /// Gönderi sayfasında cevap düğmesi: yazma alanına odaklanır.
+    var onReply: (() -> Void)? = nil
     @State private var showComments = false
+    /// Gönderi sayfasında fotoğrafın gerçek boyutu; oran buradan.
+    @State private var imageSize: CGSize?
     @State private var showDeleteConfirmation = false
     @State private var showModeratorRemove = false
     @State private var showBlockConfirmation = false
@@ -42,11 +51,15 @@ struct PostCard: View {
         post.repliesAreAnswers ? L10n.Board.answerCount(post.comments.count) : L10n.Board.commentCount(post.comments.count)
     }
 
+    private func open() {
+        if let openPost { openPost() } else { showComments = true }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: BondTheme.Space.md) {
             header
             content
-            if let top = post.topComment, top.voteCount >= 0 {
+            if !isDetail, let top = post.topComment, top.voteCount >= 0 {
                 topReply(top)
             }
             actions
@@ -58,7 +71,7 @@ struct PostCard: View {
         // Gönderi sayfası kartın kendisinden büyüyerek açılır, kapanınca yerine döner.
         .zoomSource(id: "gonderi-\(post.id)", in: zoomNamespace)
         .sheet(isPresented: $showComments) {
-            CommentsView(postID: post.id)
+            NavigationStack { PostDetailView(postID: post.id, showsClose: true) }
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
                 .presentationCornerRadius(28)
@@ -198,52 +211,83 @@ struct PostCard: View {
         .accessibilityLabel(L10n.Common.options)
     }
 
-    /// Yazı ve varsa fotoğraf. Dokununca gönderi açılır (cevaplar).
-    private var content: some View {
-        Button {
-            showComments = true
-        } label: {
-            VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
-                // Rozet başlık satırından buraya indi: ad ve bölüm kesilmesin,
-                // tür de metnin hemen üstünde okunsun (Reddit'in flair'i gibi).
-                if post.kind != .moment {
-                    PostKindBadge(kind: post.kind)
-                }
-                if !post.caption.trimmed.isEmpty {
-                    Text(post.caption)
-                        .font(.body.weight(hasImage ? .medium : .semibold))
-                        .lineSpacing(4)
-                        .lineLimit(6)
-                        .multilineTextAlignment(.leading)
-                        .foregroundStyle(BondTheme.ink)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                if hasImage {
-                    Color.clear
-                        .aspectRatio(1 / imageAspect, contentMode: .fit)
-                        .overlay {
-                            if post.localImageData != nil || post.imageAssetName != nil {
-                                ProfileMedia(url: nil, data: post.localImageData,
-                                             assetName: post.imageAssetName, kind: .content)
-                            } else if let url = post.imageURL {
+    /// Yazı ve varsa fotoğraf. Akışta dokununca gönderi sayfası açılır;
+    /// sayfanın kendisinde düz içerik, metin seçilebilir.
+    @ViewBuilder private var content: some View {
+        if isDetail {
+            contentBody
+                .textSelection(.enabled)
+        } else {
+            Button(action: open) {
+                contentBody.contentShape(Rectangle())
+            }
+            .buttonStyle(.pressableCard)
+            .accessibilityLabel(post.caption)
+            .accessibilityHint(L10n.Board.openPost)
+        }
+    }
+
+    /// Sayfada fotoğraf kendi oranında (çok uzun/geniş olanlar sınırda);
+    /// akışta sabit 4:3, liste sıçramasın.
+    private var detailAspect: CGFloat {
+        guard let imageSize, imageSize.width > 0, imageSize.height > 0 else { return 1 / imageAspect }
+        return min(max(imageSize.width / imageSize.height, 0.7), 1.9)
+    }
+
+    private var captionFont: Font {
+        // Sayfada yazı büyür (X'teki gibi); fotoğrafsız gönderi başlık gibi durur.
+        if isDetail { return hasImage ? .title3 : .title3.weight(.semibold) }
+        return .body.weight(hasImage ? .medium : .semibold)
+    }
+
+    private var contentBody: some View {
+        VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
+            // Rozet başlık satırından buraya indi: ad ve bölüm kesilmesin,
+            // tür de metnin hemen üstünde okunsun (Reddit'in flair'i gibi).
+            if post.kind != .moment {
+                PostKindBadge(kind: post.kind)
+            }
+            if !post.caption.trimmed.isEmpty {
+                Text(post.caption)
+                    .font(captionFont)
+                    .lineSpacing(4)
+                    .lineLimit(isDetail ? nil : 6)
+                    .multilineTextAlignment(.leading)
+                    .foregroundStyle(BondTheme.ink)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: isDetail)
+            }
+            if hasImage {
+                Color.clear
+                    .aspectRatio(isDetail ? detailAspect : 1 / imageAspect, contentMode: .fit)
+                    .overlay {
+                        if post.localImageData != nil || post.imageAssetName != nil {
+                            ProfileMedia(url: nil, data: post.localImageData,
+                                         assetName: post.imageAssetName, kind: .content)
+                        } else if let url = post.imageURL {
+                            if isDetail {
+                                MeasuredRemoteImage(url: url, naturalSize: $imageSize)
+                            } else {
                                 ProfileMedia(url: url, data: nil, kind: .content, showsRetry: true)
                             }
                         }
-                        .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
-                }
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
+                    .onAppear {
+                        guard isDetail, imageSize == nil else { return }
+                        if let data = post.localImageData, let image = UIImage(data: data) {
+                            imageSize = image.size
+                        } else if let name = post.imageAssetName, let image = UIImage(named: name) {
+                            imageSize = image.size
+                        }
+                    }
             }
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.pressableCard)
-        .accessibilityLabel(post.caption)
-        .accessibilityHint(L10n.Board.openPost)
     }
 
     /// En çok oy alan cevap, tek bakışta. Soruyu açmadan cevabı görürsün.
     private func topReply(_ comment: SocialComment) -> some View {
-        Button {
-            showComments = true
-        } label: {
+        Button(action: open) {
             HStack(alignment: .top, spacing: BondTheme.Space.sm) {
                 Label(String(comment.voteCount), systemImage: "arrow.up")
                     .font(.caption.weight(.bold))
@@ -277,7 +321,9 @@ struct PostCard: View {
                 onDown: { appState.vote(postID: post.id, up: false) }
             )
 
-            Button { showComments = true } label: {
+            Button {
+                if isDetail { onReply?() } else { open() }
+            } label: {
                 HStack(spacing: 5) {
                     Image(systemName: "bubble.left")
                         .font(.footnote.weight(.semibold))
