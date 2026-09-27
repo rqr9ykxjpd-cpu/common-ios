@@ -1574,13 +1574,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Chats"
+            "value" : "Chat"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sohbetler"
+            "value" : "Sohbet"
           }
         }
       }

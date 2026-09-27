@@ -27,7 +27,6 @@ struct PremiumMatchesView: View {
                     introductions
                     acceptedIntroductions
                     yanitIstekleriSatiri
-                    AppSectionHeader(title: L10n.Chat.messages)
                     if let error = appState.conversationsError {
                         ScreenFailureView(message: error, compact: !appState.conversations.isEmpty) {
                             Task { await appState.loadConversations() }
@@ -193,29 +192,11 @@ struct PremiumMatchesView: View {
             NavigationLink {
                 MessageRequestsView()
             } label: {
-                HStack(spacing: BondTheme.Space.md) {
-                    Image(systemName: "tray.full.fill")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(BondTheme.violet)
-                        .frame(width: 38, height: 38)
-                        .background(BondTheme.violet.opacity(0.12), in: Circle())
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(bekleyen.count == 1 ? L10n.Chat.oneRequest : L10n.Chat.requestCount(bekleyen.count))
-                            .font(.headline)
-                            .foregroundStyle(BondTheme.ink)
-                        Text(L10n.Chat.fromUnmatched)
-                            .font(.footnote)
-                            .foregroundStyle(BondTheme.muted)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(BondTheme.muted)
-                }
-                .padding(BondTheme.Space.md)
-                .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous).stroke(BondTheme.hairline))
-                .contentShape(RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
+                // Profildeki istek kartıyla aynı görünüm.
+                RequestSummaryLabel(
+                    title: bekleyen.count == 1 ? L10n.Chat.oneRequest : L10n.Chat.requestCount(bekleyen.count),
+                    detail: L10n.Chat.fromUnmatched
+                )
             }
             .buttonStyle(PressableStyle())
         }

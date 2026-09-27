@@ -388,46 +388,14 @@ struct SocialProfileView: View {
 
     private var requestSummaryCard: some View {
         Button { showRequests = true } label: {
-            HStack(spacing: BondTheme.Space.compact) {
-                Image(systemName: pendingRequestCount > 0 ? "tray.full.fill" : "tray")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(pendingRequestCount > 0 ? BondTheme.onAccent : BondTheme.ink)
-                    .frame(width: 40, height: 40)
-                    .background(
-                        pendingRequestCount > 0 ? BondTheme.burntOrange : BondTheme.paper,
-                        in: Circle()
-                    )
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(
-                        pendingRequestCount > 0
-                            ? L10n.ProfileHome.pendingRequests(pendingRequestCount)
-                            : L10n.ProfileHome.noPendingRequests
-                    )
-                    .font(.subheadline.weight(.semibold))
-                    .contentTransition(.numericText())
-
-                    // Boşken de ne olduğu okunsun: buluşma istekleri burada.
-                    Text(L10n.ProfileHome.requestsDetail)
-                        .font(.footnote)
-                        .foregroundStyle(BondTheme.muted)
-                        .lineLimit(1)
-                }
-
-                Spacer(minLength: BondTheme.Space.sm)
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(BondTheme.muted)
-                    .accessibilityHidden(true)
-            }
-            .foregroundStyle(BondTheme.ink)
-            .padding(.horizontal, BondTheme.Space.md)
-            .frame(maxWidth: .infinity, minHeight: pendingRequestCount > 0 ? 76 : 64, alignment: .leading)
-            .background(
-                pendingRequestCount > 0 ? BondTheme.burntOrange.opacity(0.10) : BondTheme.surface,
-                in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous)
+            RequestSummaryLabel(
+                title: pendingRequestCount > 0
+                    ? L10n.ProfileHome.pendingRequests(pendingRequestCount)
+                    : L10n.ProfileHome.noPendingRequests,
+                // Boşken de ne olduğu okunsun: buluşma istekleri burada.
+                detail: L10n.ProfileHome.requestsDetail,
+                active: pendingRequestCount > 0
             )
-            .contentShape(RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
         }
         .buttonStyle(PressableStyle())
         .animation(BondTheme.Motion.smooth, value: pendingRequestCount)
