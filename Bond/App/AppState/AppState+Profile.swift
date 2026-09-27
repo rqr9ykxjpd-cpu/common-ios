@@ -30,7 +30,7 @@ extension AppState {
             try await service.claimUsername(candidate)
             draft.username = candidate
             persistAccount()
-            needsUsernameChoice = false
+            // Ekranı çağıran kapatıyor (düğmedeki ✓'den sonra).
             show(L10n.Username.chosen)
             Haptics.success()
             return true

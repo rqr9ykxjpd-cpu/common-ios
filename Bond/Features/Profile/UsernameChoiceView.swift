@@ -7,7 +7,6 @@ struct UsernameChoiceView: View {
     @Environment(AppState.self) private var appState
     @State private var username = ""
     @State private var status: UsernameStatus = .idle
-    @State private var saving = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: BondTheme.Space.lg) {
@@ -30,24 +29,13 @@ struct UsernameChoiceView: View {
 
             Spacer(minLength: 0)
 
-            Button {
-                Task {
-                    saving = true
-                    _ = await appState.chooseUsername(username)
-                    saving = false
-                }
-            } label: {
-                HStack(spacing: 8) {
-                    if saving { ProgressView().tint(BondTheme.onAccent) }
-                    Text(L10n.Common.save).fontWeight(.semibold)
-                }
-                .foregroundStyle(BondTheme.onAccent)
-                .frame(maxWidth: .infinity, minHeight: 54)
-                .background(BondTheme.acid, in: Capsule())
-            }
-            .buttonStyle(.pressable)
-            .disabled(!status.allowsSave || saving)
-            .opacity(status.allowsSave ? 1 : 0.45)
+            PrimaryActionButton(
+                title: L10n.Common.save,
+                enabled: status.allowsSave,
+                action: { await appState.chooseUsername(username) },
+                // ✓ görünsün diye ekran işlem bitince değil, ✓'den sonra kapanıyor.
+                onDone: { appState.needsUsernameChoice = false }
+            )
             .accessibilityIdentifier("usernameChoice.save")
         }
         .padding(BondTheme.Space.lg)

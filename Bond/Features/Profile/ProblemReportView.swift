@@ -15,7 +15,7 @@ struct ProblemReportView: View {
 
     private let maxLength = 2000
     private var trimmed: String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
-    private var canSend: Bool { trimmed.count >= 3 && !sending }
+    private var canSend: Bool { trimmed.count >= 3 }
 
     var body: some View {
         NavigationStack {
@@ -59,21 +59,12 @@ struct ProblemReportView: View {
 
                 Spacer(minLength: 0)
 
-                Button {
-                    Task { await send() }
-                } label: {
-                    HStack(spacing: 8) {
-                        if sending { ProgressView().tint(BondTheme.onAccent) }
-                        Text(L10n.ProblemReport.send).fontWeight(.semibold)
-                    }
-                    .foregroundStyle(BondTheme.onAccent)
-                    .frame(maxWidth: .infinity, minHeight: 54)
-                    .background(BondTheme.acid, in: Capsule())
-                }
-                .buttonStyle(.pressable)
-                .disabled(!canSend)
-                .opacity(canSend ? 1 : 0.45)
-                .animation(.smooth(duration: 0.2), value: canSend)
+                PrimaryActionButton(
+                    title: L10n.ProblemReport.send,
+                    enabled: canSend,
+                    action: { await send() },
+                    onDone: { dismiss() }
+                )
                 .accessibilityIdentifier("problemReport.send")
             }
             .padding(BondTheme.Space.lg)
@@ -94,9 +85,9 @@ struct ProblemReportView: View {
         }
     }
 
-    private func send() async {
+    private func send() async -> Bool {
         sending = true
         defer { sending = false }
-        if await appState.reportProblem(trimmed, screen: screen) { dismiss() }
+        return await appState.reportProblem(trimmed, screen: screen)
     }
 }

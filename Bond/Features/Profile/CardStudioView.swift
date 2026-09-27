@@ -190,21 +190,14 @@ struct CardStudioView: View {
 
     private var actions: some View {
         VStack(spacing: 2) {
-            Button {
-                Task { await save() }
-            } label: {
-                HStack(spacing: 8) {
-                    if saving { ProgressView().tint(StudioCanvas.background) }
-                    Text(L10n.CardStudio.save).fontWeight(.semibold)
-                }
-                .foregroundStyle(StudioCanvas.background)
-                .frame(maxWidth: .infinity, minHeight: 54)
-                .background(.white, in: Capsule())
-            }
-            .buttonStyle(.pressable)
-            .disabled(!hasChanges || saving)
-            .opacity(hasChanges ? 1 : 0.4)
-            .animation(.smooth(duration: 0.2), value: hasChanges)
+            PrimaryActionButton(
+                title: L10n.CardStudio.save,
+                enabled: hasChanges,
+                fill: .white,
+                foreground: StudioCanvas.background,
+                action: { await save() },
+                onDone: { dismiss() }
+            )
             .accessibilityIdentifier("cardStudio.save")
 
             Button(L10n.ProfileHome.publicPreview) { showPreview = true }
@@ -216,10 +209,10 @@ struct CardStudioView: View {
         .padding(.horizontal, BondTheme.Space.md)
     }
 
-    private func save() async {
+    private func save() async -> Bool {
         saving = true
         defer { saving = false }
-        if await appState.saveCardTheme(selected) { dismiss() }
+        return await appState.saveCardTheme(selected)
     }
 }
 
