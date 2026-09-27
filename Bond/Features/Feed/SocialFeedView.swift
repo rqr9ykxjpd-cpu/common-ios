@@ -143,7 +143,6 @@ struct SocialFeedView: View {
                             storyRail
                             Divider().opacity(0.35).padding(.vertical, BondTheme.Space.md)
                             kindFilterRow
-                            sortRow
                             studyGroupsSection
                             if let error = appState.feedError {
                                 ScreenFailureView(message: error, compact: !visiblePosts.isEmpty) {
@@ -343,14 +342,25 @@ struct SocialFeedView: View {
 
 
     /// "Tümü · Soru · Duyuru · …" — akışı kampüs panosuna çeviren filtre.
+    /// Solda sabit "Popüler ⌄", yanında kayan tür çipleri. Sıralama eskiden
+    /// ayrı bir satırdaydı; içeriğe inmeden bir kat kontrol daha demekti.
     private var kindFilterRow: some View {
         @Bindable var appState = appState
-        return PostKindChipRow(
-            selection: $appState.selectedKindFilter,
-            allTitle: L10n.PostKind.all,
-            kinds: PostKind.featured
-        ) {
-            MoreBadgesChip { showBadgeCatalog = true }
+        return HStack(spacing: 0) {
+            sortChip
+                .padding(.leading, 20)
+            Rectangle()
+                .fill(BondTheme.hairline)
+                .frame(width: 1, height: 20)
+                .padding(.leading, 10)
+            PostKindChipRow(
+                selection: $appState.selectedKindFilter,
+                allTitle: L10n.PostKind.all,
+                kinds: PostKind.featured,
+                leadingInset: 10
+            ) {
+                MoreBadgesChip { showBadgeCatalog = true }
+            }
         }
         .padding(.bottom, BondTheme.Space.sm)
         .accessibilityLabel(L10n.PostKind.filterA11y)
@@ -360,39 +370,6 @@ struct SocialFeedView: View {
                 .presentationDragIndicator(.visible)
                 .presentationCornerRadius(28)
         }
-    }
-
-    /// "Popüler ⌄" çiplerin altında, sola yaslı — kullanıcı tercihi.
-    /// Sağda "Çalışma grubu kur": şu saatte şurada çalışacağım, gelen olur mu.
-    private var sortRow: some View {
-        HStack {
-            sortChip
-            Spacer()
-            studyGroupButton
-        }
-        .padding(.horizontal, 20)
-        .padding(.bottom, BondTheme.Space.xs)
-    }
-
-    private var studyGroupButton: some View {
-        Button {
-            Haptics.selection()
-            showStudyGroupComposer = true
-        } label: {
-            HStack(spacing: 5) {
-                Image(systemName: "book.pages")
-                    .font(.system(size: 12, weight: .semibold))
-                Text(L10n.StudyGroup.create)
-                    .font(.footnote.weight(.semibold))
-            }
-            .padding(.horizontal, 12)
-            .frame(height: 34)
-            .foregroundStyle(BondTheme.ink)
-            .background(BondTheme.surface, in: Capsule())
-            .contentShape(Capsule())
-        }
-        .buttonStyle(.pressable)
-        .accessibilityLabel(L10n.StudyGroup.create)
     }
 
     /// Açık çalışma grupları: gönderilerin üstünde, yatay şerit. Alt alta
@@ -625,6 +602,12 @@ struct SocialFeedView: View {
                     showStoryComposer = true
                 } label: {
                     Label(L10n.Composer.story, systemImage: "circle.dashed")
+                }
+                // Eskiden akışta ayrı bir satırdaki düğmeydi; oluşturma eylemleri tek yerde.
+                Button {
+                    showStudyGroupComposer = true
+                } label: {
+                    Label(L10n.StudyGroup.create, systemImage: "book.pages")
                 }
             } label: {
                 Label(L10n.Feed.share, systemImage: "plus")

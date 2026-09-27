@@ -83,12 +83,16 @@ struct PostKindChipRow<Trailing: View>: View {
     /// Sıranın sonuna eklenen parça (akışta sıralama çipi). Ayrı satır
     /// açmamak için buraya girer.
     var trailing: () -> Trailing
+    /// Soldaki boşluk. Akışta çiplerin solunda sabit sıralama çipi durduğu için daha dar.
+    var leadingInset: CGFloat
 
     init(selection: Binding<PostKind?>, allTitle: String? = nil, kinds: [PostKind] = PostKind.allCases,
+         leadingInset: CGFloat = BondTheme.Space.lg,
          @ViewBuilder trailing: @escaping () -> Trailing = { EmptyView() }) {
         _selection = selection
         self.allTitle = allTitle
         self.kinds = kinds
+        self.leadingInset = leadingInset
         self.trailing = trailing
     }
 
@@ -119,7 +123,8 @@ struct PostKindChipRow<Trailing: View>: View {
                     }
                     trailing()
                 }
-                .padding(.horizontal, BondTheme.Space.lg)
+                .padding(.leading, leadingInset)
+                .padding(.trailing, BondTheme.Space.lg)
             }
             .onChange(of: selection) { _, kind in
                 // Seçilen çip kenarda kalmasın; kısmen görünür bir seçim
