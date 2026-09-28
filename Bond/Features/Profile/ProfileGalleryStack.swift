@@ -48,8 +48,16 @@ typealias CardPanHandler = (_ translation: CGPoint, _ state: UIGestureRecognizer
 struct ProfileGalleryStack: View {
     let photos: [ProfileGalleryPhoto]
     var height: CGFloat = 440
-    @State private var front = 0
+    @State private var front: Int
     @State private var showsViewer = false
+
+    /// `startAt`: deste hangi fotoğrafta açılsın (kart fotoğrafı eklerken yeni
+    /// fotoğraf, sonda olduğu yerde açık görünsün).
+    init(photos: [ProfileGalleryPhoto], height: CGFloat = 440, startAt: Int = 0) {
+        self.photos = photos
+        self.height = height
+        _front = State(initialValue: startAt)
+    }
 
     private var current: Int { min(front, max(0, photos.count - 1)) }
 

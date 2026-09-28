@@ -652,7 +652,8 @@ private struct PickedMovie: Transferable, Sendable {
     }
 }
 
-private struct CameraPicker: UIViewControllerRepresentable {
+/// Kart fotoğrafı ekranı da kullanıyor (CardPhotoComposer).
+struct CameraPicker: UIViewControllerRepresentable {
     var allowsVideo: Bool
     let onImage: (UIImage) -> Void
     let onVideo: (URL) -> Void

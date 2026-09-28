@@ -19,6 +19,7 @@ struct SocialFeedView: View {
     @State private var selectedPostAuthor: StudentProfile?
     /// Açık gönderi sayfası (Reddit/X gibi sağdan itilir).
     @State private var openedPostID: UUID?
+    @State private var showCardPhoto = false
     /// Profil hangi avatardan açıldı: sayfa oradan büyür, kapanınca oraya döner.
     @State private var profileSourceID: String?
     @State private var showStudyGroupComposer = false
@@ -258,6 +259,7 @@ struct SocialFeedView: View {
             .sheet(isPresented: $showPostComposer, onDismiss: { composerKind = .moment }) {
                 CreatePostView(initialKind: composerKind)
             }
+            .sheet(isPresented: $showCardPhoto) { CardPhotoComposer() }
             .sheet(isPresented: $showStudyGroupComposer) {
                 StudyGroupComposer()
                     .presentationDetents([.large])
@@ -608,6 +610,13 @@ struct SocialFeedView: View {
                     showStoryComposer = true
                 } label: {
                     Label(L10n.Composer.story, systemImage: "circle.dashed")
+                }
+                // Akışa düşmeden yalnızca karta: "Kartlara ekle" fotoğrafı
+                // akışta da paylaşıyordu, yalnız kart için bir yol yoktu.
+                Button {
+                    showCardPhoto = true
+                } label: {
+                    Label(L10n.CardStudio.photoMenu, systemImage: "rectangle.stack.badge.plus")
                 }
                 // Eskiden akışta ayrı bir satırdaki düğmeydi; oluşturma eylemleri tek yerde.
                 Button {

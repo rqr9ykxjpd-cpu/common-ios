@@ -11,6 +11,8 @@ struct SocialProfileView: View {
     @State private var pull = PullAmount()
     @State private var showComposer = false
     @State private var showEditor = false
+    /// Yalnız karta fotoğraf (akışa düşmez).
+    @State private var showCardPhoto = false
     @State private var showCardStudio = false
     @State private var showProblemReport = false
     @State private var showSettings = false
@@ -101,6 +103,7 @@ struct SocialProfileView: View {
                 PhotoZoomView(url: appState.avatarURL, data: appState.avatarData)
             }
             .sheet(isPresented: $showComposer) { CreatePostView() }
+            .sheet(isPresented: $showCardPhoto) { CardPhotoComposer() }
             .onChange(of: showComposer) { _, open in
                 if !open { Task { await reload() } }
             }
@@ -291,13 +294,25 @@ struct SocialProfileView: View {
 
     private var gallery: some View {
         VStack(alignment: .leading, spacing: BondTheme.Space.md) {
-            AppSectionHeader(
-                title: L10n.ProfileHome.photos,
-                actionTitle: L10n.ProfileHome.manage
-            ) { showEditor = true }
+            // "Ekle" yalnız karta ekler (akışa düşmez); "Düzenle" sıralama ve silme.
+            HStack(alignment: .firstTextBaseline, spacing: BondTheme.Space.md) {
+                Text(L10n.ProfileHome.photos)
+                    .font(BondTheme.Typography.title3)
+                Spacer()
+                if !galleryPhotos.isEmpty, !appState.isGalleryFull {
+                    Button(L10n.CardStudio.photoAddShort) { showCardPhoto = true }
+                        .font(BondTheme.Typography.footnote.weight(.medium))
+                        .foregroundStyle(BondTheme.violet)
+                        .accessibilityIdentifier("profile.gallery.add")
+                }
+                Button(L10n.ProfileHome.manage) { showEditor = true }
+                    .font(BondTheme.Typography.footnote.weight(.medium))
+                    .foregroundStyle(BondTheme.violet)
+            }
+            .foregroundStyle(BondTheme.ink)
 
             if galleryPhotos.isEmpty {
-                Button { showEditor = true } label: {
+                Button { showCardPhoto = true } label: {
                     HStack(spacing: BondTheme.Space.md) {
                         Image(systemName: "photo.stack")
                             .font(.title2)
