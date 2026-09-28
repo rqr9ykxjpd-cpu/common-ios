@@ -9,12 +9,14 @@ extension AppState {
         let eski = posts[index].myVote
         let yeni = (up ? 1 : -1) == eski ? 0 : (up ? 1 : -1)
         apply(vote: yeni, postID: postID)
-        Haptics.impact(.light)
+        Haptics.vote(yeni)
         Task {
             do {
                 try await service.setPostVote(postID, value: yeni)
             } catch {
+                // Ok eski hâline dönerken el de bilsin: oy geçmedi.
                 apply(vote: eski, postID: postID)
+                Haptics.warning()
                 showError(error, fallback: L10n.Feed.likeFailed)
             }
         }
@@ -336,12 +338,13 @@ extension AppState {
         let eski = posts[pi].comments[ci].myVote
         let yeni = (up ? 1 : -1) == eski ? 0 : (up ? 1 : -1)
         apply(vote: yeni, postID: postID, commentID: commentID)
-        Haptics.impact(.light)
+        Haptics.vote(yeni)
         Task {
             do {
                 try await service.setCommentVote(commentID, value: yeni)
             } catch {
                 apply(vote: eski, postID: postID, commentID: commentID)
+                Haptics.warning()
                 showError(error, fallback: L10n.Feed.likeFailed)
             }
         }
