@@ -103,7 +103,7 @@ extension AppState {
     func moderatorRemovePost(_ postID: UUID) async {
         do {
             try await service.moderatorDeletePost(postID)
-            posts.removeAll { $0.id == postID }
+            forgetPost(postID)
             show(L10n.Moderation.postRemoved)
         } catch {
             showError(error, fallback: L10n.Moderation.removeFailed)

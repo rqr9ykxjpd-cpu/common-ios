@@ -119,6 +119,9 @@ final class AppState {
     /// Engellediğin kişiler; ayarlardaki liste için.
     var blockedProfiles: [BlockedProfile] = []
     var posts: [SocialPost] = []
+    /// Bu oturumda silinen gönderiler. Profil sekmesi ve kişi kartı kendi
+    /// çektikleri listeyi tutuyor; silinen gönderi oralarda da bununla düşüyor.
+    var deletedPostIDs: Set<UUID> = []
     /// Arka planda çekilmiş ama henüz listeye uygulanmamış akış: kullanıcı
     /// okurken içerik altından kaymasın; üstte "N yeni gönderi" balonu çıkar.
     var pendingPosts: [SocialPost] = []

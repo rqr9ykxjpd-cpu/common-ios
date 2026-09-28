@@ -383,6 +383,7 @@ extension AppState {
         galleryURLs = []
         conversations = []
         posts = []
+        deletedPostIDs = []
         stories = []
         notifications = []
         pendingNotificationReadIDs = []

@@ -113,8 +113,10 @@ struct SocialProfileView: View {
                                  toggleSaved: { appState.toggleSaved(postID: post.id) },
                                  openProfile: {},
                                  delete: {
+                                     // Listeden sunucu silince düşüyor (`deletedPostIDs`);
+                                     // eskiden silme başarısız olsa da ekrandan kalkıp
+                                     // sonra geri geliyordu.
                                      appState.deletePost(post.id)
-                                     profilePosts.removeAll { $0.id == post.id }
                                      selectedPost = nil
                                  })
                             .padding(.vertical, 16)
@@ -527,7 +529,9 @@ struct SocialProfileView: View {
         var byID: [UUID: SocialPost] = [:]
         for post in profilePosts { byID[post.id] = post }
         for post in appState.currentUserPosts { byID[post.id] = post }
-        return byID.values.sorted { $0.createdAt > $1.createdAt }
+        return byID.values
+            .filter { !appState.deletedPostIDs.contains($0.id) }
+            .sorted { $0.createdAt > $1.createdAt }
     }
 }
 

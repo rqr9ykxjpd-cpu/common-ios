@@ -287,11 +287,15 @@ extension AppState {
     }
 
     func deletePost(_ postID: UUID) {
-        guard posts.contains(where: { $0.id == postID && $0.isMine }) else { return }
+        // Akışta yüklü olmayan eski bir gönderi de profilden silinebilmeli;
+        // eskiden bu kontrol onu sessizce geri çeviriyordu. Sahipliği sunucu
+        // denetliyor; burada yalnızca başkasının olduğu bilinen gönderi duruyor.
+        if let post = posts.first(where: { $0.id == postID }), !post.isMine { return }
+        guard !deletedPostIDs.contains(postID) else { return }
         Task {
             do {
                 try await service.deletePost(postID)
-                posts.removeAll { $0.id == postID }
+                forgetPost(postID)
                 show(L10n.Feed.postDeleted)
                 Haptics.success()
             } catch {
@@ -299,6 +303,15 @@ extension AppState {
             }
         }
     }
+    /// Silinen gönderi bütün listelerden düşer: akış, bekleyen akış,
+    /// kaydedilenler; profil ve kart ekranları `deletedPostIDs` ile süzüyor.
+    func forgetPost(_ postID: UUID) {
+        deletedPostIDs.insert(postID)
+        posts.removeAll { $0.id == postID }
+        pendingPosts.removeAll { $0.id == postID }
+        savedPosts.removeAll { $0.id == postID }
+    }
+
     func addComment(_ body: String, to postID: UUID) {
         let cleanBody = body.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanBody.isEmpty, posts.contains(where: { $0.id == postID }) else { return }

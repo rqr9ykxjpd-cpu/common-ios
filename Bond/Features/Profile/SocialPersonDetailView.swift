@@ -848,7 +848,8 @@ struct SocialPersonDetailView: View {
     }
 
     @ViewBuilder private var personPosts: some View {
-        let posts = details?.posts ?? []
+        // Kart açıldığında çekilen liste; bu arada silinen gönderi düşsün.
+        let posts = (details?.posts ?? []).filter { !appState.deletedPostIDs.contains($0.id) }
         if !posts.isEmpty {
             VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
                 profileSectionTitle(L10n.Profile.theirPostsCaps)
