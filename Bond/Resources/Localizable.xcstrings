@@ -3628,6 +3628,40 @@
         }
       }
     },
+    "edu.domainsUnavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "School email verification is temporarily unavailable. Check your connection and try again."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Okul e-postası doğrulaması şu anda kullanılamıyor. Bağlantını kontrol edip yeniden dene."
+          }
+        }
+      }
+    },
+    "edu.loadingDomains" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checking supported school addresses…"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desteklenen okul adresleri kontrol ediliyor…"
+          }
+        }
+      }
+    },
     "edu.notAllowedDomain" : {
       "extractionState" : "manual",
       "localizations" : {

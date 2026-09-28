@@ -59,13 +59,16 @@ struct EduVerificationSheet: View {
     @State private var isChecking = false
     @State private var cooldown = 0
     @State private var showStillPending = false
+    @State private var didLoadDomains = false
+    @State private var isLoadingDomains = false
     @FocusState private var fieldFocused: Bool
 
     private var status: EduVerificationStatus { appState.eduStatus ?? .unknown }
     private var trimmed: String { email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
     private var canSend: Bool {
         !isSending && EduEmailCheck.looksLikeEmail(trimmed)
-            && (appState.eduDomains.isEmpty || EduEmailCheck.isAllowed(trimmed, domains: appState.eduDomains))
+            && !appState.eduDomains.isEmpty
+            && EduEmailCheck.isAllowed(trimmed, domains: appState.eduDomains)
     }
 
     var body: some View {
@@ -91,7 +94,7 @@ struct EduVerificationSheet: View {
                 }
             }
             .task {
-                if appState.eduDomains.isEmpty { await appState.loadEduStatus() }
+                await loadDomainsIfNeeded()
                 if !status.isPending { fieldFocused = true }
             }
             .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: status)
@@ -120,6 +123,23 @@ struct EduVerificationSheet: View {
                 .font(BondTheme.Typography.body)
                 .padding(BondTheme.Space.md)
                 .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
+
+            if isLoadingDomains {
+                HStack(spacing: 8) {
+                    ProgressView()
+                    Text(L10n.Edu.loadingDomains)
+                }
+                .font(.footnote)
+                .foregroundStyle(BondTheme.muted)
+            } else if didLoadDomains, appState.eduDomains.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(L10n.Edu.domainsUnavailable)
+                        .font(.footnote)
+                        .foregroundStyle(BondTheme.burntOrangeText)
+                    Button(L10n.Common.retry) { Task { await loadDomainsIfNeeded(force: true) } }
+                        .font(.footnote.weight(.semibold))
+                }
+            }
 
             if !trimmed.isEmpty, EduEmailCheck.looksLikeEmail(trimmed),
                !appState.eduDomains.isEmpty, !EduEmailCheck.isAllowed(trimmed, domains: appState.eduDomains) {
@@ -238,6 +258,17 @@ struct EduVerificationSheet: View {
             showStillPending = false
             fieldFocused = false
         }
+    }
+
+    private func loadDomainsIfNeeded(force: Bool = false) async {
+        guard force || appState.eduDomains.isEmpty else {
+            didLoadDomains = true
+            return
+        }
+        isLoadingDomains = true
+        _ = await appState.loadEduDomains()
+        isLoadingDomains = false
+        didLoadDomains = true
     }
 
     private func check() async {

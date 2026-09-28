@@ -22,6 +22,8 @@ extension L10n {
         static var alreadyUsed: String { String(localized: "edu.alreadyUsed") }
         static var rateLimited: String { String(localized: "edu.rateLimited") }
         static var sendFailed: String { String(localized: "edu.sendFailed") }
+        static var domainsUnavailable: String { String(localized: "edu.domainsUnavailable") }
+        static var loadingDomains: String { String(localized: "edu.loadingDomains") }
         static var verifiedToast: String { String(localized: "edu.verifiedToast") }
         static var badge: String { String(localized: "edu.badge") }
         static var verifiedLine: String { String(localized: "edu.verifiedLine") }

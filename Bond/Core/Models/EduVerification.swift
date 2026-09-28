@@ -17,23 +17,11 @@ struct EduVerificationStatus: Equatable, Sendable {
     var needsAttention: Bool { !exempt && !isVerified }
 }
 
-/// Öğrenci e-postası doğrulaması uygulamada açık mı.
-///
-/// Karar (2026-09-24): uygulama mağazaya çıktıktan sonra açılacak. Sunucu
-/// tarafı hazır; eksik olan e-posta altyapısı (kendi SMTP'miz). O kurulmadan
-/// kart görünürse herkes saatte 2 e-posta sınırına takılır. Açarken bunu
-/// `true` yapıp yeni sürümle incelemeye gönderiyoruz. Bilerek uzaktan açılan
-/// bir bayrak değil: incelemeden sonra sessizce beliren özellik 2.3.1'e takılır.
-///
-/// DEBUG'da `-edu` argümanıyla açılır; kartın durumlarını görmek için.
+/// Öğrenci e-postası doğrulaması gönderilen derlemenin görünür bir özelliğidir.
+/// Uzaktan, App Review sonrasında sessizce açılmaz; mağaza metni ve inceleme
+/// notları bu davranışla aynı kalır.
 enum EduVerificationRollout {
-    static var isEnabled: Bool {
-#if DEBUG
-        ProcessInfo.processInfo.arguments.contains("-edu")
-#else
-        false
-#endif
-    }
+    static let isEnabled = true
 }
 
 enum EduEmailCheck {

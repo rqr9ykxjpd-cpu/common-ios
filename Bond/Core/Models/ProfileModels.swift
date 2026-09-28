@@ -54,7 +54,7 @@ enum ProfileBadge: String, Codable, Hashable {
     var title: String? {
         switch self {
         case .none: nil
-        case .verified: L10n.Badge.verified
+        case .verified: L10n.Edu.badge
         case .moderator: L10n.Badge.moderator
         case .founder: L10n.Badge.founder
         }
@@ -129,4 +129,3 @@ struct BlockedProfile: Identifiable, Hashable {
     let imageURL: URL?
     let blockedAt: Date
 }
-

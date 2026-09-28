@@ -10,10 +10,35 @@ extension AppState {
         guard EduVerificationRollout.isEnabled else { return }
         do {
             eduStatus = try await service.fetchEduStatus()
-            if eduDomains.isEmpty { eduDomains = (try? await service.fetchEduDomains()) ?? [] }
+            if eduStatus?.isVerified == true, myBadge == .none {
+                // Sunucu doğrulama sırasında aynı rozeti profile de yazar. Yerel
+                // durum hemen güncellensin; yeniden giriş beklemeyelim.
+                myBadge = .verified
+                draft.badge = .verified
+                persistAccount()
+            }
+            if eduDomains.isEmpty { _ = await loadEduDomains() }
         } catch {
             guard !isCancellation(error) else { return }
             // Sessiz: kart bir sonraki açılışta gelir; hata banner'ı profil sekmesini kirletmesin.
+        }
+    }
+
+    /// İzinli alan adları sunucudan gelir. Liste yokken doğrulama isteğini
+    /// göndermiyoruz; aksi halde Auth hesabının e-postası desteklenmeyen bir
+    /// adresle değişebilir ama kullanıcı hiçbir zaman rozet alamaz.
+    @discardableResult
+    func loadEduDomains() async -> Bool {
+        do {
+            let domains = try await service.fetchEduDomains()
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+                .filter { !$0.isEmpty }
+            guard !domains.isEmpty else { return false }
+            eduDomains = Array(Set(domains)).sorted()
+            return true
+        } catch {
+            guard !isCancellation(error) else { return false }
+            return false
         }
     }
 
@@ -22,10 +47,10 @@ extension AppState {
     @discardableResult
     func requestEduVerification(_ rawEmail: String) async -> Bool {
         let adres = rawEmail.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        if eduDomains.isEmpty { eduDomains = (try? await service.fetchEduDomains()) ?? [] }
-        // Liste hâlâ yoksa (ağ) istemci karar vermesin: yanlış "üniversite adresi
-        // değil" demek yerine sunucuya bırak; doğrulamayı zaten sunucu damgalıyor.
-        if !eduDomains.isEmpty, !EduEmailCheck.isAllowed(adres, domains: eduDomains) {
+        if eduDomains.isEmpty, !(await loadEduDomains()) {
+            showError(L10n.Edu.domainsUnavailable); return false
+        }
+        if !EduEmailCheck.isAllowed(adres, domains: eduDomains) {
             showError(L10n.Edu.notAllowedDomain); return false
         }
         do {

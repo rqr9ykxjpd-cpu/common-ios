@@ -236,7 +236,9 @@ struct SocialProfileView: View {
             // İki rozet dar sütuna sığmayınca alt satıra insin; HStack sütunu taşırıyordu.
             FlowLayout(spacing: 6) {
                 ProfileBadgeLabel(badge: appState.myBadge, compact: true)
-                if appState.eduStatus?.isVerified == true { EduStudentChip() }
+                if appState.eduStatus?.isVerified == true, appState.myBadge != .verified {
+                    EduStudentChip()
+                }
             }
             // Kurucu künyesi kendi profilinde de görünsün; kartta zaten vardı.
             if appState.myBadge == .founder {
