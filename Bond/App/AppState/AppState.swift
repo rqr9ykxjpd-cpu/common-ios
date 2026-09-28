@@ -114,6 +114,8 @@ final class AppState {
     /// Açılmış profil kartlarının rengi. Kart bir kez açılınca sonraki
     /// açılışlarda doğrudan doğru renkte gelsin diye bellekte tutuluyor.
     var cardThemes: [UUID: CardTheme] = [:]
+    /// Sohbet sekmesinin üstündeki "Tanıyor olabileceğin kişiler".
+    var suggestions: [PersonSuggestion] = []
     var placesError: String?
     var conversations: [Conversation] = []
     /// Engellediğin kişiler; ayarlardaki liste için.
