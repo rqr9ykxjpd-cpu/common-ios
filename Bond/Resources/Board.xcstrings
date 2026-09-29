@@ -1940,6 +1940,24 @@
         }
       }
     },
+    "vote.ownReply" : {
+      "comment" : "Kendi cevabının oy okuna dokununca çıkan kısa bilgi.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can't vote on your own reply."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kendi yorumuna oy veremezsin."
+          }
+        }
+      }
+    },
     "vote.undo" : {
       "localizations" : {
         "en" : {

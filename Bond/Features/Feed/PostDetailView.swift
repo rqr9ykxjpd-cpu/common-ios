@@ -185,6 +185,7 @@ struct PostDetailView: View {
                     score: comment.voteCount,
                     myVote: comment.myVote,
                     disabled: comment.isMine && !appState.isFounder,
+                    onBlockedTap: { appState.show(L10n.Board.ownReplyVote) },
                     onUp: { appState.voteComment(postID: post.id, commentID: comment.id, up: true) },
                     onDown: { appState.voteComment(postID: post.id, commentID: comment.id, up: false) }
                 )

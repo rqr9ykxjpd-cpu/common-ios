@@ -40,6 +40,19 @@ enum ImageCompression {
     }
 
     /// Ham görsel verisini yüklemeye uygun JPEG'e çevirir. Çevrilemezse `nil` döner.
+    /// Arka planda: büyük fotoğrafta küçültme ve sıkıştırma bir saniyeyi
+    /// bulabiliyor. Ana iş parçacığında yapılınca ekran o sırada donuyordu.
+    static func prepareForUploadInBackground(_ data: Data) async -> Data? {
+        await Task.detached(priority: .userInitiated) { prepareForUpload(data) }.value
+    }
+
+    /// Kameradan gelen görüntü için aynısı.
+    static func prepareForUploadInBackground(_ image: UIImage) async -> Data? {
+        await Task.detached(priority: .userInitiated) {
+            image.jpegData(compressionQuality: 0.9).flatMap(prepareForUpload)
+        }.value
+    }
+
     static func prepareForUpload(_ data: Data) -> Data? {
         guard let image = imageForDisplay(data) else { return nil }
 

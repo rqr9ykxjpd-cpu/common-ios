@@ -33,6 +33,8 @@ struct CreatePostView: View {
     @State private var showCameraDenied = false
     @State private var isPublishing = false
     @State private var isPreparingMedia = false
+    /// Hazırlanan video mu (Story'deki bekleme metni için).
+    @State private var isPreparingVideo = false
     @State private var myPostCount = 0
     @State private var addToProfile = false
     /// Paylaşım bitti: düğme kısa bir an tike dönüp ekran öyle kapanıyor.
@@ -229,19 +231,45 @@ struct CreatePostView: View {
         return ZStack {
             Color.black.ignoresSafeArea()
             if imageData == nil {
-                storyEmptyState(filter: filter)
+                // Seçilen dosya hazırlanırken "seç" kutusu değil, hazırlanıyor
+                // hâli: eskiden kutu olduğu gibi kalıyordu ve seçiciye geri
+                // dönülmüş gibi görünüyordu.
+                if isPreparingMedia {
+                    storyPreparing
+                } else {
+                    storyEmptyState(filter: filter)
+                }
             } else {
                 StoryMediaCanvas(url: nil, data: videoClip?.posterJPEG ?? imageData, videoURL: videoClip?.fileURL, isPaused: false)
                     .ignoresSafeArea()
                     .onTapGesture { UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil) }
                 storyOverlay(filter: filter)
             }
-            if isPreparingMedia {
+            // Fotoğraf değiştirilirken: eski fotoğrafın üstünde.
+            if isPreparingMedia, imageData != nil {
                 Color.black.opacity(0.35).ignoresSafeArea()
                 ProgressView().tint(.white).scaleEffect(1.2)
             }
         }
         .preferredColorScheme(.dark)
+    }
+
+    private var storyPreparing: some View {
+        VStack(spacing: BondTheme.Space.md) {
+            ProgressView()
+                .tint(.white)
+                .controlSize(.large)
+            Text(isPreparingVideo ? L10n.ScreenStates.videoLoading : L10n.ScreenStates.photoLoading)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.85))
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 260)
+        .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(.white.opacity(0.15)))
+        .padding(.horizontal, BondTheme.Space.lg)
+        .accessibilityElement(children: .combine)
+        .transition(.opacity)
     }
 
     private func storyEmptyState(filter: PHPickerFilter) -> some View {
@@ -541,11 +569,15 @@ struct CreatePostView: View {
     }
 
     private func consumeCameraPhoto(_ image: UIImage) {
-        if let data = image.jpegData(compressionQuality: 0.9).flatMap(ImageCompression.prepareForUpload) {
-            clearVideo()
-            imageData = data
-        } else {
-            appState.show(L10n.Composer.photoLoadFailed)
+        isPreparingMedia = true
+        Task {
+            defer { isPreparingMedia = false }
+            if let data = await ImageCompression.prepareForUploadInBackground(image) {
+                clearVideo()
+                imageData = data
+            } else {
+                appState.show(L10n.Composer.photoLoadFailed)
+            }
         }
     }
 
@@ -558,8 +590,14 @@ struct CreatePostView: View {
             await ingestPickedVideo(item)
             return
         }
+        // Fotoğraf iCloud'dan inip küçültülürken gösterge açık. Eskiden yalnız
+        // videoda açılıyordu; fotoğrafta ekran boş seçme hâline dönüp birkaç
+        // saniye hiçbir şey olmuyormuş gibi bekliyordu.
+        isPreparingMedia = true
+        defer { isPreparingMedia = false }
         let raw = try? await item.loadTransferable(type: Data.self)
-        let loaded = raw.flatMap(ImageCompression.prepareForUpload)
+        var loaded: Data?
+        if let raw { loaded = await ImageCompression.prepareForUploadInBackground(raw) }
         if let loaded {
             await MainActor.run {
                 clearVideo()
@@ -588,7 +626,11 @@ struct CreatePostView: View {
     }
 
     private func ingestVideoURL(_ url: URL) async {
-        await MainActor.run { isPreparingMedia = true }
+        await MainActor.run {
+            isPreparingMedia = true
+            isPreparingVideo = true
+        }
+        defer { isPreparingVideo = false }
         do {
             let prepared = try await VideoCompression.prepareStoryClip(from: url)
             await MainActor.run {

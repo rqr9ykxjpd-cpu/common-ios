@@ -7,6 +7,7 @@ extension L10n {
         static var imageMissing: String { String(localized: "imageMissing", table: "ScreenStates") }
         static var imageFailed: String { String(localized: "imageFailed", table: "ScreenStates") }
         static var photoLoading: String { String(localized: "photoLoading", table: "ScreenStates") }
+        static var videoLoading: String { String(localized: "videoLoading", table: "ScreenStates") }
         static var imageLoading: String { String(localized: "imageLoading", table: "ScreenStates") }
         static var addPhoto: String { String(localized: "addPhoto", table: "ScreenStates") }
         static var updating: String { String(localized: "updating", table: "ScreenStates") }

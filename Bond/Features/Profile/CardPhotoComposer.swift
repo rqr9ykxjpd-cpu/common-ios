@@ -180,7 +180,9 @@ struct CardPhotoComposer: View {
             selectedItem = nil
         }
         let raw = try? await item.loadTransferable(type: Data.self)
-        if let data = raw.flatMap(ImageCompression.prepareForUpload) {
+        var data: Data?
+        if let raw { data = await ImageCompression.prepareForUploadInBackground(raw) }
+        if let data {
             show(data)
         } else {
             appState.show(L10n.Composer.photoLoadFailed)
@@ -196,10 +198,14 @@ struct CardPhotoComposer: View {
     }
 
     private func ingestCamera(_ image: UIImage) {
-        if let data = image.jpegData(compressionQuality: 0.9).flatMap(ImageCompression.prepareForUpload) {
-            show(data)
-        } else {
-            appState.show(L10n.Composer.photoLoadFailed)
+        isPreparing = true
+        Task {
+            defer { isPreparing = false }
+            if let data = await ImageCompression.prepareForUploadInBackground(image) {
+                show(data)
+            } else {
+                appState.show(L10n.Composer.photoLoadFailed)
+            }
         }
     }
 

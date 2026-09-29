@@ -179,6 +179,9 @@ struct VoteControl: View {
     /// +1, -1, 0
     let myVote: Int
     var disabled: Bool = false
+    /// Kapalıyken dokunulursa (kendi cevabı) neden olmadığını söyler. Eskiden
+    /// ok soluk durup dokunuşa hiç tepki vermiyordu; bozuk sanılıyordu.
+    var onBlockedTap: (() -> Void)? = nil
     let onUp: () -> Void
     let onDown: () -> Void
     /// Oy verildiği an artar: ok zıplar, yukarı oyda turuncu halka yayılır.
@@ -211,6 +214,11 @@ struct VoteControl: View {
         let fill = up ? BondTheme.upvote : BondTheme.ink
         // Dokunma alanı 36pt (HIG'e yakın), görünen daire 28pt.
         return Button {
+            if disabled {
+                Haptics.warning()
+                onBlockedTap?()
+                return
+            }
             if !active, !reduceMotion {
                 if up { upPulse += 1 } else { downPulse += 1 }
             }
@@ -260,7 +268,6 @@ struct VoteControl: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.pressable)
-        .disabled(disabled)
         .animation(reduceMotion ? nil : BondTheme.Motion.bouncy, value: active)
         .accessibilityLabel(up ? (active ? L10n.Board.unvote : L10n.Board.vote)
                                : (active ? L10n.Board.undoDownvote : L10n.Board.downvote))
