@@ -51,6 +51,24 @@ if [ -z "$GOOGLE_REVERSED_CLIENT_ID" ] && [ -n "$GOOGLE_CLIENT_ID" ]; then
     esac
 fi
 
+# Telefon derlemesi eksik ayarla bitmesin. Eskiden .env yokken sessizce boş
+# değerler yazılıyordu; uygulama telefonda açılıyor ama Google ve Apple ile
+# giriş çalışmıyordu (sunucu adresi boş). Cihaz derlemesi burada duruyor ve
+# dosyalara dokunmadan çıkıyor; simülatör örnek modla açılabildiği için uyarı.
+eksik=""
+[ -n "$SUPABASE_HOST" ] || eksik="$eksik SUPABASE_HOST"
+[ -n "$SUPABASE_PUBLISHABLE_KEY" ] || eksik="$eksik SUPABASE_PUBLISHABLE_KEY"
+[ -n "$GOOGLE_CLIENT_ID" ] || eksik="$eksik GOOGLE_CLIENT_ID"
+[ -n "$GOOGLE_SERVER_CLIENT_ID" ] || eksik="$eksik GOOGLE_SERVER_CLIENT_ID"
+[ -n "$REVENUECAT_API_KEY" ] || eksik="$eksik REVENUECAT_API_KEY"
+if [ -n "$eksik" ]; then
+    if [ "${PLATFORM_NAME:-}" = "iphoneos" ]; then
+        echo "error: .env eksik ya da boş:$eksik. Cihaz derlemesi durduruldu; giriş ve satın alma çalışmazdı. ($ENV_FILE)"
+        exit 1
+    fi
+    echo "warning: .env eksik ya da boş:$eksik. Uygulama sunucusuz açılır (yalnız örnek mod)."
+fi
+
 mkdir -p "$SECRETS_DIR" "$ROOT/Config"
 
 # Info.plist $(GOOGLE_REVERSED_CLIENT_ID) xcconfig'ten bir derleme geride kalır.
