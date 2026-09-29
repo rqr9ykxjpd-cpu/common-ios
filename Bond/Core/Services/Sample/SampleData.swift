@@ -299,7 +299,9 @@ enum SampleData {
                         place: places[0], viewed: false,
                         viewRecords: [
                             StoryViewRecord(viewer: profiles[0], viewCount: 2, lastViewedAt: hours(1)),
-                            StoryViewRecord(viewer: profiles[4], viewCount: 1, lastViewedAt: hours(3))
+                            StoryViewRecord(viewer: profiles[4], viewCount: 1, lastViewedAt: hours(3)),
+                            // Bağlantı olmayan biri: kartı kaydırılabiliyor.
+                            StoryViewRecord(viewer: profiles[2], viewCount: 1, lastViewedAt: hours(4))
                         ],
                         isMine: true),
             CampusStory(author: profiles[0], imageAssetName: "post-cafe", caption: "Bugünün ışığı",

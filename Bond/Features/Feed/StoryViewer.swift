@@ -629,6 +629,9 @@ struct StoryViewer: View {
 struct StoryViewersSheet: View {
     @Environment(AppState.self) private var appState
     @State private var showProNote = false
+    /// Açılan kişi kartı. Listenin içine itilmiyor, kendi tam boy sayfasında
+    /// açılıyor: yarım sayfada kart sıkışıyor, sağa/sola çekmeye yer kalmıyordu.
+    @State private var openedViewer: StudentProfile?
     let story: CampusStory
     let records: [StoryViewRecord]
     @Environment(\.dismiss) private var dismiss
@@ -663,8 +666,10 @@ struct StoryViewersSheet: View {
                     } else {
                         LazyVStack(spacing: 0) {
                             ForEach(records.sorted(by: { $0.lastViewedAt > $1.lastViewedAt })) { record in
-                                NavigationLink {
-                                    SocialPersonDetailView(profile: record.viewer, place: nil)
+                                Button {
+                                    // Kendi kartın yerine profil sekmesi var; burada açılmıyor.
+                                    guard record.viewer.id != appState.currentUserID else { return }
+                                    openedViewer = record.viewer
                                 } label: {
                                     HStack(spacing: BondTheme.Space.md) {
                                         ProfileMedia(url: record.viewer.imageURL, data: nil, assetName: record.viewer.imageAssetName)
@@ -699,9 +704,11 @@ struct StoryViewersSheet: View {
                                             .buttonStyle(PressableStyle())
                                             .accessibilityLabel(L10n.Story.viewCountLocked)
                                         }
-                                        Image(systemName: "chevron.right")
-                                            .font(.system(size: 12, weight: .bold))
-                                            .foregroundStyle(BondTheme.muted)
+                                        if record.viewer.id != appState.currentUserID {
+                                            Image(systemName: "chevron.right")
+                                                .font(.system(size: 12, weight: .bold))
+                                                .foregroundStyle(BondTheme.muted)
+                                        }
                                     }
                                     .foregroundStyle(BondTheme.ink)
                                     .contentShape(Rectangle())
@@ -709,6 +716,7 @@ struct StoryViewersSheet: View {
                                     .overlay(alignment: .bottom) { Rectangle().fill(BondTheme.hairline).frame(height: 0.5) }
                                 }
                                 .buttonStyle(PressableStyle())
+                                .disabled(record.viewer.id == appState.currentUserID)
                                 .accessibilityLabel(L10n.Feed.openProfile(record.viewer.name))
                             }
                         }
@@ -727,6 +735,14 @@ struct StoryViewersSheet: View {
             }
             .sheet(isPresented: $showProNote) {
                 ProUpsellSheet().presentationDetents([.height(320)])
+            }
+            .sheet(item: $openedViewer) { viewer in
+                NavigationStack {
+                    SocialPersonDetailView(profile: viewer, place: nil, showsClose: true)
+                }
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+                .presentationCornerRadius(28)
             }
         }
     }
