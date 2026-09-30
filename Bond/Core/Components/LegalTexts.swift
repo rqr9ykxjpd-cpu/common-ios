@@ -11,10 +11,11 @@ enum LegalBlock {
 enum LegalTexts {
     static let gizlilik: [LegalBlock] = [
         .baslik("Gizlilik Politikası"),
-        .paragraf("Son güncelleme: 11 Eylül 2026"),
+        .paragraf("Son güncelleme: 30 Eylül 2026"),
         .paragraf("Common, üniversite kampüsü topluluklarına yönelik; kampüs paylaşımları, kulüpler, buluşmalar ve mesajlaşma sunan bir sosyal uygulamadır. Bu metin, uygulamanın hangi bilgileri topladığını, neden topladığını ve bu bilgilerle ne yaptığını anlatır. Sade tutmaya çalıştık."),
         .altbaslik("Topladığımız bilgiler"),
         .paragraf("Hesabını açarken: e-posta adresin (Google veya Apple ile giriş yaptığında bize iletilen adres), adın, doğum tarihin, üniversiten, bölümün ve sınıfın. Doğum tarihini yaşını hesaplamak ve 18 yaş sınırını uygulamak için istiyoruz."),
+        .paragraf("Öğrenci doğrulaması yaparsan: okul e-posta adresin ve doğrulandığı zaman. Bu adresi öğrenci durumunu doğrulamak, aynı okul adresinin birden fazla hesapta kullanılmasını önlemek ve profilinde Öğrenci rozeti göstermek için işleriz."),
         .paragraf("Profilini doldururken: kendini anlattığın metin, ilgi alanların ve profil fotoğrafların."),
         .paragraf("Uygulamayı kullanırken: paylaştığın gönderiler ve story'ler, yazdığın yorumlar ve mesajlar, beğendiğin ve kaydettiğin gönderiler, katıldığın kulüpler, \"şu an buradayım\" diye seçtiğin kampüs noktası, kimlerle bağlantı kurduğun ve son aktif olduğun zaman."),
         .paragraf("Otomatik olarak: oturumunu açık tutmak için gereken teknik kayıtlar."),
@@ -27,7 +28,7 @@ enum LegalTexts {
         .madde("Mesajların: uygulama içinde konuşmanın taraflarına gösterilir. Bir mesaj şikayet edildiğinde, o mesajın içeriği ve şikayet gerekçesi yetkili moderatörlere iletilir; bu işlem tüm konuşmayı moderatörlere açmaz."),
         .madde("Seçtiğin kampüs noktası: yalnızca sen görünür olmayı seçtiğin sürece ve yalnızca uygulamadaki diğer öğrenciler görebilir."),
         .madde("Bir story'yi izlemen: o story'nin sahibi seni izleyenler listesinde görür ve kaç kez izlediğin de ona görünür. Story kaybolduğunda bu bilgi de silinir."),
-        .madde("E-posta adresin ve doğum tarihin: diğer kullanıcılara gösterilmez."),
+        .madde("E-posta adreslerin ve doğum tarihin: diğer kullanıcılara gösterilmez. Okul e-postanı doğrularsan diğer kullanıcılar yalnızca Öğrenci rozetini görür."),
         .madde("Engellediğin kişiler: engellediğin kişi bunu göremez."),
         .altbaslik("Bilgilerin nerede tutuluyor"),
         .paragraf("Veriler, altyapı sağlayıcımız Supabase'in sunucularında saklanır. Bağlantılar şifreli (HTTPS) kurulur. Mesajlar sunucuda saklanır; uygulama uçtan uca şifreli mesajlaşma sunduğunu iddia etmez. Profil fotoğrafları ve diğer medya özel depolama alanlarında tutulur; uygulama bunlara erişim kurallarına tabi, süreli bağlantılarla ulaşır. Geçerli bir bağlantıyı alan kişi, süresi dolana kadar medyayı uygulama dışında da açabilir."),
@@ -54,11 +55,11 @@ enum LegalTexts {
 
     static let kosullar: [LegalBlock] = [
         .baslik("Kullanım Koşulları"),
-        .paragraf("Son güncelleme: 11 Eylül 2026"),
+        .paragraf("Son güncelleme: 30 Eylül 2026"),
         .paragraf("Common'u kullanarak bu koşulları kabul etmiş olursun. Kabul etmiyorsan uygulamayı kullanma."),
         .altbaslik("Kimler kullanabilir"),
         .paragraf("Common, üniversite öğrencilerine yöneliktir ve 18 yaşını doldurmuş olman gerekir. Hesabını kendi adına açarsın; başkasının kimliğine bürünemez, sahte profil oluşturamazsın. Hesabını başkasına devredemez, paylaşamazsın."),
-        .paragraf("Google veya Apple ile giriş yapabilirsin. Giriş için .edu.tr adresi şartı aranmaz; giriş yapmış olmak üniversite öğrencisi olduğunun doğrulandığı anlamına gelmez."),
+        .paragraf("Google veya Apple ile giriş yapabilirsin. Giriş için .edu.tr adresi şartı aranmaz; giriş yapmış olmak tek başına üniversite öğrencisi olduğunun doğrulandığı anlamına gelmez. Profilindeki “Öğrenci” rozeti, desteklenen okul e-posta adresine gönderilen bağlantının onaylandığını gösterir. Doğrulama isteğe bağlıdır ve giriş yaptığın e-posta adresi herkese gösterilmez."),
         .altbaslik("Paylaştığın içerikten sen sorumlusun"),
         .paragraf("Uygulamaya yüklediğin fotoğraf, yazı ve mesajların sorumluluğu sana aittir. Yalnızca paylaşma hakkına sahip olduğun içerikleri paylaş."),
         .paragraf("Paylaştığın içerik sana ait kalır. Bize yalnızca bu içeriği uygulama içinde diğer kullanıcılara gösterebilmemiz için gereken izni vermiş olursun; bu izin içeriğini sildiğinde sona erer."),
@@ -97,10 +98,11 @@ enum LegalTexts {
 
     static let privacy: [LegalBlock] = [
         .baslik("Privacy Policy"),
-        .paragraf("Last updated: 11 September 2026"),
+        .paragraf("Last updated: 30 September 2026"),
         .paragraf("Common is a social app for university campus communities, with campus posts, clubs, meetups and messaging. This document explains what information the app collects, why it collects it, and what we do with it. English translation of the Turkish original; the Turkish version governs."),
         .altbaslik("Information we collect"),
         .paragraf("When you create an account: your email address (provided to us when you sign in with Google or Apple), your name, date of birth, university, department and year of study. We ask for your date of birth to calculate your age and to enforce the minimum age of 18."),
+        .paragraf("If you choose student verification: your school email address and the time it was verified. We process this to verify student status, prevent the same school address from being used by more than one account, and show the Student badge on your profile."),
         .paragraf("When you fill in your profile: your bio, interests and profile photos."),
         .paragraf("As you use the app: the posts and stories you share, the comments and messages you write, the posts you like and save, the clubs you join, the campus location you choose to appear at, who you connect with, and when you were last active."),
         .paragraf("Automatically: the technical records needed to keep you signed in."),
@@ -113,7 +115,7 @@ enum LegalTexts {
         .madde("Your messages: shown to the participants of the conversation in the app. When a message is reported, that message's content and the report reason are shared with authorized moderators; this does not give moderators access to the entire conversation."),
         .madde("The campus place you pick: only while you choose to be visible, and only to other students in the app."),
         .madde("Watching someone's story: the owner of that story sees you in their list of viewers, including how many times you watched it. This is deleted with the story."),
-        .madde("Your email address and date of birth: never shown to other users."),
+        .madde("Your email addresses and date of birth: never shown to other users. If you verify a school email, other users see only the Student badge."),
         .madde("People you block: cannot see that you blocked them."),
         .altbaslik("Where your data is stored"),
         .paragraf("Data is stored on the servers of our infrastructure provider, Supabase. Connections are encrypted (HTTPS). Messages are stored on the server; we do not claim to provide end-to-end encrypted messaging. Profile photos and other media are held in private storage; the app accesses them through access rules and time-limited links. Someone who receives a valid link can open that media outside the app until the link expires."),
@@ -140,11 +142,11 @@ enum LegalTexts {
 
     static let terms: [LegalBlock] = [
         .baslik("Terms of Use"),
-        .paragraf("Last updated: 11 September 2026"),
+        .paragraf("Last updated: 30 September 2026"),
         .paragraf("By using Common you accept these terms. If you do not accept them, do not use the app. English translation of the Turkish original; the Turkish version governs."),
         .altbaslik("Who can use it"),
         .paragraf("Common is intended for university students and you must be 18 or older. You open an account in your own name; you may not impersonate anyone or create a fake profile. You may not transfer or share your account."),
-        .paragraf("You can sign in with Google or Apple. A .edu.tr address is not required; signing in does not verify that you are a university student."),
+        .paragraf("You can sign in with Google or Apple. A .edu.tr address is not required; signing in alone does not verify that you are a university student. The “Student” badge on a profile means that the link sent to a supported school email address was confirmed. Verification is optional, and the sign-in email address is not shown publicly."),
         .altbaslik("You are responsible for what you share"),
         .paragraf("You are responsible for the photos, text and messages you upload. Only share content you have the right to share."),
         .paragraf("Content you share remains yours. You grant us only the permission needed to display it to other users inside the app, and that permission ends when you delete the content."),

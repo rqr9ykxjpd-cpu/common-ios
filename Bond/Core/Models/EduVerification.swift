@@ -19,22 +19,13 @@ struct EduVerificationStatus: Equatable, Sendable {
 
 /// Öğrenci e-postası doğrulaması uygulamada açık mı.
 ///
-/// Karar (2026-09-28): uygulama mağazaya çıkmadan açılmıyor. Kod ve sunucu
-/// hazır; eksik olan e-posta altyapısı (kendi SMTP'miz, Türkçe şablon,
-/// `dogrulandi.html`'in yayında olması). Açarken bunu `true` yapıp yeni sürümle
-/// incelemeye gönderiyoruz; mağaza metni, gizlilik metni ve inceleme notu da
-/// o sürümde güncellenir. Bilerek uzaktan açılan bir bayrak değil: incelemeden
-/// sonra sessizce beliren özellik 2.3.1'e takılır.
-///
-/// DEBUG'da `-edu` argümanıyla açılır; kartın durumlarını görmek için.
+/// Karar (2026-09-28): uygulama mağazaya çıkmadan açılmıyordu. 1.0 yayına
+/// çıktıktan sonra (2026-09-30) e-posta altyapısı kuruldu (kendi SMTP'miz,
+/// Türkçe şablon, `dogrulandi.html`) ve 1.1 ile açıldı; gizlilik metni ve
+/// inceleme notu aynı sürümde güncellendi. Bilerek uzaktan açılan bir bayrak
+/// değil: incelemeden sonra sessizce beliren özellik 2.3.1'e takılır.
 enum EduVerificationRollout {
-    static var isEnabled: Bool {
-#if DEBUG
-        ProcessInfo.processInfo.arguments.contains("-edu")
-#else
-        false
-#endif
-    }
+    static let isEnabled = true
 }
 
 enum EduEmailCheck {
