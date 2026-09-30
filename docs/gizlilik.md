@@ -1,6 +1,6 @@
 # Gizlilik Politikası
 
-**Son güncelleme:** 11 Eylül 2026
+**Son güncelleme:** 30 Eylül 2026
 
 Common, üniversite kampüsü topluluklarına yönelik; kampüs paylaşımları, kulüpler,
 buluşmalar ve mesajlaşma sunan bir sosyal uygulamadır. Bu
@@ -12,6 +12,14 @@ topladığını ve bu bilgilerle ne yaptığını anlatır. Sade tutmaya çalı�
 **Hesabını açarken:** e-posta adresin (Google veya Apple ile giriş yaptığında
 bize iletilen adres), adın, doğum tarihin, üniversiten, bölümün ve sınıfın.
 Doğum tarihini yaşını hesaplamak ve 18 yaş sınırını uygulamak için istiyoruz.
+
+**Öğrenci doğrulaması yaparsan:** okul e-posta adresin ve doğrulandığı zaman.
+Bu adresi öğrenci durumunu doğrulamak, aynı okul adresinin birden fazla hesapta
+kullanılmasını önlemek ve profilinde Öğrenci rozeti göstermek için işleriz.
+
+**Sorun bildirirsen:** yazdığın metin, uygulama sürümü, iOS sürümü, cihaz modeli
+ve hangi ekrandan yazdığın; destek ekibiyle yazışmaların. Bunları yalnızca sen ve
+yetkili destek ekibi görür; sorunu çözmek ve sana yanıt vermek için kullanırız.
 
 **Profilini doldururken:** kendini anlattığın metin, ilgi alanların ve profil
 fotoğrafların.
@@ -48,7 +56,8 @@ kiralamıyor veya devretmiyoruz.
   yalnızca uygulamadaki diğer öğrenciler görebilir.
 - **Bir story'yi izlemen:** o story'nin sahibi seni izleyenler listesinde görür
   ve kaç kez izlediğin de ona görünür. Story kaybolduğunda bu bilgi de silinir.
-- **E-posta adresin ve doğum tarihin:** diğer kullanıcılara gösterilmez.
+- **E-posta adreslerin ve doğum tarihin:** diğer kullanıcılara gösterilmez.
+  Okul e-postanı doğrularsan diğer kullanıcılar yalnızca Öğrenci rozetini görür.
 - **Engellediğin kişiler:** engellediğin kişi bunu göremez.
 
 ## Bilgilerin nerede tutuluyor
