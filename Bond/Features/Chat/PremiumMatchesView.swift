@@ -10,6 +10,8 @@ struct PremiumMatchesView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Liste ilk açılışta yerine oturdu mu; sonra `settleIn` kapanır.
     @State private var listSettled = false
+    /// "Tanıyor olabileceğin kişiler"den açılan kart.
+    @State private var suggestedProfile: StudentProfile?
 
     private var sortedConversations: [Conversation] {
         appState.conversations.sorted { $0.updatedAt > $1.updatedAt }
@@ -24,6 +26,15 @@ struct PremiumMatchesView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: BondTheme.Space.xl) {
+                    // Boşken hiç yer kaplamasın: öneri yoksa satır da yok.
+                    if !appState.visibleSuggestions.isEmpty {
+                        PeopleYouMayKnowRail(
+                            suggestions: appState.visibleSuggestions,
+                            open: { suggestedProfile = $0 },
+                            dismiss: { appState.dismissSuggestion($0) }
+                        )
+                        .transition(.opacity)
+                    }
                     introductions
                     acceptedIntroductions
                     yanitIstekleriSatiri
@@ -69,13 +80,22 @@ struct PremiumMatchesView: View {
                 await appState.loadConversations()
                 await appState.loadMessageRequests(silently: true)
                 await appState.loadNotifications()
+                await appState.loadSuggestions()
             }
             .task {
                 // Sohbet ve mesaj istekleri kişi listesinden bağımsız yüklenir.
                 async let conversations: Void = appState.loadConversations()
                 async let requests: Void = appState.loadMessageRequests(silently: true)
-                _ = await (conversations, requests)
+                async let suggestions: Void = appState.loadSuggestions()
+                _ = await (conversations, requests, suggestions)
                 await appState.loadNotifications()
+            }
+            .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: appState.visibleSuggestions.isEmpty)
+            // Kart kapanınca yenile: sola geçilen kişi sunucuda eleniyor.
+            .sheet(item: $suggestedProfile, onDismiss: { Task { await appState.loadSuggestions() } }) { profile in
+                NavigationStack {
+                    SocialPersonDetailView(profile: profile, place: nil, showsClose: true)
+                }
             }
             .background(BondTheme.paper.ignoresSafeArea())
             .navigationTitle(L10n.Chat.title)

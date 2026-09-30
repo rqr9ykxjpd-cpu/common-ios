@@ -414,6 +414,7 @@ extension AppState {
         serverPlan = .free
         tier = subscriptions.tier
         cardThemes = [:]
+        suggestions = []
 
         isFinishingOnboarding = false
         onboardingFailure = nil
