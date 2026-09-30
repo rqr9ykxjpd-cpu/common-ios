@@ -288,6 +288,22 @@
           }
         }
       }
+    },
+    "eduHelp": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Having trouble? Let us know"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sorun mu var? Bize bildir"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

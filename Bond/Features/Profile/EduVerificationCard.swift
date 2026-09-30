@@ -66,6 +66,7 @@ struct EduVerificationSheet: View {
     @State private var showStillPending = false
     @State private var didLoadDomains = false
     @State private var isLoadingDomains = false
+    @State private var showProblemReport = false
     @FocusState private var fieldFocused: Bool
 
     private var status: EduVerificationStatus { appState.eduStatus ?? .unknown }
@@ -87,8 +88,12 @@ struct EduVerificationSheet: View {
                     } else {
                         entry
                     }
+                    if !status.isVerified { problemLink }
                 }
                 .padding(BondTheme.Space.lg)
+            }
+            .sheet(isPresented: $showProblemReport) {
+                ProblemReportView(screen: "Öğrenci e-postası")
             }
             .background(BondTheme.paper.ignoresSafeArea())
             .navigationTitle(L10n.Edu.sheetTitle)
@@ -235,6 +240,18 @@ struct EduVerificationSheet: View {
             try? await Task.sleep(for: .seconds(1))
             if !Task.isCancelled { cooldown -= 1 }
         }
+    }
+
+    /// Adres kabul edilmedi, e-posta gelmedi…: öğrenci takılırsa doğrudan bize
+    /// yazsın. Kurucu Sorunlar'da "Öğrenci e-postası" ekranından geldiğini görür.
+    private var problemLink: some View {
+        Button { showProblemReport = true } label: {
+            Label(L10n.ProblemReport.eduHelp, systemImage: "exclamationmark.bubble")
+                .font(.footnote.weight(.medium))
+                .foregroundStyle(BondTheme.muted)
+                .frame(maxWidth: .infinity, minHeight: 44)
+        }
+        .accessibilityIdentifier("edu.problem")
     }
 
     // MARK: - Doğrulandı

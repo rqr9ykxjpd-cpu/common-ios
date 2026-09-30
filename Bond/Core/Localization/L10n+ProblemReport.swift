@@ -19,6 +19,8 @@ extension L10n {
         static var close: String { String(localized: "close", table: "ProblemReport") }
         static var closed: String { String(localized: "closed", table: "ProblemReport") }
         static var anonymous: String { String(localized: "anonymous", table: "ProblemReport") }
+        /// Öğrenci e-postası penceresinin altındaki bağlantı.
+        static var eduHelp: String { String(localized: "eduHelp", table: "ProblemReport") }
         static func attached(_ info: String) -> String {
             String(format: String(localized: "attached", table: "ProblemReport"), info)
         }
