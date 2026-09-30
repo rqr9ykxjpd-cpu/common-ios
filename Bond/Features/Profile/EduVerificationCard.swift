@@ -18,12 +18,15 @@ struct EduVerificationCard: View {
                     .background(status.isPending ? BondTheme.paper : BondTheme.burntOrange, in: Circle())
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(status.isPending ? L10n.Edu.pendingTitle : L10n.Edu.cardTitle)
+                    // Bölünmez tire: büyük yazıda satır "e-" / "postanı" diye kırılmasın.
+                    Text((status.isPending ? L10n.Edu.pendingTitle : L10n.Edu.cardTitle)
+                        .replacingOccurrences(of: "-", with: "\u{2011}"))
                         .font(.subheadline.weight(.semibold))
+                        .fixedSize(horizontal: false, vertical: true)
                     Text(status.isPending ? L10n.Edu.pendingBody(status.pendingEmail ?? "") : L10n.Edu.cardBody)
                         .font(.footnote)
                         .foregroundStyle(BondTheme.muted)
-                        .lineLimit(2)
+                        .lineLimit(3)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
@@ -35,6 +38,8 @@ struct EduVerificationCard: View {
             }
             .foregroundStyle(BondTheme.ink)
             .padding(.horizontal, BondTheme.Space.md)
+            // Büyük yazıda kart yazıyla birlikte uzar; kenara yapışmaz.
+            .padding(.vertical, BondTheme.Space.compact)
             .frame(maxWidth: .infinity, minHeight: 76, alignment: .leading)
             .background(
                 status.isPending ? BondTheme.surface : BondTheme.burntOrange.opacity(0.10),
