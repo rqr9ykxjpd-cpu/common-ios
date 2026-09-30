@@ -11,4 +11,7 @@ protocol SupportDesk: Sendable {
     func sendSupportMessage(_ reportID: UUID, body: String, resolve: Bool) async throws -> SupportThread.Status
     /// Kurucu: hesabı öğrenci doğrulamasından muaf tut ya da muafiyeti kaldır.
     func setEduExempt(_ userID: UUID, exempt: Bool) async throws -> Bool
+    /// Öğrenci kilidi sunucuda açık mı; kurucu açıp kapatır.
+    func fetchEduGate() async throws -> Bool
+    func setEduGate(_ enabled: Bool) async throws -> Bool
 }

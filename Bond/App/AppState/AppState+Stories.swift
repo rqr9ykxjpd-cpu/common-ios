@@ -30,6 +30,7 @@ extension AppState {
 
     @discardableResult
     func publishStory(_ upload: StoryUpload, caption: String, place: CampusPlace?) async -> Bool {
+        guard requireStudent() else { return false }
         do {
             try await service.publishStory(upload, caption: caption, placeID: place?.id)
             await loadStories()
@@ -62,6 +63,8 @@ extension AppState {
         }
     }
     func markStoryViewed(_ story: CampusStory) {
+        // Kilitliyken story açılmıyor; açılsa bile kimsenin izleyenlerinde görünmesin.
+        guard !isEduLocked else { return }
         guard let storyIndex = stories.firstIndex(where: { $0.id == story.id }) else { return }
         stories[storyIndex].viewed = true
 
@@ -99,6 +102,7 @@ extension AppState {
     }
     /// Story beğenisi. Sahibine bildirim sunucudaki tetikleyiciden gidiyor.
     func setStoryLiked(_ storyID: UUID, liked: Bool) {
+        guard !liked || requireStudent() else { return }
         Haptics.impact(.light)
         Task {
             do { try await service.setStoryLiked(storyID, liked: liked) }

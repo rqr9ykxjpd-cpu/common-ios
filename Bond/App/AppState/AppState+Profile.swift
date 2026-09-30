@@ -207,6 +207,8 @@ extension AppState {
     /// Birinin profili kasıtlı olarak açıldığında çağrılır.
     func recordProfileVisit(_ profile: StudentProfile) {
         guard !(ghostMode && tier.hasGhostMode) else { return }
+        // Kilitliyken kimsenin "Profilini görüntüleyenler"inde görünmesin.
+        guard !isEduLocked else { return }
         guard profile.id != currentUserID else { return }
         Task { try? await service.recordProfileVisit(profile.id) }
     }

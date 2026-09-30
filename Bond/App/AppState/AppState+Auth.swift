@@ -124,6 +124,7 @@ extension AppState {
         try? await service.touchLastActive()
         startPresenceHeartbeat()
         await loadSupportThreads()
+        await loadEduStatus()
         startMessageListener()
         await refreshSubscriptions()
         await startPushRegistration()
@@ -179,6 +180,7 @@ extension AppState {
             try? await service.touchLastActive()
             startPresenceHeartbeat()
             await loadSupportThreads()
+            await loadEduStatus()
             startMessageListener()
             await refreshSubscriptions()
             // Geçerli oturum ve tamamlanmış profil varken karşılama ekranında bırakmak

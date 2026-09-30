@@ -7,11 +7,19 @@ struct EduVerificationCard: View {
     @State private var showSheet = false
 
     private var status: EduVerificationStatus { appState.eduStatus ?? .unknown }
+    /// Kilitliyken kart durumu söylüyor: kimse görmüyor, doğrulayınca açılıyor.
+    private var locked: Bool { !status.isPending && appState.isEduLocked }
+    private var title: String {
+        status.isPending ? L10n.Edu.pendingTitle : (locked ? L10n.Support.lockedTitle : L10n.Edu.cardTitle)
+    }
+    private var detail: String {
+        status.isPending ? L10n.Edu.pendingBody(status.pendingEmail ?? "") : (locked ? L10n.Support.lockedBody : L10n.Edu.cardBody)
+    }
 
     var body: some View {
         Button { showSheet = true } label: {
             HStack(spacing: BondTheme.Space.compact) {
-                Image(systemName: status.isPending ? "envelope.badge.fill" : "graduationcap.fill")
+                Image(systemName: status.isPending ? "envelope.badge.fill" : (locked ? "eye.slash.fill" : "graduationcap.fill"))
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(status.isPending ? BondTheme.ink : BondTheme.onAccent)
                     .frame(width: 40, height: 40)
@@ -19,11 +27,10 @@ struct EduVerificationCard: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     // Bölünmez tire: büyük yazıda satır "e-" / "postanı" diye kırılmasın.
-                    Text((status.isPending ? L10n.Edu.pendingTitle : L10n.Edu.cardTitle)
-                        .replacingOccurrences(of: "-", with: "\u{2011}"))
+                    Text(title.replacingOccurrences(of: "-", with: "\u{2011}"))
                         .font(.subheadline.weight(.semibold))
                         .fixedSize(horizontal: false, vertical: true)
-                    Text(status.isPending ? L10n.Edu.pendingBody(status.pendingEmail ?? "") : L10n.Edu.cardBody)
+                    Text(detail)
                         .font(.footnote)
                         .foregroundStyle(BondTheme.muted)
                         .lineLimit(3)
@@ -56,6 +63,19 @@ struct EduVerificationCard: View {
 /// açılıp tasarımlı sayfaya düşer; oradan `bond://edu-verified` ile döner ya da
 /// kullanıcı buradan elle kontrol ettirir.
 struct EduVerificationSheet: View {
+    /// Pencerenin neden açıldığı: profildeki karttan (başlıksız), kilitli bir
+    /// eylemden ("Bunun için…") ya da kayıt biter bitmez ("Kampüse son bir adım").
+    enum Intro { case none, action, welcome }
+
+    var intro: Intro = .none
+    /// UIKit'ten açıldığında kapatmayı açan taraf yapar (`EduGatePresenter`).
+    var onClose: (() -> Void)?
+
+    init(intro: Intro = .none, onClose: (() -> Void)? = nil) {
+        self.intro = intro
+        self.onClose = onClose
+    }
+
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -86,9 +106,17 @@ struct EduVerificationSheet: View {
                     } else if let bekleyen = status.pendingEmail {
                         sent(to: bekleyen)
                     } else {
+                        if intro != .none { introHeader }
                         entry
                     }
                     if !status.isVerified { problemLink }
+                    if intro == .welcome, !status.isVerified {
+                        Button(L10n.Support.gateLater) { close() }
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(BondTheme.muted)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .accessibilityIdentifier("edu.later")
+                    }
                 }
                 .padding(BondTheme.Space.lg)
             }
@@ -103,7 +131,7 @@ struct EduVerificationSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     // Kısa ve diğer pencerelerle aynı: "Şimdi değil" başlığı ortadan itiyordu.
-                    Button(L10n.Common.close) { dismiss() }
+                    Button(L10n.Common.close) { close() }
                 }
             }
             .task {
@@ -114,6 +142,44 @@ struct EduVerificationSheet: View {
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+    }
+
+    private func close() {
+        if let onClose { onClose() } else { dismiss() }
+    }
+
+    /// Neden burada olduğunu ve neyin açılacağını söyleyen üst kısım.
+    private var introHeader: some View {
+        VStack(alignment: .leading, spacing: BondTheme.Space.md) {
+            Text((intro == .welcome ? L10n.Support.gateWelcomeTitle : L10n.Support.gateActionTitle)
+                .replacingOccurrences(of: "-", with: "\u{2011}"))
+                .font(.system(.title2, design: .serif).weight(.bold))
+                .tracking(-0.3)
+                .foregroundStyle(BondTheme.ink)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
+            Text(intro == .welcome ? L10n.Support.gateWelcomeBody : L10n.Support.gateActionBody)
+                .font(.subheadline)
+                .foregroundStyle(BondTheme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+            if intro == .welcome { perks(unlocked: false) }
+        }
+    }
+
+    /// Doğrulayınca açılanlar. Doğrulandı ekranında tik tik yerine oturur.
+    private func perks(unlocked: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(Array(Self.perkList.enumerated()), id: \.offset) { sira, perk in
+                PerkRow(icon: perk.icon, title: perk.title, unlocked: unlocked,
+                        delay: reduceMotion ? 0 : 0.18 + Double(sira) * 0.16)
+            }
+        }
+    }
+
+    private static var perkList: [(icon: String, title: String)] {
+        [("text.bubble", L10n.Support.gatePerkPost),
+         ("paperplane", L10n.Support.gatePerkMessage),
+         ("mappin.and.ellipse", L10n.Support.gatePerkPlace)]
     }
 
     // MARK: - Adım 1: adres
@@ -271,6 +337,8 @@ struct EduVerificationSheet: View {
             if let adres = status.email {
                 Text(adres).font(BondTheme.Typography.footnote).foregroundStyle(BondTheme.muted)
             }
+            perks(unlocked: true)
+                .padding(.top, 4)
         }
     }
 
@@ -301,10 +369,43 @@ struct EduVerificationSheet: View {
         defer { isChecking = false }
         let oldu = await appState.syncEduVerification()
         if oldu {
-            try? await Task.sleep(for: .seconds(1.2))
-            dismiss()
+            // Açılanlar tik tik yerine otursun; sonra pencere kendiliğinden kapanır.
+            try? await Task.sleep(for: .seconds(2.4))
+            close()
         } else {
             withAnimation(reduceMotion ? nil : BondTheme.Motion.smooth) { showStillPending = true }
+        }
+    }
+}
+
+
+/// "Kampüse son bir adım" ve doğrulandı ekranındaki satır. Açılınca kilit
+/// simgesi tike döner; sırayla, hafif bir dokunuşla.
+private struct PerkRow: View {
+    let icon: String
+    let title: String
+    let unlocked: Bool
+    let delay: Double
+    @State private var shown = false
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: unlocked && shown ? "checkmark.circle.fill" : icon)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(unlocked && shown ? BondTheme.violet : BondTheme.ink)
+                .contentTransition(.symbolEffect(.replace))
+                .frame(width: 28)
+            Text(title)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(BondTheme.ink)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityElement(children: .combine)
+        .task {
+            guard unlocked else { return }
+            try? await Task.sleep(for: .seconds(delay))
+            withAnimation(BondTheme.Motion.smooth) { shown = true }
+            Haptics.selection()
         }
     }
 }

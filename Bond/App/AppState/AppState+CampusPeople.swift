@@ -120,6 +120,7 @@ extension AppState {
     /// Tek taraf: bildirim. Karşılıklı: `matches` + Sohbet listesinde DM.
     @discardableResult
     func sendRightSwipe(to profile: StudentProfile) async -> RightSwipeResult {
+        guard requireStudent() else { return .failed }
         if rightSwipedProfileIDs.contains(profile.id) {
             show(L10n.CampusDesign.alreadySwiped)
             return .already

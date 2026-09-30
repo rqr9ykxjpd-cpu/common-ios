@@ -17,10 +17,19 @@ extension SampleProductService: SupportDesk {
     }
 
     func setEduExempt(_ userID: UUID, exempt: Bool) async throws -> Bool { exempt }
+
+    func fetchEduGate() async throws -> Bool { await SampleSupportStore.shared.eduGate }
+
+    func setEduGate(_ enabled: Bool) async throws -> Bool {
+        await SampleSupportStore.shared.setEduGate(enabled)
+        return enabled
+    }
 }
 
 private actor SampleSupportStore {
     static let shared = SampleSupportStore()
+    private(set) var eduGate = false
+    func setEduGate(_ acik: Bool) { eduGate = acik }
 
     private static let eduID = UUID(uuidString: "5A0E0000-0000-4000-8000-000000000001")!
     private static let feedID = UUID(uuidString: "5A0E0000-0000-4000-8000-000000000002")!

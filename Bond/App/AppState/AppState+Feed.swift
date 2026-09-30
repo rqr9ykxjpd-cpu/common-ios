@@ -5,6 +5,7 @@ extension AppState {
     /// ▲ / ▼: aynı yöne ikinci dokunuş oyu geri alır, ters yön oyu çevirir.
     /// Önce ekranda, sonra sunucuda; sunucu reddederse eski hâle döner.
     func vote(postID: UUID, up: Bool) {
+        guard requireStudent() else { return }
         guard let index = posts.firstIndex(where: { $0.id == postID }) else { return }
         let eski = posts[index].myVote
         let yeni = (up ? 1 : -1) == eski ? 0 : (up ? 1 : -1)
@@ -205,6 +206,7 @@ extension AppState {
 
     @discardableResult
     func publishPost(imageData: Data?, caption: String, place: CampusPlace?, kind: PostKind = .moment, announces: Bool = true) async -> Bool {
+        guard requireStudent() else { return false }
         let cleanCaption = caption.trimmingCharacters(in: .whitespacesAndNewlines)
         guard imageData != nil || !cleanCaption.isEmpty else { return false }
         do {
@@ -315,6 +317,7 @@ extension AppState {
     }
 
     func addComment(_ body: String, to postID: UUID) {
+        guard requireStudent() else { return }
         let cleanBody = body.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanBody.isEmpty, posts.contains(where: { $0.id == postID }) else { return }
         Task {
@@ -332,6 +335,7 @@ extension AppState {
 
     /// Cevaba ▲ / ▼. Kendi cevabına oy yok; kurucu istisna (sunucu da aynı kuralı uygular).
     func voteComment(postID: UUID, commentID: UUID, up: Bool) {
+        guard requireStudent() else { return }
         guard let pi = posts.firstIndex(where: { $0.id == postID }),
               let ci = posts[pi].comments.firstIndex(where: { $0.id == commentID }),
               !posts[pi].comments[ci].isMine || isFounder else { return }

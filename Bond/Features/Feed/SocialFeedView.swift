@@ -143,6 +143,12 @@ struct SocialFeedView: View {
                     ScrollView {
                         LazyVStack(spacing: 0) {
                             Color.clear.frame(height: 1).id("feed-top")
+                            if appState.isEduLocked {
+                                BrowseModeBanner()
+                                    .padding(.horizontal, 20)
+                                    .padding(.bottom, BondTheme.Space.sm)
+                                    .transition(.opacity)
+                            }
                             storyRail
                             Divider().opacity(0.35).padding(.vertical, BondTheme.Space.md)
                             kindFilterRow
@@ -253,14 +259,14 @@ struct SocialFeedView: View {
             .navigationDestination(item: $openedPostID) { id in
                 PostDetailView(postID: id)
             }
-            .sheet(isPresented: $showStoryComposer) {
+            .eduGatedSheet(isPresented: $showStoryComposer, appState: appState) {
                 CreatePostView(initialContentType: 1)
             }
-            .sheet(isPresented: $showPostComposer, onDismiss: { composerKind = .moment }) {
+            .eduGatedSheet(isPresented: $showPostComposer, appState: appState, onDismiss: { composerKind = .moment }) {
                 CreatePostView(initialKind: composerKind)
             }
             .sheet(isPresented: $showCardPhoto) { CardPhotoComposer() }
-            .sheet(isPresented: $showStudyGroupComposer) {
+            .eduGatedSheet(isPresented: $showStudyGroupComposer, appState: appState) {
                 StudyGroupComposer()
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
@@ -327,7 +333,11 @@ struct SocialFeedView: View {
                 selectedClub: $selectedClub
             ))
 #endif
-            .fullScreenCover(item: Binding(get: { appState.selectedStory }, set: { appState.selectedStory = $0 })) { story in
+            .fullScreenCover(item: Binding(
+                // Kilitliyken story açılmaz; dokunulunca doğrulama penceresi gelir.
+                get: { appState.isEduLocked ? nil : appState.selectedStory },
+                set: { appState.selectedStory = $0 }
+            )) { story in
                 // Dokunulan daireden büyüyerek açılır, kapanınca geri küçülür.
                 StoryViewer(
                     stories: appState.stories,
@@ -346,6 +356,11 @@ struct SocialFeedView: View {
                     close: { appState.selectedStory = nil }
                 )
                 .zoomTransition(sourceID: "story-\(story.id)", in: profileZoom)
+            }
+            .onChange(of: appState.selectedStory?.id) { _, yeni in
+                guard yeni != nil, appState.isEduLocked else { return }
+                appState.selectedStory = nil
+                appState.presentEduGate(.action)
             }
         }
     }

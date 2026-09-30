@@ -24,6 +24,7 @@ extension AppState {
         }
     }
     func sendMeetingRequest(to profile: StudentProfile, at place: CampusPlace) {
+        guard requireStudent() else { return }
         guard meetingRequest(for: profile, at: place) == nil else { return }
         let optimistic = MeetingRequest(profile: profile, place: place, direction: .outgoing)
         meetingRequests.insert(optimistic, at: 0)

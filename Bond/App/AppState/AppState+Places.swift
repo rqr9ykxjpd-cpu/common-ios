@@ -28,6 +28,8 @@ extension AppState {
         let operationID = UUID()
         let accountID = currentUserID
         let turningOff = currentVisiblePlace?.id == place.id
+        // Kilitliyken yerini gösteremez; çıkmak her zaman serbest.
+        guard turningOff || requireStudent() else { return }
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) {
@@ -97,6 +99,7 @@ extension AppState {
 
     func toggleClubMembership(_ club: CampusClub) {
         let willJoin = !joinedClubIDs.contains(club.id)
+        guard !willJoin || requireStudent() else { return }
         if willJoin {
             joinedClubIDs.insert(club.id)
             show(L10n.Places.joinedClub(club.name))

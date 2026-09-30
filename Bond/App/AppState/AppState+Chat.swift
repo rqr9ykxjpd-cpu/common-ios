@@ -187,6 +187,7 @@ extension AppState {
     /// denetirdi.
     @discardableResult
     func sendMessageRequest(to profile: StudentProfile, body: String, storyID: UUID? = nil) async -> Bool {
+        guard requireStudent() else { return false }
         let metin = body.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !metin.isEmpty else { return false }
         do {

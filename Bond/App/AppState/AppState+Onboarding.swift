@@ -86,6 +86,13 @@ extension AppState {
         onboardingFailure = nil
         withAnimation(.smooth(duration: 0.55)) { route = .app }
         await startPushRegistration()
+        // Yeni öğrenci: kayıt biter bitmez "Kampüse son bir adım". Geçebilir;
+        // o zaman gezinti modunda kalır, kilitli bir şeye dokununca pencere yine açılır.
+        await loadEduStatus()
+        if isEduLocked {
+            try? await Task.sleep(for: .seconds(0.9))
+            presentEduGate(.welcome)
+        }
         show(chosenName.isEmpty ? L10n.Auth.welcome : L10n.Auth.welcomeName(chosenName))
     }
 

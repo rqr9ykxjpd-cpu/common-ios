@@ -39,7 +39,17 @@ extension SupabaseProductService: SupportDesk {
             .rpc("founder_set_edu_exempt", params: EduExemptParams(target: userID, exempt: exempt))
             .execute().value
     }
+
+    func fetchEduGate() async throws -> Bool {
+        try await client.rpc("get_edu_gate").execute().value
+    }
+
+    func setEduGate(_ enabled: Bool) async throws -> Bool {
+        try await client.rpc("founder_set_edu_gate", params: EduGateParams(enabled: enabled)).execute().value
+    }
 }
+
+struct EduGateParams: Encodable { let enabled: Bool }
 
 struct SupportReportParams: Encodable {
     let reportID: UUID

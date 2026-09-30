@@ -101,6 +101,7 @@ extension AppState {
     /// Sunucu tek açık grup kuralını koyuyor (STUDY_GROUP_ACTIVE_EXISTS).
     @discardableResult
     func createStudyGroup(place: CampusPlace, startsAt: Date, note: String, capacity: Int?) async -> Bool {
+        guard requireStudent() else { return false }
         do {
             let group = try await service.createStudyGroup(
                 placeID: place.id, startsAt: startsAt,
@@ -149,6 +150,7 @@ extension AppState {
         let me = currentUserProfile
         let onceki = studyGroups[i]
         let katiliyor = !onceki.joined
+        guard !katiliyor || requireStudent() else { return }
         if katiliyor {
             guard !onceki.isFull else { showError(L10n.StudyGroup.full); return }
             studyGroups[i].members.append(me)

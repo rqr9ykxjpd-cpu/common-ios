@@ -254,6 +254,12 @@ struct PostDetailView: View {
                 .font(.subheadline)
                 .lineLimit(1...4)
                 .focused($focused)
+                // Kilitliyken yorum kutusuna dokununca klavye yerine doğrulama penceresi.
+                .onChange(of: focused) { _, yeni in
+                    guard yeni, appState.isEduLocked else { return }
+                    focused = false
+                    appState.presentEduGate(.action)
+                }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
                 .background(BondTheme.ink.opacity(0.055), in: RoundedRectangle(cornerRadius: 20, style: .continuous))

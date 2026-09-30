@@ -102,7 +102,7 @@ struct SocialProfileView: View {
             .fullScreenCover(isPresented: $showPhoto) {
                 PhotoZoomView(url: appState.avatarURL, data: appState.avatarData)
             }
-            .sheet(isPresented: $showComposer) { CreatePostView() }
+            .eduGatedSheet(isPresented: $showComposer, appState: appState) { CreatePostView() }
             .sheet(isPresented: $showCardPhoto) { CardPhotoComposer() }
             .onChange(of: showComposer) { _, open in
                 if !open { Task { await reload() } }

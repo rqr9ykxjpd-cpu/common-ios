@@ -496,6 +496,294 @@
           }
         }
       }
+    },
+    "gateActionTitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify your student email for this"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bunun için öğrenci e-postanı doğrula"
+          }
+        }
+      }
+    },
+    "gateActionBody": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Votes, comments, posts and messages are open to verified students. Until you verify, no one can see you."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oy, yorum, paylaşım ve mesaj doğrulanmış öğrencilere açık. Doğrulayana kadar seni kimse görmez."
+          }
+        }
+      }
+    },
+    "gateWelcomeTitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One last step onto campus"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kampüse son bir adım"
+          }
+        }
+      }
+    },
+    "gateWelcomeBody": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everyone on Common is a real student. Verify your school email and campus opens up."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Common'da herkes gerçek bir öğrenci. Okul e-postanı doğrula, kampüs açılsın."
+          }
+        }
+      }
+    },
+    "gatePerkPost": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posts, comments and votes"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paylaşım, yorum ve oy"
+          }
+        }
+      }
+    },
+    "gatePerkMessage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messages, connections and meetups"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mesaj, bağlantı ve buluşma"
+          }
+        }
+      }
+    },
+    "gatePerkPlace": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Showing up on On Campus"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kim nerede'de görünmek"
+          }
+        }
+      }
+    },
+    "gateLater": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Look around first"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önce etrafa bakayım"
+          }
+        }
+      }
+    },
+    "browseBanner": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're browsing"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gezinti modundasın"
+          }
+        }
+      }
+    },
+    "browseAction": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doğrula"
+          }
+        }
+      }
+    },
+    "lockedTitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No one can see you yet"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seni henüz kimse görmüyor"
+          }
+        }
+      }
+    },
+    "lockedBody": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify your school email to post, message and show up on On Campus."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Okul e-postanı doğrula; paylaşım, mesaj ve Kim nerede açılsın."
+          }
+        }
+      }
+    },
+    "gateToggle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Student lock"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öğrenci kilidi"
+          }
+        }
+      }
+    },
+    "gateToggleHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When on, unverified accounts are hidden and can't interact."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açıkken doğrulanmamış hesaplar görünmez ve etkileşemez."
+          }
+        }
+      }
+    },
+    "gateConfirmOn": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on the student lock? %lld accounts will be hidden until they verify."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öğrenci kilidi açılsın mı? %lld hesap doğrulayana kadar görünmez olacak."
+          }
+        }
+      }
+    },
+    "gateTurnOn": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aç"
+          }
+        }
+      }
+    },
+    "gateTurnOff": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn off"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapat"
+          }
+        }
+      }
+    },
+    "gateConfirmOff": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn off the student lock? Everyone becomes visible again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öğrenci kilidi kapansın mı? Herkes yeniden görünür olur."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

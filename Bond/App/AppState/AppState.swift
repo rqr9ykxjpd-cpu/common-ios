@@ -290,6 +290,11 @@ final class AppState {
     /// artık gereksiz.
     func showError(_ error: Error, fallback: String) {
         guard !isCancellation(error) else { return }
+        // Öğrenci kilidi: sunucu reddettiyse ham hata yerine doğrulama penceresi.
+        if (String(describing: error) + error.localizedDescription).contains("EDU_REQUIRED") {
+            presentEduGate(.action)
+            return
+        }
         // Bağlantı yokken sebebi üstteki şerit söylüyor; her başarısız istek
         // için ayrıca "Tamam"lı uyarı açmak kullanıcıyı boğuyordu.
         if network.isOffline, UserFacingError.isConnectivity(error) { return }

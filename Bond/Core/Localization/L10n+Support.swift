@@ -34,6 +34,26 @@ extension L10n {
         static func pushCount(_ n: Int) -> String {
             String(format: String(localized: "pushCount", table: "Support"), Int64(n))
         }
+        static var gateActionTitle: String { String(localized: "gateActionTitle", table: "Support") }
+        static var gateActionBody: String { String(localized: "gateActionBody", table: "Support") }
+        static var gateWelcomeTitle: String { String(localized: "gateWelcomeTitle", table: "Support") }
+        static var gateWelcomeBody: String { String(localized: "gateWelcomeBody", table: "Support") }
+        static var gatePerkPost: String { String(localized: "gatePerkPost", table: "Support") }
+        static var gatePerkMessage: String { String(localized: "gatePerkMessage", table: "Support") }
+        static var gatePerkPlace: String { String(localized: "gatePerkPlace", table: "Support") }
+        static var gateLater: String { String(localized: "gateLater", table: "Support") }
+        static var browseBanner: String { String(localized: "browseBanner", table: "Support") }
+        static var browseAction: String { String(localized: "browseAction", table: "Support") }
+        static var lockedTitle: String { String(localized: "lockedTitle", table: "Support") }
+        static var lockedBody: String { String(localized: "lockedBody", table: "Support") }
+        static var gateToggle: String { String(localized: "gateToggle", table: "Support") }
+        static var gateToggleHint: String { String(localized: "gateToggleHint", table: "Support") }
+        static var gateTurnOn: String { String(localized: "gateTurnOn", table: "Support") }
+        static var gateTurnOff: String { String(localized: "gateTurnOff", table: "Support") }
+        static var gateConfirmOff: String { String(localized: "gateConfirmOff", table: "Support") }
+        static func gateConfirmOn(_ n: Int) -> String {
+            String(format: String(localized: "gateConfirmOn", table: "Support"), Int64(n))
+        }
         static func replyCount(_ n: Int) -> String {
             String(format: String(localized: "replyCount", table: "Support"), Int64(n))
         }
