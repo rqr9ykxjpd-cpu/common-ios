@@ -17,6 +17,7 @@ struct ProblemReport: Identifiable, Equatable, Sendable {
     var replyCount: Int = 0
     var staffUnread: Bool = false
     var screen: String? = nil
+    var reporterAvatarURL: URL? = nil
 
     var isOpen: Bool { handledAt == nil }
     /// Kapatılmış kayıt her zaman "çözüldü"; eski kayıtlarda durum alanı yok.
@@ -24,7 +25,8 @@ struct ProblemReport: Identifiable, Equatable, Sendable {
 
     var opening: SupportOpening {
         SupportOpening(id: id, message: message, createdAt: createdAt, screen: screen,
-                       reporter: reporterUsername.map { "@\($0)" } ?? reporterName, status: displayStatus)
+                       reporter: reporterUsername.map { "@\($0)" } ?? reporterName, status: displayStatus,
+                       reporterAvatarURL: reporterAvatarURL)
     }
 }
 

@@ -73,9 +73,22 @@ struct SocialProfileView: View {
                 // Sorun bildirmek herkes için bir dokunuş uzakta; ayarların içinde
                 // kaybolmasın diye dişlinin yanında.
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { showProblemReport = true } label: { Image(systemName: "exclamationmark.bubble") }
-                        .accessibilityLabel(L10n.ProblemReport.button)
-                        .accessibilityIdentifier("profile.reportProblem")
+                    // Destek kapısı: talebi olan yazışmalarına, olmayan doğrudan
+                    // Sorun bildir'e gider. Yanıt gelince turuncu nokta.
+                    Button { showProblemReport = true } label: {
+                        Image(systemName: "exclamationmark.bubble")
+                            .overlay(alignment: .topTrailing) {
+                                if appState.supportUnreadCount > 0 {
+                                    Circle()
+                                        .fill(BondTheme.burntOrange)
+                                        .frame(width: 9, height: 9)
+                                        .offset(x: 3, y: -2)
+                                }
+                            }
+                    }
+                    .accessibilityLabel(appState.supportThreads.isEmpty ? L10n.ProblemReport.button : L10n.Support.inboxTitle)
+                    .accessibilityValue(appState.supportUnreadCount > 0 ? L10n.Support.statusAnswered : "")
+                    .accessibilityIdentifier("profile.reportProblem")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showSettings = true } label: { Image(systemName: "gearshape") }
@@ -84,7 +97,11 @@ struct SocialProfileView: View {
                 }
             }
             .sheet(isPresented: $showProblemReport) {
-                ProblemReportView(screen: "Profil")
+                if appState.supportThreads.isEmpty {
+                    ProblemReportView(screen: "Profil")
+                } else {
+                    SupportInboxView()
+                }
             }
             .task(id: appState.currentUserID) { await reload() }
             .refreshable { await reload() }

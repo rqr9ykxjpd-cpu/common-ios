@@ -330,8 +330,10 @@ struct ModerationView: View {
                     Circle().fill(BondTheme.burntOrange).frame(width: 8, height: 8)
                         .accessibilityHidden(true)
                 }
+                SupportAvatar(url: sorun.reporterAvatarURL)
                 Text(sorun.reporterUsername.map { "@\($0)" } ?? sorun.reporterName ?? L10n.ProblemReport.anonymous)
                     .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
                 SupportStatusChip(status: sorun.displayStatus, staffView: true)
                 Spacer(minLength: 8)
                 Text(sorun.createdAt.relativeTurkish)

@@ -54,6 +54,11 @@ extension L10n {
         static func gateConfirmOn(_ n: Int) -> String {
             String(format: String(localized: "gateConfirmOn", table: "Support"), Int64(n))
         }
+        static var filterAll: String { String(localized: "filterAll", table: "Support") }
+        static var filterUnverified: String { String(localized: "filterUnverified", table: "Support") }
+        static var unverifiedEmpty: String { String(localized: "unverifiedEmpty", table: "Support") }
+        static var verifyStudent: String { String(localized: "verifyStudent", table: "Support") }
+        static var unverifyStudent: String { String(localized: "unverifyStudent", table: "Support") }
         static func replyCount(_ n: Int) -> String {
             String(format: String(localized: "replyCount", table: "Support"), Int64(n))
         }

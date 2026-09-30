@@ -18,6 +18,7 @@ extension SupabaseProductService {
     func fetchProblemReports() async throws -> [ProblemReport] {
         guard currentUserID != nil else { throw BackendServiceError.missingSession }
         let rows: [ProblemReportRow] = try await client.rpc("list_problem_reports").execute().value
+        let fotolar = await signedURLs(bucket: "profile-photos", paths: rows.compactMap(\.reporterAvatarPath))
         return rows.map { row in
             ProblemReport(
                 id: row.id,
@@ -30,7 +31,8 @@ extension SupabaseProductService {
                 status: .init(server: row.status ?? (row.handledAt == nil ? "open" : "resolved")),
                 replyCount: row.replyCount ?? 0,
                 staffUnread: row.staffUnread ?? false,
-                screen: row.context?["screen"]
+                screen: row.context?["screen"],
+                reporterAvatarURL: row.reporterAvatarPath.flatMap { fotolar[$0] }
             )
         }
     }
@@ -62,6 +64,7 @@ struct ProblemReportRow: Decodable {
     let status: String?
     let replyCount: Int?
     let staffUnread: Bool?
+    let reporterAvatarPath: String?
 
     enum CodingKeys: String, CodingKey {
         case id, message, context, status
@@ -71,5 +74,6 @@ struct ProblemReportRow: Decodable {
         case reporterUsername = "reporter_username"
         case replyCount = "reply_count"
         case staffUnread = "staff_unread"
+        case reporterAvatarPath = "reporter_avatar_path"
     }
 }

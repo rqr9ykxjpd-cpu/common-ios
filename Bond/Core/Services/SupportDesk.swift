@@ -14,4 +14,6 @@ protocol SupportDesk: Sendable {
     /// Öğrenci kilidi sunucuda açık mı; kurucu açıp kapatır.
     func fetchEduGate() async throws -> Bool
     func setEduGate(_ enabled: Bool) async throws -> Bool
+    /// Kurucu: hesabı elle öğrenci olarak doğrula ya da doğrulamayı kaldır.
+    func setStudentVerified(_ userID: UUID, verified: Bool) async throws -> Bool
 }

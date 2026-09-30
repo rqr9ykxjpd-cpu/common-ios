@@ -94,7 +94,17 @@ struct SupportThreadView: View {
     private func bubble(_ text: String, fromStaff: Bool, date: Date) -> some View {
         let benim = fromStaff == isStaff
         let ad = fromStaff ? L10n.Support.staffName : (isStaff ? (opening.reporter ?? L10n.ProblemReport.anonymous) : L10n.Support.you)
-        return VStack(alignment: benim ? .trailing : .leading, spacing: 4) {
+        return HStack(alignment: .bottom, spacing: 8) {
+            // Karşı taraf solda, fotoğrafıyla: destek için Common işareti,
+            // kurucu tarafında şikâyetçinin profil fotoğrafı.
+            if !benim {
+                if fromStaff {
+                    SupportAvatar(url: nil, isStaff: true)
+                } else {
+                    SupportAvatar(url: opening.reporterAvatarURL)
+                }
+            }
+            VStack(alignment: benim ? .trailing : .leading, spacing: 4) {
             Text(text)
                 .font(.body)
                 .foregroundStyle(benim ? BondTheme.paper : BondTheme.ink)
@@ -107,6 +117,7 @@ struct SupportThreadView: View {
             Text("\(ad) · \(date.relativeTurkish)")
                 .font(.caption2)
                 .foregroundStyle(BondTheme.muted)
+            }
         }
         .frame(maxWidth: .infinity, alignment: benim ? .trailing : .leading)
         .padding(benim ? .leading : .trailing, 44)
@@ -203,5 +214,36 @@ struct SupportStatusChip: View {
         case .answered: BondTheme.violet
         case .resolved: BondTheme.muted
         }
+    }
+}
+
+/// Yazışmadaki küçük fotoğraf: öğrenci için profil fotoğrafı, destek için
+/// Common işareti. Fotoğraf yoksa sade bir daire.
+struct SupportAvatar: View {
+    let url: URL?
+    var isStaff = false
+    var size: CGFloat = 28
+
+    var body: some View {
+        Group {
+            if isStaff {
+                Image("LaunchLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .padding(size * 0.2)
+                    .background(BondTheme.surface, in: Circle())
+            } else if let url {
+                ProfileMedia(url: url, data: nil, assetName: nil)
+                    .clipShape(Circle())
+            } else {
+                Image(systemName: "person.fill")
+                    .font(.system(size: size * 0.45, weight: .semibold))
+                    .foregroundStyle(BondTheme.muted)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(BondTheme.surface, in: Circle())
+            }
+        }
+        .frame(width: size, height: size)
+        .accessibilityHidden(true)
     }
 }

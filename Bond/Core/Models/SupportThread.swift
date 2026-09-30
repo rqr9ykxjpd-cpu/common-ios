@@ -41,6 +41,8 @@ struct SupportOpening: Identifiable, Hashable, Sendable {
     /// Kurucu tarafında kimin yazdığı ("@kullanici").
     let reporter: String?
     var status: SupportThread.Status
+    /// Kurucu tarafında şikâyetçinin profil fotoğrafı.
+    var reporterAvatarURL: URL? = nil
 }
 
 extension SupportThread {

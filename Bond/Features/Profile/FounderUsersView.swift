@@ -15,6 +15,13 @@ struct FounderUsersView: View {
     /// Öğrenci kilidi: nil = henüz okunmadı.
     @State private var eduGate: Bool?
     @State private var gateTarget: Bool?
+    /// Süzgeç: hepsi ya da yalnız doğrulanmamışlar (muaf ve rozetli olmayan).
+    @State private var onlyUnverified = false
+
+    private func isUnverified(_ user: FounderUser) -> Bool {
+        !user.eduVerified && !user.eduExempt && user.badge == .none
+    }
+    private var shownUsers: [FounderUser] { onlyUnverified ? users.filter(isUnverified) : users }
 
     var body: some View {
         Group {
@@ -44,9 +51,24 @@ struct FounderUsersView: View {
                         .listRowBackground(BondTheme.paper)
                         .accessibilityIdentifier("founder.eduGate")
                     }
+                    Section {
+                        Picker(L10n.Board.users, selection: $onlyUnverified) {
+                            Text(L10n.Support.filterAll).tag(false)
+                            Text("\(L10n.Support.filterUnverified) (\(users.filter(isUnverified).count))").tag(true)
+                        }
+                        .pickerStyle(.segmented)
+                        .listRowBackground(BondTheme.paper)
+                        .listRowSeparator(.hidden)
+                    }
                     // Yeşil nokta: son 8 dakikada uygulamayı açık tutanlar.
                     Section {
-                        ForEach(users) { user in
+                        if shownUsers.isEmpty {
+                            Text(L10n.Support.unverifiedEmpty)
+                                .font(.footnote)
+                                .foregroundStyle(BondTheme.muted)
+                                .listRowBackground(BondTheme.paper)
+                        }
+                        ForEach(shownUsers) { user in
                             Button { actionTarget = user } label: { row(user) }
                                 .buttonStyle(.plain)
                                 .listRowBackground(BondTheme.paper)
@@ -236,6 +258,9 @@ struct FounderUsersView: View {
             Button(user.badge == .moderator ? L10n.Board.removeModerator : L10n.Board.makeModerator) {
                 Task { await setModerator(user, user.badge != .moderator) }
             }
+            Button(user.eduVerified ? L10n.Support.unverifyStudent : L10n.Support.verifyStudent) {
+                Task { await setStudentVerified(user, !user.eduVerified) }
+            }
             if !user.eduVerified {
                 Button(user.eduExempt ? L10n.Support.removeExempt : L10n.Support.makeExempt) {
                     Task { await setEduExempt(user, !user.eduExempt) }
@@ -281,6 +306,18 @@ struct FounderUsersView: View {
             eduGate = try await appState.founderSetEduGate(acik)
             show(L10n.Board.userDone)
             await load()
+        } catch { show(UserFacingError.message(error, fallback: L10n.Board.founderActionFailed)) }
+    }
+
+    private func setStudentVerified(_ user: FounderUser, _ verified: Bool) async {
+        do {
+            let yeni = try await appState.founderSetStudentVerified(user.id, verified: verified)
+            update(user.id) {
+                $0.eduVerified = yeni
+                if yeni, $0.badge == .none { $0.badge = .verified }
+                if !yeni, $0.badge == .verified { $0.badge = .none }
+            }
+            show(L10n.Board.userDone)
         } catch { show(UserFacingError.message(error, fallback: L10n.Board.founderActionFailed)) }
     }
 

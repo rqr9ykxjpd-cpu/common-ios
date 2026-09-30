@@ -24,6 +24,8 @@ extension SampleProductService: SupportDesk {
         await SampleSupportStore.shared.setEduGate(enabled)
         return enabled
     }
+
+    func setStudentVerified(_ userID: UUID, verified: Bool) async throws -> Bool { verified }
 }
 
 private actor SampleSupportStore {
