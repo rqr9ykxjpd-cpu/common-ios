@@ -102,13 +102,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Thanks, we got your report"
+            "value": "Got it. You’ll see our reply in Settings → My support requests."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Teşekkürler, bildirimini aldık"
+            "value": "Aldık. Yanıtımızı Ayarlar → Destek taleplerim'de görürsün."
           }
         }
       }

@@ -129,6 +129,8 @@ enum AppNotificationKind: Hashable {
     case announcement
     /// Çalışma grubuna katılım.
     case studyGroup
+    /// Destek talebine yanıt ya da "çözüldü".
+    case support
 
     var systemName: String {
         switch self {
@@ -139,6 +141,7 @@ enum AppNotificationKind: Hashable {
         case .club: "person.3.fill"
         case .meetingRequest: "cup.and.saucer.fill"
         case .studyGroup: "book.fill"
+        case .support: "lifepreserver.fill"
         case .announcement: "megaphone.fill"
         }
     }

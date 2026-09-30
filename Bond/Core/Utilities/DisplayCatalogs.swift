@@ -148,6 +148,9 @@ enum NotificationCopy {
             return serverTitle
         case .studyGroup:
             return L10n.Notification.studyGroupTitle(actorName)
+        case .support:
+            // Sunucu başlığı Türkçe yazıyor; dile göre buradan.
+            return serverTitle.contains("çözüldü") ? L10n.Support.notifResolved : L10n.Support.notifAnswered
         }
     }
 
@@ -177,7 +180,7 @@ enum NotificationCopy {
                 return L10n.Notification.meetingAcceptedBody(place)
             }
             return L10n.Notification.meetingBody(place)
-        case .club, .announcement:
+        case .club, .announcement, .support:
             return serverBody
         case .studyGroup:
             return L10n.Notification.studyGroupBody(named.isEmpty ? L10n.Common.someone : named)

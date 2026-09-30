@@ -142,6 +142,12 @@ final class AppState {
     var eduStatus: EduVerificationStatus?
     /// İzinli edu alan adları (istemcide anında kontrol için).
     var eduDomains: [String] = []
+    /// Son doğrulama hatası; "Sorun bildir"e eklenir ki destek neyin takıldığını görsün.
+    var lastEduErrorCode: String?
+    /// Kendi destek taleplerin (Sorun bildir yazışmaları).
+    var supportThreads: [SupportThread] = []
+    /// Uygulama açıkken "son aktif" zamanını tazeleyen görev.
+    @ObservationIgnored var presenceTask: Task<Void, Never>?
 
     /// Eşleşmeden gelen/giden yanıt istekleri.
     var messageRequests: [MessageRequest] = []

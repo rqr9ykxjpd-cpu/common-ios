@@ -80,6 +80,7 @@ extension AppState {
         await loadMeetingRequests()
         await loadMessageRequests(silently: true)
         try? await service.touchLastActive()
+        startPresenceHeartbeat()
         startMessageListener()
 
         onboardingFailure = nil

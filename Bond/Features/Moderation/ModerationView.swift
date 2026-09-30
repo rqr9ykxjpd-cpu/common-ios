@@ -17,6 +17,8 @@ struct ModerationView: View {
     @State private var contentToRemove: ModerationReport?
     /// 0: içerik şikâyetleri, 1: "Sorun bildir" ile gelenler.
     @State private var sekme = 0
+    /// Yanıtlanmak üzere açılan destek talebi.
+    @State private var acikTalep: SupportOpening?
 
     var body: some View {
         NavigationStack {
@@ -54,6 +56,9 @@ struct ModerationView: View {
             }
             .refreshable { await appState.loadReports() }
             .task(id: appState.myBadge) { await appState.loadReports() }
+            .sheet(item: $acikTalep, onDismiss: { Task { await appState.loadReports() } }) { talep in
+                SupportThreadView(opening: talep, isStaff: true)
+            }
             .background(BondTheme.paper.ignoresSafeArea())
             .navigationTitle(L10n.Moderation.title)
             .toolbar {
@@ -321,8 +326,13 @@ struct ModerationView: View {
     private func sorunKarti(_ sorun: ProblemReport) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
+                if sorun.staffUnread {
+                    Circle().fill(BondTheme.burntOrange).frame(width: 8, height: 8)
+                        .accessibilityHidden(true)
+                }
                 Text(sorun.reporterUsername.map { "@\($0)" } ?? sorun.reporterName ?? L10n.ProblemReport.anonymous)
                     .font(.subheadline.weight(.semibold))
+                SupportStatusChip(status: sorun.displayStatus, staffView: true)
                 Spacer(minLength: 8)
                 Text(sorun.createdAt.relativeTurkish)
                     .font(.caption)
@@ -337,15 +347,27 @@ struct ModerationView: View {
                     .font(.caption)
                     .foregroundStyle(BondTheme.muted)
             }
-            if sorun.isOpen {
-                Button(L10n.ProblemReport.close) {
-                    Task { await appState.closeProblemReport(sorun.id) }
+            // Yanıtla: yazışma açılır, öğrenciye bildirim gider. Kapat: yazmadan çözüldü.
+            HStack(spacing: 8) {
+                Button {
+                    acikTalep = sorun.opening
+                } label: {
+                    Text(sorun.replyCount > 0
+                         ? "\(L10n.Support.reply) · \(L10n.Support.replyCount(sorun.replyCount))"
+                         : L10n.Support.reply)
                 }
                 .buttonStyle(.secondaryCapsuleOnSurface)
-            } else {
-                Label(L10n.ProblemReport.closed, systemImage: "checkmark")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(BondTheme.muted)
+                .accessibilityIdentifier("problem.reply")
+                if sorun.isOpen {
+                    Button(L10n.ProblemReport.close) {
+                        Task { await appState.closeProblemReport(sorun.id) }
+                    }
+                    .buttonStyle(.secondaryCapsuleOnSurface)
+                } else {
+                    Label(L10n.ProblemReport.closed, systemImage: "checkmark")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(BondTheme.muted)
+                }
             }
         }
         .padding(BondTheme.Space.md)

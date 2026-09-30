@@ -67,7 +67,7 @@ extension SupabaseProductService {
     }
 
     func fetchFounderUsers(search: String) async throws -> [FounderUser] {
-        let rows: [FounderUserRow] = try await client
+        let rows: [FounderUserListRow] = try await client
             .rpc("get_founder_users", params: FounderUsersParams(search: search, lim: 100))
             .execute().value
         let avatars = await signedURLs(bucket: "profile-photos", paths: rows.compactMap(\.avatarPath))
@@ -77,7 +77,9 @@ extension SupabaseProductService {
                         badge: ProfileBadge(rawValue: $0.badge) ?? .none,
                         isVerified: $0.isVerified, isActive: $0.isActive,
                         plan: SubscriptionTier(serverValue: $0.plan),
-                        createdAt: $0.createdAt, lastActiveAt: $0.lastActiveAt)
+                        createdAt: $0.createdAt, lastActiveAt: $0.lastActiveAt,
+                        eduExempt: $0.eduExempt ?? false, eduVerified: $0.eduVerified ?? false,
+                        hasPush: $0.hasPush ?? false)
         }
     }
 

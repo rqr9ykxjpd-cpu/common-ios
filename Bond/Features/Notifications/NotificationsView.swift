@@ -12,6 +12,7 @@ struct NotificationsView: View {
     @State private var conversationRoute: NotificationConversationRoute?
     /// Yorum/oy bildirimi: gönderi sayfası bu yığına itilir (Reddit/X gibi).
     @State private var openedPostID: UUID?
+    @State private var showSupport = false
     @State private var pushAuthorizationStatus: UNAuthorizationStatus?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Liste ilk açılışta yerine oturdu mu; sonra `settleIn` kapanır.
@@ -104,6 +105,9 @@ struct NotificationsView: View {
                 NavigationStack {
                     SocialPersonDetailView(profile: profile, place: nil, showsClose: true)
                 }
+            }
+            .sheet(isPresented: $showSupport) {
+                SupportInboxView()
             }
             .sheet(isPresented: $showMeetingRequests) {
                 MeetingRequestsView()
@@ -239,6 +243,10 @@ struct NotificationsView: View {
 
     private func open(_ notification: AppNotification) {
         appState.markNotificationRead(notification.id)
+        if notification.kind == .support {
+            showSupport = true
+            return
+        }
         if notification.kind == .meetingRequest {
             showMeetingRequests = true
             return
@@ -289,6 +297,7 @@ struct NotificationsView: View {
         case .meetingRequest: BondTheme.coral
         case .announcement: BondTheme.burntOrange
         case .studyGroup: BondTheme.ink
+        case .support: BondTheme.violet
         }
     }
 }

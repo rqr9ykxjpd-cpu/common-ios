@@ -474,6 +474,7 @@ struct NotificationRow: Decodable {
         case "club": .club
         case "announcement": .announcement
         case "study_group": .studyGroup
+        case "support": .support
         default: .meetingRequest
         }
     }

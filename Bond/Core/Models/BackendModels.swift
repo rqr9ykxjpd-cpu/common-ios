@@ -79,6 +79,16 @@ struct FounderUser: Identifiable, Hashable, Sendable {
     let createdAt: Date
     let lastActiveAt: Date
     var avatarAssetName: String? = nil
+    /// Öğrenci doğrulamasından muaf (kurucu elle tutar).
+    var eduExempt: Bool = false
+    /// Okul e-postası doğrulanmış.
+    var eduVerified: Bool = false
+    /// Bildirimi açık: kayıtlı cihaz jetonu var (son açılıştaki iOS izni).
+    var hasPush: Bool = false
+
+    /// Yeşil nokta. Uygulama açıkken "son aktif" 2,5 dakikada bir tazeleniyor,
+    /// sunucu da 5 dakikadan sık yazmıyor; 8 dakika bu ikisinin toplamı.
+    var isOnline: Bool { isActive && lastActiveAt > Date.now.addingTimeInterval(-8 * 60) }
 }
 
 /// Kurucu paneli: bir günün sayıları.

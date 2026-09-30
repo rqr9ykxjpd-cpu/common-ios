@@ -16,6 +16,7 @@ struct ProfileSettingsView: View {
     @State private var showUsernameEditor = false
     @State private var showDeleteAccountAlert = false
     @State private var showAppleDeleteAccount = false
+    @State private var showSupport = false
 
     private static let supportURL = URL(
         string: "mailto:220207018@yalova.edu.tr?subject=Common%20destek"
@@ -191,6 +192,17 @@ struct ProfileSettingsView: View {
                 }
 
                 Section(L10n.Profile.aboutSection) {
+                    // Sorun bildir yazışmaları: destek yanıtlayınca rozet çıkar.
+                    settingsButton(
+                        icon: "lifepreserver",
+                        title: L10n.Support.inboxTitle,
+                        detail: L10n.Support.inboxHint,
+                        badge: appState.supportUnreadCount
+                    ) {
+                        showSupport = true
+                    }
+                    .accessibilityIdentifier("settings.support")
+
                     settingsButton(
                         icon: "doc.text",
                         title: L10n.Legal.terms,
@@ -239,6 +251,9 @@ struct ProfileSettingsView: View {
             }
             .sheet(isPresented: $showAppleDeleteAccount) {
                 AppleAccountDeletionView()
+            }
+            .sheet(isPresented: $showSupport) {
+                SupportInboxView()
             }
             .sheet(isPresented: $showBlocked) {
                 NavigationStack { BlockedProfilesView() }

@@ -66,6 +66,8 @@ extension AppState {
         await loadNotifications()
         await loadStories()
         try? await service.touchLastActive()
+        startPresenceHeartbeat()
+        await loadSupportThreads()
         await startPushRegistration()
         await checkForNewPosts()
         // Kullanıcı maildeki doğrulama bağlantısına Safari'de dokunup geri gelmiş olabilir.

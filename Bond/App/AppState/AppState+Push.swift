@@ -17,6 +17,9 @@ extension AppState {
             let granted = (try? await center.requestAuthorization(options: [.alert, .badge, .sound])) ?? false
             guard granted else { return }
         case .denied:
+            // İzin sonradan kapatıldıysa sunucudaki jeton da gitsin: kurucunun
+            // "bildirimi açık" bilgisi son açılıştaki izni göstersin.
+            await unregisterPushToken()
             return
         default:
             break

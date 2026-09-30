@@ -12,8 +12,20 @@ struct ProblemReport: Identifiable, Equatable, Sendable {
     let reporterUsername: String?
     /// "1.0 (6) · iOS 26.0 · iPhone14,5 · Profil" gibi tek satır.
     let contextLine: String
+    /// Destek yazışması: durum, yanıt sayısı, öğrencinin okunmamış yazısı.
+    var status: SupportThread.Status = .open
+    var replyCount: Int = 0
+    var staffUnread: Bool = false
+    var screen: String? = nil
 
     var isOpen: Bool { handledAt == nil }
+    /// Kapatılmış kayıt her zaman "çözüldü"; eski kayıtlarda durum alanı yok.
+    var displayStatus: SupportThread.Status { isOpen ? (status == .resolved ? .open : status) : .resolved }
+
+    var opening: SupportOpening {
+        SupportOpening(id: id, message: message, createdAt: createdAt, screen: screen,
+                       reporter: reporterUsername.map { "@\($0)" } ?? reporterName, status: displayStatus)
+    }
 }
 
 /// Bildirime otomatik eklenen bilgiler: sorunu yeniden üretebilmek için.

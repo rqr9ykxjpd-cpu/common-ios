@@ -122,6 +122,8 @@ extension AppState {
         await loadMessageRequests(silently: true)
         await loadProfileVisits(silently: true)
         try? await service.touchLastActive()
+        startPresenceHeartbeat()
+        await loadSupportThreads()
         startMessageListener()
         await refreshSubscriptions()
         await startPushRegistration()
@@ -175,6 +177,8 @@ extension AppState {
             await loadMessageRequests(silently: true)
             await loadProfileVisits(silently: true)
             try? await service.touchLastActive()
+            startPresenceHeartbeat()
+            await loadSupportThreads()
             startMessageListener()
             await refreshSubscriptions()
             // Geçerli oturum ve tamamlanmış profil varken karşılama ekranında bırakmak
@@ -361,6 +365,8 @@ extension AppState {
 
     func clearSession(keepAccountData: Bool) {
         stopMessageListener()
+        stopPresenceHeartbeat()
+        supportThreads = []
         Task { await subscriptions.resetIdentity() }
         let accountID = currentUserID
         if !keepAccountData {

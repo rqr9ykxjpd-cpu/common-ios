@@ -55,17 +55,23 @@ extension AppState {
         }
         do {
             try await service.requestEduVerification(email: adres)
+            lastEduErrorCode = nil
             if eduStatus == nil { eduStatus = .unknown }
             eduStatus?.pendingEmail = adres
             Haptics.success()
             return true
         } catch {
             let ham = (String(describing: error) + error.localizedDescription).lowercased()
+            // Kısa, kişisel veri içermeyen kod: öğrenci "Sorun bildir"e basarsa
+            // talebe eklenir, destek neyin takıldığını tahmin etmek zorunda kalmaz.
             if ham.contains("already") || ham.contains("exists") || ham.contains("registered") {
+                lastEduErrorCode = "email_exists"
                 showError(L10n.Edu.alreadyUsed)
             } else if ham.contains("rate") || ham.contains("limit") {
+                lastEduErrorCode = "rate_limit"
                 showError(L10n.Edu.rateLimited)
             } else {
+                lastEduErrorCode = "send_failed"
                 showError(error, fallback: L10n.Edu.sendFailed)
             }
             return false

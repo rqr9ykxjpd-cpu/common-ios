@@ -26,7 +26,11 @@ extension SupabaseProductService {
                 handledAt: row.handledAt,
                 reporterName: row.reporterName,
                 reporterUsername: row.reporterUsername,
-                contextLine: ProblemReportContext.line(from: row.context ?? [:])
+                contextLine: ProblemReportContext.line(from: row.context ?? [:]),
+                status: .init(server: row.status ?? (row.handledAt == nil ? "open" : "resolved")),
+                replyCount: row.replyCount ?? 0,
+                staffUnread: row.staffUnread ?? false,
+                screen: row.context?["screen"]
             )
         }
     }
@@ -55,12 +59,17 @@ struct ProblemReportRow: Decodable {
     let handledAt: Date?
     let reporterName: String?
     let reporterUsername: String?
+    let status: String?
+    let replyCount: Int?
+    let staffUnread: Bool?
 
     enum CodingKeys: String, CodingKey {
-        case id, message, context
+        case id, message, context, status
         case createdAt = "created_at"
         case handledAt = "handled_at"
         case reporterName = "reporter_name"
         case reporterUsername = "reporter_username"
+        case replyCount = "reply_count"
+        case staffUnread = "staff_unread"
     }
 }

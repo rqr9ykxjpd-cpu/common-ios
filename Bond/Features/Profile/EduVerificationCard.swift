@@ -93,7 +93,9 @@ struct EduVerificationSheet: View {
                 .padding(BondTheme.Space.lg)
             }
             .sheet(isPresented: $showProblemReport) {
-                ProblemReportView(screen: "Öğrenci e-postası")
+                // Son hata kodu da gider (email_exists…): destek neyin takıldığını görür.
+                ProblemReportView(screen: ["Öğrenci e-postası", appState.lastEduErrorCode]
+                    .compactMap { $0 }.joined(separator: " · "))
             }
             .background(BondTheme.paper.ignoresSafeArea())
             .navigationTitle(L10n.Edu.sheetTitle)
