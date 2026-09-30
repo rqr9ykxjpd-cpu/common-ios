@@ -90,7 +90,8 @@ struct EduVerificationSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(status.isVerified ? L10n.Common.close : L10n.Edu.notNow) { dismiss() }
+                    // Kısa ve diğer pencerelerle aynı: "Şimdi değil" başlığı ortadan itiyordu.
+                    Button(L10n.Common.close) { dismiss() }
                 }
             }
             .task {
