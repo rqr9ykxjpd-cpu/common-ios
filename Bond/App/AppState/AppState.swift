@@ -190,6 +190,10 @@ final class AppState {
     var boostPromptPostID: UUID?
     var pinPromptPostID: UUID?
     var votersPostID: UUID?
+    /// Ekranda açık gönderi sayfası sayısı. Kurucu pencereleri (oy ekle,
+    /// sabitle, oy verenler) en üstteki gönderi sayfasından açılıyor; akış
+    /// o sırada kendi kopyasını açmaya çalışmasın.
+    var openPostPages = 0
     /// Az önce paylaşılanlar: Popüler sırada sıfır oyla dibe düşmesin, bir sonraki
     /// yüklemeye kadar tepede dursun. Kullanıcı paylaştığını görmeli.
     var justPublishedPostIDs: Set<UUID> = []

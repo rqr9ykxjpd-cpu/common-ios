@@ -130,6 +130,8 @@ struct SocialProfileView: View {
                             Button(L10n.Common.close) { selectedPost = nil }
                         }
                     }
+                    // Kurucu menüsü bu kartta da; üstüne gönderi sayfası açılırsa o sunar.
+                    .modifier(FounderPresentations(active: appState.openPostPages == 0))
                 }
             }
 #if DEBUG

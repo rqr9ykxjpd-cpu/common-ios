@@ -10,8 +10,8 @@ struct SocialFeedView: View {
     /// Boş durumdan "ilk soruyu sen sor" ile açılınca composer o türle başlar.
     @State private var composerKind: PostKind = .moment
     /// Kurucu "oy ekle" alert'inin metni.
-    @State private var boostInput = ""
-    @State private var pinInput = ""
+    /// Akış ekranda mı (başka sekme ya da üstüne itilmiş sayfa yokken).
+    @State private var feedOnScreen = true
     @State private var showBadgeCatalog = false
     @State private var selectedClub: CampusClub?
     @State private var showNotifications = false
@@ -317,7 +317,9 @@ struct SocialFeedView: View {
                 try? await Task.sleep(for: .seconds(1.2))
                 feedSettled = true
             }
-            .modifier(FounderPresentations(boostInput: $boostInput, pinInput: $pinInput))
+            .onAppear { feedOnScreen = true }
+            .onDisappear { feedOnScreen = false }
+            .modifier(FounderPresentations(active: feedOnScreen && appState.openPostPages == 0))
 #if DEBUG
             .modifier(DebugFeedLaunchHooks(
                 showPostComposer: $showPostComposer,
@@ -692,12 +694,17 @@ private struct AddStoryBubble: View {
     }
 }
 
-/// Kurucu sunumları tek yerden: kartın içindeki alert kaydırılmış hücrede
-/// güvenilir açılmıyordu. AppState'teki hedef ID'yi izler.
-private struct FounderPresentations: ViewModifier {
+/// Kurucu sunumları (oy ekle, sabitle, oy verenler): kartın içindeki alert
+/// kaydırılmış hücrede güvenilir açılmıyordu; AppState'teki hedef ID'yi izler.
+///
+/// Kartı gösteren her ekran bunu takıyor, ama yalnız en üstteki `active`.
+/// Eskiden yalnız akış takıyordu: gönderi sayfası üstteyken menüdeki bu
+/// seçenekler hiçbir şey açmıyordu.
+struct FounderPresentations: ViewModifier {
     @Environment(AppState.self) private var appState
-    @Binding var boostInput: String
-    @Binding var pinInput: String
+    var active = true
+    @State private var boostInput = ""
+    @State private var pinInput = ""
 
     private var boostTarget: SocialPost? {
         appState.boostPromptPostID.flatMap { id in appState.posts.first { $0.id == id } }
@@ -712,8 +719,8 @@ private struct FounderPresentations: ViewModifier {
             .alert(
                 L10n.Board.boostTitle,
                 isPresented: Binding(
-                    get: { appState.boostPromptPostID != nil },
-                    set: { if !$0 { appState.boostPromptPostID = nil } }
+                    get: { active && appState.boostPromptPostID != nil },
+                    set: { if !$0, active { appState.boostPromptPostID = nil } }
                 ),
                 presenting: boostTarget
             ) { post in
@@ -730,8 +737,8 @@ private struct FounderPresentations: ViewModifier {
             .alert(
                 L10n.Board.pin,
                 isPresented: Binding(
-                    get: { appState.pinPromptPostID != nil },
-                    set: { if !$0 { appState.pinPromptPostID = nil } }
+                    get: { active && appState.pinPromptPostID != nil },
+                    set: { if !$0, active { appState.pinPromptPostID = nil } }
                 ),
                 presenting: pinTarget
             ) { post in
@@ -747,8 +754,8 @@ private struct FounderPresentations: ViewModifier {
                 Text(post.isPinned ? "\(L10n.Board.pinPrompt)\n\(L10n.Board.pinnedAt(post.pinSlot))" : L10n.Board.pinPrompt)
             }
             .sheet(item: Binding(
-                get: { appState.votersPostID.map(VotersRoute.init) },
-                set: { if $0 == nil { appState.votersPostID = nil } }
+                get: { active ? appState.votersPostID.map(VotersRoute.init) : nil },
+                set: { if $0 == nil, active { appState.votersPostID = nil } }
             )) { route in
                 PostVotersView(postID: route.id)
                     .presentationDetents([.medium, .large])

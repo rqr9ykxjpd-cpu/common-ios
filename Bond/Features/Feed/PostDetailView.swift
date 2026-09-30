@@ -75,6 +75,9 @@ struct PostDetailView: View {
         }
         .background(BondTheme.paper.ignoresSafeArea())
         .navigationTitle(L10n.Board.postTitle)
+        .modifier(FounderPresentations())
+        .onAppear { appState.openPostPages += 1 }
+        .onDisappear { appState.openPostPages = max(0, appState.openPostPages - 1) }
         .navigationBarTitleDisplayMode(.inline)
         // Sekme çubuğu açık kalıyor (X'teki gibi); yazma alanı onun üstünde.
         // Gizleyip geri açmak iOS 26'da çubuğun camını bozuyordu: dönüşte
