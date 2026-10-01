@@ -146,6 +146,10 @@ final class AppState {
     var lastEduErrorCode: String?
     /// Kendi destek taleplerin (Sorun bildir yazışmaları).
     var supportThreads: [SupportThread] = []
+    /// Kulüplerin logosu ve iletişimi (1.2); kulüp kimliğine göre.
+    var clubExtras: [UUID: ClubExtras] = [:]
+    /// Yönetici olarak atandığım kulüpler.
+    var managedClubIDs: Set<UUID> = []
     /// Uygulama açıkken "son aktif" zamanını tazeleyen görev.
     @ObservationIgnored var presenceTask: Task<Void, Never>?
 

@@ -57,8 +57,14 @@ struct CampusClubsView: View {
                     }
                 }
             }
-            .refreshable { await appState.loadClubs() }
-            .task { await appState.loadClubs() }
+            .refreshable {
+                await appState.loadClubs()
+                await appState.loadClubExtras()
+            }
+            .task {
+                await appState.loadClubs()
+                await appState.loadClubExtras()
+            }
             .task(id: appState.clubs.isEmpty) {
                 guard !appState.clubs.isEmpty, !hasStartedEntrance else { return }
                 hasStartedEntrance = true
@@ -113,11 +119,8 @@ struct CampusClubsView: View {
 
         return Button { selectedClub = club } label: {
             HStack(alignment: .top, spacing: BondTheme.Space.compact) {
-                Image(systemName: club.icon)
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(accent)
-                    .frame(width: 44, height: 44)
-                    .background(accent.opacity(0.14), in: Circle())
+                ClubLogoView(url: appState.clubExtras[club.id]?.logoURL, icon: club.icon,
+                             accentHex: club.accentHex, size: 44)
 
                 VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
                     Text(club.name)

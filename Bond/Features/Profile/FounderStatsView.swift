@@ -38,7 +38,10 @@ struct FounderStatsView: View {
                             hero(s)
                             if !days.isEmpty { weekSection }
                             broadcastSection
-                            usersLink
+                            VStack(spacing: BondTheme.Space.sm) {
+                                usersLink
+                                clubsLink
+                            }
                             announcementsSection
                             numbers(L10n.Board.statsUsers, [
                                 ("usersTotal", s.usersTotal), ("usersVerified", s.usersVerified),
@@ -428,6 +431,30 @@ struct FounderStatsView: View {
             .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(.pressable)
+    }
+
+    private var clubsLink: some View {
+        NavigationLink {
+            FounderClubsView()
+        } label: {
+            HStack(spacing: BondTheme.Space.compact) {
+                Image(systemName: "person.3")
+                    .font(.system(size: 15, weight: .semibold))
+                    .frame(width: 40, height: 40)
+                    .background(BondTheme.paper, in: Circle())
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L10n.ClubAdmin.clubsTitle).font(.subheadline.weight(.semibold))
+                    Text(L10n.ClubAdmin.clubsHint).font(.footnote).foregroundStyle(BondTheme.muted).lineLimit(1)
+                }
+                Spacer(minLength: BondTheme.Space.sm)
+                Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(BondTheme.muted)
+            }
+            .foregroundStyle(BondTheme.ink)
+            .padding(14)
+            .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .buttonStyle(.pressable)
+        .accessibilityIdentifier("founder.clubs")
     }
 
     private var announcementsSection: some View {
