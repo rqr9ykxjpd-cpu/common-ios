@@ -80,6 +80,17 @@ struct StoryViewer: View {
         .background(Color.black.ignoresSafeArea())
         .onAppear { activatePlaybackAudio() }
         .onDisappear { deactivatePlaybackAudio() }
+        // Liste izlerken yenilenebiliyor (yeni story, öne dönüş). Sıra numarası
+        // aynı kalınca başka bir story'ye atlanıyor, kart yarı kaymış görünebiliyordu;
+        // açık olan story'de kalınır, geçiş animasyonu oynatılmaz.
+        .onChange(of: stories.map(\.id)) { eski, yeni in
+            guard eski.indices.contains(currentIndex),
+                  let yeniSira = yeni.firstIndex(of: eski[currentIndex]),
+                  yeniSira != currentIndex else { return }
+            var aninda = Transaction()
+            aninda.disablesAnimations = true
+            withTransaction(aninda) { currentIndex = yeniSira }
+        }
         .task(id: currentIndex) {
             if let story {
                 onViewed(story)
