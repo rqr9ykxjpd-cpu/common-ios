@@ -5,7 +5,12 @@ import SwiftUI
 struct SocialProfileView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dynamicTypeSize) private var typeSize
-    /// Fotoğraf tam ekrana kendi yerinden büyüyerek açılır (iOS yakınlaştırma geçişi).
+    /// Fotoğrafa dokununca büyüyüp üste geçer, bilgiler altına kayar; yeniden
+    /// dokununca eski hâline döner. Basılı tutunca tam ekran.
+    @State private var avatarExpanded = false
+    /// Ad ve bilgiler yerleşim değişirken görünmez: dar sütundan geniş satıra
+    /// geçerken satırlar yeniden kırılıyor, hareket ederken üst üste biniyordu.
+    @State private var identityVisible = true
     @Namespace private var fotoAlani
     @State private var showPhoto = false
     /// Sayfa yukarıdan ne kadar aşağı çekildi. Yalnızca fotoğraf okuyor; sayfanın
@@ -175,10 +180,21 @@ struct SocialProfileView: View {
                     editProfileButton
                 }
             } else {
-                HStack(alignment: .center, spacing: 20) {
+                // Tek düzen, iki hâl: aynı görünümler yer değiştirir, hiçbiri silinip
+                // yeniden çizilmez. Önceki sürüm iki ayrı dalı birbirine geçiriyordu;
+                // fotoğraf sıçrıyor, yazılar solup yeniden beliriyordu.
+                let yerlesim = avatarExpanded
+                    ? AnyLayout(VStackLayout(alignment: .leading, spacing: 16))
+                    : AnyLayout(HStackLayout(alignment: .center, spacing: 20))
+                yerlesim {
                     avatar
-                    nameAndEducation
-                    editProfileButton
+                    HStack(alignment: .center, spacing: 20) {
+                        nameAndEducation
+                        editProfileButton
+                    }
+                    // Yeni yerine görünmezken anında geçer, sonra orada belirir.
+                    .animation(nil, value: avatarExpanded)
+                    .opacity(identityVisible ? 1 : 0)
                 }
             }
             about
@@ -304,15 +320,33 @@ struct SocialProfileView: View {
     private var avatarTile: some View {
         ZStack(alignment: .bottomTrailing) {
             Button {
-                if hasAvatar { showPhoto = true } else { showEditor = true }
+                guard hasAvatar else { showEditor = true; return }
+                Haptics.selection()
+                // Yazı anında gizlenir: solarken yeni yerine zıplayınca fotoğrafın üstüne biniyordu.
+                var aninda = Transaction()
+                aninda.disablesAnimations = true
+                withTransaction(aninda) { identityVisible = false }
+                // Sekmesiz ve kısa: sıçrama yerleşimi dağıtıyordu.
+                withAnimation(.smooth(duration: 0.42)) { avatarExpanded.toggle() }
+                Task {
+                    try? await Task.sleep(for: .milliseconds(260))
+                    withAnimation(.easeOut(duration: 0.24)) { identityVisible = true }
+                }
             } label: {
                 ProfileMedia(url: appState.avatarURL, data: appState.avatarData)
-                    .frame(width: 96, height: 116)
+                    .frame(width: avatarExpanded ? 210 : 96, height: avatarExpanded ? 252 : 116)
                     .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous))
+                    .shadow(color: .black.opacity(avatarExpanded ? 0.16 : 0), radius: 14, y: 6)
             }
             .buttonStyle(.plain)
             .zoomSource(id: "profilFoto", in: fotoAlani)
+            // Tam ekran görünüm basılı tutunca.
+            .simultaneousGesture(LongPressGesture(minimumDuration: 0.45).onEnded { _ in
+                guard hasAvatar else { return }
+                showPhoto = true
+            })
             .accessibilityLabel(hasAvatar ? L10n.Profile.zoomPhoto : L10n.ScreenStates.addPhoto)
+            .accessibilityAction(named: L10n.Profile.zoomPhoto) { if hasAvatar { showPhoto = true } }
 
             Button { showEditor = true } label: {
                 Image(systemName: "camera.fill")
