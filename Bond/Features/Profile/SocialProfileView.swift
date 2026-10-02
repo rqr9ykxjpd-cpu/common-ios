@@ -5,9 +5,7 @@ import SwiftUI
 struct SocialProfileView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dynamicTypeSize) private var typeSize
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// Fotoğrafa dokununca yerinde büyür, yeniden dokununca küçülür.
-    @State private var avatarExpanded = false
+    /// Fotoğraf tam ekrana kendi yerinden büyüyerek açılır (iOS yakınlaştırma geçişi).
     @Namespace private var fotoAlani
     @State private var showPhoto = false
     /// Sayfa yukarıdan ne kadar aşağı çekildi. Yalnızca fotoğraf okuyor; sayfanın
@@ -128,6 +126,7 @@ struct SocialProfileView: View {
             .sheet(isPresented: $showPaywall) { PaywallView() }
             .fullScreenCover(isPresented: $showPhoto) {
                 PhotoZoomView(url: appState.avatarURL, data: appState.avatarData)
+                    .zoomTransition(sourceID: "profilFoto", in: fotoAlani)
             }
             .eduGatedSheet(isPresented: $showComposer, appState: appState) { CreatePostView() }
             .sheet(isPresented: $showCardPhoto) { CardPhotoComposer() }
@@ -175,24 +174,11 @@ struct SocialProfileView: View {
                     nameAndEducation
                     editProfileButton
                 }
-            } else if avatarExpanded {
-                // Büyüyen fotoğraf üste geçer; yazılar sıkışmasın diye altına kayar.
-                VStack(alignment: .leading, spacing: 16) {
-                    avatar
-                    HStack(alignment: .center, spacing: 20) {
-                        nameAndEducation
-                        editProfileButton
-                    }
-                    .matchedGeometryEffect(id: "kimlik", in: fotoAlani)
-                }
             } else {
                 HStack(alignment: .center, spacing: 20) {
                     avatar
-                    HStack(alignment: .center, spacing: 20) {
-                        nameAndEducation
-                        editProfileButton
-                    }
-                    .matchedGeometryEffect(id: "kimlik", in: fotoAlani)
+                    nameAndEducation
+                    editProfileButton
                 }
             }
             about
@@ -312,32 +298,21 @@ struct SocialProfileView: View {
         PullStretch(pull: pull) {
             avatarTile
         }
-        .matchedGeometryEffect(id: "foto", in: fotoAlani)
         .accessibilityIdentifier("profile.avatar")
     }
 
     private var avatarTile: some View {
         ZStack(alignment: .bottomTrailing) {
             Button {
-                guard hasAvatar else { showEditor = true; return }
-                Haptics.selection()
-                withAnimation(reduceMotion ? nil : .spring(response: 0.42, dampingFraction: 0.72)) {
-                    avatarExpanded.toggle()
-                }
+                if hasAvatar { showPhoto = true } else { showEditor = true }
             } label: {
                 ProfileMedia(url: appState.avatarURL, data: appState.avatarData)
-                    .frame(width: avatarExpanded ? 210 : 96, height: avatarExpanded ? 252 : 116)
+                    .frame(width: 96, height: 116)
                     .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous))
-                    .shadow(color: .black.opacity(avatarExpanded ? 0.18 : 0), radius: 14, y: 6)
             }
             .buttonStyle(.plain)
-            // Tam ekran görünüm basılı tutunca.
-            .simultaneousGesture(LongPressGesture(minimumDuration: 0.45).onEnded { _ in
-                guard hasAvatar else { return }
-                showPhoto = true
-            })
+            .zoomSource(id: "profilFoto", in: fotoAlani)
             .accessibilityLabel(hasAvatar ? L10n.Profile.zoomPhoto : L10n.ScreenStates.addPhoto)
-            .accessibilityAction(named: L10n.Profile.zoomPhoto) { if hasAvatar { showPhoto = true } }
 
             Button { showEditor = true } label: {
                 Image(systemName: "camera.fill")
