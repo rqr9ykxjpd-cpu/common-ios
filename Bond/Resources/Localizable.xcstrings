@@ -3838,13 +3838,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Check the inbox of %@. Tap the link, then come back to Common — your badge will be ready."
+            "value" : "Check the inbox for %@; if it's not there, look in Junk. The link works for 24 hours; tap it, then come back to Common and your badge will be ready."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ gelen kutusunu kontrol et. Bağlantıya dokununca Common’a dön; rozetin hazır olur."
+            "value" : "%@ gelen kutusunu kontrol et; görmüyorsan Gereksiz (Junk) klasörüne bak. Bağlantı 24 saat geçerli; dokununca Common’a dön, rozetin hazır olur."
           }
         }
       }
