@@ -12,6 +12,7 @@ struct FounderUsersView: View {
     @State private var freezeTarget: FounderUser?
     @State private var toast: String?
     @State private var profileRoute: StudentProfile?
+    @State private var notifyTarget: FounderUser?
     /// Öğrenci kilidi: nil = henüz okunmadı.
     @State private var eduGate: Bool?
     @State private var gateTarget: Bool?
@@ -109,6 +110,11 @@ struct FounderUsersView: View {
             actions(for: user)
         } message: { user in
             Text(userMeta(user))
+        }
+        .sheet(item: $notifyTarget) { user in
+            FounderNotifySheet(user: user) { gitti in
+                if gitti { show(L10n.FounderNotify.sent) }
+            }
         }
         .confirmationDialog(L10n.Board.freeze, isPresented: Binding(
             get: { freezeTarget != nil }, set: { if !$0 { freezeTarget = nil } }
@@ -248,6 +254,7 @@ struct FounderUsersView: View {
     @ViewBuilder
     private func actions(for user: FounderUser) -> some View {
         Button(L10n.Support.openProfile) { profileRoute = studentProfile(user) }
+        Button(L10n.FounderNotify.action) { notifyTarget = user }
         if user.badge != .founder {
             Button(L10n.Board.giftPlus30) { Task { await grant(user, .plus, days: 30) } }
             Button(L10n.Board.giftPro30) { Task { await grant(user, .pro, days: 30) } }
