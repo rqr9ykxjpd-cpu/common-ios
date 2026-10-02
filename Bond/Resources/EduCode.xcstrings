@@ -1,0 +1,150 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "sentTitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the code"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kodu gir"
+          }
+        }
+      }
+    },
+    "sentBody": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We sent an 8-digit code to %@. Check your inbox (and junk folder)."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ adresine 8 haneli bir kod gönderdik. Gelen kutunu (ve gereksiz klasörünü) kontrol et."
+          }
+        }
+      }
+    },
+    "placeholder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "00000000"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "00000000"
+          }
+        }
+      }
+    },
+    "verify": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doğrula"
+          }
+        }
+      }
+    },
+    "invalid": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The code is wrong or expired. Enter the latest code from the email or request a new one."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kod yanlış ya da süresi dolmuş. E-postadaki son kodu gir ya da yeni kod iste."
+          }
+        }
+      }
+    },
+    "linkFallback": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I tapped the link in the email"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-postadaki bağlantıya dokundum"
+          }
+        }
+      }
+    },
+    "sendCode": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send code"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kod gönder"
+          }
+        }
+      }
+    },
+    "sheetHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the address your university gave you. We'll send an 8-digit code; enter it here to verify your profile."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Üniversitenin sana verdiği adresi yaz. 8 haneli bir kod gönderelim; kodu buraya girince profilin doğrulanır."
+          }
+        }
+      }
+    },
+    "tooManyTries": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Too many attempts. Wait a few minutes and request a new code."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çok fazla deneme. Birkaç dakika bekleyip yeni kod iste."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

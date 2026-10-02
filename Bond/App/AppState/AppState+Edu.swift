@@ -95,3 +95,40 @@ extension AppState {
         return oldu
     }
 }
+
+// MARK: - Kodla doğrulama
+extension AppState {
+    /// E-postadaki 8 haneli kod. Başarısızsa ekranda gösterilecek cümle döner.
+    func verifyEduCode(_ rawCode: String) async -> (verified: Bool, message: String?) {
+        let kod = String(rawCode.filter(\.isNumber))
+        guard kod.count == 8, let adres = eduStatus?.pendingEmail,
+              let dogrulayici = service as? any EduCodeVerifying else { return (false, nil) }
+        do {
+            let oldu = try await dogrulayici.verifyEduCode(email: adres, code: kod)
+            guard oldu else {
+                lastEduErrorCode = "not_edu_after_code"
+                return (false, L10n.Edu.notAllowedDomain)
+            }
+            lastEduErrorCode = nil
+            await loadEduStatus()
+            show(L10n.Edu.verifiedToast)
+            Haptics.success()
+            return (true, nil)
+        } catch {
+            guard !isCancellation(error) else { return (false, nil) }
+            Haptics.warning()
+            let ham = (String(describing: error) + " " + error.localizedDescription).lowercased()
+            if ham.contains("rate") || ham.contains("too many") || ham.contains("429") {
+                lastEduErrorCode = "otp_rate_limit"
+                return (false, L10n.EduCode.tooManyTries)
+            }
+            if ham.contains("expired") || ham.contains("invalid") || ham.contains("otp") || ham.contains("token") {
+                lastEduErrorCode = "otp_invalid"
+                return (false, L10n.EduCode.invalid)
+            }
+            lastEduErrorCode = "otp_failed"
+            return (false, UserFacingError.message(error, fallback: L10n.EduCode.invalid))
+        }
+    }
+}
+
