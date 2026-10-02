@@ -1,178 +1,210 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "theirs": {
+    "deleteAll": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Their reaction: %@"
+            "value": "Delete all"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Karşı tarafın tepkisi: %@"
+            "value": "Tümünü sil"
           }
         }
       }
     },
-    "pickerTitle": {
+    "deleteAllConfirm": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose a reaction"
+            "value": "Delete all notifications?"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tepki seç"
+            "value": "Bütün bildirimler silinsin mi?"
           }
         }
       }
     },
-    "more": {
+    "deleteAllBody": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "More emoji"
+            "value": "This can't be undone."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Daha fazla emoji"
+            "value": "Bu geri alınamaz."
           }
         }
       }
     },
-    "recent": {
+    "deleteFailed": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Recent"
+            "value": "Couldn't delete the notification. Try again."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Son kullanılanlar"
+            "value": "Bildirim silinemedi. Tekrar dene."
           }
         }
       }
     },
-    "faces": {
+    "chatDeleted": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Faces"
+            "value": "Chat deleted"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Yüzler"
+            "value": "Sohbet silindi"
           }
         }
       }
     },
-    "gestures": {
+    "clearChat": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hands"
+            "value": "Clear chat"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "El ve jestler"
+            "value": "Sohbeti temizle"
           }
         }
       }
     },
-    "hearts": {
+    "clearChatConfirm": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hearts"
+            "value": "Clear your chat with %@?"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Kalpler"
+            "value": "%@ ile sohbet temizlensin mi?"
           }
         }
       }
     },
-    "fun": {
+    "clearChatBody": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Celebration"
+            "value": "Messages are removed only for you; your connection stays and they keep their own history."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Kutlama"
+            "value": "Mesajlar yalnızca senden silinir; bağlantın sürer ve karşı taraf kendi geçmişini görmeye devam eder."
           }
         }
       }
     },
-    "food": {
+    "clearFailed": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Food and drink"
+            "value": "Couldn't clear the chat. Try again."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Yiyecek ve içecek"
+            "value": "Sohbet temizlenemedi. Tekrar dene."
           }
         }
       }
     },
-    "animals": {
+    "chatCleared": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Animals and nature"
+            "value": "Chat cleared"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hayvanlar ve doğa"
+            "value": "Sohbet temizlendi"
           }
         }
       }
     },
-    "symbols": {
+    "removeAndDelete": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Objects and symbols"
+            "value": "Remove connection and delete chat"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nesneler ve semboller"
+            "value": "Bağlantıyı kaldır ve sohbeti sil"
+          }
+        }
+      }
+    },
+    "removeAndDeleteConfirm": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove your connection with %@ and delete the chat?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ ile bağlantın kaldırılsın ve sohbet silinsin mi?"
+          }
+        }
+      }
+    },
+    "removeAndDeleteBody": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The chat disappears for both of you. If you reconnect later, the old messages won't come back for you."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sohbet ikinizin listesinden de kalkar. İleride yeniden bağlansanız da eski mesajlar sende geri gelmez."
           }
         }
       }

@@ -150,6 +150,10 @@ final class AppState {
     var clubExtras: [UUID: ClubExtras] = [:]
     /// Yönetici olarak atandığım kulüpler.
     var managedClubIDs: Set<UUID> = []
+    /// Kim nerede'de biri geldi ya da gitti; açık kişi listesi buna bakıp yenilenir.
+    var placeActivityRevision = 0
+    @ObservationIgnored var placeListenerTask: Task<Void, Never>?
+    @ObservationIgnored var backgroundPresenceObserver: NSObjectProtocol?
     /// Uygulama açıkken "son aktif" zamanını tazeleyen görev.
     @ObservationIgnored var presenceTask: Task<Void, Never>?
 
@@ -294,6 +298,8 @@ final class AppState {
     /// artık gereksiz.
     func showError(_ error: Error, fallback: String) {
         guard !isCancellation(error) else { return }
+        // "Yetki yok" çoğu zaman oturumun sessizce düştüğü demek; öyleyse giriş ekranı.
+        verifySessionIfAuthError(error)
         // Öğrenci kilidi: sunucu reddettiyse ham hata yerine doğrulama penceresi.
         if (String(describing: error) + error.localizedDescription).contains("EDU_REQUIRED") {
             presentEduGate(.action)

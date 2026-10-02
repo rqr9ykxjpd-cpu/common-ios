@@ -112,3 +112,45 @@ extension AppState {
         )
     }
 }
+
+// MARK: - Silme
+extension AppState {
+    /// Hemen listeden düşer; sunucu reddederse geri gelir.
+    func deleteNotification(_ notificationID: UUID) {
+        guard let masa = service as? any NotificationDeleting,
+              let index = notifications.firstIndex(where: { $0.id == notificationID }) else { return }
+        let silinen = notifications[index]
+        var guncel = notifications
+        guncel.remove(at: index)
+        notifications = guncel
+        syncApplicationBadge()
+        Task {
+            do {
+                try await masa.deleteNotification(notificationID)
+            } catch {
+                if !notifications.contains(where: { $0.id == silinen.id }) {
+                    notifications.append(silinen)
+                    syncApplicationBadge()
+                }
+                showError(error, fallback: L10n.Inbox.deleteFailed)
+            }
+        }
+    }
+
+    func deleteAllNotifications() {
+        guard let masa = service as? any NotificationDeleting, !notifications.isEmpty else { return }
+        let onceki = notifications
+        notifications = []
+        syncApplicationBadge()
+        Task {
+            do {
+                try await masa.deleteAllNotifications()
+                Haptics.success()
+            } catch {
+                notifications = onceki
+                syncApplicationBadge()
+                showError(error, fallback: L10n.Inbox.deleteFailed)
+            }
+        }
+    }
+}

@@ -9,7 +9,8 @@ import UIKit
 // MARK: - Servis
 
 struct SampleProductService: ProductService {
-    private let store: SampleStore
+    /// Örnek modda ek özellik dosyaları (bildirim silme vb.) aynı depoyu kullansın.
+    let store: SampleStore
     /// `false` verilirse sunucuda profil yokmuş gibi davranır; `restoreBackendSession`
     /// da kullanıcıyı kayıt akışına yönlendirir. Gerçek yeni kullanıcı yolunu sunucu
     /// olmadan görebilmek için.

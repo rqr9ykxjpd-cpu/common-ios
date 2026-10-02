@@ -99,7 +99,7 @@ extension AppState {
         draft.completionPercent(hasAvatar: avatarData != nil || avatarURL != nil)
     }
 
-    func saveProfile(_ updatedDraft: ProfileDraft, avatar: Data?, gallery: [Data]) async -> Bool {
+    func saveProfile(_ updatedDraft: ProfileDraft, avatar: Data?, gallery: [Data]?) async -> Bool {
         var updatedDraft = updatedDraft
         // Görünen ad boş bırakıldıysa kullanıcı adı görünür; sunucuda ad zorunlu.
         if updatedDraft.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -127,41 +127,46 @@ extension AppState {
         // hatası üç şeyi birden bozuyordu: metinler sunucuya yazılmış olmasına rağmen
         // "kaydedilemedi" deniyor, `persistAccount()` hiç çalışmadığı için yerel kayıt
         // sunucudan farklı kalıyor ve ekran kapanmadığı için kullanıcı baştan deniyordu.
-        var photoFailed = false
-        do {
-            // `nil` artık "değiştirme" demek, "sil" değil. Düzenleme ekranı mevcut
-            // fotoğrafı sunucudan indirerek dolduruyor; indirme başarısız olduğunda
-            // (ağ koptuğunda ya da imzalı adres süresi dolduğunda) elinde nil kalıyor
-            // ve sırf bio değiştirmek için kaydeden kişinin profil fotoğrafı sessizce
-            // siliniyordu. Silme seçeneği hiçbir yerde sunulmuyor: fotoğraf zorunlu.
-            if let avatar {
+        var avatarFailed = false
+        var galleryFailed = false
+        if let avatar {
+            do {
+                // `nil` artık "değiştirme" demek, "sil" değil. Düzenleme ekranı mevcut
+                // fotoğrafı sunucudan indirerek dolduruyor; indirme başarısız olduğunda
+                // (ağ koptuğunda ya da imzalı adres süresi dolduğunda) elinde nil kalıyor
+                // ve sırf bio değiştirmek için kaydeden kişinin profil fotoğrafı sessizce
+                // siliniyordu. Silme seçeneği hiçbir yerde sunulmuyor: fotoğraf zorunlu.
                 avatarURL = try await service.updateAvatar(avatar)
+                if avatarURL != nil { avatarData = nil }
+            } catch {
+                avatarFailed = true
+                avatarData = avatar
             }
-            galleryURLs = try await service.updateGallery(gallery)
-        } catch {
-            photoFailed = true
         }
 
-        if !photoFailed {
-            // Gösterim imzalı URL + BondImageLoader; ham JPEG oturumda kalmasın.
-            if avatarURL != nil { avatarData = nil }
-            if galleryURLs.isEmpty, !gallery.isEmpty {
+        if let gallery {
+            do {
+                galleryURLs = try await service.updateGallery(gallery)
+                // İmzalı URL üretimi geçici olarak başarısızsa yeni fotoğrafları
+                // ekranda tut; veritabanı değişimi yine başarıyla tamamlanmıştır.
+                profileGalleryData = galleryURLs.isEmpty && !gallery.isEmpty ? gallery : []
+            } catch {
+                galleryFailed = true
                 profileGalleryData = gallery
-            } else {
-                profileGalleryData = []
             }
-        } else {
-            profileGalleryData = gallery
         }
 
         persistAccount()
+        let photoFailed = avatarFailed || galleryFailed
         if photoFailed {
             showError(L10n.Profile.photosPartialFail)
         } else {
             show(L10n.Profile.updated)
             Haptics.success()
         }
-        return true
+        // Fotoğraf başarısızsa editör açık kalır; kullanıcı seçtiği görselleri
+        // kaybetmeden yeniden deneyebilir. Metin alanları zaten güvenle kaydedildi.
+        return !photoFailed
     }
 
     func appendGalleryPhoto(_ image: Data) async -> Bool {

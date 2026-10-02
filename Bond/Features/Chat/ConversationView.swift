@@ -14,7 +14,10 @@ struct ConversationView: View {
     @State private var editingMessage: Message?
     @State private var showPaywall = false
     @State private var activeMessageActions: UUID?
+    /// Tam emoji seçicinin açık olduğu mesaj.
+    @State private var emojiPickerMessage: Message?
     @State private var showUnmatchAlert = false
+    @State private var showClearAlert = false
     @State private var showBlockConfirmation = false
     @State private var messagePendingDeletion: UUID?
     @State private var messagePendingReport: UUID?
@@ -36,6 +39,12 @@ struct ConversationView: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(spacing: 10) {
+                            // Tepki çubuğu hep yukarı açılır (altındaki balonun arkasında
+                            // kalıyordu); en üstteki mesajda çubuk sığsın diye yer açılır.
+                            if let ilk = conversation.messages.first?.id, activeMessageActions == ilk {
+                                Color.clear.frame(height: 52)
+                                    .transition(.opacity)
+                            }
                             connectionNote
                             ForEach(conversation.messages) { message in
                                 MessageBubble(
@@ -65,7 +74,11 @@ struct ConversationView: View {
                                             activeMessageActions = activeMessageActions == message.id ? nil : message.id
                                         }
                                     },
-                                    opensBelow: message.id == conversation.messages.first?.id
+                                    opensBelow: false,
+                                    openEmojiPicker: {
+                                        activeMessageActions = nil
+                                        emojiPickerMessage = message
+                                    }
                                 )
                                 // Açık tepki çubuğu komşu balonların üstünde kalsın.
                                 .zIndex(activeMessageActions == message.id ? 1 : 0)
@@ -166,14 +179,33 @@ struct ConversationView: View {
         } message: {
             Text(L10n.ContentReport.shareMessage)
         }
-        .alert(L10n.Chat.unmatchConfirm, isPresented: $showUnmatchAlert) {
+        .alert(L10n.Inbox.removeAndDeleteConfirm(conversation?.profile.name ?? L10n.Common.someone),
+               isPresented: $showUnmatchAlert) {
             Button(L10n.Common.cancel, role: .cancel) {}
-            Button(L10n.Chat.endMatch, role: .destructive) {
-                appState.unmatch(conversationID)
+            Button(L10n.Inbox.removeAndDelete, role: .destructive) {
+                appState.removeConnectionAndDeleteChat(conversationID)
                 dismiss()
             }
         } message: {
-            Text(L10n.Chat.unmatchBody)
+            Text(L10n.Inbox.removeAndDeleteBody)
+        }
+        .sheet(item: $emojiPickerMessage) { mesaj in
+            EmojiReactionPicker(selected: mesaj.myReaction) { emoji in
+                if mesaj.myReaction != emoji { ReactionEmoji.remember(emoji) }
+                appState.react(to: mesaj.id, in: conversationID, with: emoji)
+            }
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(28)
+        }
+        .alert(L10n.Inbox.clearChatConfirm(conversation?.profile.name ?? L10n.Common.someone),
+               isPresented: $showClearAlert) {
+            Button(L10n.Common.cancel, role: .cancel) {}
+            Button(L10n.Inbox.clearChat, role: .destructive) {
+                appState.clearConversation(conversationID)
+            }
+        } message: {
+            Text(L10n.Inbox.clearChatBody)
         }
         .confirmationDialog(
             L10n.Chat.blockConfirm(conversation?.profile.name ?? L10n.Common.someone),
@@ -259,7 +291,10 @@ struct ConversationView: View {
                 } label: {
                     Label(L10n.Common.report, systemImage: "flag")
                 }
-                Button(L10n.Chat.endMatch, role: .destructive) { showUnmatchAlert = true }
+                Button(L10n.Inbox.clearChat, systemImage: "eraser") { showClearAlert = true }
+                Button(L10n.Inbox.removeAndDelete, systemImage: "person.crop.circle.badge.xmark", role: .destructive) {
+                    showUnmatchAlert = true
+                }
                 Button(L10n.Common.block, role: .destructive) { showBlockConfirmation = true }
             } label: {
                 Image(systemName: "ellipsis")
@@ -472,7 +507,10 @@ private struct MessageBubble: View {
     let showActions: () -> Void
     /// Sohbetin ilk mesajı: tepki çubuğu üste değil alta açılır.
     var opensBelow = false
-    private let reactions = ["❤️", "😂", "😮", "😢", "👍"]
+    /// Hızlı çubuk: son kullandıkların önde. Çubuk her açıldığında tazelenir.
+    @State private var quickReactions = ReactionEmoji.quick
+    /// "+": seçici sohbet ekranından açılır (satırdaki sheet tembel listede açılmıyordu).
+    var openEmojiPicker: () -> Void = {}
     @State private var dragOffset: CGFloat = 0
     /// Kaydırma yanıt eşiğini geçti mi: geçince ok büyüyor ve hafif titreşim
     /// geliyor, bırakınca yanıtlanacağını parmak hissediyor.
@@ -523,6 +561,12 @@ private struct MessageBubble: View {
                         RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(BondTheme.hairline)
                     }
                 }
+                .overlay(alignment: badgeAlignment) {
+                    if hasReaction {
+                        reactionBadge
+                            .offset(x: message.isMine ? -10 : 10, y: 13)
+                    }
+                }
                 // Tepki çubuğu balonun üstünde yüzüyor. Eskiden araya girip
                 // altındaki bütün mesajları aşağı itiyordu; ekran zıplıyordu.
                 // İlk mesajda üstte yer yok (başlık çubuğu), çubuk alta açılıyor.
@@ -566,47 +610,73 @@ private struct MessageBubble: View {
                         Button(L10n.Common.report, action: report)
                     }
                 }
-
-                // İki taraf da tepki verebilir; ikisi yan yana. Karşı tarafınki yalnızca
-                // gösterilir, seninkine dokununca kalkar.
-                if message.theirReaction != nil || message.myReaction != nil {
-                    HStack(spacing: 4) {
-                        if let theirs = message.theirReaction {
-                            reactionPill(theirs, mine: false)
-                                .accessibilityLabel(L10n.ChatReactions.theirs(theirs))
-                                .transition(reactionTransition)
-                                .id("karsi-\(theirs)")
-                        }
-                        if let mine = message.myReaction {
-                            Button { react(mine) } label: { reactionPill(mine, mine: true) }
-                                .buttonStyle(PressableStyle())
-                                .accessibilityLabel(L10n.Chat.removeReaction(mine))
-                                .transition(reactionTransition)
-                                .id("benim-\(mine)")
-                        }
-                    }
-                }
             }
+            // Köşeden taşan rozet bir sonraki mesaja binmesin.
+            .padding(.bottom, hasReaction ? 14 : 0)
             .animation(reduceMotion ? nil : BondTheme.Motion.bouncy, value: message.theirReaction)
             .animation(reduceMotion ? nil : BondTheme.Motion.bouncy, value: message.myReaction)
             if !message.isMine { Spacer(minLength: 62) }
         }
+        .onChange(of: actionsVisible) { _, acik in
+            if acik { quickReactions = ReactionEmoji.quick }
+        }
     }
 
-    /// Tepki balonun köşesinden fırlıyor; değişince yenisi yerine oturuyor.
-    private var reactionTransition: AnyTransition {
-        .scale(scale: 0.3, anchor: message.isMine ? .topTrailing : .topLeading).combined(with: .opacity)
+    private var hasReaction: Bool { message.theirReaction != nil || message.myReaction != nil }
+
+    /// Seçilen emojiyi gönderir; yeni bir tepkiyse son kullanılanlara ekler.
+    private func choose(_ emoji: String) {
+        if message.myReaction != emoji { ReactionEmoji.remember(emoji) }
+        react(emoji)
     }
 
-    /// Senin tepkin hafif koyu çerçeveli: dokunulabilir olduğu anlaşılsın.
-    private func reactionPill(_ emoji: String, mine: Bool) -> some View {
-        Text(emoji)
-            .font(.subheadline)
-            .padding(.horizontal, 10)
-            .frame(minHeight: 44)
+    /// Balonun ekran ortasına bakan alt köşesine oturan rozet; yarısı balonun
+    /// üstünde, yarısı dışında. İki taraf aynı emojiyi verdiyse "❤️ 2".
+    @ViewBuilder private var reactionBadge: some View {
+        let theirs = message.theirReaction
+        let mine = message.myReaction
+        let ikisiAyni = theirs != nil && theirs == mine
+        Button {
+            if let mine { react(mine) }
+        } label: {
+            HStack(spacing: 2) {
+                if ikisiAyni, let theirs {
+                    Text(theirs)
+                    Text("2")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(BondTheme.muted)
+                } else {
+                    if let theirs { Text(theirs) }
+                    if let mine { Text(mine) }
+                }
+            }
+            .font(.system(size: 15))
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
             .background(BondTheme.surface, in: Capsule())
-            .overlay(Capsule().stroke(mine ? BondTheme.ink.opacity(0.35) : BondTheme.hairline, lineWidth: mine ? 1.2 : 1))
+            .overlay(Capsule().stroke(mine != nil ? BondTheme.ink.opacity(0.22) : BondTheme.hairline, lineWidth: 0.75))
+            // Sohbet zemini renginde ince halka: rozet balondan kesilmiş gibi temiz durur.
+            .background(Capsule().fill(BondTheme.paper).padding(-2.5))
+            .shadow(color: .black.opacity(0.10), radius: 3, y: 1)
+            .contentShape(Rectangle().inset(by: -10))
+        }
+        .buttonStyle(PressableStyle())
+        .disabled(mine == nil)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(reactionAccessibilityLabel)
+        .accessibilityAddTraits(mine != nil ? .isButton : [])
+        .transition(.scale(scale: 0.2, anchor: badgeAlignment.unitPoint).combined(with: .opacity))
+        .id("tepki-\(theirs ?? "")-\(mine ?? "")")
     }
+
+    private var reactionAccessibilityLabel: String {
+        [message.theirReaction.map { L10n.ChatReactions.theirs($0) },
+         message.myReaction.map { L10n.Chat.removeReaction($0) }]
+            .compactMap { $0 }.joined(separator: ", ")
+    }
+
+    /// Kendi mesajında sol alt, karşınınkinde sağ alt: ekranın ortasına bakan köşe.
+    private var badgeAlignment: Alignment { message.isMine ? .bottomLeading : .bottomTrailing }
 
     private var actionsAlignment: Alignment {
         switch (message.isMine, opensBelow) {
@@ -619,16 +689,27 @@ private struct MessageBubble: View {
 
     private var quickActions: some View {
         HStack(spacing: 2) {
-            ForEach(reactions, id: \.self) { reaction in
-                Button { react(reaction) } label: {
+            ForEach(quickReactions, id: \.self) { reaction in
+                Button { choose(reaction) } label: {
                     Text(reaction)
                         .font(.system(size: 19))
-                        .frame(width: 38, height: 38)
+                        .frame(width: 34, height: 38)
                         .background(message.myReaction == reaction ? BondTheme.violet.opacity(0.14) : .clear, in: Circle())
                 }
                 .buttonStyle(PressableStyle())
                 .accessibilityLabel(L10n.Chat.addReaction(reaction))
             }
+            // Altısı yetmezse bütün emojiler.
+            Button(action: openEmojiPicker) {
+                Image(systemName: "plus")
+                    .font(.footnote.weight(.bold))
+                    .foregroundStyle(BondTheme.muted)
+                    .frame(width: 30, height: 30)
+                    .background(BondTheme.ink.opacity(0.06), in: Circle())
+                    .frame(width: 34, height: 38)
+            }
+            .buttonStyle(PressableStyle())
+            .accessibilityLabel(L10n.ChatReactions.more)
             Rectangle().fill(BondTheme.hairline).frame(width: 1, height: 24)
             Button(action: reply) {
                 Image(systemName: "arrowshape.turn.up.left")

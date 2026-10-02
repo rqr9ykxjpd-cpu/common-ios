@@ -12,6 +12,8 @@ struct PremiumMatchesView: View {
     @State private var listSettled = false
     /// "Tanıyor olabileceğin kişiler"den açılan kart.
     @State private var suggestedProfile: StudentProfile?
+    @State private var pendingClear: Conversation?
+    @State private var pendingRemove: Conversation?
 
     private var sortedConversations: [Conversation] {
         appState.conversations.sorted { $0.updatedAt > $1.updatedAt }
@@ -59,6 +61,16 @@ struct PremiumMatchesView: View {
                                         conversationRow(conversation)
                                     }
                                     .buttonStyle(PressableStyle())
+                                    // Basılı tut: temizle ya da bağlantıyı kaldırıp sil (ikisi de onay ister).
+                                    .contextMenu {
+                                        Button(L10n.Inbox.clearChat, systemImage: "eraser") {
+                                            pendingClear = conversation
+                                        }
+                                        Button(L10n.Inbox.removeAndDelete, systemImage: "person.crop.circle.badge.xmark",
+                                               role: .destructive) {
+                                            pendingRemove = conversation
+                                        }
+                                    }
                                     Divider().overlay(BondTheme.hairline)
                                 }
                                 .settleIn(index: index, active: !listSettled)
@@ -98,6 +110,24 @@ struct PremiumMatchesView: View {
                 }
             }
             .background(BondTheme.paper.ignoresSafeArea())
+            .alert(L10n.Inbox.clearChatConfirm(pendingClear?.profile.name ?? L10n.Common.someone),
+                   isPresented: Binding(get: { pendingClear != nil }, set: { if !$0 { pendingClear = nil } }),
+                   presenting: pendingClear) { sohbet in
+                Button(L10n.Common.cancel, role: .cancel) {}
+                Button(L10n.Inbox.clearChat, role: .destructive) { appState.clearConversation(sohbet.id) }
+            } message: { _ in
+                Text(L10n.Inbox.clearChatBody)
+            }
+            .alert(L10n.Inbox.removeAndDeleteConfirm(pendingRemove?.profile.name ?? L10n.Common.someone),
+                   isPresented: Binding(get: { pendingRemove != nil }, set: { if !$0 { pendingRemove = nil } }),
+                   presenting: pendingRemove) { sohbet in
+                Button(L10n.Common.cancel, role: .cancel) {}
+                Button(L10n.Inbox.removeAndDelete, role: .destructive) {
+                    withAnimation(BondTheme.Motion.smooth) { appState.removeConnectionAndDeleteChat(sohbet.id) }
+                }
+            } message: { _ in
+                Text(L10n.Inbox.removeAndDeleteBody)
+            }
             .navigationTitle(L10n.Chat.title)
             .navigationDestination(item: $introductionConversation) { id in
                 ConversationView(conversationID: id)

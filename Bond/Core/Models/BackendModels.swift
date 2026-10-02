@@ -85,10 +85,11 @@ struct FounderUser: Identifiable, Hashable, Sendable {
     var eduVerified: Bool = false
     /// Bildirimi açık: kayıtlı cihaz jetonu var (son açılıştaki iOS izni).
     var hasPush: Bool = false
+    /// Sunucunun söylediği: son 3 dakikada "buradayım" dedi ve sonra "ayrıldım" demedi.
+    var serverOnline: Bool? = nil
 
-    /// Yeşil nokta. Uygulama açıkken "son aktif" 2,5 dakikada bir tazeleniyor,
-    /// sunucu da 5 dakikadan sık yazmıyor; 8 dakika bu ikisinin toplamı.
-    var isOnline: Bool { isActive && lastActiveAt > Date.now.addingTimeInterval(-8 * 60) }
+    /// Yeşil nokta. Sunucu bilgisi varsa o; yoksa (eski sunucu) son aktifin 8 dakikası.
+    var isOnline: Bool { serverOnline ?? (isActive && lastActiveAt > Date.now.addingTimeInterval(-8 * 60)) }
 }
 
 /// Kurucu paneli: bir günün sayıları.

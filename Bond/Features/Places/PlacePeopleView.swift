@@ -73,7 +73,9 @@ struct PlacePeopleView: View {
             .navigationDestination(item: $selectedPerson) { profile in
                 SocialPersonDetailView(profile: profile, place: place)
             }
-            .task(id: appState.currentVisiblePlace?.id) { await reload() }
+            // Kendi seçimin ya da başkasının gelip gitmesi: liste kendiliğinden yenilenir.
+            .task(id: PeopleReloadKey(place: appState.currentVisiblePlace?.id,
+                                      revision: appState.placeActivityRevision)) { await reload() }
         }
     }
 
@@ -98,4 +100,9 @@ struct PlacePeopleView: View {
         .accessibilityLabel(sent ? L10n.Profile.requestSent : L10n.Places.sendMeetupA11y(profile.name))
         .accessibilityIdentifier("place.meetup.\(profile.id)")
     }
+}
+
+private struct PeopleReloadKey: Hashable {
+    let place: UUID?
+    let revision: Int
 }

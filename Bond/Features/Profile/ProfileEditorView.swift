@@ -18,6 +18,7 @@ struct ProfileEditorView: View {
     @State private var showDiscardAlert = false
     @State private var myPostCount = 0
     @State private var usernameStatus: UsernameStatus = .idle
+    @State private var isSaving = false
 
     /// Kullanıcı adı değişmediyse kontrol beklenmez.
     private var usernameOK: Bool {
@@ -98,9 +99,11 @@ struct ProfileEditorView: View {
             // gerekiyor.
             ToolbarItem(placement: .topBarLeading) {
                 Button(L10n.Common.cancel) { changed ? (showDiscardAlert = true) : dismiss() }
+                    .disabled(isSaving)
             }
             ToolbarItem(placement: .topBarTrailing) {
-                Button(L10n.Common.save) { save() }.disabled(!valid)
+                Button(L10n.Common.save) { save() }
+                    .disabled(!valid || !changed || isSaving)
             }
         }
         .onAppear { loadOnce() }
@@ -150,6 +153,7 @@ struct ProfileEditorView: View {
         } message: {
             Text(L10n.Profile.discardBody)
         }
+        .interactiveDismissDisabled(isSaving)
     }
 
     /// Kaydetme çubuğu.
@@ -181,9 +185,9 @@ struct ProfileEditorView: View {
             }
 
             AppButton(
-                title: changed ? L10n.Profile.saveChanges : L10n.Profile.savedButton,
-                systemName: changed ? "arrow.up" : "checkmark",
-                enabled: valid && changed
+                title: isSaving ? L10n.Common.saving : (changed ? L10n.Profile.saveChanges : L10n.Profile.savedButton),
+                systemName: isSaving ? nil : (changed ? "arrow.up" : "checkmark"),
+                enabled: valid && changed && !isSaving
             ) { save() }
         }
         .padding(.horizontal, BondTheme.Space.lg)
@@ -427,26 +431,38 @@ struct ProfileEditorView: View {
     // indirip yerel baseline'a alıyoruz — böylece "değişiklik var mı?" karşılaştırması yanlış pozitif
     // vermez ve kaydetmeden çıkıldığında mevcut fotoğraflar kaybolmuş gibi görünmez.
     private func hydrateExistingPhotos() async {
-        if avatarData == nil, let url = appState.avatarURL {
-            avatarData = await compactedRemoteImage(url)
-        } else if let avatarData {
-            self.avatarData = ImageCompression.prepareForUpload(avatarData) ?? avatarData
+        let existingAvatar: Data?
+        if let localAvatar = avatarData {
+            existingAvatar = ImageCompression.prepareForUpload(localAvatar) ?? localAvatar
+        } else if let url = appState.avatarURL {
+            existingAvatar = await compactedRemoteImage(url)
+        } else {
+            existingAvatar = nil
         }
-        if galleryData.isEmpty, !appState.galleryURLs.isEmpty {
+
+        // İndirme sürerken kullanıcı yeni fotoğraf seçmiş olabilir. Eski sunucu
+        // görseli baseline olur ama yeni seçim asla onunla ezilmez.
+        if avatarData == nil, avatarItem == nil { avatarData = existingAvatar }
+        baselineAvatarData = existingAvatar
+
+        var existingGallery = galleryData
+        if existingGallery.isEmpty, !appState.galleryURLs.isEmpty {
             var hydrated: [Data] = []
             for url in appState.galleryURLs {
                 if let data = await compactedRemoteImage(url) { hydrated.append(data) }
             }
-            galleryData = hydrated
-            shareToFeed = Array(repeating: false, count: galleryData.count)
-        } else if !galleryData.isEmpty {
-            galleryData = galleryData.map { ImageCompression.prepareForUpload($0) ?? $0 }
+            existingGallery = hydrated
+        } else if !existingGallery.isEmpty {
+            existingGallery = existingGallery.map { ImageCompression.prepareForUpload($0) ?? $0 }
+        }
+        if galleryData.isEmpty, galleryItems.isEmpty {
+            galleryData = existingGallery
+            shareToFeed = Array(repeating: false, count: existingGallery.count)
         }
         if shareToFeed.count != galleryData.count {
             shareToFeed = Array(repeating: false, count: galleryData.count)
         }
-        baselineAvatarData = avatarData
-        baselineGalleryData = galleryData
+        baselineGalleryData = existingGallery
     }
 
     /// Düzenleyici kaydetmede ham JPEG tutuyor; sunucudaki 8 MB aslı burada
@@ -457,13 +473,18 @@ struct ProfileEditorView: View {
     }
 
     private func save() {
-        guard valid else { return }
+        guard valid, changed, !isSaving else { return }
+        isSaving = true
         let flagged = galleryData.indices.compactMap { index -> Data? in
             guard shareToFeed.indices.contains(index), shareToFeed[index] else { return nil }
             return galleryData[index]
         }
+        let avatarUpdate = avatarData == baselineAvatarData ? nil : avatarData
+        let galleryUpdate = galleryData == baselineGalleryData ? nil : galleryData
         Task {
-            if await appState.saveProfile(draft, avatar: avatarData, gallery: galleryData) {
+            let saved = await appState.saveProfile(draft, avatar: avatarUpdate, gallery: galleryUpdate)
+            isSaving = false
+            if saved {
                 await appState.publishPhotosAsPosts(flagged)
                 dismiss()
             }

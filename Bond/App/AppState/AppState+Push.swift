@@ -30,10 +30,10 @@ extension AppState {
         }
     }
 
-    /// Bildirim iznini doğru anda, bir kez sorar: kullanıcı cevap bekleyen bir
-    /// şey yaptığında (soru sordu, cevap yazdı, sağa kaydırdı, mesaj attı).
-    /// Açılışta sormak reddedilir; Bildirimler sekmesine girmeyen ise hiç
-    /// sorulmazdı, push hiç gelmezdi. İzin zaten kararlıysa hiçbir şey olmaz.
+    /// Bildirim iznini bir kez sorar: uygulamaya girer girmez (giriş, oturum
+    /// açılışı, kayıt sonu) ve yedek olarak cevap bekleyen ilk eylemde (soru,
+    /// cevap, sağa kaydırma, mesaj). Bildirimler sekmesine girmeyen kişiye hiç
+    /// sorulmuyordu, push hiç gelmiyordu. İzin zaten kararlıysa hiçbir şey olmaz.
     func promptForPushIfNeeded() {
         guard !defaults.bool(forKey: SessionKey.pushPrompted) else { return }
         Task {

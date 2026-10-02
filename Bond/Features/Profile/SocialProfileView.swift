@@ -5,6 +5,10 @@ import SwiftUI
 struct SocialProfileView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Fotoğrafa dokununca yerinde büyür, yeniden dokununca küçülür.
+    @State private var avatarExpanded = false
+    @Namespace private var fotoAlani
     @State private var showPhoto = false
     /// Sayfa yukarıdan ne kadar aşağı çekildi. Yalnızca fotoğraf okuyor; sayfanın
     /// geri kalanı her karede yeniden çizilmesin diye ayrı bir nesnede.
@@ -24,6 +28,12 @@ struct SocialProfileView: View {
     @State private var profilePosts: [SocialPost] = []
     @State private var loadingPosts = true
     @State private var loadID = UUID()
+    /// Hakkımda yerinde yazılıyor; düzenleme ekranına gitmek gerekmiyor.
+    @State private var editingBio = false
+    @State private var bioText = ""
+    @State private var savingBio = false
+    @FocusState private var bioFocused: Bool
+    private let bioLimit = 220
 
     private var displayName: String { appState.draft.name.isEmpty ? L10n.Common.you : appState.draft.name }
     private var hasAvatar: Bool { appState.avatarURL != nil || appState.avatarData != nil }
@@ -165,28 +175,27 @@ struct SocialProfileView: View {
                     nameAndEducation
                     editProfileButton
                 }
+            } else if avatarExpanded {
+                // Büyüyen fotoğraf üste geçer; yazılar sıkışmasın diye altına kayar.
+                VStack(alignment: .leading, spacing: 16) {
+                    avatar
+                    HStack(alignment: .center, spacing: 20) {
+                        nameAndEducation
+                        editProfileButton
+                    }
+                    .matchedGeometryEffect(id: "kimlik", in: fotoAlani)
+                }
             } else {
                 HStack(alignment: .center, spacing: 20) {
                     avatar
-                    nameAndEducation
-                    editProfileButton
+                    HStack(alignment: .center, spacing: 20) {
+                        nameAndEducation
+                        editProfileButton
+                    }
+                    .matchedGeometryEffect(id: "kimlik", in: fotoAlani)
                 }
             }
-            if !appState.draft.bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                Text(appState.draft.bio)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("profile.about")
-            } else {
-                Button { showEditor = true } label: {
-                    Label(L10n.Profile.writeAbout, systemImage: "plus")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(BondTheme.muted)
-                        .frame(minHeight: 44)
-                }
-                .buttonStyle(.plain)
-            }
+            about
 
             if !featuredInterests.isEmpty {
                 FlowLayout(spacing: BondTheme.Space.sm) {
@@ -209,24 +218,126 @@ struct SocialProfileView: View {
         }
     }
 
+    @ViewBuilder
+    private var about: some View {
+        let bio = appState.draft.bio.trimmingCharacters(in: .whitespacesAndNewlines)
+        if editingBio {
+            VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
+                TextField(L10n.Profile.bioPlaceholder, text: $bioText, axis: .vertical)
+                    .font(.subheadline)
+                    .lineLimit(2...6)
+                    .focused($bioFocused)
+                    .padding(12)
+                    .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .accessibilityLabel(L10n.Profile.about)
+                    .accessibilityIdentifier("profile.aboutField")
+                HStack(spacing: BondTheme.Space.md) {
+                    Text("\(bioText.count)/\(bioLimit)")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(bioText.count > bioLimit ? BondTheme.coral : BondTheme.muted)
+                    Spacer()
+                    Button(L10n.Common.cancel) { endBioEdit() }
+                        .font(.subheadline)
+                        .foregroundStyle(BondTheme.muted)
+                        .disabled(savingBio)
+                    Button { Task { await saveBio() } } label: {
+                        if savingBio {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Text(L10n.Common.save).font(.subheadline.weight(.semibold))
+                        }
+                    }
+                    .foregroundStyle(BondTheme.ink)
+                    // Değişiklik yokken soluk: rengi elle verildiği için kendiliğinden solmuyordu.
+                    .opacity(bioSaveDisabled(bio) && !savingBio ? 0.35 : 1)
+                    .disabled(bioSaveDisabled(bio))
+                    .accessibilityIdentifier("profile.aboutSave")
+                }
+                .frame(minHeight: 32)
+            }
+            .transition(.opacity)
+        } else if !bio.isEmpty {
+            Button(action: beginBioEdit) {
+                Text(appState.draft.bio)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(L10n.Profile.writeAbout)
+            .accessibilityIdentifier("profile.about")
+        } else {
+            Button(action: beginBioEdit) {
+                Label(L10n.Profile.writeAbout, systemImage: "plus")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(BondTheme.muted)
+                    .frame(minHeight: 44)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("profile.writeAbout")
+        }
+    }
+
+    private func bioSaveDisabled(_ bio: String) -> Bool {
+        savingBio || bioText.count > bioLimit
+            || bioText.trimmingCharacters(in: .whitespacesAndNewlines) == bio
+    }
+
+    private func beginBioEdit() {
+        bioText = appState.draft.bio
+        withAnimation(BondTheme.Motion.smooth) { editingBio = true }
+        bioFocused = true
+    }
+
+    private func endBioEdit() {
+        bioFocused = false
+        withAnimation(BondTheme.Motion.smooth) { editingBio = false }
+    }
+
+    /// Yalnızca metin: fotoğraflar `nil`, yani dokunulmuyor.
+    private func saveBio() async {
+        savingBio = true
+        defer { savingBio = false }
+        var yeni = appState.draft
+        yeni.bio = bioText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if await appState.saveProfile(yeni, avatar: nil, gallery: nil) {
+            endBioEdit()
+        }
+    }
+
     private var avatar: some View {
         PullStretch(pull: pull) {
             avatarTile
         }
+        .matchedGeometryEffect(id: "foto", in: fotoAlani)
         .accessibilityIdentifier("profile.avatar")
     }
 
     private var avatarTile: some View {
         ZStack(alignment: .bottomTrailing) {
             Button {
-                if hasAvatar { showPhoto = true } else { showEditor = true }
+                guard hasAvatar else { showEditor = true; return }
+                Haptics.selection()
+                withAnimation(reduceMotion ? nil : .spring(response: 0.42, dampingFraction: 0.72)) {
+                    avatarExpanded.toggle()
+                }
             } label: {
                 ProfileMedia(url: appState.avatarURL, data: appState.avatarData)
-                    .frame(width: 96, height: 116)
+                    .frame(width: avatarExpanded ? 210 : 96, height: avatarExpanded ? 252 : 116)
                     .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous))
+                    .shadow(color: .black.opacity(avatarExpanded ? 0.18 : 0), radius: 14, y: 6)
             }
             .buttonStyle(.plain)
+            // Tam ekran görünüm basılı tutunca.
+            .simultaneousGesture(LongPressGesture(minimumDuration: 0.45).onEnded { _ in
+                guard hasAvatar else { return }
+                showPhoto = true
+            })
             .accessibilityLabel(hasAvatar ? L10n.Profile.zoomPhoto : L10n.ScreenStates.addPhoto)
+            .accessibilityAction(named: L10n.Profile.zoomPhoto) { if hasAvatar { showPhoto = true } }
 
             Button { showEditor = true } label: {
                 Image(systemName: "camera.fill")

@@ -165,29 +165,23 @@ extension SupabaseProductService {
     func updateGallery(_ images: [Data]) async throws -> [URL] {
         guard let userID = currentUserID else { throw BackendServiceError.missingSession }
         let limitedImages = Array(images.prefix(CampusLimits.maxGalleryPhotos))
-        let oldPhotos: [ProfilePhotoRow] = try await client
-            .from("profile_photos")
-            .select("storage_path,position")
-            .eq("profile_id", value: userID)
-            .execute()
-            .value
         var newPaths: [String] = []
+        let oldPaths: [String]
         do {
             for image in limitedImages {
                 let path = "\(userID.uuidString.lowercased())/gallery-\(UUID().uuidString.lowercased()).jpg"
                 try await client.storage.from("profile-photos").upload(path, data: image, options: FileOptions(contentType: "image/jpeg"))
                 newPaths.append(path)
             }
-            try await client.from("profile_photos").delete(returning: .minimal).eq("profile_id", value: userID).execute()
-            if !newPaths.isEmpty {
-                let rows = newPaths.enumerated().map { ProfilePhotoInsert(profileID: userID, storagePath: $0.element, position: $0.offset) }
-                try await client.from("profile_photos").insert(rows).execute()
-            }
+            oldPaths = try await client
+                .rpc("replace_gallery_photos", params: ReplaceGalleryPhotosParams(storagePaths: newPaths))
+                .execute()
+                .value
         } catch {
             if !newPaths.isEmpty { _ = try? await client.storage.from("profile-photos").remove(paths: newPaths) }
             throw error
         }
-        let obsoletePaths = oldPhotos.map(\.storagePath).filter { !newPaths.contains($0) }
+        let obsoletePaths = oldPaths.filter { !newPaths.contains($0) }
         if !obsoletePaths.isEmpty { _ = try? await client.storage.from("profile-photos").remove(paths: obsoletePaths) }
         var urls: [URL] = []
         for path in newPaths {

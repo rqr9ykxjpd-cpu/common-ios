@@ -79,7 +79,7 @@ extension SupabaseProductService {
                         plan: SubscriptionTier(serverValue: $0.plan),
                         createdAt: $0.createdAt, lastActiveAt: $0.lastActiveAt,
                         eduExempt: $0.eduExempt ?? false, eduVerified: $0.eduVerified ?? false,
-                        hasPush: $0.hasPush ?? false)
+                        hasPush: $0.hasPush ?? false, serverOnline: $0.isOnline)
         }
     }
 

@@ -82,6 +82,7 @@ extension AppState {
         try? await service.touchLastActive()
         startPresenceHeartbeat()
         startMessageListener()
+        startPlaceListener()
 
         onboardingFailure = nil
         withAnimation(.smooth(duration: 0.55)) { route = .app }
@@ -92,6 +93,9 @@ extension AppState {
         if isEduLocked {
             try? await Task.sleep(for: .seconds(0.9))
             presentEduGate(.welcome)
+        } else {
+            // Kilit penceresi açılıyorsa izin sonraki açılışta: iki pencere üst üste binmesin.
+            promptForPushIfNeeded()
         }
         show(chosenName.isEmpty ? L10n.Auth.welcome : L10n.Auth.welcomeName(chosenName))
     }

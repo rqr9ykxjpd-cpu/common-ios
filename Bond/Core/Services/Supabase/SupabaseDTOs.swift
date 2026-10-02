@@ -556,6 +556,11 @@ struct AppendGalleryPhotoParams: Encodable {
     }
 }
 
+struct ReplaceGalleryPhotosParams: Encodable {
+    let storagePaths: [String]
+    enum CodingKeys: String, CodingKey { case storagePaths = "p_storage_paths" }
+}
+
 struct AvatarPathUpdate: Encodable {
     let path: String?
     enum CodingKeys: String, CodingKey { case path = "avatar_path" }

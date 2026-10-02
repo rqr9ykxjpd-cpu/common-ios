@@ -127,6 +127,7 @@ extension AppState {
         await loadManagedClubs()
         await loadEduStatus()
         startMessageListener()
+        startPlaceListener()
         await refreshSubscriptions()
         await startPushRegistration()
         if requiresAvatarStep(photosLoaded: fotograflarOkundu) {
@@ -136,6 +137,7 @@ extension AppState {
         withAnimation(.smooth(duration: 0.55)) { route = .app }
         let name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
         show(name.isEmpty ? L10n.Auth.welcome : L10n.Auth.welcomeName(name))
+        promptForPushIfNeeded()
         return true
     }
     func restoreBackendSession() async {
@@ -184,6 +186,7 @@ extension AppState {
             await loadManagedClubs()
             await loadEduStatus()
             startMessageListener()
+            startPlaceListener()
             await refreshSubscriptions()
             // Geçerli oturum ve tamamlanmış profil varken karşılama ekranında bırakmak
             // kullanıcıyı hiçbir yere gidemez halde bırakıyordu.
@@ -193,6 +196,7 @@ extension AppState {
                 withAnimation(.smooth(duration: 0.45)) { route = .app }
             }
             await startPushRegistration()
+            if route == .app { promptForPushIfNeeded() }
         } catch {
             // Ağın kopması oturumun bittiği anlamına gelmiyor. Kampüs wifi'ında bir istek
             // zaman aşımına uğradığında kullanıcıyı karşılama ekranına atmak, girişi
@@ -200,6 +204,9 @@ extension AppState {
             // yerelde önbellekli. Kullanıcıyı olduğu yerde bırakıp durumu söylüyoruz.
             if isNetworkFailure(error) {
                 showError(error, fallback: L10n.Auth.connectionFailed)
+                // Ağ gelince ya da öne gelince yeniden bakılır; burada yenileme
+                // anahtarı reddedildiyse hemen giriş ekranına alınır.
+                Task { await verifySession() }
             } else {
                 route = .welcome
                 showError(error, fallback: L10n.Auth.sessionRestoreFailed)
@@ -286,6 +293,7 @@ extension AppState {
         defer { isAccountActionInProgress = false }
         persistAccount()
         do {
+            await (service as? any PresenceReporting)?.markOffline()
             await unregisterPushToken()
             await BondImageLoader.shared.reset()
             try await service.signOut()
@@ -369,6 +377,7 @@ extension AppState {
 
     func clearSession(keepAccountData: Bool) {
         stopMessageListener()
+        stopPlaceListener()
         stopPresenceHeartbeat()
         supportThreads = []
         Task { await subscriptions.resetIdentity() }

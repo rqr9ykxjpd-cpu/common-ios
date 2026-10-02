@@ -23,6 +23,9 @@ extension AppState {
         placePresence = Dictionary(ozetler.map { ($0.placeID, $0) }, uniquingKeysWith: { a, _ in a })
     }
 
+    /// Dokunur dokunmaz sonuç ekranda: yer, sayı ve kendi fotoğrafın anında
+    /// değişir; sunucu reddederse eski hâline döner. Eskiden düğmede gösterge
+    /// dönüyor, sayı ancak ikinci bir istekten sonra güncelleniyordu.
     func togglePresence(at place: CampusPlace) {
         guard presenceUpdateID == nil else { return }
         let operationID = UUID()
@@ -30,35 +33,60 @@ extension AppState {
         let turningOff = currentVisiblePlace?.id == place.id
         // Kilitliyken yerini gösteremez; çıkmak her zaman serbest.
         guard turningOff || requireStudent() else { return }
-        var transaction = Transaction()
-        transaction.disablesAnimations = true
-        withTransaction(transaction) {
+        let oncekiYer = currentVisiblePlace
+        let oncekiOzet = placePresence
+        withAnimation(BondTheme.Motion.snappy) {
             presenceUpdateID = operationID
-            presenceUpdatingPlaceID = place.id
             presenceError = nil
+            currentVisiblePlace = turningOff ? nil : place
+            placePresence = Self.presence(oncekiOzet, leaving: oncekiYer?.id,
+                                          joining: turningOff ? nil : place.id, avatar: avatarURL)
         }
+        Haptics.success()
         Task { @MainActor in
             do {
                 try await service.setVisiblePlace(turningOff ? nil : place.id)
                 guard presenceUpdateID == operationID, accountID == currentUserID else { return }
-                withTransaction(transaction) {
-                    currentVisiblePlace = turningOff ? nil : place
-                    presenceUpdateID = nil
-                    presenceUpdatingPlaceID = nil
-                }
-                Haptics.success()
+                presenceUpdateID = nil
+                // Sunucunun kesin sayısı (aynı anda gelen başkaları dahil).
                 await loadPlacePresence()
             } catch {
                 guard presenceUpdateID == operationID, accountID == currentUserID else { return }
-                withTransaction(transaction) {
+                withAnimation(BondTheme.Motion.snappy) {
+                    currentVisiblePlace = oncekiYer
+                    placePresence = oncekiOzet
                     presenceUpdateID = nil
-                    presenceUpdatingPlaceID = nil
-                    if !isCancellation(error) {
-                        presenceError = UserFacingError.message(error, fallback: L10n.Places.toggleFailed)
-                    }
+                }
+                if !isCancellation(error) {
+                    // Ekran hatayı kendi satırında gösteriyor; burada yalnızca oturum kontrolü.
+                    presenceError = UserFacingError.message(error, fallback: L10n.Places.toggleFailed)
+                    verifySessionIfAuthError(error)
                 }
             }
         }
+    }
+
+    /// Ayrılınan yerden bir eksilt, gidilen yere bir ekle (fotoğraf başa).
+    static func presence(_ ozet: [UUID: PlacePresenceSummary], leaving: UUID?, joining: UUID?,
+                         avatar: URL?) -> [UUID: PlacePresenceSummary] {
+        var sonuc = ozet
+        if let leaving, leaving != joining, let eski = sonuc[leaving] {
+            let sayi = max(0, eski.count - 1)
+            sonuc[leaving] = sayi == 0 ? nil : PlacePresenceSummary(
+                placeID: leaving, count: sayi,
+                avatarURLs: eski.avatarURLs.filter { $0 != avatar },
+                avatarAssetNames: eski.avatarAssetNames)
+        }
+        if let joining, joining != leaving {
+            let eski = sonuc[joining]
+            var fotolar = eski?.avatarURLs ?? []
+            if let avatar, !fotolar.contains(avatar) { fotolar.insert(avatar, at: 0) }
+            sonuc[joining] = PlacePresenceSummary(
+                placeID: joining, count: (eski?.count ?? 0) + 1,
+                avatarURLs: Array(fotolar.prefix(3)),
+                avatarAssetNames: eski?.avatarAssetNames ?? [])
+        }
+        return sonuc
     }
 
     /// Bir yerde şu an görünen kişiler. Bu liste koda gömülü sabit isimlerdi; herkese

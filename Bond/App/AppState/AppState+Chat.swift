@@ -62,6 +62,11 @@ extension AppState {
     /// sunucudan tazeliyoruz. Bildirimler ve story'ler de aynı sebeple yenileniyor.
     func refreshAfterForeground() async {
         guard route == .app else { return }
+        // Arka planda geçen sürede oturum bitmiş olabilir; önce onu öğren.
+        await verifySession()
+        guard route == .app else { return }
+        // Arka plandayken kaçırılan "geldi/gitti"ler.
+        await loadPlacePresence()
         await loadConversations()
         await loadNotifications()
         await loadStories()
@@ -379,10 +384,11 @@ extension AppState {
         let previous = conversations[conversationIndex].messages[messageIndex].myReaction
         let updated = previous == reaction ? nil : reaction
         conversations[conversationIndex].messages[messageIndex].myReaction = updated
+        // Titreşim dokunduğun an: sunucu cevabını beklemek tepkiyi gecikmiş hissettiriyordu.
+        Haptics.impact(.light)
         Task {
             do {
                 try await service.setMessageReaction(messageID: messageID, reaction: updated)
-                Haptics.impact(.light)
             } catch {
                 guard let refreshedConversation = conversations.firstIndex(where: { $0.id == conversationID }),
                       let refreshedMessage = conversations[refreshedConversation].messages.firstIndex(where: { $0.id == messageID }) else { return }
@@ -392,3 +398,43 @@ extension AppState {
         }
     }
 }
+
+// MARK: - Sohbeti temizle / bağlantıyı kaldır
+extension AppState {
+    /// Mesajlar yalnızca senden gider; sohbet listede boş kalır, bağlantı sürer.
+    func clearConversation(_ conversationID: UUID) {
+        guard let masa = service as? any ConversationClearing,
+              let index = conversations.firstIndex(where: { $0.id == conversationID }) else { return }
+        let onceki = conversations[index]
+        let oncekiBildirimler = notifications
+        conversations[index].messages = []
+        conversations[index].unreadCount = 0
+        notifications.removeAll { $0.conversationID == conversationID }
+        syncApplicationBadge()
+        Haptics.success()
+        Task {
+            do {
+                try await masa.clearConversation(conversationID)
+                show(L10n.Inbox.chatCleared)
+            } catch {
+                if let geri = conversations.firstIndex(where: { $0.id == conversationID }) {
+                    conversations[geri] = onceki
+                }
+                notifications = oncekiBildirimler
+                syncApplicationBadge()
+                showError(error, fallback: L10n.Inbox.clearFailed)
+            }
+        }
+    }
+
+    /// Bağlantı iki taraftan kalkar; eski mesajlar yeniden bağlansanız da sende dönmez.
+    func removeConnectionAndDeleteChat(_ conversationID: UUID) {
+        notifications.removeAll { $0.conversationID == conversationID }
+        syncApplicationBadge()
+        if let masa = service as? any ConversationClearing {
+            Task { try? await masa.clearConversation(conversationID) }
+        }
+        unmatch(conversationID)
+    }
+}
+

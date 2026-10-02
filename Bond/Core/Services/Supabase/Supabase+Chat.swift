@@ -13,17 +13,22 @@ extension SupabaseProductService {
             .value
 
         let peerAvatarPaths = matches.compactMap { $0.peer(for: userID).avatarPath }
-        let urlMap = await signedURLs(bucket: "profile-photos", paths: peerAvatarPaths)
+        async let urlMapIstegi = signedURLs(bucket: "profile-photos", paths: peerAvatarPaths)
+        // "Sohbeti temizle": damgadan önceki mesajlar bu kişiye gösterilmez.
+        async let temizlikIstegi = conversationClearDates()
+        let urlMap = await urlMapIstegi
+        let temizlik = await temizlikIstegi
 
         var conversations: [Conversation] = []
         for match in matches {
-            let rows: [MessageRow] = try await client
+            let tumu: [MessageRow] = try await client
                 .from("messages")
                 .select("id,match_id,sender_id,body,reply_to_id,reaction,sender_reaction,created_at,read_at,edited_at")
                 .eq("match_id", value: match.id)
                 .order("created_at", ascending: true)
                 .execute()
                 .value
+            let rows = temizlik[match.id].map { tarih in tumu.filter { $0.createdAt > tarih } } ?? tumu
             let peer = match.peer(for: userID)
             let messages = rows.map { $0.message(currentUserID: userID, allRows: rows, peerName: peer.name) }
             conversations.append(Conversation(

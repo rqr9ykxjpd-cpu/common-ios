@@ -116,6 +116,7 @@ struct FounderUserListRow: Decodable {
     let eduExempt: Bool?
     let eduVerified: Bool?
     let hasPush: Bool?
+    let isOnline: Bool?
     enum CodingKeys: String, CodingKey {
         case id, name, department, badge, plan
         case academicYear = "academic_year"
@@ -127,5 +128,6 @@ struct FounderUserListRow: Decodable {
         case eduExempt = "edu_exempt"
         case eduVerified = "edu_verified"
         case hasPush = "has_push"
+        case isOnline = "is_online"
     }
 }

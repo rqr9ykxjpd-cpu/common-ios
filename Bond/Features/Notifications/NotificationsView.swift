@@ -17,11 +17,13 @@ struct NotificationsView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Liste ilk açılışta yerine oturdu mu; sonra `settleIn` kapanır.
     @State private var listSettled = false
+    @State private var confirmDeleteAll = false
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: BondTheme.Space.lg) {
+            // Liste: satır sola kaydırılınca silinir, basılı tutunca hepsi silinebilir.
+            List {
+                Group {
                     Text(L10n.Notification.intro)
                         .font(BondTheme.Typography.footnote)
                         .foregroundStyle(BondTheme.muted)
@@ -31,38 +33,57 @@ struct NotificationsView: View {
                     }
                     if appState.notifications.isEmpty {
                         notificationState
-                    } else {
-                        LazyVStack(spacing: 0) {
-                            ForEach(Array(appState.notifications.sorted(by: { $0.createdAt > $1.createdAt }).enumerated()),
-                                    id: \.element.id) { index, notification in
-                                VStack(spacing: 0) {
-                                    Button { open(notification) } label: {
-                                        notificationRow(notification)
-                                    }
-                                    .buttonStyle(PressableStyle())
-                                    .contextMenu {
-                                        if !notification.isRead {
-                                            Button(L10n.Notification.markRead) {
-                                                appState.markNotificationRead(notification.id)
-                                            }
-                                        }
-                                    }
-                                    Divider().overlay(BondTheme.hairline)
-                                }
-                                .settleIn(index: index, active: !listSettled)
+                    }
+                }
+                .listRowInsets(EdgeInsets(top: BondTheme.Space.sm, leading: BondTheme.Space.lg,
+                                          bottom: BondTheme.Space.sm, trailing: BondTheme.Space.lg))
+                .listRowSeparator(.hidden)
+                .listRowBackground(BondTheme.paper)
+
+                ForEach(Array(appState.notifications.sorted(by: { $0.createdAt > $1.createdAt }).enumerated()),
+                        id: \.element.id) { index, notification in
+                    Button { open(notification) } label: {
+                        notificationRow(notification)
+                    }
+                    .buttonStyle(PressableStyle())
+                    .settleIn(index: index, active: !listSettled)
+                    .listRowInsets(EdgeInsets(top: 0, leading: BondTheme.Space.lg, bottom: 0, trailing: BondTheme.Space.lg))
+                    .listRowSeparatorTint(BondTheme.hairline)
+                    .listRowBackground(BondTheme.paper)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        Button(L10n.Common.delete, systemImage: "trash", role: .destructive) {
+                            appState.deleteNotification(notification.id)
+                        }
+                    }
+                    .contextMenu {
+                        if !notification.isRead {
+                            Button(L10n.Notification.markRead, systemImage: "checkmark") {
+                                appState.markNotificationRead(notification.id)
                             }
                         }
-                        .task {
-                            try? await Task.sleep(for: .seconds(1.2))
-                            listSettled = true
+                        Button(L10n.Common.delete, systemImage: "trash", role: .destructive) {
+                            appState.deleteNotification(notification.id)
+                        }
+                        Button(L10n.Inbox.deleteAll, systemImage: "trash.slash", role: .destructive) {
+                            confirmDeleteAll = true
                         }
                     }
                 }
-                .padding(.horizontal, BondTheme.Space.lg)
-                .padding(.top, BondTheme.Space.md)
-                .padding(.bottom, BondTheme.Space.xxl)
+            }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: appState.notifications.map(\.id))
+            .task {
+                try? await Task.sleep(for: .seconds(1.2))
+                listSettled = true
             }
             .background(BondTheme.paper.ignoresSafeArea())
+            .confirmationDialog(L10n.Inbox.deleteAllConfirm, isPresented: $confirmDeleteAll, titleVisibility: .visible) {
+                Button(L10n.Inbox.deleteAll, role: .destructive) { appState.deleteAllNotifications() }
+                Button(L10n.Common.cancel, role: .cancel) {}
+            } message: {
+                Text(L10n.Inbox.deleteAllBody)
+            }
             .refreshable { await appState.loadNotifications() }
             .task {
                 // İzin kartı en başta: listeden sonra gelince satırları aniden aşağı itiyordu.
