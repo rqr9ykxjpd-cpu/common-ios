@@ -50,16 +50,6 @@ extension AppState {
         }
     }
 
-    func fetchEduGate() async throws -> Bool {
-        guard let masa = service as? any SupportDesk else { return false }
-        return try await masa.fetchEduGate()
-    }
-
-    func founderSetEduGate(_ enabled: Bool) async throws -> Bool {
-        guard let masa = service as? any SupportDesk else { throw BackendServiceError.missingSession }
-        return try await masa.setEduGate(enabled)
-    }
-
     func founderSetStudentVerified(_ userID: UUID, verified: Bool) async throws -> Bool {
         guard let masa = service as? any SupportDesk else { throw BackendServiceError.missingSession }
         return try await masa.setStudentVerified(userID, verified: verified)

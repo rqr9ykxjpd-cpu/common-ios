@@ -13,9 +13,6 @@ struct FounderUsersView: View {
     @State private var toast: String?
     @State private var profileRoute: StudentProfile?
     @State private var notifyTarget: FounderUser?
-    /// Öğrenci kilidi: nil = henüz okunmadı.
-    @State private var eduGate: Bool?
-    @State private var gateTarget: Bool?
     /// Süzgeç: hepsi ya da yalnız doğrulanmamışlar (muaf ve rozetli olmayan).
     @State private var onlyUnverified = false
 
@@ -36,22 +33,6 @@ struct FounderUsersView: View {
                 ContentUnavailableView(L10n.Board.usersEmpty, systemImage: "person.slash")
             } else {
                 List {
-                    // Öğrenci kilidi: 1.1 mağazaya çıkınca buradan açılır.
-                    Section {
-                        Toggle(isOn: Binding(get: { eduGate ?? false }, set: { gateTarget = $0 })) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(L10n.Support.gateToggle).font(.subheadline.weight(.semibold))
-                                Text(L10n.Support.gateToggleHint)
-                                    .font(.caption)
-                                    .foregroundStyle(BondTheme.muted)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                        }
-                        .tint(BondTheme.burntOrange)
-                        .disabled(eduGate == nil)
-                        .listRowBackground(BondTheme.paper)
-                        .accessibilityIdentifier("founder.eduGate")
-                    }
                     Section {
                         Picker(L10n.Board.users, selection: $onlyUnverified) {
                             Text(L10n.Support.filterAll).tag(false)
@@ -136,20 +117,6 @@ struct FounderUsersView: View {
             }
         }
         .animation(.snappy, value: toast)
-        .confirmationDialog(
-            gateTarget == true
-                ? L10n.Support.gateConfirmOn(users.filter { !$0.eduExempt && !$0.eduVerified && $0.badge == .none }.count)
-                : L10n.Support.gateConfirmOff,
-            isPresented: Binding(get: { gateTarget != nil }, set: { if !$0 { gateTarget = nil } }),
-            titleVisibility: .visible
-        ) {
-            if let hedef = gateTarget {
-                Button(hedef ? L10n.Support.gateTurnOn : L10n.Support.gateTurnOff, role: hedef ? .destructive : nil) {
-                    Task { await setGate(hedef) }
-                }
-            }
-            Button(L10n.Common.cancel, role: .cancel) { gateTarget = nil }
-        }
         .sheet(item: $profileRoute) { profil in
             NavigationStack {
                 SocialPersonDetailView(profile: profil, place: nil, showsClose: true)
@@ -287,7 +254,6 @@ struct FounderUsersView: View {
         if users.isEmpty { isLoading = true }
         do { users = try await appState.fetchFounderUsers(search: search.trimmed) }
         catch { failure = UserFacingError.message(error, fallback: L10n.Board.founderActionFailed) }
-        if eduGate == nil { eduGate = try? await appState.fetchEduGate() }
         isLoading = false
     }
 
@@ -304,15 +270,6 @@ struct FounderUsersView: View {
             let yeni = try await appState.founderSetModerator(user.id, enabled: enabled)
             update(user.id) { $0.badge = yeni }
             show(L10n.Board.userDone)
-        } catch { show(UserFacingError.message(error, fallback: L10n.Board.founderActionFailed)) }
-    }
-
-    private func setGate(_ acik: Bool) async {
-        gateTarget = nil
-        do {
-            eduGate = try await appState.founderSetEduGate(acik)
-            show(L10n.Board.userDone)
-            await load()
         } catch { show(UserFacingError.message(error, fallback: L10n.Board.founderActionFailed)) }
     }
 
