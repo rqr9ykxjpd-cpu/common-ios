@@ -247,6 +247,9 @@ extension AppState {
         defer { isLoadingConversations = false }
         do {
             conversations = try await service.fetchConversations()
+            if let masa = service as? any ConversationClearing {
+                clearedConversationIDs = await masa.fetchClearedConversationIDs()
+            }
             conversationsError = nil
         } catch {
             guard !isCancellation(error) else { return }
@@ -401,14 +404,24 @@ extension AppState {
 
 // MARK: - Sohbeti temizle / bağlantıyı kaldır
 extension AppState {
+    /// Sohbet listesinde gösterilenler: temizlenip sonra yazışılmayanlar yok.
+    /// Kişi bu arada "Tanıyor olabileceğin kişiler"in başında duruyor.
+    var listedConversations: [Conversation] {
+        conversations.filter { !(clearedConversationIDs.contains($0.id) && $0.messages.isEmpty) }
+    }
+
     /// Mesajlar yalnızca senden gider; sohbet listede boş kalır, bağlantı sürer.
     func clearConversation(_ conversationID: UUID) {
         guard let masa = service as? any ConversationClearing,
               let index = conversations.firstIndex(where: { $0.id == conversationID }) else { return }
         let onceki = conversations[index]
         let oncekiBildirimler = notifications
-        conversations[index].messages = []
-        conversations[index].unreadCount = 0
+        let oncekiTemiz = clearedConversationIDs
+        withAnimation(BondTheme.Motion.smooth) {
+            conversations[index].messages = []
+            conversations[index].unreadCount = 0
+            clearedConversationIDs.insert(conversationID)
+        }
         notifications.removeAll { $0.conversationID == conversationID }
         syncApplicationBadge()
         Haptics.success()
@@ -416,7 +429,10 @@ extension AppState {
             do {
                 try await masa.clearConversation(conversationID)
                 show(L10n.Inbox.chatCleared)
+                // Kişi öneri satırının başına gelsin.
+                await loadSuggestions()
             } catch {
+                clearedConversationIDs = oncekiTemiz
                 if let geri = conversations.firstIndex(where: { $0.id == conversationID }) {
                     conversations[geri] = onceki
                 }

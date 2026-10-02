@@ -5,6 +5,7 @@ extension L10n {
     enum Suggestions {
         static var title: String { String(localized: "title", table: "Suggestions") }
         static var classmate: String { String(localized: "classmate", table: "Suggestions") }
+        static var connection: String { String(localized: "connection", table: "Suggestions") }
         static var dismiss: String { String(localized: "dismiss", table: "Suggestions") }
         static var dismissFailed: String { String(localized: "dismissFailed", table: "Suggestions") }
         static var openHint: String { String(localized: "openHint", table: "Suggestions") }

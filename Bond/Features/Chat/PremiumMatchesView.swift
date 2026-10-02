@@ -16,7 +16,7 @@ struct PremiumMatchesView: View {
     @State private var pendingRemove: Conversation?
 
     private var sortedConversations: [Conversation] {
-        appState.conversations.sorted { $0.updatedAt > $1.updatedAt }
+        appState.listedConversations.sorted { $0.updatedAt > $1.updatedAt }
     }
 
     init(showsCloseButton: Bool = true, close: (() -> Void)? = nil) {
@@ -41,15 +41,15 @@ struct PremiumMatchesView: View {
                     acceptedIntroductions
                     yanitIstekleriSatiri
                     if let error = appState.conversationsError {
-                        ScreenFailureView(message: error, compact: !appState.conversations.isEmpty) {
+                        ScreenFailureView(message: error, compact: !appState.listedConversations.isEmpty) {
                             Task { await appState.loadConversations() }
                         }
                     }
-                    if appState.conversations.isEmpty, appState.isLoadingConversations {
+                    if appState.listedConversations.isEmpty, appState.isLoadingConversations {
                         // Yüklenirken "henüz sohbetin yok" yazıyordu.
                         VStack(spacing: 0) { ForEach(0..<4, id: \.self) { _ in SkeletonRow() } }
                             .padding(.horizontal, BondTheme.Space.lg)
-                    } else if appState.conversations.isEmpty && appState.conversationsError == nil {
+                    } else if appState.listedConversations.isEmpty && appState.conversationsError == nil {
                         emptyConversations
                     } else {
                         LazyVStack(spacing: 0) {

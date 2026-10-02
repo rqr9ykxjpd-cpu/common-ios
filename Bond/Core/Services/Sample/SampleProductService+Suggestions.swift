@@ -15,13 +15,17 @@ extension SampleProductService: PeopleSuggesting {
             ("Arda", .mutual(2)),
             ("Selin", .interests(3))
         ]
-        return kisiler.compactMap { ad, sebep in
+        // Sohbeti temizlenen ve sonra yazışılmayan bağlantılar en başta.
+        let temizlenen = await SampleClearedStore.shared.ids
+        let baglantilar = try await fetchConversations()
+            .filter { temizlenen.contains($0.id) && $0.messages.isEmpty }
+            .map { PersonSuggestion(profile: $0.profile, reason: .connection) }
+        let digerleri = kisiler.compactMap { ad, sebep -> PersonSuggestion? in
             guard let profil = SampleData.profiles.first(where: { $0.name == ad }),
                   !kaldirilan.contains(profil.id) else { return nil }
             return PersonSuggestion(profile: profil, reason: sebep)
         }
-        .prefix(limit)
-        .map { $0 }
+        return Array((baglantilar + digerleri).prefix(limit))
     }
 
     func dismissSuggestion(_ profileID: UUID) async throws {

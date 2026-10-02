@@ -6,6 +6,10 @@ extension SupabaseProductService: ConversationClearing {
         try await client.rpc("clear_conversation", params: ClearConversationParams(targetMatch: matchID)).execute()
     }
 
+    func fetchClearedConversationIDs() async -> Set<UUID> {
+        Set(await conversationClearDates().keys)
+    }
+
     /// Temizlenmiş sohbetlerde damgadan önceki mesajlar gösterilmez.
     func conversationClearDates() async -> [UUID: Date] {
         guard let userID = currentUserID else { return [:] }

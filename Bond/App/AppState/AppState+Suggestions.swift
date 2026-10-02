@@ -5,7 +5,8 @@ extension AppState {
     /// Satırda gösterilenler. Liste açılışta bir kez geliyor; bu arada bağlantı
     /// kurulan, kartı sağa geçilen ya da engellenen kişi hemen düşüyor.
     var visibleSuggestions: [PersonSuggestion] {
-        let baglantilar = Set(conversations.map(\.profile.id))
+        // Listede görünen sohbetler; temizlenmiş bağlantı satırda başta kalır.
+        let baglantilar = Set(listedConversations.map(\.profile.id))
         let engellenenler = Set(blockedProfiles.map(\.id))
         return suggestions.filter {
             !baglantilar.contains($0.id)

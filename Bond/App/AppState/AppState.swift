@@ -150,6 +150,8 @@ final class AppState {
     var clubExtras: [UUID: ClubExtras] = [:]
     /// Yönetici olarak atandığım kulüpler.
     var managedClubIDs: Set<UUID> = []
+    /// Temizlenen sohbetler; temizlikten sonra mesaj yoksa listede görünmez.
+    var clearedConversationIDs: Set<UUID> = []
     /// Kim nerede'de biri geldi ya da gitti; açık kişi listesi buna bakıp yenilenir.
     var placeActivityRevision = 0
     @ObservationIgnored var placeListenerTask: Task<Void, Never>?

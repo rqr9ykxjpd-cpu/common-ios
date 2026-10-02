@@ -11,6 +11,8 @@ struct PersonSuggestion: Identifiable, Hashable, Sendable {
     var id: UUID { profile.id }
 
     enum Reason: Hashable, Sendable {
+        /// Sohbetini temizlediğin bağlantın: kartı açıp yeniden yazabilesin.
+        case connection
         /// Ortak bağlantı sayısı.
         case mutual(Int)
         /// Ortak kulübün adı.
@@ -26,6 +28,7 @@ struct PersonSuggestion: Identifiable, Hashable, Sendable {
         /// Tanınmayan bir sebep gelirse öneri gösterilmiyor.
         init?(server reason: String, detail: String?, count: Int) {
             switch reason {
+            case "connection": self = .connection
             case "mutual" where count > 0: self = .mutual(count)
             case "club": guard let detail, !detail.isEmpty else { return nil }; self = .club(detail)
             case "classmate": self = .classmate(department: detail ?? "")
@@ -38,6 +41,7 @@ struct PersonSuggestion: Identifiable, Hashable, Sendable {
         /// Yuvarlağın altındaki kısa satır.
         var label: String {
             switch self {
+            case .connection: L10n.Suggestions.connection
             case .mutual(let count): L10n.Suggestions.mutual(count)
             case .club(let name): name
             case .classmate: L10n.Suggestions.classmate
