@@ -88,13 +88,6 @@ struct EduVerificationSheet: View {
     @State private var isLoadingDomains = false
     @State private var showProblemReport = false
     @FocusState private var fieldFocused: Bool
-    /// E-postadaki 8 haneli kod; dolunca kendiliğinden doğrulanır.
-    @State private var code = ""
-    @State private var isVerifyingCode = false
-    @State private var codeError: String?
-    /// Yanlış kodda alan "hayır" der gibi titrer.
-    @State private var codeShake = 0
-    @FocusState private var codeFocused: Bool
 
     private var status: EduVerificationStatus { appState.eduStatus ?? .unknown }
     private var trimmed: String { email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
@@ -193,7 +186,7 @@ struct EduVerificationSheet: View {
 
     private var entry: some View {
         VStack(alignment: .leading, spacing: BondTheme.Space.md) {
-            Text(L10n.EduCode.sheetHint)
+            Text(L10n.Edu.sheetHint)
                 .font(BondTheme.Typography.footnote)
                 .foregroundStyle(BondTheme.muted)
                 .fixedSize(horizontal: false, vertical: true)
@@ -239,7 +232,7 @@ struct EduVerificationSheet: View {
             Button { Task { await send() } } label: {
                 HStack(spacing: 8) {
                     if isSending { ProgressView().tint(BondTheme.paper) }
-                    Text(L10n.EduCode.sendCode).font(.subheadline.weight(.semibold))
+                    Text(L10n.Edu.send).font(.subheadline.weight(.semibold))
                 }
                 .frame(maxWidth: .infinity, minHeight: 50)
                 .foregroundStyle(BondTheme.paper)
@@ -255,73 +248,29 @@ struct EduVerificationSheet: View {
     private func sent(to address: String) -> some View {
         VStack(alignment: .leading, spacing: BondTheme.Space.md) {
             HStack(spacing: 12) {
-                Image(systemName: "envelope.badge.fill")
-                    .font(.system(size: 30, weight: .semibold))
-                    .foregroundStyle(BondTheme.ink)
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 34, weight: .semibold))
+                    .foregroundStyle(BondTheme.acid)
                     .symbolEffect(.bounce, options: .nonRepeating, value: status.pendingEmail)
-                Text(L10n.EduCode.sentTitle)
+                Text(L10n.Edu.sentTitle)
                     .font(BondTheme.Typography.title2)
                     .foregroundStyle(BondTheme.ink)
             }
-            Text(L10n.EduCode.sentBody(address))
+            Text(L10n.Edu.sentBody(address))
                 .font(BondTheme.Typography.footnote)
                 .foregroundStyle(BondTheme.muted)
                 .fixedSize(horizontal: false, vertical: true)
 
-            // Klavye kodu e-postadan önerir (oneTimeCode); 8 hane dolunca doğrulanır.
-            TextField(L10n.EduCode.placeholder, text: $code)
-                .keyboardType(.numberPad)
-                .textContentType(.oneTimeCode)
-                .focused($codeFocused)
-                .font(.system(size: 26, weight: .semibold, design: .rounded).monospacedDigit())
-                .tracking(6)
-                .multilineTextAlignment(.center)
-                .padding(.vertical, 14)
-                .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: BondTheme.Radius.surface, style: .continuous)
-                        .stroke(codeError == nil ? Color.clear : BondTheme.burntOrangeText.opacity(0.6), lineWidth: 1.2)
-                }
-                .limitShake(trigger: codeShake)
-                .onChange(of: code) { _, yeni in
-                    let rakam = String(yeni.filter(\.isNumber).prefix(8))
-                    if rakam != yeni { code = rakam; return }
-                    // Yanlış koddan sonra alan boşalıyor; uyarı yeni yazmaya başlayınca kalkar.
-                    if codeError != nil, !rakam.isEmpty { codeError = nil }
-                    if rakam.count == 8 { Task { await verifyCode() } }
-                }
-                .accessibilityLabel(L10n.EduCode.sentTitle)
-                .accessibilityIdentifier("edu.code")
-
-            if let codeError {
-                Text(codeError)
-                    .font(.footnote)
-                    .foregroundStyle(BondTheme.burntOrangeText)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .transition(.opacity)
-            }
-
-            Button { Task { await verifyCode() } } label: {
+            Button { Task { await check() } } label: {
                 HStack(spacing: 8) {
-                    if isVerifyingCode { ProgressView().tint(BondTheme.paper) }
-                    Text(L10n.EduCode.verify).font(.subheadline.weight(.semibold))
+                    if isChecking { ProgressView().tint(BondTheme.paper) }
+                    Text(L10n.Edu.checkNow).font(.subheadline.weight(.semibold))
                 }
                 .frame(maxWidth: .infinity, minHeight: 50)
                 .foregroundStyle(BondTheme.paper)
-                .background(code.count == 8 ? BondTheme.ink : BondTheme.muted.opacity(0.5), in: Capsule())
+                .background(BondTheme.ink, in: Capsule())
             }
             .buttonStyle(PressableStyle())
-            .disabled(code.count != 8 || isVerifyingCode)
-
-            // Yedek yol: kodu değil bağlantıyı kullananlar için.
-            Button { Task { await check() } } label: {
-                HStack(spacing: 6) {
-                    if isChecking { ProgressView().controlSize(.small) }
-                    Text(L10n.EduCode.linkFallback).font(.footnote.weight(.medium))
-                }
-                .foregroundStyle(BondTheme.muted)
-                .frame(maxWidth: .infinity, minHeight: 36)
-            }
             .disabled(isChecking)
 
             if showStillPending {
@@ -335,8 +284,6 @@ struct EduVerificationSheet: View {
             HStack(spacing: BondTheme.Space.md) {
                 Button {
                     email = address
-                    code = ""
-                    codeError = nil
                     Task { await send() }
                 } label: {
                     Text(cooldown > 0 ? L10n.Edu.resendIn(cooldown) : L10n.Edu.resend)
@@ -347,8 +294,6 @@ struct EduVerificationSheet: View {
                 Spacer()
                 Button {
                     email = address
-                    code = ""
-                    codeError = nil
                     appState.eduStatus?.pendingEmail = nil
                     fieldFocused = true
                 } label: {
@@ -358,27 +303,10 @@ struct EduVerificationSheet: View {
             .foregroundStyle(BondTheme.ink)
             .padding(.top, 4)
         }
-        .onAppear { codeFocused = true }
         .task(id: cooldown) {
             guard cooldown > 0 else { return }
             try? await Task.sleep(for: .seconds(1))
             if !Task.isCancelled { cooldown -= 1 }
-        }
-    }
-
-    private func verifyCode() async {
-        guard code.count == 8, !isVerifyingCode else { return }
-        isVerifyingCode = true
-        defer { isVerifyingCode = false }
-        let sonuc = await appState.verifyEduCode(code)
-        if sonuc.verified {
-            codeFocused = false
-            try? await Task.sleep(for: .seconds(2.4))
-            close()
-        } else if let mesaj = sonuc.message {
-            code = ""
-            codeShake += 1
-            withAnimation(reduceMotion ? nil : BondTheme.Motion.smooth) { codeError = mesaj }
         }
     }
 
