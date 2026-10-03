@@ -117,7 +117,9 @@ struct CardStudioView: View {
             // Kartın yanlarından komşular görünsün; yükseklik ekrana göre.
             let genislik = min(geo.size.width - 104, (geo.size.height - 24) / 1.36)
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 14) {
+                // Tembel yığın değil: on kartın yeri baştan bilinmeyince ilk açılışta
+                // seçili kart ortalanamıyor, sağa kayık ve eğik duruyordu.
+                HStack(spacing: 14) {
                     ForEach(CardTheme.allCases) { theme in
                         StudioIDCard(
                             theme: theme,

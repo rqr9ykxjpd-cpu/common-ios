@@ -20,7 +20,12 @@ struct SocialPersonDetailView: View {
     @State private var isLoadingDetails = false
     @State private var isSendingSwipe = false
     @State private var showBlockConfirmation = false
-    /// Kart fotoğrafı tam ekran; kaynaktan iOS yakınlaştırmasıyla açılır.
+    /// Fotoğrafa dokununca kendi profilindeki gibi yerinde büyür, bilgiler
+    /// altına kayar; yeniden dokununca eski hâline döner. Basılı tutunca tam ekran.
+    @State private var portraitExpanded = false
+    /// Ad ve bilgiler yerleşim değişirken görünmez; satırlar yeniden kırılırken
+    /// fotoğrafın üstüne binmesin.
+    @State private var identityVisible = true
     @State private var showPortrait = false
     @Namespace private var portreAlani
     @State private var showSuspendConfirmation = false
@@ -611,9 +616,15 @@ struct SocialPersonDetailView: View {
                     identityCopy
                 }
             } else {
-                HStack(alignment: .top, spacing: 16) {
+                let yerlesim = portraitExpanded
+                    ? AnyLayout(VStackLayout(alignment: .leading, spacing: BondTheme.Space.md))
+                    : AnyLayout(HStackLayout(alignment: .top, spacing: 16))
+                yerlesim {
                     identityPortrait
                     identityCopy
+                        // Yeni yerine görünmezken anında geçer, sonra orada belirir.
+                        .animation(nil, value: portraitExpanded)
+                        .opacity(identityVisible ? 1 : 0)
                 }
             }
 
@@ -634,16 +645,23 @@ struct SocialPersonDetailView: View {
 
     private var identityPortrait: some View {
         Button {
-            guard portraitURL != nil || (isMe && appState.avatarData != nil) else { return }
+            guard hasPortrait else { return }
             Haptics.selection()
-            showPortrait = true
+            var aninda = Transaction()
+            aninda.disablesAnimations = true
+            withTransaction(aninda) { identityVisible = false }
+            withAnimation(.smooth(duration: 0.42)) { portraitExpanded.toggle() }
+            Task {
+                try? await Task.sleep(for: .milliseconds(260))
+                withAnimation(.easeOut(duration: 0.24)) { identityVisible = true }
+            }
         } label: {
             ProfileMedia(
                 url: portraitURL,
                 data: isMe ? appState.avatarData : nil,
                 assetName: profile.imageAssetName
             )
-            .frame(width: 96, height: 120)
+            .frame(width: portraitExpanded ? 240 : 96, height: portraitExpanded ? 300 : 120)
             .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous)
@@ -652,7 +670,16 @@ struct SocialPersonDetailView: View {
         }
         .buttonStyle(.plain)
         .zoomSource(id: "kartFoto", in: portreAlani)
+        .simultaneousGesture(LongPressGesture(minimumDuration: 0.45).onEnded { _ in
+            guard hasPortrait else { return }
+            showPortrait = true
+        })
         .accessibilityLabel(L10n.Profile.zoomPhoto)
+        .accessibilityAction(named: L10n.Profile.zoomPhoto) { if hasPortrait { showPortrait = true } }
+    }
+
+    private var hasPortrait: Bool {
+        portraitURL != nil || profile.imageAssetName != nil || (isMe && appState.avatarData != nil)
     }
 
     private var identityCopy: some View {
