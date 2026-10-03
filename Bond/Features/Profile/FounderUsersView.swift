@@ -144,7 +144,8 @@ struct FounderUsersView: View {
                     Text(user.name).font(.subheadline.weight(.semibold))
                         .lineLimit(1)
                         .layoutPriority(1)
-                    if user.badge != .none, let icon = user.badge.systemImage {
+                    // Doğrulama tek tik: rozetteki tik ile e-posta tiki yan yana çıkıyordu.
+                    if user.badge == .founder || user.badge == .moderator, let icon = user.badge.systemImage {
                         Image(systemName: icon)
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(user.badge == .founder ? BondTheme.ember : BondTheme.icon)
@@ -156,7 +157,7 @@ struct FounderUsersView: View {
                             .background(BondTheme.burntOrange.opacity(0.15), in: Capsule())
                             .foregroundStyle(BondTheme.burntOrangeText)
                     }
-                    if user.eduVerified {
+                    if user.eduVerified || user.badge == .verified {
                         EduStudentChip()
                     } else if user.eduExempt, user.badge == .none {
                         Text(L10n.Support.eduExempt.uppercased())
