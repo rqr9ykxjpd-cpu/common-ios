@@ -20,6 +20,9 @@ struct SocialPersonDetailView: View {
     @State private var isLoadingDetails = false
     @State private var isSendingSwipe = false
     @State private var showBlockConfirmation = false
+    /// Kart fotoğrafı tam ekran; kaynaktan iOS yakınlaştırmasıyla açılır.
+    @State private var showPortrait = false
+    @Namespace private var portreAlani
     @State private var showSuspendConfirmation = false
 
     // Kart kaydırma. Sağ = bağlantı isteği, sol = kapat. Fotoğraf destesi
@@ -257,6 +260,10 @@ struct SocialPersonDetailView: View {
         .task(id: profile.id) { await peekSwipeIfNeeded() }
         .fullScreenCover(item: $conversationRoute) { route in
             NavigationStack { ConversationView(conversationID: route.id, showsClose: true) }
+        }
+        .fullScreenCover(isPresented: $showPortrait) {
+            PhotoZoomView(url: portraitURL, data: isMe ? appState.avatarData : nil)
+                .zoomTransition(sourceID: "kartFoto", in: portreAlani)
         }
     }
 
@@ -619,21 +626,33 @@ struct SocialPersonDetailView: View {
         }
     }
 
+    /// Kendi kartında uygulamadaki fotoğraf: az önce değiştirdiysen yenisi,
+    /// sunucudan dönmesini beklemeden.
+    private var portraitURL: URL? {
+        isMe ? (appState.avatarURL ?? details?.avatarURL ?? profile.imageURL) : (details?.avatarURL ?? profile.imageURL)
+    }
+
     private var identityPortrait: some View {
-        // Kendi kartında uygulamadaki fotoğraf: az önce değiştirdiysen yenisi,
-        // sunucudan dönmesini beklemeden.
-        ProfileMedia(
-            url: isMe ? (appState.avatarURL ?? details?.avatarURL ?? profile.imageURL) : (details?.avatarURL ?? profile.imageURL),
-            data: isMe ? appState.avatarData : nil,
-            assetName: profile.imageAssetName
-        )
-        .frame(width: 96, height: 120)
-        .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous)
-                .stroke(BondTheme.hairline.opacity(0.8), lineWidth: 0.5)
+        Button {
+            guard portraitURL != nil || (isMe && appState.avatarData != nil) else { return }
+            Haptics.selection()
+            showPortrait = true
+        } label: {
+            ProfileMedia(
+                url: portraitURL,
+                data: isMe ? appState.avatarData : nil,
+                assetName: profile.imageAssetName
+            )
+            .frame(width: 96, height: 120)
+            .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous)
+                    .stroke(BondTheme.hairline.opacity(0.8), lineWidth: 0.5)
+            }
         }
-        .accessibilityHidden(true)
+        .buttonStyle(.plain)
+        .zoomSource(id: "kartFoto", in: portreAlani)
+        .accessibilityLabel(L10n.Profile.zoomPhoto)
     }
 
     private var identityCopy: some View {

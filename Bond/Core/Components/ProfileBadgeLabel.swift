@@ -11,7 +11,10 @@ struct ProfileBadgeLabel: View {
     var compact = false
 
     var body: some View {
-        if let icon = badge.systemImage, let title = badge.title {
+        if badge == .verified {
+            // Doğrulanmış öğrenci: yazısız tik, adın yanındaki tik gibi.
+            VerifiedTick(size: compact ? 15 : 18)
+        } else if let icon = badge.systemImage, let title = badge.title {
             Label(title, systemImage: icon)
                 .font(.system(size: compact ? 10 : 11, weight: .semibold))
                 .foregroundStyle(badge.accentForeground)
@@ -24,17 +27,30 @@ struct ProfileBadgeLabel: View {
     }
 }
 
-/// Öğrenci e-postası doğrulanmış hesabın küçük rozeti; rozet kapsülüyle aynı boy.
+/// Öğrenci e-postası doğrulanmış hesabın işareti: yalnız tik.
 struct EduStudentChip: View {
     var body: some View {
-        Label(L10n.Edu.badge, systemImage: "checkmark.seal.fill")
-            .font(.system(size: 10, weight: .semibold))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 8)
-            .frame(height: 22)
-            .background(BondTheme.violet, in: Capsule())
-            .lineLimit(1)
-            .fixedSize()
+        VerifiedTick(size: 15)
+    }
+}
+
+/// Doğrulama tiki. Renkler sabit: uyarlanan mürekkep koyu kartta açığa dönüp
+/// beyaz tiki yutuyordu. Beyaz hale, koyu kartta (mürekkep, lacivert) tikin
+/// zemine karışmasını önlüyor; açık zeminde görünmüyor.
+struct VerifiedTick: View {
+    var size: CGFloat = 16
+
+    var body: some View {
+        Image(systemName: "checkmark.seal.fill")
+            .font(.system(size: size, weight: .semibold))
+            .symbolRenderingMode(.palette)
+            .foregroundStyle(.white, Color(hex: "1D1D1F"))
+            .background {
+                Image(systemName: "seal.fill")
+                    .font(.system(size: size + 4, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
+            .accessibilityElement()
             .accessibilityLabel(L10n.Edu.verifiedLine)
     }
 }

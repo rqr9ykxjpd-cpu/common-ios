@@ -37,7 +37,7 @@ enum ProfileBadge: String, Codable, Hashable {
         case .none: nil
         case .verified: "checkmark.seal.fill"
         case .moderator: "shield.lefthalf.filled"
-        case .founder: "star.circle.fill"
+        case .founder: "checkmark.seal.fill"
         }
     }
 
