@@ -144,9 +144,15 @@ struct PostCard: View {
         }
     }
 
+    /// Paylaşılan metnin sonunda uygulamanın bağlantısı: mesajda App Store kartı
+    /// olarak açılıyor, tıklayan indirir. Eskiden yalnızca yazı gidiyordu.
+    private var shareText: String {
+        "\(post.author.name): \(post.caption)\n\n" + L10n.Share.postFooter(AppLinks.appStore.absoluteString)
+    }
+
     private var menu: some View {
         Menu {
-            ShareLink(item: "\(post.author.name): \(post.caption)") {
+            ShareLink(item: shareText) {
                 Label(L10n.Feed.share, systemImage: "square.and.arrow.up")
             }
             if post.isMine {
@@ -340,7 +346,7 @@ struct PostCard: View {
 
             Spacer()
 
-            ShareLink(item: "\(post.author.name): \(post.caption)") {
+            ShareLink(item: shareText) {
                 Image(systemName: "paperplane")
                     .font(.body.weight(.regular))
                     .frame(width: 36, height: 36)
