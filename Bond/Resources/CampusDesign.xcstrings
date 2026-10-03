@@ -310,13 +310,13 @@
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hayalet mod: kampüste görünmezsin"
+            "value": "Hayalet mod: ziyaretlerde ve story izleyenlerde görünmezsin"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghost Mode hides you On Campus"
+            "value": "Ghost Mode keeps you off profile visits and story views"
           }
         }
       }

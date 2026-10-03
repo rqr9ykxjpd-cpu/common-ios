@@ -8209,7 +8209,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ghost mode (On Campus)"
+            "value" : "Ghost mode"
           }
         },
         "tr" : {
@@ -10293,13 +10293,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Stay hidden On Campus, and hide whose profile you open and which stories you view"
+            "value" : "Hide whose profile you open and which stories you view"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kampüste görünme; kimin profiline girdiğin ve hangi story’yi izlediğin gizlensin"
+            "value" : "Kimin profiline girdiğin ve hangi story’yi izlediğin gizlensin"
           }
         }
       }
@@ -10310,13 +10310,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "On — you’re hidden On Campus, and even which story you viewed stays hidden"
+            "value" : "On — profiles you open and stories you view don’t show you"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Açık — kampüste görünmüyorsun; hangi story’yi kaç kez izlediğin de gizli"
+            "value" : "Açık — girdiğin profillerde ve izlediğin story’lerde görünmüyorsun"
           }
         }
       }
