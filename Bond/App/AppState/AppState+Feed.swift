@@ -205,12 +205,12 @@ extension AppState {
     }
 
     @discardableResult
-    func publishPost(imageData: Data?, caption: String, place: CampusPlace?, kind: PostKind = .moment, announces: Bool = true) async -> Bool {
+    func publishPost(images: [Data], caption: String, place: CampusPlace?, kind: PostKind = .moment, announces: Bool = true) async -> Bool {
         guard requireStudent() else { return false }
         let cleanCaption = caption.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard imageData != nil || !cleanCaption.isEmpty else { return false }
+        guard !images.isEmpty || !cleanCaption.isEmpty else { return false }
         do {
-            let post = try await service.createPost(caption: cleanCaption, placeName: place?.name, imageData: imageData, kind: kind)
+            let post = try await service.createPost(caption: cleanCaption, placeName: place?.name, images: images, kind: kind)
             var social = socialPost(from: post)
             // Sunucu rozeti kaçırsa bile kendi gönderinde yerel rozet kalsın.
             if social.isMine, social.author.badge == .none, myBadge != .none {
@@ -419,6 +419,8 @@ extension AppState {
             caption: post.caption,
             imageURL: post.imageURL,
             localImageData: post.imageData,
+            galleryURLs: post.galleryURLs,
+            galleryData: post.galleryData,
             place: post.placeName.flatMap { name in places.first { $0.name == name } },
             kind: post.kind,
             liked: post.liked,

@@ -246,6 +246,19 @@ struct PostCard: View {
         return .body.weight(hasImage ? .medium : .semibold)
     }
 
+    /// Destedeki fotoğraflar. Kimlik sıra numarası: imzalı adres her yenilemede
+    /// değiştiği için adresle kimlik verilince deste baştan çiziliyordu.
+    private var galleryPhotos: [ProfileGalleryPhoto] {
+        if post.galleryData.count > 1 {
+            return post.galleryData.enumerated().map {
+                ProfileGalleryPhoto(id: "\(post.id)-\($0.offset)", data: $0.element)
+            }
+        }
+        return post.galleryURLs.enumerated().map {
+            ProfileGalleryPhoto(id: "\(post.id)-\($0.offset)", url: $0.element)
+        }
+    }
+
     private var contentBody: some View {
         VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
             // Rozet başlık satırından buraya indi: ad ve bölüm kesilmesin,
@@ -263,7 +276,16 @@ struct PostCard: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .fixedSize(horizontal: false, vertical: isDetail)
             }
-            if hasImage {
+            if post.hasGallery {
+                // Birden fazla fotoğraf: profil kartındaki deste, sürükleyerek geçilir.
+                Color.clear
+                    .aspectRatio(4 / 5, contentMode: .fit)
+                    .overlay {
+                        GeometryReader { geo in
+                            ProfileGalleryStack(photos: galleryPhotos, height: geo.size.height)
+                        }
+                    }
+            } else if hasImage {
                 Color.clear
                     .aspectRatio(isDetail ? detailAspect : 1 / imageAspect, contentMode: .fit)
                     .overlay {

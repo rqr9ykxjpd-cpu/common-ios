@@ -101,10 +101,11 @@ struct SampleProductService: ProductService {
     func countMyPosts() async throws -> Int {
         await store.allPosts().filter { $0.authorID == SampleData.me.id }.count
     }
-    func createPost(caption: String, placeName: String?, imageData: Data?, kind: PostKind) async throws -> BackendPost {
+    func createPost(caption: String, placeName: String?, images: [Data], kind: PostKind) async throws -> BackendPost {
         let count = await store.allPosts().filter { $0.authorID == SampleData.me.id }.count
         if count >= CampusLimits.maxPostsPerUser { throw BackendServiceError.postLimit }
-        let post = SampleData.newPost(caption: caption, placeName: placeName, imageData: imageData, kind: kind)
+        var post = SampleData.newPost(caption: caption, placeName: placeName, imageData: images.first, kind: kind)
+        if images.count > 1 { post.galleryData = Array(images.prefix(CampusLimits.maxPostPhotos)) }
         await store.insert(post)
         return post
     }

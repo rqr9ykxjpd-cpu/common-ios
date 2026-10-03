@@ -1,0 +1,70 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "add": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add photos"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraf ekle"
+          }
+        }
+      }
+    },
+    "remove": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove photo"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğrafı kaldır"
+          }
+        }
+      }
+    },
+    "count": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld / %2$lld"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld / %2$lld"
+          }
+        }
+      }
+    },
+    "footer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The first photo is the cover; people swipe through the rest. Up to %lld photos."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İlk fotoğraf kapak olur, gerisi kaydırılarak bakılır. En fazla %lld fotoğraf."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

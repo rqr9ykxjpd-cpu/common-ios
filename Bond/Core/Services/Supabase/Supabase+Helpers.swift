@@ -29,16 +29,6 @@ extension SupabaseProductService {
         guard let userID = currentUserID else { return .none }
         return await badges(for: [userID])[userID] ?? .none
     }
-    func removeMedia(bucket: String, table: String, rowID: UUID) async {
-        let rows: [MediaPathRow]? = try? await client
-            .from(table)
-            .select("media_path")
-            .eq("id", value: rowID)
-            .execute()
-            .value
-        guard let path = rows?.first?.mediaPath else { return }
-        _ = try? await client.storage.from(bucket).remove(paths: [path])
-    }
 
     /// Story satırındaki asıl dosya + video kapağı. Kapak silinmezse bucket'ta
     /// sahipsiz JPEG kalır; `can_read_media` de onu artık bağlayamaz.

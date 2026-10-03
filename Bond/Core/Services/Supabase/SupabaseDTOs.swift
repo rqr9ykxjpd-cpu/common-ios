@@ -749,6 +749,8 @@ struct PostInsert: Encodable {
     let caption: String
     let placeName: String?
     let mediaPath: String?
+    /// Yalnız çoklu fotoğrafta dolu; nil iken anahtar hiç gönderilmez.
+    let mediaPaths: [String]?
     let kind: PostKind
 
     enum CodingKeys: String, CodingKey {
@@ -756,6 +758,7 @@ struct PostInsert: Encodable {
         case caption, kind
         case placeName = "place_name"
         case mediaPath = "media_path"
+        case mediaPaths = "media_paths"
     }
 }
 
@@ -860,6 +863,8 @@ struct PostRow: Decodable {
     let caption: String
     let placeName: String?
     let mediaPath: String?
+    /// Çoklu fotoğrafta sıralı yolların tamamı; tek fotoğrafta nil.
+    let mediaPaths: [String]?
     /// Ham metin: ileride eklenen bir tür bu sürümde düz paylaşım gibi çizilir,
     /// enum'a çözülemedi diye bütün akış düşmez.
     let kind: String?
@@ -877,6 +882,7 @@ struct PostRow: Decodable {
         case authorID = "author_id"
         case placeName = "place_name"
         case mediaPath = "media_path"
+        case mediaPaths = "media_paths"
         case pinnedAt = "pinned_at"
         case pinnedSlot = "pinned_slot"
         case createdAt = "created_at"
@@ -1140,9 +1146,13 @@ struct ProfileBadgeRow: Decodable {
     let badge: ProfileBadge?
 }
 
-struct MediaPathRow: Decodable {
+struct PostMediaRow: Decodable {
     let mediaPath: String?
-    enum CodingKeys: String, CodingKey { case mediaPath = "media_path" }
+    let mediaPaths: [String]?
+    enum CodingKeys: String, CodingKey {
+        case mediaPath = "media_path"
+        case mediaPaths = "media_paths"
+    }
 }
 
 struct ExpiredStoryRow: Decodable {

@@ -95,7 +95,8 @@ protocol ProductService: Sendable {
     func fetchFeed() async throws -> [BackendPost]
     /// Kullanıcının duran gönderi sayısı. Paylaşım tavanı buna bakıyor.
     func countMyPosts() async throws -> Int
-    func createPost(caption: String, placeName: String?, imageData: Data?, kind: PostKind) async throws -> BackendPost
+    /// `images`: sıralı fotoğraflar (boş = yazı, 1 = tek fotoğraf, fazlası kaydırmalı).
+    func createPost(caption: String, placeName: String?, images: [Data], kind: PostKind) async throws -> BackendPost
     func addComment(_ body: String, to postID: UUID) async throws -> BackendComment
     /// Cevaba oy: +1 yukarı, -1 aşağı, 0 geri al.
     func setCommentVote(_ commentID: UUID, value: Int) async throws
@@ -296,7 +297,7 @@ struct UnconfiguredProductService: ProductService {
     func isStoryLiked(_ storyID: UUID) async throws -> Bool { try fail() }
     func fetchFeed() async throws -> [BackendPost] { try fail() }
     func countMyPosts() async throws -> Int { try fail() }
-    func createPost(caption: String, placeName: String?, imageData: Data?, kind: PostKind) async throws -> BackendPost { try fail() }
+    func createPost(caption: String, placeName: String?, images: [Data], kind: PostKind) async throws -> BackendPost { try fail() }
     func addComment(_ body: String, to postID: UUID) async throws -> BackendComment { try fail() }
     func setCommentVote(_ commentID: UUID, value: Int) async throws { try fail() }
     func deletePost(_ postID: UUID) async throws { try fail() }

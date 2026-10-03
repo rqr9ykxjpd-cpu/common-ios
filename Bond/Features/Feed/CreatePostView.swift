@@ -25,6 +25,10 @@ struct CreatePostView: View {
     @State private var showBadgeHint = false
     @State private var selectedItem: PhotosPickerItem?
     @State private var imageData: Data?
+    /// Gönderinin fotoğrafları sırayla (ilki kapak, `imageData` ile aynı). Story tek fotoğraf.
+    @State private var postPhotos: [Data] = []
+    /// Galeriden çoklu seçim; yüklenince boşaltılır, fotoğraflar `postPhotos`'a eklenir.
+    @State private var pickedItems: [PhotosPickerItem] = []
     @State private var videoClip: VideoCompression.PreparedClip?
     @State private var caption = ""
     @State private var selectedPlace: CampusPlace?
@@ -135,6 +139,10 @@ struct CreatePostView: View {
                     imageData = nil
                     selectedItem = nil
                 }
+                // Story tek fotoğraf; gönderiye geçince o fotoğraf listenin ilki olur.
+                if type == .post {
+                    postPhotos = imageData.map { [$0] } ?? []
+                }
                 if type == .story {
                     addToProfile = false
                 } else if imageData != nil {
@@ -198,6 +206,19 @@ struct CreatePostView: View {
     /// Tür seçici Form'un dışında: Form bölümü çipleri kendi yuvarlak kutusuna
     /// kırpıyor, sıra kenardan kenara kayamıyordu.
     private var composerForm: some View {
+        composerFormContent
+            .onChange(of: pickedItems) { _, items in
+                guard !items.isEmpty else { return }
+                Task { await ingestPostItems(items) }
+            }
+            // Kapak her yerde `imageData`: yayın, "profiline de ekle" ve story geçişi ona bakıyor.
+            .onChange(of: postPhotos) { _, photos in
+                guard !isStory else { return }
+                imageData = photos.first
+            }
+    }
+
+    private var composerFormContent: some View {
         VStack(spacing: 0) {
             if !isStory {
                 VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
@@ -374,10 +395,17 @@ struct CreatePostView: View {
             }
             Section {
                 preview
+                if !isStory, !postPhotos.isEmpty {
+                    photoStrip
+                }
                 Button(action: openCamera) {
                     Label(L10n.Composer.takePhoto, systemImage: "camera")
                 }
-                .disabled(isPreparingMedia || isPublishing)
+                .disabled(isPreparingMedia || isPublishing || (!isStory && remainingPhotos == 0))
+            } footer: {
+                if !isStory, !postPhotos.isEmpty {
+                    Text(L10n.PostPhotos.footer(CampusLimits.maxPostPhotos))
+                }
             }
             if !isStory, imageData != nil {
                 Section {
@@ -489,8 +517,9 @@ struct CreatePostView: View {
         )
     }
 
-    /// Fotoğrafa dokununca galeri açılıyor; kamera Form satırında.
-    private var preview: some View {
+    /// Fotoğrafa dokununca galeri açılıyor; kamera Form satırında. Gönderide
+    /// galeriden birden çok fotoğraf seçilir, yenileri listenin sonuna eklenir.
+    @ViewBuilder private var preview: some View {
         // Değerler kapanışa girmeden önce yerel değişkene alınıyor: `PhotosPicker`'ın
         // etiketi Sendable bir kapanış ve oradan doğrudan özellik okumak uyarı üretiyor.
         let currentImage = imageData
@@ -498,24 +527,66 @@ struct CreatePostView: View {
         let video = videoClip != nil
         let preparing = isPreparingMedia
         let filter: PHPickerFilter = story ? .any(of: [.images, .videos]) : .images
+        let label = ComposerPreview(imageData: currentImage, isStory: story, isVideo: video, isPreparing: preparing)
 
-        return PhotosPicker(selection: $selectedItem, matching: filter) {
-            ComposerPreview(
-                imageData: currentImage,
-                isStory: story,
-                isVideo: video,
-                isPreparing: preparing
-            )
+        Group {
+            if story {
+                PhotosPicker(selection: $selectedItem, matching: filter) { label }
+            } else {
+                PhotosPicker(selection: $pickedItems, maxSelectionCount: max(1, remainingPhotos),
+                             selectionBehavior: .ordered, matching: .images) { label }
+                    .disabled(remainingPhotos == 0)
+            }
         }
         .buttonStyle(PressableStyle())
         .disabled(isPreparingMedia || isPublishing)
         .accessibilityLabel(
             imageData == nil
                 ? (story ? L10n.Composer.pickStoryPhoto : L10n.Composer.pickFromLibrary)
-                : L10n.Composer.changePhoto
+                : (story ? L10n.Composer.changePhoto : L10n.PostPhotos.add)
         )
         .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous).stroke(BondTheme.hairline))
+    }
+
+    private var remainingPhotos: Int { max(0, CampusLimits.maxPostPhotos - postPhotos.count) }
+
+    /// Seçilen fotoğraflar sırayla; dokununca çıkar. Kapak (ilki) önizlemede büyük.
+    private var photoStrip: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(Array(postPhotos.enumerated()), id: \.offset) { index, data in
+                    PostPhotoThumb(data: data)
+                        .overlay(alignment: .topTrailing) {
+                            Button {
+                                withAnimation(BondTheme.Motion.snappy) { _ = postPhotos.remove(at: index) }
+                                Haptics.selection()
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 20))
+                                    .symbolRenderingMode(.palette)
+                                    .foregroundStyle(.white, .black.opacity(0.6))
+                                    .padding(4)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(L10n.PostPhotos.remove)
+                        }
+                }
+                if remainingPhotos > 0 {
+                    PhotosPicker(selection: $pickedItems, maxSelectionCount: remainingPhotos,
+                                 selectionBehavior: .ordered, matching: .images) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(BondTheme.ink)
+                            .frame(width: 64, height: 64)
+                            .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    }
+                    .accessibilityLabel(L10n.PostPhotos.add)
+                }
+            }
+            .padding(.vertical, 2)
+        }
+        .disabled(isPreparingMedia || isPublishing)
     }
 
     /// Başarı toast'ı yükleme bitmeden çıkıyordu; kullanıcı kapatınca hata
@@ -552,7 +623,7 @@ struct CreatePostView: View {
                 }
                 ok = await appState.publishStory(upload, caption: cleanCaption, place: selectedPlace)
             } else {
-                ok = await appState.publishPost(imageData: imageData, caption: cleanCaption, place: selectedPlace, kind: kind)
+                ok = await appState.publishPost(images: postPhotos, caption: cleanCaption, place: selectedPlace, kind: kind)
                 if ok, addToProfile, let imageData {
                     _ = await appState.appendGalleryPhoto(imageData)
                 }
@@ -574,7 +645,11 @@ struct CreatePostView: View {
             defer { isPreparingMedia = false }
             if let data = await ImageCompression.prepareForUploadInBackground(image) {
                 clearVideo()
-                imageData = data
+                if isStory {
+                    imageData = data
+                } else if postPhotos.count < CampusLimits.maxPostPhotos {
+                    postPhotos.append(data)
+                }
             } else {
                 appState.show(L10n.Composer.photoLoadFailed)
             }
@@ -612,6 +687,27 @@ struct CreatePostView: View {
         await MainActor.run {
             appState.show(L10n.Composer.photoLoadFailed)
         }
+    }
+
+    /// Gönderi: seçilen fotoğraflar sırayla hazırlanıp listenin sonuna eklenir.
+    /// Aynı anda hazırlanır; biri açılamazsa diğerleri yine eklenir.
+    private func ingestPostItems(_ items: [PhotosPickerItem]) async {
+        isPreparingMedia = true
+        defer { isPreparingMedia = false; pickedItems = [] }
+        let hazir = await withTaskGroup(of: (Int, Data?).self) { group in
+            for (index, item) in items.enumerated() {
+                group.addTask {
+                    guard let raw = try? await item.loadTransferable(type: Data.self) else { return (index, nil) }
+                    return (index, await ImageCompression.prepareForUploadInBackground(raw))
+                }
+            }
+            var sonuc: [(Int, Data?)] = []
+            for await parca in group { sonuc.append(parca) }
+            return sonuc.sorted { $0.0 < $1.0 }.compactMap(\.1)
+        }
+        if hazir.count < items.count { appState.show(L10n.Composer.photoLoadFailed) }
+        let yer = max(0, CampusLimits.maxPostPhotos - postPhotos.count)
+        withAnimation(BondTheme.Motion.snappy) { postPhotos.append(contentsOf: hazir.prefix(yer)) }
     }
 
     private func ingestPickedVideo(_ item: PhotosPickerItem) async {
@@ -814,6 +910,30 @@ private struct ComposerPreview: View {
             let yeni = (imageData != nil && id != "empty") ? imageData.flatMap { ImageCompression.imageForDisplay($0) } : nil
             // İlk açılışta hareket yok; sonradan seçilen fotoğraf küçükten büyüyerek oturur.
             withAnimation(eski == id || reduceMotion ? nil : BondTheme.Motion.bouncy) { preview = yeni }
+        }
+    }
+}
+
+/// Şeritteki küçük kare. Küçültme arka planda: altı büyük fotoğrafı ana iş
+/// parçacığında çözmek şeridi takılarak açıyordu.
+private struct PostPhotoThumb: View {
+    let data: Data
+    @State private var image: UIImage?
+
+    var body: some View {
+        ZStack {
+            BondTheme.surface
+            if let image {
+                Image(uiImage: image).resizable().scaledToFill()
+            }
+        }
+        .frame(width: 64, height: 64)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .task(id: data.count) {
+            let veri = data
+            image = await Task.detached(priority: .userInitiated) {
+                ImageCompression.imageForDisplay(veri, maxDimension: 200)
+            }.value
         }
     }
 }

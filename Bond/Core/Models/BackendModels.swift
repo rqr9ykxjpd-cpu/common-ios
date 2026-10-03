@@ -4,6 +4,8 @@ import Foundation
 enum CampusLimits {
     static let maxPostsPerUser = 5
     static let maxGalleryPhotos = 5
+    /// Bir gönderide en fazla bu kadar fotoğraf (sunucu kısıtıyla aynı).
+    static let maxPostPhotos = 6
 }
 
 struct BackendComment: Sendable {
@@ -164,6 +166,10 @@ struct BackendPost: Sendable {
     let pinnedAt: Date?
     /// Sabit sırası (1 = en üst); nil = sabit değil.
     let pinnedSlot: Int?
+    /// Çoklu fotoğraflı gönderide sıralı imzalı adreslerin tamamı; tek fotoğrafta boş.
+    var galleryURLs: [URL] = []
+    /// Az önce paylaşılan çoklu gönderinin yerel fotoğrafları.
+    var galleryData: [Data] = []
 
     init(
         id: UUID,

@@ -193,7 +193,7 @@ extension AppState {
                 hitLimit = true
                 break
             }
-            let ok = await publishPost(imageData: image, caption: "", place: nil, announces: false)
+            let ok = await publishPost(images: [image], caption: "", place: nil, announces: false)
             if !ok { return }
         }
         if hitLimit, !paywallVisible {

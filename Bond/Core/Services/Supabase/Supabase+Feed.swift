@@ -1,7 +1,7 @@
 import Foundation
 import Supabase
 
-private let postListSelect = "id,author_id,caption,media_path,place_name,kind,score,boost,pinned_at,pinned_slot,created_at,author:profiles!posts_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),comments(id,post_id,author_id,body,score,boost,created_at,author:profiles!comments_author_id_fkey(name,avatar_path))"
+private let postListSelect = "id,author_id,caption,media_path,media_paths,place_name,kind,score,boost,pinned_at,pinned_slot,created_at,author:profiles!posts_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),comments(id,post_id,author_id,body,score,boost,created_at,author:profiles!comments_author_id_fkey(name,avatar_path))"
 
 extension SupabaseProductService {
     func fetchFeed() async throws -> [BackendPost] {
@@ -66,7 +66,7 @@ extension SupabaseProductService {
         )
         async let mediaURLs = signedURLs(
             bucket: "post-media",
-            paths: rows.compactMap(\.mediaPath)
+            paths: rows.compactMap(\.mediaPath) + rows.flatMap { $0.mediaPaths ?? [] }
         )
         async let likeRows: [PostLikeRow] = (try? await client
             .from("post_likes")
@@ -102,7 +102,7 @@ extension SupabaseProductService {
         return rows.map { row in
             let postLikes = likes.filter { $0.postID == row.id }
             let benim = userID.flatMap { id in postLikes.first { $0.userID == id }?.value } ?? 0
-            return row.backendPost(
+            var post = row.backendPost(
                 imageData: nil,
                 authorAvatarURL: row.author.avatarPath.flatMap { avatars[$0] },
                 liked: benim == 1,
@@ -114,6 +114,8 @@ extension SupabaseProductService {
                 commentVotes: votes,
                 userID: userID
             )
+            post.galleryURLs = (row.mediaPaths ?? []).compactMap { media[$0] }
+            return post
         }
     }
 
@@ -140,7 +142,7 @@ extension SupabaseProductService {
     /// çalıştırılmadıysa) tüm sorguyu hataya düşürüyordu — akış ve sohbetler komple
     /// kırılıyordu. Ayrı ve `try?` ile: kolon varsa rozet gelir, yoksa uygulama
     /// hiçbir şey kaybetmeden çalışmaya devam eder.
-    func createPost(caption: String, placeName: String?, imageData: Data?, kind: PostKind) async throws -> BackendPost {
+    func createPost(caption: String, placeName: String?, images: [Data], kind: PostKind) async throws -> BackendPost {
         guard let userID = currentUserID else { throw BackendServiceError.missingSession }
         try ContentSafety.validate(caption)
         try ContentSafety.validate(placeName ?? "")
@@ -148,19 +150,32 @@ extension SupabaseProductService {
             let plan = try await fetchMyPlan()
             if plan.maxPosts != nil { throw BackendServiceError.postLimit }
         }
-        var mediaPath: String?
-        if let imageData {
-            let path = "\(userID.uuidString.lowercased())/\(UUID().uuidString.lowercased()).jpg"
-            try await client.storage
-                .from("post-media")
-                .upload(path, data: imageData, options: FileOptions(contentType: "image/jpeg"))
-            mediaPath = path
+        let resimler = Array(images.prefix(CampusLimits.maxPostPhotos))
+        let folder = userID.uuidString.lowercased()
+        let paths = resimler.map { _ in "\(folder)/\(UUID().uuidString.lowercased()).jpg" }
+        // Fotoğraflar aynı anda yüklenir; biri düşerse yüklenenler silinir, gönderi açılmaz.
+        do {
+            try await withThrowingTaskGroup(of: Void.self) { group in
+                for (path, data) in zip(paths, resimler) {
+                    group.addTask {
+                        try await self.client.storage
+                            .from("post-media")
+                            .upload(path, data: data, options: FileOptions(contentType: "image/jpeg"))
+                    }
+                }
+                try await group.waitForAll()
+            }
+        } catch {
+            if !paths.isEmpty { _ = try? await client.storage.from("post-media").remove(paths: paths) }
+            throw error
         }
         let payload = PostInsert(
             authorID: userID,
             caption: caption.trimmingCharacters(in: .whitespacesAndNewlines),
             placeName: placeName,
-            mediaPath: mediaPath,
+            mediaPath: paths.first,
+            // Eski sürümler `media_path`'e bakar ve ilk fotoğrafı görür.
+            mediaPaths: paths.count > 1 ? paths : nil,
             kind: kind
         )
         let row: PostRow
@@ -173,8 +188,8 @@ extension SupabaseProductService {
                 .execute()
                 .value
         } catch {
-            if let mediaPath {
-                _ = try? await client.storage.from("post-media").remove(paths: [mediaPath])
+            if !paths.isEmpty {
+                _ = try? await client.storage.from("post-media").remove(paths: paths)
             }
             if String(describing: error).localizedCaseInsensitiveContains("quota_post")
                 || String(describing: error).localizedCaseInsensitiveContains("post_limit") {
@@ -186,22 +201,24 @@ extension SupabaseProductService {
         if let path = row.author.avatarPath {
             authorAvatarURL = await profilePhotoURL(path)
         }
-        // Az önce çekilen fotoğraf zaten elde; imzalı URL yenilemede yedek.
-        var imageURL: URL?
-        if let mediaPath {
-            imageURL = (await signedURLs(bucket: "post-media", paths: [mediaPath]))[mediaPath]
-        }
+        // Az önce çekilen fotoğraflar zaten elde; imzalı URL'ler yenilemede yedek.
+        let imzali = paths.isEmpty ? [:] : await signedURLs(bucket: "post-media", paths: paths)
         // Rozet burada hiç geçirilmiyordu → yeni atılan gönderide kurucu/mod rozeti
         // kayboluyor, akış yenilenince (fetchFeed badges çeker) geri geliyordu.
         let badge = await badges(for: [userID])[userID] ?? .none
-        return row.backendPost(
-            imageData: imageData,
+        var post = row.backendPost(
+            imageData: resimler.first,
             authorAvatarURL: authorAvatarURL,
             liked: false,
             saved: false,
             badge: badge,
-            imageURL: imageURL
+            imageURL: paths.first.flatMap { imzali[$0] }
         )
+        if paths.count > 1 {
+            post.galleryURLs = paths.compactMap { imzali[$0] }
+            post.galleryData = resimler
+        }
+        return post
     }
 
     func addComment(_ body: String, to postID: UUID) async throws -> BackendComment {
@@ -233,7 +250,15 @@ extension SupabaseProductService {
     /// gönderinin kaybolması. Geride kalan dosyaya kimse erişemiyor, yalnızca yer
     /// kaplıyor — bunun için silmeyi engellemek yanlış olurdu.
     func deletePost(_ postID: UUID) async throws {
-        await removeMedia(bucket: "post-media", table: "posts", rowID: postID)
+        // Çoklu gönderide fotoğrafların hepsi silinsin; yalnız ilki gidiyordu.
+        let rows: [PostMediaRow]? = try? await client
+            .from("posts")
+            .select("media_path,media_paths")
+            .eq("id", value: postID)
+            .execute()
+            .value
+        let paths = Array(Set([rows?.first?.mediaPath].compactMap { $0 } + (rows?.first?.mediaPaths ?? [])))
+        if !paths.isEmpty { _ = try? await client.storage.from("post-media").remove(paths: paths) }
         try await client.from("posts").delete(returning: .minimal).eq("id", value: postID).execute()
     }
 

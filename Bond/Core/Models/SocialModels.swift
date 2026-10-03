@@ -118,6 +118,11 @@ struct SocialPost: Identifiable, Hashable {
     var imageURL: URL?
     var imageAssetName: String?
     var localImageData: Data?
+    /// Çoklu fotoğraflı gönderide sıralı fotoğrafların tamamı (ilki `imageURL`).
+    /// Tek fotoğrafta boş; kart o zaman eskisi gibi tek görsel çizer.
+    var galleryURLs: [URL] = []
+    /// Az önce paylaşılan çoklu gönderinin yerel fotoğrafları (sunucu adresi gelmeden).
+    var galleryData: [Data] = []
     var place: CampusPlace?
     var kind: PostKind
     var liked: Bool
@@ -132,13 +137,15 @@ struct SocialPost: Identifiable, Hashable {
     var comments: [SocialComment]
     let createdAt: Date
 
-    init(id: UUID = UUID(), author: StudentProfile, caption: String, imageURL: URL? = nil, imageAssetName: String? = nil, localImageData: Data? = nil, place: CampusPlace? = nil, kind: PostKind = .moment, liked: Bool = false, downvoted: Bool = false, saved: Bool = false, isMine: Bool = false, likeCount: Int, comments: [SocialComment] = [], createdAt: Date = .now, boost: Int = 0, pinnedAt: Date? = nil, pinnedSlot: Int? = nil) {
+    init(id: UUID = UUID(), author: StudentProfile, caption: String, imageURL: URL? = nil, imageAssetName: String? = nil, localImageData: Data? = nil, galleryURLs: [URL] = [], galleryData: [Data] = [], place: CampusPlace? = nil, kind: PostKind = .moment, liked: Bool = false, downvoted: Bool = false, saved: Bool = false, isMine: Bool = false, likeCount: Int, comments: [SocialComment] = [], createdAt: Date = .now, boost: Int = 0, pinnedAt: Date? = nil, pinnedSlot: Int? = nil) {
         self.id = id
         self.author = author
         self.caption = caption
         self.imageURL = imageURL
         self.imageAssetName = imageAssetName
         self.localImageData = localImageData
+        self.galleryURLs = galleryURLs
+        self.galleryData = galleryData
         self.place = place
         self.kind = kind
         self.liked = liked
@@ -156,6 +163,9 @@ struct SocialPost: Identifiable, Hashable {
     var hasPhoto: Bool {
         imageURL != nil || imageAssetName != nil || localImageData != nil
     }
+
+    /// Kaydırılacak birden fazla fotoğraf var mı.
+    var hasGallery: Bool { galleryURLs.count > 1 || galleryData.count > 1 }
 }
 
 struct StoryViewRecord: Identifiable, Hashable {

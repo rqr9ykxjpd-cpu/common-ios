@@ -323,7 +323,14 @@ private final class PhotoDeckView: UIView, UIGestureRecognizerDelegate {
 
     override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         if gestureRecognizer === tap { return !dragging && !flying }
-        guard gestureRecognizer === pan, photos.count > 1, !flying else { return false }
+        // UIView sürümü üst görünümlerin hareketleri için de soruluyor. Sayfanın
+        // kaydırması burada reddedildiği için parmak destedeyken sayfa kaymıyordu.
+        // Sayfa kaydırması serbest (yatay sürüklemede deste onu iptal ediyor);
+        // kartı kaydırıp istek gönderme gibi diğer üst hareketler deste üstünde kapalı.
+        guard gestureRecognizer === pan else {
+            return enclosingScrollViews().contains { $0.panGestureRecognizer === gestureRecognizer }
+        }
+        guard photos.count > 1, !flying else { return false }
         let translation = pan.translation(in: self)
         return ProfileGestureDecision.deckClaimsPan(x: translation.x, y: translation.y)
     }
