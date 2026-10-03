@@ -275,7 +275,9 @@ struct PlacesWallView: View {
                 HStack(spacing: -7) {
                     // Kişiye göre kimlik: biri gelince yüzü küçükten büyüyerek
                     // sıraya katılıyor, gidince küçülüp çıkıyor.
-                    ForEach(Array(ozet.avatarURLs.prefix(3)), id: \.self) { url in
+                    // Kimlik fotoğrafın yolu: imzalı adres her yenilemede değişiyor,
+                    // yüzler her seferinde küçülüp yeniden büyüyordu.
+                    ForEach(Array(ozet.avatarURLs.prefix(3)), id: \.imageKey) { url in
                         ProfileMedia(url: url, data: nil)
                             .frame(width: 20, height: 20).clipShape(Circle())
                             .overlay(Circle().stroke(BondTheme.surface, lineWidth: 1.5))
@@ -305,9 +307,7 @@ struct PlacesWallView: View {
     }
 
     private func presenceButton(_ place: CampusPlace, isHere: Bool) -> some View {
-        let isUpdating = appState.presenceUpdatingPlaceID == place.id
-        return Button {
-            guard appState.presenceUpdateID == nil else { return }
+        Button {
             Haptics.selection()
             appState.togglePresence(at: place)
         } label: {
@@ -324,8 +324,6 @@ struct PlacesWallView: View {
                     if isHere { DroppingPin() }
                     Text(isHere ? L10n.Places.youAreHere : L10n.Places.imHere)
                 }
-                .opacity(isUpdating ? 0 : 1)
-                if isUpdating { ProgressView().controlSize(.small) }
             }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(isHere ? L10n.Places.hideVisibility : L10n.Places.imHere)
@@ -353,12 +351,7 @@ struct PlacesWallView: View {
             $0.disablesAnimations = reduceMotion
             $0.animation = reduceMotion ? nil : BondTheme.Motion.snappy
         }
-        .transaction(value: isUpdating) {
-            $0.disablesAnimations = reduceMotion
-            $0.animation = reduceMotion ? nil : BondTheme.Motion.snappy
-        }
         .transaction { if reduceMotion { $0.animation = nil; $0.disablesAnimations = true } }
-        .disabled(isUpdating)
         .accessibilityIdentifier("place.presence.\(place.id)")
     }
 }
@@ -392,4 +385,9 @@ private struct DroppingPin: View {
 private struct PinFrame {
     var y: CGFloat
     var squash: CGFloat = 1
+}
+
+private extension URL {
+    /// Aynı fotoğrafın her yenilemede değişen imzalı adresleri için sabit kimlik.
+    var imageKey: String { BondImageLoader.cacheKey(for: self) }
 }

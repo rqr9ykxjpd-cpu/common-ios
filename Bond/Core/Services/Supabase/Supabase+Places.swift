@@ -13,6 +13,22 @@ extension SupabaseProductService {
         return CampusPlaceOrder.sorted(places)
     }
 
+    /// Uygulama açılınca "Buradasın" doğru yerde dursun. Eskiden hiç okunmuyordu:
+    /// sunucuda bir yerde görünen kişi uygulamada "hiçbir yerde görünmüyorsun"
+    /// görüyor, oradan ayrılamıyordu.
+    func fetchMyVisiblePlaceID() async throws -> UUID? {
+        guard let userID = currentUserID else { throw BackendServiceError.missingSession }
+        let rows: [MyVisiblePlaceRow] = try await client
+            .from("profiles")
+            .select("visible_place_id,visible_until")
+            .eq("id", value: userID)
+            .limit(1)
+            .execute()
+            .value
+        guard let row = rows.first, let until = row.visibleUntil, until > .now else { return nil }
+        return row.visiblePlaceID
+    }
+
     /// Yer başına görünen kişi sayısı + ilk üç avatar; tek RPC.
     func fetchPlacePresence() async throws -> [PlacePresenceSummary] {
         let rows: [PlacePresenceRow] = try await client.rpc("get_place_presence").execute().value

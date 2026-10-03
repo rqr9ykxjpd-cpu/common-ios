@@ -200,6 +200,7 @@ struct SampleProductService: ProductService {
 
     // Yer, story, kulüp, buluşma
     func fetchPlaces() async throws -> [CampusPlace] { await store.allPlaces() }
+    func fetchMyVisiblePlaceID() async throws -> UUID? { await store.visiblePlaceID }
     func fetchPlacePresence() async throws -> [PlacePresenceSummary] { await store.placePresence() }
     func fetchMeetingRequests() async throws -> [MeetingRequest] { await store.allMeetingRequests() }
     func sendMeetingRequest(to profileID: UUID, placeID: UUID) async throws {

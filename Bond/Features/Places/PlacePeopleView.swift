@@ -56,7 +56,6 @@ struct PlacePeopleView: View {
                     Button(isHere ? L10n.Places.hideVisibility : L10n.Places.imHere) {
                         appState.togglePresence(at: place)
                     }
-                    .disabled(appState.presenceUpdateID != nil)
                 }
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {

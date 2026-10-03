@@ -10,6 +10,15 @@ struct VisiblePlaceParams: Encodable {
     }
 }
 
+struct MyVisiblePlaceRow: Decodable {
+    let visiblePlaceID: UUID?
+    let visibleUntil: Date?
+    enum CodingKeys: String, CodingKey {
+        case visiblePlaceID = "visible_place_id"
+        case visibleUntil = "visible_until"
+    }
+}
+
 struct PlacePeopleParams: Encodable {
     let targetPlace: UUID
     enum CodingKeys: String, CodingKey { case targetPlace = "target_place" }

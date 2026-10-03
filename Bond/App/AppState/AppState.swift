@@ -96,8 +96,6 @@ final class AppState {
     var introductionRequests: [StudentProfile] = []
     var introductionRequestsError: String?
     var isLoadingIntroductions = false
-    var presenceUpdateID: UUID?
-    var presenceUpdatingPlaceID: UUID?
     var presenceError: String?
     var isLoadingStories = false
     var isLoadingConversations = false
@@ -155,6 +153,10 @@ final class AppState {
     /// Kim nerede'de biri geldi ya da gitti; açık kişi listesi buna bakıp yenilenir.
     var placeActivityRevision = 0
     @ObservationIgnored var placeListenerTask: Task<Void, Never>?
+    /// "Buradayım" seçimini sunucuya taşıyan iş; çalışırken yeni dokunuşları da gönderir.
+    @ObservationIgnored var presenceSyncTask: Task<Void, Never>?
+    /// Sunucunun bildiği yer. `.none`: henüz bilinmiyor, ilk seçim mutlaka gönderilir.
+    @ObservationIgnored var confirmedVisiblePlaceID: UUID?? = .none
     @ObservationIgnored var backgroundPresenceObserver: NSObjectProtocol?
     /// Uygulama açıkken "son aktif" zamanını tazeleyen görev.
     @ObservationIgnored var presenceTask: Task<Void, Never>?

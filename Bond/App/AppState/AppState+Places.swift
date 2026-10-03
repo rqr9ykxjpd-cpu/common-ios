@@ -7,7 +7,15 @@ extension AppState {
         isLoadingPlaces = true
         defer { isLoadingPlaces = false }
         do {
-            places = try await service.fetchPlaces()
+            async let yerler = service.fetchPlaces()
+            async let benimYerim = service.fetchMyVisiblePlaceID()
+            let (yeniYerler, gorunduguYer) = try await (yerler, benimYerim)
+            places = yeniYerler
+            // Kullanıcının bekleyen bir dokunuşu varsa onun seçimi geçerli.
+            if presenceSyncTask == nil {
+                confirmedVisiblePlaceID = .some(gorunduguYer)
+                currentVisiblePlace = gorunduguYer.flatMap { id in yeniYerler.first { $0.id == id } }
+            }
             placesError = nil
             await loadPlacePresence()
         } catch {
@@ -18,51 +26,69 @@ extension AppState {
         }
     }
     /// Sayılar ayrı yüklenir ve hata vermez: sayı gelmezse satır sadece adsız kalır.
+    /// Kullanıcının gönderilmekte olan seçimi varsa dokunulmaz; o bitince yenilenir.
     func loadPlacePresence() async {
-        guard let ozetler = try? await service.fetchPlacePresence() else { return }
+        guard let ozetler = try? await service.fetchPlacePresence(), presenceSyncTask == nil else { return }
+        applyPlacePresence(ozetler)
+    }
+
+    private func applyPlacePresence(_ ozetler: [PlacePresenceSummary]) {
         placePresence = Dictionary(ozetler.map { ($0.placeID, $0) }, uniquingKeysWith: { a, _ in a })
     }
 
     /// Dokunur dokunmaz sonuç ekranda: yer, sayı ve kendi fotoğrafın anında
-    /// değişir; sunucu reddederse eski hâline döner. Eskiden düğmede gösterge
-    /// dönüyor, sayı ancak ikinci bir istekten sonra güncelleniyordu.
+    /// değişir. Eskiden istek sürerken gelen dokunuş sessizce yok sayılıyordu;
+    /// artık her dokunuş ekrana yansıyor, sunucuya sırayla yalnızca son seçim gidiyor.
     func togglePresence(at place: CampusPlace) {
-        guard presenceUpdateID == nil else { return }
-        let operationID = UUID()
-        let accountID = currentUserID
         let turningOff = currentVisiblePlace?.id == place.id
         // Kilitliyken yerini gösteremez; çıkmak her zaman serbest.
         guard turningOff || requireStudent() else { return }
         let oncekiYer = currentVisiblePlace
-        let oncekiOzet = placePresence
         withAnimation(BondTheme.Motion.snappy) {
-            presenceUpdateID = operationID
             presenceError = nil
             currentVisiblePlace = turningOff ? nil : place
-            placePresence = Self.presence(oncekiOzet, leaving: oncekiYer?.id,
+            placePresence = Self.presence(placePresence, leaving: oncekiYer?.id,
                                           joining: turningOff ? nil : place.id, avatar: avatarURL)
         }
         Haptics.success()
-        Task { @MainActor in
-            do {
-                try await service.setVisiblePlace(turningOff ? nil : place.id)
-                guard presenceUpdateID == operationID, accountID == currentUserID else { return }
-                presenceUpdateID = nil
-                // Sunucunun kesin sayısı (aynı anda gelen başkaları dahil).
-                await loadPlacePresence()
-            } catch {
-                guard presenceUpdateID == operationID, accountID == currentUserID else { return }
-                withAnimation(BondTheme.Motion.snappy) {
-                    currentVisiblePlace = oncekiYer
-                    placePresence = oncekiOzet
-                    presenceUpdateID = nil
+        syncPresence()
+    }
+
+    /// Ekrandaki seçimi sunucuya taşır. Çalışırken gelen dokunuşları da sırayla
+    /// gönderir; sunucu reddederse ekran son onaylanan yere döner.
+    private func syncPresence() {
+        guard presenceSyncTask == nil else { return }
+        let accountID = currentUserID
+        presenceSyncTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            while accountID == currentUserID {
+                let hedef = currentVisiblePlace?.id
+                if case .some(let onayli) = confirmedVisiblePlaceID, onayli == hedef {
+                    // Sunucunun kesin sayısı (aynı anda gelen başkaları dahil).
+                    // Beklerken yeni dokunuş geldiyse eski sayı ekrana basılmaz.
+                    let ozetler = try? await service.fetchPlacePresence()
+                    guard currentVisiblePlace?.id == hedef else { continue }
+                    if let ozetler { applyPlacePresence(ozetler) }
+                    break
                 }
-                if !isCancellation(error) {
-                    // Ekran hatayı kendi satırında gösteriyor; burada yalnızca oturum kontrolü.
-                    presenceError = UserFacingError.message(error, fallback: L10n.Places.toggleFailed)
-                    verifySessionIfAuthError(error)
+                do {
+                    try await service.setVisiblePlace(hedef)
+                    confirmedVisiblePlaceID = .some(hedef)
+                } catch {
+                    guard accountID == currentUserID else { break }
+                    let geri = confirmedVisiblePlaceID.flatMap { $0 }.flatMap { id in places.first { $0.id == id } }
+                    withAnimation(BondTheme.Motion.snappy) { currentVisiblePlace = geri }
+                    if !isCancellation(error) {
+                        // Ekran hatayı kendi satırında gösteriyor; burada yalnızca oturum kontrolü.
+                        presenceError = UserFacingError.message(error, fallback: L10n.Places.toggleFailed)
+                        verifySessionIfAuthError(error)
+                    }
+                    if let ozetler = try? await service.fetchPlacePresence() { applyPlacePresence(ozetler) }
+                    break
                 }
             }
+            // Çıkış yapıldıysa sıfırlama zaten yapıldı; yeni hesabın işine dokunma.
+            if accountID == currentUserID { presenceSyncTask = nil }
         }
     }
 
@@ -74,19 +100,25 @@ extension AppState {
             let sayi = max(0, eski.count - 1)
             sonuc[leaving] = sayi == 0 ? nil : PlacePresenceSummary(
                 placeID: leaving, count: sayi,
-                avatarURLs: eski.avatarURLs.filter { $0 != avatar },
+                avatarURLs: eski.avatarURLs.filter { !Self.sameImage($0, avatar) },
                 avatarAssetNames: eski.avatarAssetNames)
         }
         if let joining, joining != leaving {
             let eski = sonuc[joining]
             var fotolar = eski?.avatarURLs ?? []
-            if let avatar, !fotolar.contains(avatar) { fotolar.insert(avatar, at: 0) }
+            if let avatar, !fotolar.contains(where: { Self.sameImage($0, avatar) }) { fotolar.insert(avatar, at: 0) }
             sonuc[joining] = PlacePresenceSummary(
                 placeID: joining, count: (eski?.count ?? 0) + 1,
                 avatarURLs: Array(fotolar.prefix(3)),
                 avatarAssetNames: eski?.avatarAssetNames ?? [])
         }
         return sonuc
+    }
+
+    /// İmzalı adresin anahtarı her istekte değişiyor; aynı fotoğraf mı diye yoluna bakılır.
+    static func sameImage(_ a: URL, _ b: URL?) -> Bool {
+        guard let b else { return false }
+        return BondImageLoader.cacheKey(for: a) == BondImageLoader.cacheKey(for: b)
     }
 
     /// Bir yerde şu an görünen kişiler. Bu liste koda gömülü sabit isimlerdi; herkese

@@ -179,6 +179,8 @@ protocol ProductService: Sendable {
     func registerDeviceToken(_ token: String) async throws
     func unregisterDeviceToken(_ token: String) async throws
     func fetchPlaces() async throws -> [CampusPlace]
+    /// Kullanıcının şu an göründüğü yer; süresi dolduysa nil.
+    func fetchMyVisiblePlaceID() async throws -> UUID?
     /// Yer başına kaç kişi görünüyor (liste satırı).
     func fetchPlacePresence() async throws -> [PlacePresenceSummary]
     func fetchMeetingRequests() async throws -> [MeetingRequest]
@@ -344,6 +346,7 @@ struct UnconfiguredProductService: ProductService {
     func registerDeviceToken(_ token: String) async throws { try fail() }
     func unregisterDeviceToken(_ token: String) async throws { try fail() }
     func fetchPlaces() async throws -> [CampusPlace] { try fail() }
+    func fetchMyVisiblePlaceID() async throws -> UUID? { try fail() }
     func fetchPlacePresence() async throws -> [PlacePresenceSummary] { try fail() }
     func fetchMeetingRequests() async throws -> [MeetingRequest] { try fail() }
     func sendMeetingRequest(to profileID: UUID, placeID: UUID) async throws { try fail() }

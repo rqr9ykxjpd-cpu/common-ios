@@ -416,8 +416,9 @@ extension AppState {
         selectedStory = nil
         selectedPlaceFilter = nil
         currentVisiblePlace = nil
-        presenceUpdateID = nil
-        presenceUpdatingPlaceID = nil
+        presenceSyncTask?.cancel()
+        presenceSyncTask = nil
+        confirmedVisiblePlaceID = .none
         presenceError = nil
         feedLoadGeneration += 1
         clubsLoadGeneration += 1
