@@ -7,7 +7,7 @@ struct EduVerificationCard: View {
     @State private var showSheet = false
 
     private var status: EduVerificationStatus { appState.eduStatus ?? .unknown }
-    /// Kilitliyken kart durumu söylüyor: kimse görmüyor, doğrulayınca açılıyor.
+    /// Kilitliyken kart durumu söylüyor: doğrulanmadın, doğrulayınca açılıyor.
     private var locked: Bool { !status.isPending && appState.isEduLocked }
     private var title: String {
         status.isPending ? L10n.Edu.pendingTitle : (locked ? L10n.Support.lockedTitle : L10n.Edu.cardTitle)
@@ -19,7 +19,7 @@ struct EduVerificationCard: View {
     var body: some View {
         Button { showSheet = true } label: {
             HStack(spacing: BondTheme.Space.compact) {
-                Image(systemName: status.isPending ? "envelope.badge.fill" : (locked ? "eye.slash.fill" : "graduationcap.fill"))
+                Image(systemName: status.isPending ? "envelope.badge.fill" : "graduationcap.fill")
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(status.isPending ? BondTheme.ink : BondTheme.onAccent)
                     .frame(width: 40, height: 40)

@@ -518,13 +518,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Votes, comments, posts and messages are open to verified students. Until you verify, no one can see you."
+            "value": "Votes, comments, posts and messages are open to verified students."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Oy, yorum, paylaşım ve mesaj doğrulanmış öğrencilere açık. Doğrulayana kadar seni kimse görmez."
+            "value": "Oy, yorum, paylaşım ve mesaj doğrulanmış öğrencilere açık."
           }
         }
       }
@@ -662,13 +662,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No one can see you yet"
+            "value": "You’re not verified yet"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Seni henüz kimse görmüyor"
+            "value": "Henüz doğrulanmadın"
           }
         }
       }
