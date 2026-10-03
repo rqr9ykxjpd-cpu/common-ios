@@ -73,23 +73,13 @@ extension AppState {
         // `restoreBackendSession` içinde kuruluyordu, yeni kullanıcı uygulamayı yeniden
         // başlatana kadar gelen mesajları görmüyordu.
         await loadMyProfilePhotos()
-        await loadNotifications()
-        await loadPlaces(silently: true)
-        await loadStories()
-        await loadClubs(silently: true)
-        await loadMeetingRequests()
-        await loadMessageRequests(silently: true)
-        try? await service.touchLastActive()
-        startPresenceHeartbeat()
-        startMessageListener()
-        startPlaceListener()
-
         onboardingFailure = nil
         withAnimation(.smooth(duration: 0.55)) { route = .app }
+        await loadSessionData()
         await startPushRegistration()
         // Yeni öğrenci: kayıt biter bitmez "Kampüse son bir adım". Geçebilir;
         // o zaman gezinti modunda kalır, kilitli bir şeye dokununca pencere yine açılır.
-        await loadEduStatus()
+        // Doğrulama durumu `loadSessionData` ile geldi.
         if isEduLocked {
             try? await Task.sleep(for: .seconds(0.9))
             presentEduGate(.welcome)

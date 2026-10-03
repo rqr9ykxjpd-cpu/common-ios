@@ -112,34 +112,48 @@ extension AppState {
         pendingProviderName = nil
         applyRemoteProfile(profile)
         persistSession()
+        // Yalnızca fotoğraf adımı kararı için bekleniyor; uygulama hemen açılır,
+        // geri kalan her şey ekranlar dolarken aynı anda gelir.
         let fotograflarOkundu = await loadMyProfilePhotos()
-        await loadNotifications()
-        await loadPlaces(silently: true)
-        await loadStories()
-        await loadClubs(silently: true)
-        await loadMeetingRequests()
-        await loadStudyGroups(silently: true)
-        await loadMessageRequests(silently: true)
-        await loadProfileVisits(silently: true)
-        try? await service.touchLastActive()
-        startPresenceHeartbeat()
-        await loadSupportThreads()
-        await loadManagedClubs()
-        await loadEduStatus()
-        startMessageListener()
-        startPlaceListener()
-        await refreshSubscriptions()
-        await startPushRegistration()
         if requiresAvatarStep(photosLoaded: fotograflarOkundu) {
             withAnimation(.smooth(duration: 0.55)) { route = .onboarding(.photo) }
+            await loadSessionData()
+            await startPushRegistration()
             return true
         }
         withAnimation(.smooth(duration: 0.55)) { route = .app }
         let name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
         show(name.isEmpty ? L10n.Auth.welcome : L10n.Auth.welcomeName(name))
+        await loadSessionData()
+        await startPushRegistration()
         promptForPushIfNeeded()
         return true
     }
+
+    /// Oturum açıkken uygulamanın ihtiyaç duyduğu her şey. İstekler aynı anda
+    /// gidiyor: sırayla gittiklerinde 14 tur bekleniyordu (açılışta 1–3 saniye),
+    /// anlık mesaj ve Kim nerede dinleyicileri de en sona kalıyordu.
+    func loadSessionData() async {
+        startMessageListener()
+        startPlaceListener()
+        startPresenceHeartbeat()
+        async let bildirimler: Void = loadNotifications()
+        async let yerler: Void = loadPlaces(silently: true)
+        async let storyler: Void = loadStories()
+        async let kulupler: Void = loadClubs(silently: true)
+        async let bulusmalar: Void = loadMeetingRequests()
+        async let gruplar: Void = loadStudyGroups(silently: true)
+        async let istekler: Void = loadMessageRequests(silently: true)
+        async let ziyaretler: Void = loadProfileVisits(silently: true)
+        async let destek: Void = loadSupportThreads()
+        async let yonetilenler: Void = loadManagedClubs()
+        async let dogrulama: Void = loadEduStatus()
+        async let abonelik: Void = refreshSubscriptions()
+        async let sonAktif: Void? = try? service.touchLastActive()
+        _ = await (bildirimler, yerler, storyler, kulupler, bulusmalar, gruplar, istekler,
+                   ziyaretler, destek, yonetilenler, dogrulama, abonelik, sonAktif)
+    }
+
     func restoreBackendSession() async {
 #if DEBUG
         if skipsSessionRestore { return }
@@ -171,30 +185,17 @@ extension AppState {
             }
             applyRemoteProfile(profile)
             if !email.isEmpty { persistSession() }
+            async let oturumVerisi: Void = loadSessionData()
             let fotograflarOkundu = await loadMyProfilePhotos()
-            await loadNotifications()
-            await loadPlaces(silently: true)
-            await loadStories()
-            await loadClubs(silently: true)
-            await loadMeetingRequests()
-            await loadStudyGroups(silently: true)
-            await loadMessageRequests(silently: true)
-            await loadProfileVisits(silently: true)
-            try? await service.touchLastActive()
-            startPresenceHeartbeat()
-            await loadSupportThreads()
-            await loadManagedClubs()
-            await loadEduStatus()
-            startMessageListener()
-            startPlaceListener()
-            await refreshSubscriptions()
             // Geçerli oturum ve tamamlanmış profil varken karşılama ekranında bırakmak
-            // kullanıcıyı hiçbir yere gidemez halde bırakıyordu.
+            // kullanıcıyı hiçbir yere gidemez halde bırakıyordu. Ekran geri kalan
+            // verileri beklemeden açılır.
             if requiresAvatarStep(photosLoaded: fotograflarOkundu) {
                 withAnimation(.smooth(duration: 0.45)) { route = .onboarding(.photo) }
             } else if route != .app {
                 withAnimation(.smooth(duration: 0.45)) { route = .app }
             }
+            await oturumVerisi
             await startPushRegistration()
             if route == .app { promptForPushIfNeeded() }
         } catch {
