@@ -334,12 +334,17 @@ struct SocialProfileView: View {
                 }
             } label: {
                 ProfileMedia(url: appState.avatarURL, data: appState.avatarData)
-                    .frame(width: avatarExpanded ? 210 : 96, height: avatarExpanded ? 252 : 116)
+                    .frame(width: avatarExpanded ? 250 : 96, height: avatarExpanded ? 300 : 116)
+                    .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            // Gölge geçiş kaynağında: içerikteyken köşeli çiziliyor, büyüyünce
+            // köşelerde gri kare kalıyordu.
+            .matchedTransitionSource(id: "profilFoto", in: fotoAlani) { kaynak in
+                kaynak
                     .clipShape(RoundedRectangle(cornerRadius: BondTheme.Radius.media, style: .continuous))
                     .shadow(color: .black.opacity(avatarExpanded ? 0.16 : 0), radius: 14, y: 6)
             }
-            .buttonStyle(.plain)
-            .zoomSource(id: "profilFoto", in: fotoAlani)
             // Tam ekran görünüm basılı tutunca.
             .simultaneousGesture(LongPressGesture(minimumDuration: 0.45).onEnded { _ in
                 guard hasAvatar else { return }
