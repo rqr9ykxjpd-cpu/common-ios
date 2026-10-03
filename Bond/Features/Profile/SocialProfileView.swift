@@ -185,7 +185,8 @@ struct SocialProfileView: View {
                 // fotoğraf sıçrıyor, yazılar solup yeniden beliriyordu.
                 let yerlesim = avatarExpanded
                     ? AnyLayout(VStackLayout(alignment: .leading, spacing: 16))
-                    : AnyLayout(HStackLayout(alignment: .center, spacing: 20))
+                    // Fotoğraf sol üstte; yandaki blok uzayınca ortaya kaymasın.
+                    : AnyLayout(HStackLayout(alignment: .top, spacing: 20))
                 yerlesim {
                     avatar
                     HStack(alignment: .center, spacing: 20) {
