@@ -144,8 +144,8 @@ struct ConversationView: View {
         }
         .background(BondTheme.paper.ignoresSafeArea())
         .foregroundStyle(BondTheme.ink)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar { sohbetAracCubugu }
+        .toolbar(.hidden, for: .navigationBar)
+        .sohbetUstCubugu { sohbetUstCubugu }
         .onAppear { appState.markConversationRead(conversationID) }
         // "Yazıyor…": sohbet açıkken karşı tarafın sinyallerini dinle, ekran
         // kapanınca kanalı kapat. Kayıt tutulmuyor; sinyal anlık.
@@ -252,17 +252,25 @@ struct ConversationView: View {
     }
 
 
-    /// Sohbet başlığı. Kişiye dokununca profili açılıyor; sağdaki menü
-    /// şikayet, engelleme ve eşleşmeyi bitirme.
-    @ToolbarContentBuilder private var sohbetAracCubugu: some ToolbarContent {
-        if showsClose {
-            ToolbarItem(placement: .topBarLeading) {
-                Button { dismiss() } label: { Image(systemName: "xmark") }
-                    .accessibilityLabel(L10n.Common.close)
+    /// Sohbetin üst çubuğu sayfanın içinde. iOS 26 araç çubuğundaki başlığı ekran
+    /// kaydıktan sonra gösteriyordu; ad, mesajlardan yarım saniye geç beliriyordu.
+    /// Burada mesajlarla aynı karede geliyor. Kenardan kaydırıp geri dönme
+    /// `NavigationSwipeBack` ile açık. Kişiye dokununca profili açılıyor; sağdaki
+    /// menü şikayet, temizleme, bağlantıyı kaldırma ve engelleme.
+    private var sohbetUstCubugu: some View {
+        HStack(spacing: 8) {
+            Button { dismiss() } label: {
+                Image(systemName: showsClose ? "xmark" : "chevron.left")
+                    .font(.system(size: 17, weight: .semibold))
+                    .frame(width: 44, height: 44)
+                    .modifier(CubukDugmesi())
             }
-        }
-        ToolbarItem(placement: .principal) {
-            if let conversation = appState.conversations.first(where: { $0.id == conversationID }) {
+            .buttonStyle(.plain)
+            .accessibilityLabel(showsClose ? L10n.Common.close : L10n.Common.goBack)
+
+            Spacer(minLength: 0)
+
+            if let conversation {
                 Button { showProfile = true } label: {
                     HStack(spacing: 8) {
                         ProfileMedia(url: conversation.profile.imageURL, data: nil,
@@ -271,14 +279,15 @@ struct ConversationView: View {
                             .clipShape(Circle())
                         Text(conversation.profile.name)
                             .font(.system(.callout, design: .rounded, weight: .semibold))
+                            .lineLimit(1)
                     }
-                    .foregroundStyle(BondTheme.ink)
                 }
                 .buttonStyle(.pressable)
                 .accessibilityLabel(L10n.Feed.openProfile(conversation.profile.name))
             }
-        }
-        ToolbarItem(placement: .topBarTrailing) {
+
+            Spacer(minLength: 0)
+
             Menu {
                 Menu {
                     ForEach(ReportReason.allCases) { reason in
@@ -298,9 +307,15 @@ struct ConversationView: View {
                 Button(L10n.Common.block, role: .destructive) { showBlockConfirmation = true }
             } label: {
                 Image(systemName: "ellipsis")
+                    .font(.system(size: 17, weight: .semibold))
+                    .frame(width: 44, height: 44)
+                    .modifier(CubukDugmesi())
             }
             .accessibilityLabel(L10n.Chat.options)
         }
+        .foregroundStyle(BondTheme.ink)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 6)
     }
 
     /// Karşı tarafla gerçekten paylaşılan ilgi alanları. Bu not daha önce sabit bir
@@ -488,6 +503,29 @@ struct ConversationView: View {
         guard let id = conversation.messages.last?.id else { return }
         if animated { withAnimation(.easeOut(duration: 0.25)) { proxy.scrollTo(id, anchor: .bottom) } }
         else { proxy.scrollTo(id, anchor: .bottom) }
+    }
+}
+
+/// Üst çubuk düğmesi: iOS 26'da sistem çubuğundaki gibi cam, öncesinde buzlu zemin.
+private struct CubukDugmesi: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.glassEffect(.regular.interactive(), in: .circle)
+        } else {
+            content.background(.regularMaterial, in: Circle())
+        }
+    }
+}
+
+private extension View {
+    /// iOS 26'da mesajlar çubuğun altına kayarken sistem çubuğu gibi soluyor.
+    @ViewBuilder
+    func sohbetUstCubugu<C: View>(@ViewBuilder _ content: () -> C) -> some View {
+        if #available(iOS 26.0, *) {
+            safeAreaBar(edge: .top, spacing: 0, content: content)
+        } else {
+            safeAreaInset(edge: .top, spacing: 0) { content().background(BondTheme.paper) }
+        }
     }
 }
 
