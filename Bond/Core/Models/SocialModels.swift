@@ -93,8 +93,10 @@ struct SocialComment: Identifiable, Hashable {
     var downvoted: Bool
     /// Kurucunun eklediği oy (voteCount'a dahil).
     var boost: Int
+    /// Gönderildi, sunucudan dönmedi: listede soluk durur, oylanamaz.
+    var isPending = false
 
-    init(id: UUID = UUID(), author: String, authorAvatarURL: URL? = nil, body: String, isMine: Bool = false, createdAt: Date = .now, voteCount: Int = 0, voted: Bool = false, downvoted: Bool = false, boost: Int = 0) {
+    init(id: UUID = UUID(), author: String, authorAvatarURL: URL? = nil, body: String, isMine: Bool = false, createdAt: Date = .now, voteCount: Int = 0, voted: Bool = false, downvoted: Bool = false, boost: Int = 0, isPending: Bool = false) {
         self.id = id
         self.author = author
         self.authorAvatarURL = authorAvatarURL
@@ -105,6 +107,7 @@ struct SocialComment: Identifiable, Hashable {
         self.voted = voted
         self.downvoted = downvoted
         self.boost = boost
+        self.isPending = isPending
     }
 }
 

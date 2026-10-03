@@ -31,44 +31,57 @@ struct PostDetailView: View {
     var body: some View {
         Group {
             if let post {
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        PostCard(
-                            post: post,
-                            toggleLike: { appState.toggleLike(postID: post.id) },
-                            toggleSaved: { appState.toggleSaved(postID: post.id) },
-                            openProfile: { selectedAuthor = post.author },
-                            delete: {
-                                appState.deletePost(post.id)
-                                dismiss()
-                            },
-                            isDetail: true,
-                            onReply: { focused = true }
-                        )
-                        .padding(.top, BondTheme.Space.sm)
-                        .padding(.bottom, BondTheme.Space.lg)
-                        repliesHeader(post)
-                        if post.comments.isEmpty {
-                            AppEmptyState(
-                                systemImage: "bubble.left.and.bubble.right",
-                                title: post.repliesAreAnswers ? L10n.Board.answersEmpty : L10n.Comments.empty,
-                                message: post.repliesAreAnswers ? L10n.Board.answersEmptyBody : L10n.Comments.emptyBody
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(spacing: 0) {
+                            PostCard(
+                                post: post,
+                                toggleLike: { appState.toggleLike(postID: post.id) },
+                                toggleSaved: { appState.toggleSaved(postID: post.id) },
+                                openProfile: { selectedAuthor = post.author },
+                                delete: {
+                                    appState.deletePost(post.id)
+                                    dismiss()
+                                },
+                                isDetail: true,
+                                onReply: { focused = true }
                             )
-                            .padding(.top, BondTheme.Space.md)
-                            .padding(.horizontal, 20)
-                        } else {
-                            ForEach(post.rankedComments) { comment in
-                                commentRow(comment, post: post)
-                                    .padding(.horizontal, 20)
+                            .padding(.top, BondTheme.Space.sm)
+                            .padding(.bottom, BondTheme.Space.lg)
+                            repliesHeader(post)
+                            if post.comments.isEmpty {
+                                AppEmptyState(
+                                    systemImage: "bubble.left.and.bubble.right",
+                                    title: post.repliesAreAnswers ? L10n.Board.answersEmpty : L10n.Comments.empty,
+                                    message: post.repliesAreAnswers ? L10n.Board.answersEmptyBody : L10n.Comments.emptyBody
+                                )
+                                .padding(.top, BondTheme.Space.md)
+                                .padding(.horizontal, 20)
+                            } else {
+                                ForEach(post.rankedComments) { comment in
+                                    commentRow(comment, post: post)
+                                        .padding(.horizontal, 20)
+                                        .id(comment.id)
+                                        // Sunucuya giderken soluk; oy ve menü o sırada kapalı.
+                                        .opacity(comment.isPending ? 0.55 : 1)
+                                        .allowsHitTesting(!comment.isPending)
+                                }
                             }
                         }
+                        .animation(reduceMotion ? nil : BondTheme.Motion.snappy,
+                                   value: post.rankedComments.map(\.id))
+                        .padding(.bottom, BondTheme.Space.xl)
                     }
-                    .animation(reduceMotion ? nil : BondTheme.Motion.snappy,
-                               value: post.rankedComments.map(\.id))
-                    .padding(.bottom, BondTheme.Space.xl)
+                    .scrollDismissesKeyboard(.interactively)
+                    .safeAreaInset(edge: .bottom, spacing: 0) { composer }
+                    // Gönderdiğin yorum yazma kutusunun altında kalmasın; ona kay.
+                    .onChange(of: post.comments.last?.id) { _, son in
+                        guard let son, post.comments.last?.isPending == true else { return }
+                        withAnimation(reduceMotion ? nil : BondTheme.Motion.smooth) {
+                            proxy.scrollTo(son, anchor: .bottom)
+                        }
+                    }
                 }
-                .scrollDismissesKeyboard(.interactively)
-                .safeAreaInset(edge: .bottom, spacing: 0) { composer }
             } else {
                 AppEmptyState(systemImage: "exclamationmark.bubble", title: L10n.Comments.missingPost)
             }
@@ -274,8 +287,12 @@ struct PostDetailView: View {
 
     private func send() {
         guard canSend else { return }
-        appState.addComment(draft, to: postID)
+        let metin = draft
         draft = ""
         focused = true
+        Task {
+            // Gönderilemezse yazdığın kaybolmasın; bu arada yenisini yazdıysan dokunma.
+            if await !appState.addComment(metin, to: postID), draft.isEmpty { draft = metin }
+        }
     }
 }

@@ -316,20 +316,37 @@ extension AppState {
         savedPosts.removeAll { $0.id == postID }
     }
 
-    func addComment(_ body: String, to postID: UUID) {
-        guard requireStudent() else { return }
+    /// Yorum dokunur dokunmaz listede (soluk); sunucu kaydedince gerçeğiyle yer
+    /// değiştirir. Eskiden sunucu dönene kadar hiçbir şey görünmüyor, kutu boşalıyor
+    /// ve "gitti mi?" diye tekrar yazılıyordu. Gönderilemezse silinir; `false` döner
+    /// ki ekran yazılanı kutuya geri koysun.
+    @discardableResult
+    func addComment(_ body: String, to postID: UUID) async -> Bool {
+        guard requireStudent() else { return false }
         let cleanBody = body.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !cleanBody.isEmpty, posts.contains(where: { $0.id == postID }) else { return }
-        Task {
-            do {
-                let comment = try await service.addComment(cleanBody, to: postID)
-                guard let refreshedIndex = posts.firstIndex(where: { $0.id == postID }) else { return }
-                posts[refreshedIndex].comments.append(socialComment(from: comment))
-                Haptics.impact(.light)
-                promptForPushIfNeeded()
-            } catch {
-                showError(error, fallback: L10n.Feed.commentFailed)
+        guard !cleanBody.isEmpty, let index = posts.firstIndex(where: { $0.id == postID }) else { return false }
+        let bekleyen = SocialComment(
+            author: draft.name.isEmpty ? draft.username : draft.name,
+            authorAvatarURL: avatarURL, body: cleanBody, isMine: true, isPending: true
+        )
+        posts[index].comments.append(bekleyen)
+        Haptics.impact(.light)
+        do {
+            let comment = try await service.addComment(cleanBody, to: postID)
+            guard let i = posts.firstIndex(where: { $0.id == postID }) else { return true }
+            posts[i].comments.removeAll { $0.id == bekleyen.id }
+            // Bu arada liste yenilendiyse yorum zaten gelmiştir; iki kez eklenmesin.
+            if !posts[i].comments.contains(where: { $0.id == comment.id }) {
+                posts[i].comments.append(socialComment(from: comment))
             }
+            promptForPushIfNeeded()
+            return true
+        } catch {
+            if let i = posts.firstIndex(where: { $0.id == postID }) {
+                posts[i].comments.removeAll { $0.id == bekleyen.id }
+            }
+            showError(error, fallback: L10n.Feed.commentFailed)
+            return false
         }
     }
 
