@@ -45,8 +45,10 @@ struct SocialProfileView: View {
             + appState.pendingMessageRequests.count
             + appState.pendingIncomingMeetingRequestCount
     }
+    /// Resmi Common hesabında ilgi alanı gösterilmiyor.
     private var featuredInterests: [String] {
-        Array(appState.draft.interests).sorted().prefix(3).map { $0 }
+        guard appState.currentUserID != OfficialAccount.id else { return [] }
+        return Array(appState.draft.interests).sorted().prefix(3).map { $0 }
     }
 
     private var galleryPhotos: [ProfileGalleryPhoto] {
@@ -376,8 +378,10 @@ struct SocialProfileView: View {
                     .foregroundStyle(BondTheme.muted)
                     .lineLimit(1)
             }
-            Text([appState.draft.department, AcademicYear.display(appState.draft.year)]
-                .filter { !$0.isEmpty }.joined(separator: " · "))
+            Text(appState.currentUserID == OfficialAccount.id
+                 ? L10n.Official.line
+                 : [appState.draft.department, AcademicYear.display(appState.draft.year)]
+                    .filter { !$0.isEmpty }.joined(separator: " · "))
                 .font(.subheadline).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             // İki rozet dar sütuna sığmayınca alt satıra insin; HStack sütunu taşırıyordu.

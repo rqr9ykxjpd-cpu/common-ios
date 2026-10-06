@@ -273,7 +273,8 @@ struct SocialPersonDetailView: View {
     }
 
     @ViewBuilder private var interestList: some View {
-        let hepsi = details?.interests ?? profile.interests
+        // Resmi Common hesabında ilgi alanı gösterilmiyor.
+        let hepsi = profile.id == OfficialAccount.id ? [] : (details?.interests ?? profile.interests)
         if !hepsi.isEmpty {
             let benimkiler = isMe ? [] : appState.draft.interests
             let ortak = hepsi.filter { benimkiler.contains($0) }
@@ -697,13 +698,19 @@ struct SocialPersonDetailView: View {
                     .lineLimit(1)
             }
 
-            ProfileEducationLine(
-                department: profile.department,
-                university: profile.university,
-                year: profile.year,
-                font: BondTheme.Typography.footnote,
-                color: theme.secondaryText
-            )
+            if profile.id == OfficialAccount.id {
+                Text(L10n.Official.line)
+                    .font(BondTheme.Typography.footnote)
+                    .foregroundStyle(theme.secondaryText)
+            } else {
+                ProfileEducationLine(
+                    department: profile.department,
+                    university: profile.university,
+                    year: profile.year,
+                    font: BondTheme.Typography.footnote,
+                    color: theme.secondaryText
+                )
+            }
 
             ProfileBadgeLabel(badge: details?.badge ?? profile.badge)
         }

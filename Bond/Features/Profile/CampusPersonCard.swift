@@ -16,7 +16,7 @@ struct CampusPersonCard: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(profile.name)
                     .font(.body)
-                Text([profile.department, AcademicYear.display(profile.year)].filter { !$0.isEmpty }.joined(separator: " · "))
+                Text(educationLine)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 if let place {
@@ -42,8 +42,14 @@ struct CampusPersonCard: View {
         .accessibilityHint(L10n.CampusDesign.viewProfile)
     }
 
+    /// Bölüm · sınıf; resmi Common hesabında "Resmi Common hesabı".
+    private var educationLine: String {
+        guard profile.id != OfficialAccount.id else { return L10n.Official.line }
+        return [profile.department, AcademicYear.display(profile.year)].filter { !$0.isEmpty }.joined(separator: " · ")
+    }
+
     private var accessibilityName: String {
-        var parts = [profile.name, profile.department, AcademicYear.display(profile.year)]
+        var parts = [profile.name, educationLine]
         if let place { parts.append(place.name) }
         return parts.filter { !$0.isEmpty }.joined(separator: ", ")
     }

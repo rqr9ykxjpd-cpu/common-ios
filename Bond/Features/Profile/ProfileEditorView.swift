@@ -25,12 +25,15 @@ struct ProfileEditorView: View {
         draft.username == appState.draft.username || usernameStatus.allowsSave
     }
 
+    /// Resmi Common hesabında bölüm, sınıf, doğum tarihi ve ilgi alanı yok.
+    private var isOfficial: Bool { appState.currentUserID == OfficialAccount.id }
+
     /// Görünen ad isteğe bağlı: boşsa kullanıcı adı görünür (AppState.saveProfile).
     private var valid: Bool {
         usernameOK &&
-        !draft.department.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        (isOfficial || !draft.department.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) &&
         draft.bio.count <= 220 &&
-        draft.interests.count >= 3
+        (isOfficial || draft.interests.count >= 3)
     }
 
     private var changed: Bool {
@@ -69,14 +72,14 @@ struct ProfileEditorView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: BondTheme.Space.xl) {
-                completionBanner
+                if !isOfficial { completionBanner }
                 Text(L10n.Profile.publishNote)
                     .font(.caption)
                     .foregroundStyle(BondTheme.muted)
                 photos
                 basicInformation
                 about
-                interestSelection
+                if !isOfficial { interestSelection }
                 accountInformation
             }
             .padding(.horizontal, BondTheme.Space.lg)
@@ -202,8 +205,8 @@ struct ProfileEditorView: View {
     private var missingFields: [String] {
         var missing: [String] = []
         if !usernameOK { missing.append(L10n.Username.title) }
-        if draft.department.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { missing.append(L10n.Profile.needDepartment) }
-        if draft.interests.count < InterestCatalog.minimumSelection {
+        if !isOfficial, draft.department.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { missing.append(L10n.Profile.needDepartment) }
+        if !isOfficial, draft.interests.count < InterestCatalog.minimumSelection {
             missing.append(L10n.Profile.needMoreInterests(InterestCatalog.minimumSelection - draft.interests.count))
         }
         if draft.bio.count > 220 { missing.append(L10n.Profile.bioTooLong) }
@@ -321,14 +324,16 @@ struct ProfileEditorView: View {
                     .background(BondTheme.ink.opacity(0.045), in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface))
                 }
                 nameField
-                ProfileTextField(title: L10n.Profile.needDepartment, text: $draft.department)
-                DatePicker(L10n.Profile.birthDate, selection: $draft.birthDate, in: ...AgeLimit.latestBirthDate, displayedComponents: .date)
-                    .font(.subheadline.weight(.medium))
-                    .environment(\.locale, L10n.appLocale)
-                Picker(L10n.Profile.year, selection: $draft.year) {
-                    ForEach(AcademicYear.all, id: \.self) { Text(AcademicYear.display($0)).tag($0) }
+                if !isOfficial {
+                    ProfileTextField(title: L10n.Profile.needDepartment, text: $draft.department)
+                    DatePicker(L10n.Profile.birthDate, selection: $draft.birthDate, in: ...AgeLimit.latestBirthDate, displayedComponents: .date)
+                        .font(.subheadline.weight(.medium))
+                        .environment(\.locale, L10n.appLocale)
+                    Picker(L10n.Profile.year, selection: $draft.year) {
+                        ForEach(AcademicYear.all, id: \.self) { Text(AcademicYear.display($0)).tag($0) }
+                    }
+                    .tint(BondTheme.violet)
                 }
-                .tint(BondTheme.violet)
             }
         }
     }

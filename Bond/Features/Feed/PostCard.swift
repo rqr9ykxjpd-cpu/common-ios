@@ -46,6 +46,8 @@ struct PostCard: View {
         if post.isPinned { parcalar.append(L10n.Board.pinnedAt(post.pinSlot)) }
         if let place = post.place {
             parcalar.append(place.name)
+        } else if post.author.id == OfficialAccount.id {
+            parcalar.append(L10n.Official.line)
         } else {
             let bolum = [post.author.department, AcademicYear.display(post.author.year)].filter { !$0.isEmpty }
             parcalar.append(bolum.isEmpty ? post.author.university : bolum.joined(separator: " · "))
