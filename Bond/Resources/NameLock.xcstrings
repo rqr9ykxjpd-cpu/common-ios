@@ -1,0 +1,70 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "lockedHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your name comes from the account you signed in with and can’t be changed. You can change your username anytime."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adın giriş yaptığın hesaptan geliyor ve değiştirilemez. Kullanıcı adını istediğin zaman değiştirebilirsin."
+          }
+        }
+      }
+    },
+    "onceHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter your real name. Once saved, it can’t be changed."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gerçek adını yaz. Kaydettikten sonra değiştirilemez."
+          }
+        }
+      }
+    },
+    "lockedError": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your name can’t be changed. You can change your username."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adın değiştirilemez; kullanıcı adını değiştirebilirsin."
+          }
+        }
+      }
+    },
+    "title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Display name"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görünen ad"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

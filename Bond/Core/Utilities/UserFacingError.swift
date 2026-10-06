@@ -73,6 +73,10 @@ enum UserFacingError {
         if String(describing: error).localizedCaseInsensitiveContains("CONTENT_BLOCKED") {
             return ContentSafetyError.blockedText.errorDescription
         }
+        // Görünen ad kilitli (sunucu: profiles_name_lock).
+        if String(describing: error).contains("NAME_LOCKED") {
+            return L10n.NameLock.lockedError
+        }
         // Kendi tanımladığımız hatalar zaten Türkçe ve yerinde.
         if let backendError = error as? BackendServiceError {
             return backendError.errorDescription

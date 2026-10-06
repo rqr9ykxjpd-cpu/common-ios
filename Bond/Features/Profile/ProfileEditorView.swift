@@ -320,7 +320,7 @@ struct ProfileEditorView: View {
                     .padding(.horizontal, 12).padding(.vertical, 8)
                     .background(BondTheme.ink.opacity(0.045), in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface))
                 }
-                ProfileTextField(title: L10n.Onboarding.name, text: $draft.name)
+                nameField
                 ProfileTextField(title: L10n.Profile.needDepartment, text: $draft.department)
                 DatePicker(L10n.Profile.birthDate, selection: $draft.birthDate, in: ...AgeLimit.latestBirthDate, displayedComponents: .date)
                     .font(.subheadline.weight(.medium))
@@ -329,6 +329,51 @@ struct ProfileEditorView: View {
                     ForEach(AcademicYear.all, id: \.self) { Text(AcademicYear.display($0)).tag($0) }
                 }
                 .tint(BondTheme.violet)
+            }
+        }
+    }
+
+    /// Görünen ad: sağlayıcıdan geldiyse kilitli satır; gelmediyse bir kez
+    /// yazılabilir (sonra sunucu kilitler). Ölçüt kayıtlı ada bakar, yazılana değil.
+    @ViewBuilder private var nameField: some View {
+        if NameLock.isEditable(
+            name: appState.draft.name,
+            username: appState.draft.username,
+            userID: appState.currentUserID,
+            isFounder: appState.isFounder
+        ) {
+            VStack(alignment: .leading, spacing: 6) {
+                ProfileTextField(title: L10n.NameLock.title, text: $draft.name)
+                if !appState.isFounder {
+                    Text(L10n.NameLock.onceHint)
+                        .font(.caption)
+                        .foregroundStyle(BondTheme.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        } else {
+            VStack(alignment: .leading, spacing: 7) {
+                Text(L10n.NameLock.title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(BondTheme.muted)
+                HStack {
+                    Text(draft.name)
+                        .font(.callout.weight(.medium))
+                        .foregroundStyle(BondTheme.ink)
+                        .lineLimit(1)
+                    Spacer(minLength: 8)
+                    Image(systemName: "lock.fill")
+                        .font(.footnote)
+                        .foregroundStyle(BondTheme.muted)
+                        .accessibilityHidden(true)
+                }
+                .padding(.horizontal, 12).frame(height: 46)
+                .background(BondTheme.ink.opacity(0.03), in: RoundedRectangle(cornerRadius: BondTheme.Radius.surface))
+                .accessibilityElement(children: .combine)
+                Text(L10n.NameLock.lockedHint)
+                    .font(.caption)
+                    .foregroundStyle(BondTheme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
