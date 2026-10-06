@@ -1,8 +1,8 @@
 import Foundation
 
-/// Gönderide yorumun yanındaki düğme. Kurucu her gönderiye, resmi Common
-/// hesabı kendi gönderisine ekler (sunucu: `set_post_cta`). Ham değer
-/// sunucudaki `posts.cta`; tanınmayan değer düğmesiz çizilir.
+/// Gönderide yorumun yanındaki düğme. Yalnızca resmi Common hesabı kendi
+/// gönderisine ekler (sunucu: `set_post_cta`). Ham değer sunucudaki
+/// `posts.cta`; tanınmayan değer düğmesiz çizilir.
 enum PostAction: String, CaseIterable, Identifiable, Sendable {
     case invite
     case appIcon = "app_icon"

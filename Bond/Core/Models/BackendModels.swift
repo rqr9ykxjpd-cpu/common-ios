@@ -170,7 +170,7 @@ struct BackendPost: Sendable {
     var galleryURLs: [URL] = []
     /// Az önce paylaşılan çoklu gönderinin yerel fotoğrafları.
     var galleryData: [Data] = []
-    /// Yorumun yanındaki düğme (kurucu ya da Common hesabı ekler).
+    /// Yorumun yanındaki düğme (Common hesabı ekler).
     var action: PostAction?
 
     init(

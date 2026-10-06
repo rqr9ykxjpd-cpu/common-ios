@@ -28,9 +28,9 @@ struct PostCard: View {
     /// Gönderideki düğmenin açtığı ekran.
     @State private var presentedAction: PostAction?
 
-    /// Düğmeyi kurucu her gönderiye, Common hesabı kendi gönderisine ekler.
+    /// Düğmeyi yalnızca Common hesabı kendi gönderisine ekler.
     private var canSetAction: Bool {
-        appState.isFounder || (post.isMine && appState.currentUserID == OfficialAccount.id)
+        post.isMine && appState.currentUserID == OfficialAccount.id
     }
     private var hasImage: Bool {
         post.imageURL != nil || post.imageAssetName != nil || post.localImageData != nil

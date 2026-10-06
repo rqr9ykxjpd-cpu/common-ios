@@ -101,7 +101,7 @@ extension AppState {
     }
 
     /// Gönderiyi `slot`. sıraya sabitler (1 = en üst); nil kaldırır.
-    /// Kurucu / Common hesabı: gönderiye düğme ekler ya da kaldırır (nil).
+    /// Common hesabı: kendi gönderisine düğme ekler ya da kaldırır (nil).
     /// Önce ekranda; sunucu reddederse eski hâline döner.
     func setPostAction(_ postID: UUID, action: PostAction?) {
         guard let ayarlayan = service as? any PostActionSetting,
