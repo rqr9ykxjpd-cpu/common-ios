@@ -1,8 +1,8 @@
 import UIKit
 
-/// Ana ekran simgesi. Altın simgeler Plus/Pro'ya özel; seçim yalnızca bu
-/// telefonda geçerli, kimse başkasının simgesini görmüyor ("planını yalnızca
-/// sen görürsün" sözü bozulmasın).
+/// Ana ekran simgesi. Renkli simgeler herkese açık, altınlar Plus/Pro'ya özel;
+/// seçim yalnızca bu telefonda geçerli, kimse başkasının simgesini görmüyor
+/// ("planını yalnızca sen görürsün" sözü bozulmasın).
 ///
 /// Simge setleri `Assets.xcassets` içinde; derlemeye
 /// `ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES` ile giriyorlar
@@ -10,6 +10,10 @@ import UIKit
 /// `UIImage(named:)` ile okunamıyor.
 enum AppIconChoice: String, CaseIterable, Identifiable {
     case classic
+    case pink
+    case lightPink
+    case red
+    case blue
     case goldNight
     case gold
 
@@ -19,6 +23,10 @@ enum AppIconChoice: String, CaseIterable, Identifiable {
     var iconName: String? {
         switch self {
         case .classic: nil
+        case .pink: "AppIconPink"
+        case .lightPink: "AppIconLightPink"
+        case .red: "AppIconRed"
+        case .blue: "AppIconBlue"
         case .goldNight: "AppIconGoldNight"
         case .gold: "AppIconGold"
         }
@@ -27,6 +35,10 @@ enum AppIconChoice: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .classic: L10n.PlanPerks.iconClassic
+        case .pink: L10n.PlanPerks.iconPink
+        case .lightPink: L10n.PlanPerks.iconLightPink
+        case .red: L10n.PlanPerks.iconRed
+        case .blue: L10n.PlanPerks.iconBlue
         case .goldNight: L10n.PlanPerks.iconGoldNight
         case .gold: L10n.PlanPerks.iconGold
         }
@@ -35,12 +47,17 @@ enum AppIconChoice: String, CaseIterable, Identifiable {
     var previewAsset: String {
         switch self {
         case .classic: "IconPreviewClassic"
+        case .pink: "IconPreviewPink"
+        case .lightPink: "IconPreviewLightPink"
+        case .red: "IconPreviewRed"
+        case .blue: "IconPreviewBlue"
         case .goldNight: "IconPreviewGoldNight"
         case .gold: "IconPreviewGold"
         }
     }
 
-    var isGold: Bool { self != .classic }
+    /// Plus/Pro'ya özel olanlar. Abonelik bitince yalnızca bunlar geri alınır.
+    var isGold: Bool { self == .gold || self == .goldNight }
 
     @MainActor
     static var current: AppIconChoice {

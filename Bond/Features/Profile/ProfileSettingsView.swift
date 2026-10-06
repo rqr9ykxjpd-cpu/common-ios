@@ -103,32 +103,20 @@ struct ProfileSettingsView: View {
                         }
                     }
 
-                    // Altın simgeler Plus/Pro'ya özel; ücretsizde kilitli satır paywall açar.
-                    if appState.tier >= .plus {
-                        NavigationLink {
-                            AppIconPickerView()
-                        } label: {
-                            Label {
-                                Text(L10n.PlanPerks.iconRow)
-                            } icon: {
-                                Image(AppIconChoice.gold.previewAsset)
-                                    .resizable()
-                                    .frame(width: 22, height: 22)
-                                    .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
-                            }
+                    // Renkli simgeler herkese açık; altınlar seçicinin içinde kilitli.
+                    NavigationLink {
+                        AppIconPickerView()
+                    } label: {
+                        Label {
+                            Text(L10n.PlanPerks.iconRow)
+                        } icon: {
+                            Image(AppIconChoice.current.previewAsset)
+                                .resizable()
+                                .frame(width: 22, height: 22)
+                                .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
                         }
-                        .accessibilityIdentifier("settings.appIcon")
-                    } else {
-                        settingsButton(
-                            icon: "lock.fill",
-                            title: L10n.PlanPerks.iconRow,
-                            detail: L10n.PlanPerks.iconLocked,
-                            trailing: L10n.Tier.plus
-                        ) {
-                            showPaywall = true
-                        }
-                        .accessibilityIdentifier("settings.appIcon")
                     }
+                    .accessibilityIdentifier("settings.appIcon")
                 }
 
                 Section(L10n.Profile.privacy) {

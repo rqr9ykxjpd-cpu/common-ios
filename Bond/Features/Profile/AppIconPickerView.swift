@@ -1,9 +1,12 @@
 import SwiftUI
 
-/// Ayarlar → Uygulama simgesi (Plus/Pro). Üç kutucuk; dokununca iOS simgeyi
-/// değiştirip kendi uyarısını gösteriyor.
+/// Ayarlar → Uygulama simgesi. Renkliler herkese açık; altınlar Plus/Pro'ya
+/// özel, ücretsiz planda kilitli ve dokununca abonelik ekranı açılıyor.
+/// Dokununca iOS simgeyi değiştirip kendi uyarısını gösteriyor.
 struct AppIconPickerView: View {
+    @Environment(AppState.self) private var appState
     @State private var selected = AppIconChoice.current
+    @State private var showPaywall = false
     @State private var changing = false
     @State private var errorMessage: String?
 
@@ -18,7 +21,9 @@ struct AppIconPickerView: View {
                     }
                 }
 
-                Text(L10n.PlanPerks.iconFooter)
+                Text(appState.tier == .free
+                     ? L10n.PlanPerks.iconGoldLocked + " " + L10n.PlanPerks.iconFooter
+                     : L10n.PlanPerks.iconFooter)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
 
@@ -33,12 +38,24 @@ struct AppIconPickerView: View {
         .background(Color(uiColor: .systemGroupedBackground))
         .navigationTitle(L10n.PlanPerks.iconRow)
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
+        }
+    }
+
+    private func locked(_ choice: AppIconChoice) -> Bool {
+        choice.isGold && appState.tier == .free
     }
 
     private func tile(_ choice: AppIconChoice) -> some View {
         let secili = choice == selected
+        let kilitli = locked(choice)
         return Button {
-            Task { await select(choice) }
+            if kilitli {
+                showPaywall = true
+            } else {
+                Task { await select(choice) }
+            }
         } label: {
             VStack(spacing: BondTheme.Space.sm) {
                 Image(choice.previewAsset)
@@ -53,14 +70,25 @@ struct AppIconPickerView: View {
                     .padding(4)
                     .overlay {
                         RoundedRectangle(cornerRadius: 21, style: .continuous)
-                            .stroke(secili ? PlusGold.deep : .clear, lineWidth: 3)
+                            .stroke(secili ? BondTheme.ink : .clear, lineWidth: 3)
+                    }
+                    .overlay(alignment: .bottomTrailing) {
+                        if kilitli {
+                            Image(systemName: "lock.fill")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(PlusGold.ink)
+                                .frame(width: 24, height: 24)
+                                .background(PlusGold.light, in: Circle())
+                                .overlay(Circle().stroke(Color(uiColor: .systemGroupedBackground), lineWidth: 2))
+                                .offset(x: 4, y: 4)
+                        }
                     }
                     .overlay(alignment: .topTrailing) {
                         if secili {
                             Image(systemName: "checkmark.circle.fill")
                                 .font(.system(size: 22))
                                 .symbolRenderingMode(.palette)
-                                .foregroundStyle(PlusGold.ink, PlusGold.light)
+                                .foregroundStyle(.white, BondTheme.ink)
                                 .offset(x: 6, y: -6)
                                 .transition(.scale.combined(with: .opacity))
                         }
@@ -77,6 +105,7 @@ struct AppIconPickerView: View {
         .buttonStyle(.pressable)
         .disabled(changing)
         .accessibilityAddTraits(secili ? .isSelected : [])
+        .accessibilityValue(kilitli ? L10n.PlanPerks.iconLocked : "")
         .accessibilityIdentifier("appIcon.\(choice.rawValue)")
     }
 

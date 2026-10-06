@@ -17,6 +17,6 @@ GOOGLE_REVERSED_CLIENT_ID =
 // incelemede gerçek olmayan kişilerin fotoğrafları paketin içinde durmasın.
 EXCLUDED_SOURCE_FILE_NAMES[config=Release] = SampleAssets.xcassets
 
-// Plus/Pro'ya özel altın simgeler (Ayarlar → Uygulama simgesi). Varsayılan
-// simge pbxproj'daki ASSETCATALOG_COMPILER_APPICON_NAME; bunlar ek seçenekler.
-ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = AppIconGold AppIconGoldNight
+// Ek simgeler (Ayarlar → Uygulama simgesi): renkliler herkese, altınlar
+// Plus/Pro'ya. Varsayılan simge pbxproj'daki ASSETCATALOG_COMPILER_APPICON_NAME.
+ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = AppIconPink AppIconLightPink AppIconRed AppIconBlue AppIconGold AppIconGoldNight
