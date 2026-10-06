@@ -76,6 +76,8 @@ extension AppState {
         onboardingFailure = nil
         withAnimation(.smooth(duration: 0.55)) { route = .app }
         await loadSessionData()
+        // Davet eden: profil satırı artık var. Bulunamazsa yalnızca kısa uyarı.
+        await applyInviterIfNeeded()
         await startPushRegistration()
         // Yeni öğrenci: kayıt biter bitmez "Kampüse son bir adım". Geçebilir;
         // o zaman gezinti modunda kalır, kilitli bir şeye dokununca pencere yine açılır.

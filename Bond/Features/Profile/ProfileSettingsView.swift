@@ -14,6 +14,7 @@ struct ProfileSettingsView: View {
     @State private var showPrivacy = false
     @State private var showSignOutAlert = false
     @State private var showUsernameEditor = false
+    @State private var showInvite = false
     @State private var showDeleteAccountAlert = false
     @State private var showAppleDeleteAccount = false
     @State private var showSupport = false
@@ -51,6 +52,14 @@ struct ProfileSettingsView: View {
                         showUsernameEditor = true
                     }
                     .accessibilityIdentifier("settings.username")
+                    settingsButton(
+                        icon: "person.badge.plus",
+                        title: L10n.Referral.rowTitle,
+                        detail: L10n.Referral.rowHint
+                    ) {
+                        showInvite = true
+                    }
+                    .accessibilityIdentifier("settings.invite")
                     if appState.isModerator {
                         // Rozet: bekleyen şikâyetler + açık "Sorun bildir" kayıtları.
                         let bekleyen = appState.pendingReports.count + appState.openProblemCount
@@ -254,6 +263,9 @@ struct ProfileSettingsView: View {
             }
             .sheet(isPresented: $showSupport) {
                 SupportInboxView()
+            }
+            .sheet(isPresented: $showInvite) {
+                InviteFriendsView()
             }
             .sheet(isPresented: $showBlocked) {
                 NavigationStack { BlockedProfilesView() }

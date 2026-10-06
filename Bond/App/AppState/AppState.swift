@@ -73,6 +73,10 @@ final class AppState {
     var email: String
     var currentUserID: UUID
     var draft = ProfileDraft()
+    /// Kayıtta "Seni kim davet etti?" alanına yazılan; kayıt bitince sunucuya gider.
+    var inviterUsername = ""
+    /// Ayarlardaki "Arkadaşını davet et" sayıları; ekran açılınca gelir.
+    var referralSummary: ReferralSummary?
     /// Akış ve story'ler ilk kez yüklenirken. Boş liste ile "henüz yüklenmedi"
     /// ayırt edilemiyordu: akış yüklenirken ekranda "Akış henüz boş" yazıyordu,
     /// yani kullanıcıya yanlış bilgi veriliyordu.

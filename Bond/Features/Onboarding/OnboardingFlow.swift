@@ -29,6 +29,7 @@ struct OnboardingFlow: View {
                     case .ready:
                         ReadyStep(
                             name: appState.draft.name,
+                            inviter: $appState.inviterUsername,
                             isSaving: appState.isFinishingOnboarding,
                             failure: appState.onboardingFailure
                         ) { appState.advance(from: step) }
@@ -291,7 +292,9 @@ private struct InterestsStep: View {
 }
 
 private struct ReadyStep: View {
+    @Environment(AppState.self) private var appState
     let name: String
+    @Binding var inviter: String
     var isSaving = false
     var failure: String?
     let submit: () -> Void
@@ -326,6 +329,11 @@ private struct ReadyStep: View {
 
             Spacer(minLength: BondTheme.Space.xxl)
 
+            InviterField(text: $inviter) { aday in
+                try await appState.inviterExists(aday)
+            }
+            .padding(.bottom, BondTheme.Space.lg)
+
             if let failure {
                 HStack(alignment: .top, spacing: BondTheme.Space.sm) {
                     Image(systemName: "exclamationmark.triangle.fill")
@@ -350,6 +358,84 @@ private struct ReadyStep: View {
         .padding(.horizontal, BondTheme.Space.lg)
         .padding(.top, BondTheme.Space.xl)
         .padding(.bottom, BondTheme.Space.lg)
+    }
+}
+
+/// "Seni kim davet etti?" İsteğe bağlı; yazılan kullanıcı adı yazarken
+/// kontrol ediliyor ki yanlış yazılan davet sessizce kaybolmasın.
+private struct InviterField: View {
+    @Binding var text: String
+    let check: (String) async throws -> Bool
+    @State private var durum: Durum = .bos
+
+    private enum Durum { case bos, bakiliyor, var_, yok }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(L10n.Referral.fieldTitle)
+                .font(BondTheme.Typography.footnote.weight(.semibold))
+                .textCase(.uppercase)
+                .tracking(0.7)
+                .foregroundStyle(BondTheme.ink)
+            HStack(spacing: 2) {
+                Text("@")
+                    .font(BondTheme.Typography.body)
+                    .foregroundStyle(BondTheme.muted)
+                    .accessibilityHidden(true)
+                TextField(L10n.Referral.fieldPlaceholder, text: $text)
+                    .font(BondTheme.Typography.body)
+                    .foregroundStyle(BondTheme.ink)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .keyboardType(.asciiCapable)
+                    .accessibilityLabel(L10n.Referral.fieldTitle)
+                switch durum {
+                case .bakiliyor: ProgressView().controlSize(.small)
+                case .var_:
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(Color(uiColor: .systemGreen))
+                        .transition(.scale.combined(with: .opacity))
+                case .yok:
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(BondTheme.coral)
+                        .transition(.scale.combined(with: .opacity))
+                case .bos: EmptyView()
+                }
+            }
+            .frame(minHeight: 32)
+            Text(durum == .yok ? L10n.Referral.notFound : (durum == .var_ ? L10n.Referral.found : L10n.Referral.fieldHint))
+                .font(BondTheme.Typography.caption)
+                .foregroundStyle(durum == .yok ? BondTheme.coral : BondTheme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+                .animation(.smooth(duration: 0.2), value: durum)
+        }
+        .padding(.top, 16)
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(BondTheme.hairline.opacity(0.8))
+                .frame(height: 0.5)
+        }
+        .onChange(of: text) { _, yeni in
+            let duzgun = Username.normalize(yeni)
+            if duzgun != yeni { text = duzgun }
+        }
+        .task(id: text) { await dogrula(text) }
+    }
+
+    private func dogrula(_ aday: String) async {
+        guard aday.count >= Username.minLength else { durum = .bos; return }
+        durum = .bakiliyor
+        try? await Task.sleep(for: .milliseconds(400))
+        guard !Task.isCancelled else { return }
+        do {
+            let varMi = try await check(aday)
+            guard !Task.isCancelled else { return }
+            durum = varMi ? .var_ : .yok
+        } catch {
+            // Ağ hatası "yok" demek değil; kayıt bitince sunucu yine bakıyor.
+            guard !Task.isCancelled else { return }
+            durum = .bos
+        }
     }
 }
 
