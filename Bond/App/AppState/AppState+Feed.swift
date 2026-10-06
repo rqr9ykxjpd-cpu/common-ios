@@ -101,6 +101,25 @@ extension AppState {
     }
 
     /// Gönderiyi `slot`. sıraya sabitler (1 = en üst); nil kaldırır.
+    /// Kurucu / Common hesabı: gönderiye düğme ekler ya da kaldırır (nil).
+    /// Önce ekranda; sunucu reddederse eski hâline döner.
+    func setPostAction(_ postID: UUID, action: PostAction?) {
+        guard let ayarlayan = service as? any PostActionSetting,
+              let i = posts.firstIndex(where: { $0.id == postID }) else { return }
+        let eski = posts[i].action
+        posts[i].action = action
+        Haptics.success()
+        Task {
+            do {
+                try await ayarlayan.setPostAction(postID, action: action)
+            } catch {
+                guard let j = posts.firstIndex(where: { $0.id == postID }) else { return }
+                posts[j].action = eski
+                showError(error, fallback: L10n.Board.founderActionFailed)
+            }
+        }
+    }
+
     func setPostPin(_ postID: UUID, slot: Int?) {
         guard let i = posts.firstIndex(where: { $0.id == postID }) else { return }
         let eskiAt = posts[i].pinnedAt, eskiSlot = posts[i].pinnedSlot
@@ -413,7 +432,7 @@ extension AppState {
             isVerified: post.authorVerified,
             badge: badgeOverride ?? post.authorBadge
         )
-        return SocialPost(
+        var sonuc = SocialPost(
             id: post.id,
             author: author,
             caption: post.caption,
@@ -434,6 +453,8 @@ extension AppState {
             pinnedAt: post.pinnedAt,
             pinnedSlot: post.pinnedSlot
         )
+        sonuc.action = post.action
+        return sonuc
     }
 
     func socialComment(from comment: BackendComment) -> SocialComment {

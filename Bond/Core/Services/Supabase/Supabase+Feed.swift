@@ -1,7 +1,7 @@
 import Foundation
 import Supabase
 
-private let postListSelect = "id,author_id,caption,media_path,media_paths,place_name,kind,score,boost,pinned_at,pinned_slot,created_at,author:profiles!posts_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),comments(id,post_id,author_id,body,score,boost,created_at,author:profiles!comments_author_id_fkey(name,avatar_path))"
+private let postListSelect = "id,author_id,caption,media_path,media_paths,place_name,kind,score,boost,pinned_at,pinned_slot,cta,created_at,author:profiles!posts_author_id_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),comments(id,post_id,author_id,body,score,boost,created_at,author:profiles!comments_author_id_fkey(name,avatar_path))"
 
 extension SupabaseProductService {
     func fetchFeed() async throws -> [BackendPost] {

@@ -123,6 +123,8 @@ struct SocialPost: Identifiable, Hashable {
     var galleryURLs: [URL] = []
     /// Az önce paylaşılan çoklu gönderinin yerel fotoğrafları (sunucu adresi gelmeden).
     var galleryData: [Data] = []
+    /// Yorumun yanındaki düğme (kurucu ya da Common hesabı ekler).
+    var action: PostAction?
     var place: CampusPlace?
     var kind: PostKind
     var liked: Bool

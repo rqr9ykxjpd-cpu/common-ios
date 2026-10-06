@@ -25,6 +25,13 @@ struct PostCard: View {
     @State private var showDeleteConfirmation = false
     @State private var showModeratorRemove = false
     @State private var showBlockConfirmation = false
+    /// Gönderideki düğmenin açtığı ekran.
+    @State private var presentedAction: PostAction?
+
+    /// Düğmeyi kurucu her gönderiye, Common hesabı kendi gönderisine ekler.
+    private var canSetAction: Bool {
+        appState.isFounder || (post.isMine && appState.currentUserID == OfficialAccount.id)
+    }
     private var hasImage: Bool {
         post.imageURL != nil || post.imageAssetName != nil || post.localImageData != nil
     }
@@ -187,6 +194,22 @@ struct PostCard: View {
             }
             // Kurucu: oy ekle / sabitle. Moderatör: oy verenler. Kapı sunucuda;
             // burası sadece menüyü ilgisiz hesapta kalabalıklaştırmamak için.
+            if canSetAction {
+                Divider()
+                Menu(L10n.PostAction.add, systemImage: "rectangle.badge.plus") {
+                    ForEach(PostAction.allCases) { secenek in
+                        Button(secenek.title, systemImage: secenek.systemImage) {
+                            appState.setPostAction(post.id, action: secenek)
+                        }
+                    }
+                    if post.action != nil {
+                        Divider()
+                        Button(L10n.PostAction.remove, systemImage: "minus.circle", role: .destructive) {
+                            appState.setPostAction(post.id, action: nil)
+                        }
+                    }
+                }
+            }
             if appState.isModerator {
                 Divider()
                 if appState.isFounder {
@@ -341,7 +364,41 @@ struct PostCard: View {
         .accessibilityLabel("\(L10n.Board.topAnswer): \(comment.author), \(comment.body)")
     }
 
+    /// Gönderide düğme varken satır sığmazsa sıkışık hâl: yorumda yalnızca
+    /// sayı, paylaş simgesi menüde ("Paylaş" orada da var). Düğmesiz gönderi
+    /// eskisi gibi.
     private var actions: some View {
+        Group {
+            if post.action != nil {
+                ViewThatFits(in: .horizontal) {
+                    actionRow(compact: false)
+                    actionRow(compact: true)
+                }
+            } else {
+                actionRow(compact: false)
+            }
+        }
+        .animation(BondTheme.Motion.snappy, value: post.action)
+        .sheet(item: $presentedAction) { action in
+            switch action {
+            case .invite:
+                InviteFriendsView()
+            case .appIcon:
+                NavigationStack {
+                    AppIconPickerView()
+                        .toolbar {
+                            ToolbarItem(placement: .topBarTrailing) {
+                                Button(L10n.Common.done) { presentedAction = nil }
+                            }
+                        }
+                }
+            case .plus:
+                PaywallView()
+            }
+        }
+    }
+
+    private func actionRow(compact: Bool) -> some View {
         HStack(spacing: BondTheme.Space.sm) {
             // ▲ çağıranın kapanışı (akış/profil aynı davranır), ▼ doğrudan AppState.
             VoteControl(
@@ -357,8 +414,9 @@ struct PostCard: View {
                 HStack(spacing: 5) {
                     Image(systemName: "bubble.left")
                         .font(.footnote.weight(.semibold))
-                    Text(replyCountText)
+                    Text(compact ? "\(post.comments.count)" : replyCountText)
                         .font(.footnote.weight(.semibold))
+                        .monospacedDigit()
                 }
                 .padding(.horizontal, 12)
                 .frame(height: 36)
@@ -367,15 +425,38 @@ struct PostCard: View {
             }
             .buttonStyle(.pressable)
             .accessibilityLabel(L10n.Feed.openComments)
+            .accessibilityValue(replyCountText)
 
-            Spacer()
-
-            ShareLink(item: shareText) {
-                Image(systemName: "paperplane")
-                    .font(.body.weight(.regular))
-                    .frame(width: 36, height: 36)
+            if let action = post.action {
+                Button {
+                    presentedAction = action
+                } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: action.systemImage)
+                            .font(.footnote.weight(.semibold))
+                        Text(action.title)
+                            .font(.footnote.weight(.semibold))
+                    }
+                    .padding(.horizontal, 12)
+                    .frame(height: 36)
+                    .foregroundStyle(BondTheme.onAccent)
+                    .background(BondTheme.ink, in: Capsule())
+                    .fixedSize()
+                }
+                .buttonStyle(.pressable)
+                .transition(.scale(scale: 0.8).combined(with: .opacity))
             }
-            .accessibilityLabel(L10n.Feed.share)
+
+            Spacer(minLength: 0)
+
+            if !compact {
+                ShareLink(item: shareText) {
+                    Image(systemName: "paperplane")
+                        .font(.body.weight(.regular))
+                        .frame(width: 36, height: 36)
+                }
+                .accessibilityLabel(L10n.Feed.share)
+            }
             Button(action: toggleSaved) {
                 Image(systemName: post.saved ? "bookmark.fill" : "bookmark")
                     .font(.body.weight(.regular))

@@ -873,12 +873,14 @@ struct PostRow: Decodable {
     let boost: Int?
     let pinnedAt: Date?
     let pinnedSlot: Int?
+    /// Yorumun yanındaki düğme; tanınmayan değer düğmesiz çizilir.
+    let cta: String?
     let createdAt: Date
     let author: SupabaseProfileRow
     let comments: [CommentRow]
 
     enum CodingKeys: String, CodingKey {
-        case id, caption, author, comments, kind, score, boost
+        case id, caption, author, comments, kind, score, boost, cta
         case authorID = "author_id"
         case placeName = "place_name"
         case mediaPath = "media_path"
@@ -890,7 +892,7 @@ struct PostRow: Decodable {
 
     /// Puan sunucudan (`score + boost`); oy satırları yalnızca kişinin kendi oyunu söyler.
     func backendPost(imageData: Data?, authorAvatarURL: URL?, liked: Bool, downvoted: Bool = false, saved: Bool, badge: ProfileBadge = .none, commentAvatarURLs: [String: URL] = [:], imageURL: URL? = nil, commentVotes: [CommentVoteRow] = [], userID: UUID? = nil) -> BackendPost {
-        BackendPost(
+        var post = BackendPost(
             id: id,
             authorID: authorID,
             authorName: author.name,
@@ -928,6 +930,8 @@ struct PostRow: Decodable {
             pinnedAt: pinnedAt,
             pinnedSlot: pinnedSlot
         )
+        post.action = cta.flatMap(PostAction.init(rawValue:))
+        return post
     }
 }
 
