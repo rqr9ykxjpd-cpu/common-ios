@@ -65,6 +65,8 @@ struct PostCard: View {
             actions
         }
         .padding(.horizontal, 20)
+        // Common hesabının gönderisi akışta çerçeveli; gönderi sayfasında değil.
+        .modifier(OfficialPostFrame(active: !isDetail && post.author.id == OfficialAccount.id))
         // Erişilebilirlik boyutlarında kapsül sırası taşıyordu; kart bir üst
         // sınırda durur, sistem geri kalanını büyütür.
         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
