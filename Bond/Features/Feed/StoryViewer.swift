@@ -80,8 +80,8 @@ struct StoryViewer: View {
         }
         .foregroundStyle(.white)
         .background(Color.black.ignoresSafeArea())
-        .onAppear { activatePlaybackAudio() }
-        .onDisappear { deactivatePlaybackAudio() }
+        .onAppear { StoryPlaybackAudio.activate() }
+        .onDisappear { StoryPlaybackAudio.deactivate() }
         // Liste izlerken yenilenebiliyor (yeni story, öne dönüş). Sıra numarası
         // aynı kalınca başka bir story'ye atlanıyor, kart yarı kaymış görünebiliyordu;
         // açık olan story'de kalınır, geçiş animasyonu oynatılmaz.
@@ -553,16 +553,6 @@ struct StoryViewer: View {
             return min(CampusStory.maxVideoDuration, max(0.5, story.duration ?? CampusStory.maxVideoDuration))
         }
         return CampusStory.photoPlayback
-    }
-
-    private func activatePlaybackAudio() {
-        let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playback, mode: .moviePlayback, options: [.duckOthers])
-        try? session.setActive(true)
-    }
-
-    private func deactivatePlaybackAudio() {
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
     private func prepareForTransition() {

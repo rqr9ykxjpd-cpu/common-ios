@@ -29,7 +29,10 @@ struct CreatePostView: View {
     @State private var postPhotos: [Data] = []
     /// Galeriden çoklu seçim; yüklenince boşaltılır, fotoğraflar `postPhotos`'a eklenir.
     @State private var pickedItems: [PhotosPickerItem] = []
-    @State private var videoClip: VideoCompression.PreparedClip?
+    /// Story videosu: önizleme seçilen dosyayla hemen açılır, yüklenecek MP4
+    /// arkada hazırlanır (`videoExport`); paylaş'a basılınca o beklenir.
+    @State private var videoPreviewURL: URL?
+    @State private var videoExport: Task<VideoCompression.PreparedClip, Error>?
     @State private var caption = ""
     @State private var selectedPlace: CampusPlace?
     @State private var showCamera = false
@@ -134,7 +137,7 @@ struct CreatePostView: View {
             }
             .onChange(of: contentType) { _, type in
                 // Gönderi videosuz: story'den geçince klip durmasın.
-                if type == .post, videoClip != nil {
+                if type == .post, videoPreviewURL != nil {
                     clearVideo()
                     imageData = nil
                     selectedItem = nil
@@ -261,7 +264,7 @@ struct CreatePostView: View {
                     storyEmptyState(filter: filter)
                 }
             } else {
-                StoryMediaCanvas(url: nil, data: videoClip?.posterJPEG ?? imageData, videoURL: videoClip?.fileURL, isPaused: false)
+                StoryMediaCanvas(url: nil, data: imageData, videoURL: videoPreviewURL, isPaused: false)
                     .ignoresSafeArea()
                     .onTapGesture { UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil) }
                 storyOverlay(filter: filter)
@@ -273,6 +276,13 @@ struct CreatePostView: View {
             }
         }
         .preferredColorScheme(.dark)
+        // Önizlemede de ses: izleme ekranı gibi sessiz modda da duyulsun.
+        .onChange(of: videoPreviewURL) { _, url in
+            if url == nil { StoryPlaybackAudio.deactivate() } else { StoryPlaybackAudio.activate() }
+        }
+        .onDisappear {
+            if videoPreviewURL != nil { StoryPlaybackAudio.deactivate() }
+        }
     }
 
     private var storyPreparing: some View {
@@ -524,7 +534,7 @@ struct CreatePostView: View {
         // etiketi Sendable bir kapanış ve oradan doğrudan özellik okumak uyarı üretiyor.
         let currentImage = imageData
         let story = isStory
-        let video = videoClip != nil
+        let video = videoPreviewURL != nil
         let preparing = isPreparingMedia
         let filter: PHPickerFilter = story ? .any(of: [.images, .videos]) : .images
         let label = ComposerPreview(imageData: currentImage, isStory: story, isVideo: video, isPreparing: preparing)
@@ -609,12 +619,14 @@ struct CreatePostView: View {
             let ok: Bool
             if isStory {
                 let upload: StoryUpload
-                if let videoClip {
-                    upload = .video(
-                        fileURL: videoClip.fileURL,
-                        posterJPEG: videoClip.posterJPEG,
-                        duration: videoClip.duration
-                    )
+                if let videoExport {
+                    // Dönüştürme bitmediyse düğme dönerken burada beklenir.
+                    guard let clip = try? await videoExport.value else {
+                        isPublishing = false
+                        appState.show(L10n.Composer.videoLoadFailed)
+                        return
+                    }
+                    upload = .video(fileURL: clip.fileURL, posterJPEG: clip.posterJPEG, duration: clip.duration)
                 } else if let imageData {
                     upload = .photo(imageData)
                 } else {
@@ -711,35 +723,65 @@ struct CreatePostView: View {
     }
 
     private func ingestPickedVideo(_ item: PhotosPickerItem) async {
+        // Dosya galeriden (gerekirse iCloud'dan) kopyalanırken de gösterge açık.
+        await MainActor.run {
+            isPreparingMedia = true
+            isPreparingVideo = true
+        }
         do {
             guard let movie = try await item.loadTransferable(type: PickedMovie.self) else {
                 throw VideoCompression.Failure.empty
             }
             await ingestVideoURL(movie.url)
         } catch {
-            await MainActor.run { showVideoFailure(error) }
+            await MainActor.run {
+                isPreparingMedia = false
+                isPreparingVideo = false
+                showVideoFailure(error)
+            }
         }
     }
 
+    /// Önizleme ilk kare ve süre okununca açılır (anlık). Yüklenecek MP4'e
+    /// dönüştürme eskiden önizlemeden önce bekleniyordu; birkaç saniye
+    /// "Video hazırlanıyor" kalıyordu. Artık arkada sürüyor.
     private func ingestVideoURL(_ url: URL) async {
         await MainActor.run {
             isPreparingMedia = true
             isPreparingVideo = true
         }
-        defer { isPreparingVideo = false }
         do {
-            let prepared = try await VideoCompression.prepareStoryClip(from: url)
+            let look = try await VideoCompression.quickLook(at: url)
             await MainActor.run {
                 clearVideo()
-                videoClip = prepared
-                imageData = prepared.posterJPEG
+                videoPreviewURL = url
+                imageData = look.poster
                 isPreparingMedia = false
+                isPreparingVideo = false
+                let export = Task { try await VideoCompression.prepareStoryClip(from: url) }
+                videoExport = export
+                Task { await reportExportFailure(export, for: url) }
             }
         } catch {
+            try? FileManager.default.removeItem(at: url)
             await MainActor.run {
                 isPreparingMedia = false
+                isPreparingVideo = false
                 showVideoFailure(error)
             }
+        }
+    }
+
+    /// Dönüştürme başarısız olursa (çok büyük, bozuk) paylaş'ı beklemeden söyle.
+    /// Bu arada başka video seçildiyse eski hata gösterilmez.
+    private func reportExportFailure(_ export: Task<VideoCompression.PreparedClip, Error>, for url: URL) async {
+        guard case .failure(let error) = await export.result else { return }
+        await MainActor.run {
+            guard videoPreviewURL == url else { return }
+            clearVideo()
+            imageData = nil
+            selectedItem = nil
+            showVideoFailure(error)
         }
     }
 
@@ -763,10 +805,19 @@ struct CreatePostView: View {
     }
 
     private func clearVideo() {
-        if let old = videoClip {
-            try? FileManager.default.removeItem(at: old.fileURL)
+        if let old = videoPreviewURL {
+            try? FileManager.default.removeItem(at: old)
         }
-        videoClip = nil
+        if let export = videoExport {
+            export.cancel()
+            Task.detached {
+                if let clip = try? await export.value {
+                    try? FileManager.default.removeItem(at: clip.fileURL)
+                }
+            }
+        }
+        videoPreviewURL = nil
+        videoExport = nil
     }
 }
 

@@ -23,6 +23,15 @@ enum VideoCompression {
         case posterFailed
     }
 
+    /// Seçilen videonun ilk karesi ve (35 sn'ye kesilmiş) süresi. Dönüştürme
+    /// birkaç saniye sürüyor; önizleme bunu beklemeden asıl dosyayla açılıyor.
+    static func quickLook(at source: URL) async throws -> (poster: Data, duration: TimeInterval) {
+        let asset = AVURLAsset(url: source)
+        let seconds = CMTimeGetSeconds(try await asset.load(.duration))
+        guard seconds.isFinite, seconds > 0.2 else { throw Failure.empty }
+        return (try await posterJPEG(from: asset), min(seconds, maxDuration))
+    }
+
     static func prepareStoryClip(from source: URL) async throws -> PreparedClip {
         let asset = AVURLAsset(url: source)
         let duration = try await asset.load(.duration)

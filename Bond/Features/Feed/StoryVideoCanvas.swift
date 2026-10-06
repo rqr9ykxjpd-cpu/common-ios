@@ -47,6 +47,9 @@ struct StoryVideoCanvas: UIViewRepresentable {
             stopObserving()
             let item = AVPlayer(url: url)
             item.actionAtItemEnd = .pause
+            // Paylaşılan klip zaten en fazla 35 sn; paylaşmadan önceki önizleme
+            // asıl (uzun olabilen) dosyayı oynatıyor, o da aynı yerde dursun.
+            item.currentItem?.forwardPlaybackEndTime = CMTime(seconds: CampusStory.maxVideoDuration, preferredTimescale: 600)
             player = item
             currentURL = url
             view.playerLayer.player = item
@@ -100,6 +103,20 @@ struct StoryVideoCanvas: UIViewRepresentable {
             if let endObserver { NotificationCenter.default.removeObserver(endObserver) }
             endObserver = nil
         }
+    }
+}
+
+/// Story videosunun sesi: sessiz modda da duyulsun (izleme ve paylaşmadan
+/// önceki önizleme). Arkada çalan müzik kısılır, kapanınca geri gelir.
+enum StoryPlaybackAudio {
+    static func activate() {
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(.playback, mode: .moviePlayback, options: [.duckOthers])
+        try? session.setActive(true)
+    }
+
+    static func deactivate() {
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 }
 
