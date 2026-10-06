@@ -51,6 +51,10 @@ private struct SuggestionBubble: View {
 
     private let avatar: CGFloat = 68
 
+    /// Kurucu satırda öne çıksın: kurucu renginde ince halka, adın yanında tik,
+    /// "Common kurucusu" aynı renkte. Parlama ya da hareket yok; göz rengi bulur.
+    private var isFounder: Bool { suggestion.profile.badge == .founder }
+
     var body: some View {
         ZStack(alignment: .top) {
             Button(action: open) {
@@ -63,15 +67,32 @@ private struct SuggestionBubble: View {
                     .frame(width: avatar, height: avatar)
                     .clipShape(Circle())
                     .overlay(Circle().strokeBorder(BondTheme.hairline, lineWidth: 0.5))
+                    .overlay {
+                        // Halka fotoğrafın dışında, arada kâğıt rengi boşluk (story halkası gibi).
+                        if isFounder {
+                            Circle()
+                                .strokeBorder(BondTheme.ember, lineWidth: 2.5)
+                                .padding(-5)
+                        }
+                    }
 
-                    Text(suggestion.profile.name)
-                        .font(BondTheme.Typography.footnote.weight(.semibold))
-                        .foregroundStyle(BondTheme.ink)
-                        .lineLimit(1)
+                    HStack(spacing: 3) {
+                        Text(suggestion.profile.name)
+                            .font(BondTheme.Typography.footnote.weight(.semibold))
+                            .foregroundStyle(BondTheme.ink)
+                            .lineLimit(1)
+                        if isFounder {
+                            Image(systemName: "checkmark.seal.fill")
+                                .font(.system(size: 11, weight: .semibold))
+                                .symbolRenderingMode(.palette)
+                                .foregroundStyle(.white, BondTheme.ember)
+                                .accessibilityHidden(true)
+                        }
+                    }
 
                     Text(suggestion.reason.label)
-                        .font(BondTheme.Typography.caption2)
-                        .foregroundStyle(BondTheme.muted)
+                        .font(BondTheme.Typography.caption2.weight(isFounder ? .semibold : .regular))
+                        .foregroundStyle(isFounder ? BondTheme.ember : BondTheme.muted)
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
