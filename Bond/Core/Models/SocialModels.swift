@@ -215,7 +215,7 @@ struct CampusStory: Identifiable, Hashable {
     /// Fotoğraf story'nin ekranda kalış süresi (oynatıcı).
     static let photoPlayback: TimeInterval = 6
     /// Sunucunun kabul ettiği üst sınır; sıkıştırma da bunu keser.
-    static let maxVideoDuration: TimeInterval = 15
+    static let maxVideoDuration: TimeInterval = 35
 
     init(id: UUID = UUID(), author: StudentProfile, imageURL: URL? = nil, imageAssetName: String? = nil, localImageData: Data? = nil, caption: String, place: CampusPlace? = nil, viewed: Bool = false, viewRecords: [StoryViewRecord] = [], isMine: Bool = false, expiresAt: Date = .now.addingTimeInterval(CampusStory.lifetime), mediaKind: StoryMediaKind = .image, videoURL: URL? = nil, posterURL: URL? = nil, duration: TimeInterval? = nil) {
         self.id = id

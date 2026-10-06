@@ -1,7 +1,7 @@
 import AVFoundation
 import UIKit
 
-/// Story videosunu yüklemeden önce MP4'e çevirir, 15 sn'ye keser, kapak üretir.
+/// Story videosunu yüklemeden önce MP4'e çevirir, 35 sn'ye keser, kapak üretir.
 ///
 /// Galeri/kamera MOV/HEVC verebiliyor; bucket yalnızca `video/mp4` kabul ediyor
 /// ve 30 MB sınırlı. Ham dosyayı olduğu gibi göndermek hem reddedilir hem de

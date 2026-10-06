@@ -442,7 +442,7 @@ extension SupabaseProductService {
                 _ = try? await client.storage.from("story-media").remove(paths: [mediaPath])
                 throw error
             }
-            let durationMs = min(15_000, max(1, Int((duration * 1000).rounded())))
+            let durationMs = min(Int(CampusStory.maxVideoDuration * 1000), max(1, Int((duration * 1000).rounded())))
             do {
                 try await client.from("stories")
                     .insert(

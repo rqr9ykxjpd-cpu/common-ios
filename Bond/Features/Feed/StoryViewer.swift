@@ -15,6 +15,8 @@ struct StoryViewer: View {
     @State private var playStartedAt: Date?
     /// Duraklatmadan önce oynanmış süre (saniye).
     @State private var playedBefore: TimeInterval = 0
+    /// Video story gerçekten oynuyor mu; inerken ve takılınca süre durur.
+    @State private var videoPlaying = false
     /// Geçiş yönü ve türü: kişi değişince kayar, aynı kişide çapraz solar.
     @State private var goingForward = true
     @State private var authorChanged = false
@@ -99,7 +101,7 @@ struct StoryViewer: View {
         }
         // Onay diyaloğu açıkken de duraklat: aksi halde altta story ilerleyip
         // silinecek kimlik kayboluyordu.
-        .task(id: "\(currentIndex)-\(replyFocused)-\(selectedStoryAuthor != nil)-\(isPaused)-\(showDeleteConfirmation)-\(showViewers)-\(reportTarget != nil)") {
+        .task(id: "\(currentIndex)-\(replyFocused)-\(selectedStoryAuthor != nil)-\(isPaused)-\(showDeleteConfirmation)-\(showViewers)-\(reportTarget != nil)-\(videoPlaying)") {
             await playCurrentStory()
         }
         // Basılı tutunca duraklatma Plus'a özel. Ücretsizde basılı tutmak, bunun
@@ -204,7 +206,14 @@ struct StoryViewer: View {
             ZStack {
                 StoryMediaCanvas(
                     url: story.imageURL, data: story.localImageData, assetName: story.imageAssetName,
-                    videoURL: story.isVideo ? story.videoURL : nil, isPaused: isInteractionBlocking
+                    videoURL: story.isVideo ? story.videoURL : nil, isPaused: isInteractionBlocking,
+                    // Geçiş sırasında eski kartın oynatıcısı da haber verebilir; yalnızca açık story sayılır.
+                    onVideoPlaying: { oynuyor in
+                        if self.story?.id == story.id { videoPlaying = oynuyor }
+                    },
+                    onVideoEnd: {
+                        if self.story?.id == story.id { next() }
+                    }
                 )
                 .frame(width: proxy.size.width, height: proxy.size.height)
 
@@ -511,7 +520,8 @@ struct StoryViewer: View {
 
     @MainActor
     private func playCurrentStory() async {
-        guard let story, !isInteractionBlocking else {
+        // Video henüz oynamıyorsa (iniyor ya da takıldı) süre de işlemez.
+        guard let story, !isInteractionBlocking, !story.isVideo || videoPlaying else {
             freezeProgress()
             return
         }
@@ -558,6 +568,7 @@ struct StoryViewer: View {
     private func prepareForTransition() {
         playStartedAt = nil
         playedBefore = 0
+        videoPlaying = false
         reply = ""
         replySent = false
         liked = false

@@ -10,13 +10,16 @@ struct StoryMediaCanvas: View {
     var assetName: String? = nil
     var videoURL: URL? = nil
     var isPaused = false
+    /// Video oynuyor mu (inerken ve takılınca hayır) ve bitti mi; izleyicinin süresi için.
+    var onVideoPlaying: ((Bool) -> Void)? = nil
+    var onVideoEnd: (() -> Void)? = nil
 
     var body: some View {
         GeometryReader { geo in
             ZStack {
                 Color.black
                 if let videoURL {
-                    StoryVideoCanvas(url: videoURL, isPaused: isPaused)
+                    StoryVideoCanvas(url: videoURL, isPaused: isPaused, onPlaying: onVideoPlaying, onEnd: onVideoEnd)
                 } else {
                     // Arka plan: aynı görsel, doldur + bulanık + karartma.
                     ProfileMedia(url: url, data: data, assetName: assetName, kind: .content, contentMode: .fill)

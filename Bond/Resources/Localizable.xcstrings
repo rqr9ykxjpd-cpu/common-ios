@@ -3328,13 +3328,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Keep the video under 15 seconds and 28 MB."
+            "value" : "Keep the video under 35 seconds and 28 MB."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Video 15 saniyeyi ve 28 MB’ı geçmesin."
+            "value" : "Video 35 saniyeyi ve 28 MB’ı geçmesin."
           }
         }
       }
