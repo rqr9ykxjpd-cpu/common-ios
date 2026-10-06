@@ -51,9 +51,14 @@ private struct SuggestionBubble: View {
 
     private let avatar: CGFloat = 68
 
-    /// Kurucu satırda öne çıksın: kurucu renginde ince halka, adın yanında tik,
-    /// "Common kurucusu" aynı renkte. Parlama ya da hareket yok; göz rengi bulur.
+    /// Kurucu satırda öne çıksın: kurucu renginde ince halka ve adın yanında
+    /// tik; altında yazı yok. Parlama ya da hareket yok; göz rengi bulur.
     private var isFounder: Bool { suggestion.profile.badge == .founder }
+
+    /// Ekranda yazmasa da VoiceOver kurucu olduğunu söylesin.
+    private var spokenReason: String {
+        isFounder ? (suggestion.profile.badge.title ?? "") : suggestion.reason.label
+    }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -90,19 +95,21 @@ private struct SuggestionBubble: View {
                         }
                     }
 
-                    Text(suggestion.reason.label)
-                        .font(BondTheme.Typography.caption2.weight(isFounder ? .semibold : .regular))
-                        .foregroundStyle(isFounder ? BondTheme.ember : BondTheme.muted)
-                        .multilineTextAlignment(.center)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
+                    if !isFounder {
+                        Text(suggestion.reason.label)
+                            .font(BondTheme.Typography.caption2)
+                            .foregroundStyle(BondTheme.muted)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 .frame(width: 84)
                 .contentShape(Rectangle())
             }
             .buttonStyle(PressableStyle())
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(suggestion.profile.name), \(suggestion.reason.label)")
+            .accessibilityLabel("\(suggestion.profile.name), \(spokenReason)")
             .accessibilityHint(L10n.Suggestions.openHint)
             .accessibilityAddTraits(.isButton)
             .accessibilityAction(named: L10n.Suggestions.dismiss, dismiss)
