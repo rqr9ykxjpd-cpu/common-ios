@@ -310,13 +310,13 @@
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hayalet mod: ziyaretlerde ve story izleyenlerde görünmezsin"
+            "value": "Hayalet mod: ziyaretlerde ve story izleyenlerde görünmezsin (Common kurucusunun profili hariç)"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghost Mode keeps you off profile visits and story views"
+            "value": "Ghost Mode keeps you off profile visits and story views (except the Common founder’s profile)"
           }
         }
       }

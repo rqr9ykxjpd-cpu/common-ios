@@ -10293,13 +10293,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hide whose profile you open and which stories you view"
+            "value" : "Hide whose profile you open and which stories you view (except the Common founder’s profile)"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kimin profiline girdiğin ve hangi story’yi izlediğin gizlensin"
+            "value" : "Kimin profiline girdiğin ve hangi story’yi izlediğin gizlensin (Common kurucusunun profili hariç)"
           }
         }
       }
@@ -10310,13 +10310,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "On — profiles you open and stories you view don’t show you"
+            "value" : "On — profiles you open and stories you view don’t show you, except the Common founder’s profile"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Açık — girdiğin profillerde ve izlediğin story’lerde görünmüyorsun"
+            "value" : "Açık — girdiğin profillerde ve izlediğin story’lerde görünmüyorsun. Common kurucusunun profili hariç."
           }
         }
       }
