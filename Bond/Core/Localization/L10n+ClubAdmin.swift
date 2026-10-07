@@ -43,6 +43,18 @@ extension L10n {
         static var saveFailed: String { String(localized: "saveFailed", table: "ClubAdmin") }
         static var nameRequired: String { String(localized: "nameRequired", table: "ClubAdmin") }
         static var emptyClubs: String { String(localized: "emptyClubs", table: "ClubAdmin") }
+        static var makeClubAccount: String { String(localized: "makeClubAccount", table: "ClubAdmin") }
+        static var clubAccountTitle: String { String(localized: "clubAccountTitle", table: "ClubAdmin") }
+        static var clubAccountHint: String { String(localized: "clubAccountHint", table: "ClubAdmin") }
+        static func clubAccountConfirm(_ account: String, _ club: String) -> String {
+            String(format: String(localized: "clubAccountConfirm", table: "ClubAdmin"), account, club)
+        }
+        static func clubAccountDone(_ club: String) -> String {
+            String(format: String(localized: "clubAccountDone", table: "ClubAdmin"), club)
+        }
+        static var clubAccountCurrent: String { String(localized: "clubAccountCurrent", table: "ClubAdmin") }
+        static var removeClubAccount: String { String(localized: "removeClubAccount", table: "ClubAdmin") }
+        static var clubAccountRemoved: String { String(localized: "clubAccountRemoved", table: "ClubAdmin") }
         static var emptyClubsBody: String { String(localized: "emptyClubsBody", table: "ClubAdmin") }
         static var managerNote: String { String(localized: "managerNote", table: "ClubAdmin") }
         static var openInstagram: String { String(localized: "openInstagram", table: "ClubAdmin") }

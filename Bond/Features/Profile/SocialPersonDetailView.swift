@@ -29,6 +29,7 @@ struct SocialPersonDetailView: View {
     @State private var showPortrait = false
     @Namespace private var portreAlani
     @State private var showSuspendConfirmation = false
+    @State private var showClubAccount = false
 
     // Kart kaydırma. Sağ = bağlantı isteği, sol = kapat. Fotoğraf destesi
     // yatay pan almıyor; bu jest kartın tamamına ait.
@@ -236,11 +237,22 @@ struct SocialPersonDetailView: View {
                             showSuspendConfirmation = true
                         }
                     }
+                    // Common hesabı: kulübün açtığı hesabı kulübe bağlar.
+                    if appState.canMakeClubAccounts, !isMe,
+                       profile.badge != .founder, profile.badge != .moderator {
+                        Divider()
+                        Button(L10n.ClubAdmin.makeClubAccount, systemImage: "building.columns") {
+                            showClubAccount = true
+                        }
+                    }
                 } label: {
                     cardBarGlyph("ellipsis")
                 }
             }
             .withoutSharedGlass()
+        }
+        .sheet(isPresented: $showClubAccount) {
+            ClubAccountSheet(person: profile)
         }
         .confirmationDialog(
             L10n.Chat.blockConfirm(profile.name),
