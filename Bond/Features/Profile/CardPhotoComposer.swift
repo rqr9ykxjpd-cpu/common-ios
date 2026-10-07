@@ -179,7 +179,7 @@ struct CardPhotoComposer: View {
             // Aynı fotoğraf yeniden seçilebilsin; seçici aynı seçimi değişiklik saymıyor.
             selectedItem = nil
         }
-        let raw = try? await item.loadTransferable(type: Data.self)
+        let raw = try? await item.loadImageData()
         var data: Data?
         if let raw { data = await ImageCompression.prepareForUploadInBackground(raw) }
         if let data {

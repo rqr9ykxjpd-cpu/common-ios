@@ -531,7 +531,7 @@ private struct PhotoStep: View {
             guard newItem != nil else { return }
             isLoading = true
             Task {
-                let raw = try? await newItem?.loadTransferable(type: Data.self)
+                let raw = try? await newItem?.loadImageData()
                 let picked = raw.flatMap(UIImage.init(data:))
                 await MainActor.run {
                     if let picked {

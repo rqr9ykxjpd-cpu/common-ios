@@ -119,7 +119,7 @@ struct ProfileEditorView: View {
             // kırpılıyor ve kullanıcının yapabileceği bir şey olmuyordu.
             Task {
                 guard let item else { return }
-                guard let raw = try? await item.loadTransferable(type: Data.self),
+                guard let raw = try? await item.loadImageData(),
                       let picked = ImageCompression.imageForDisplay(raw) else {
                     await MainActor.run { appState.show(L10n.Composer.photoLoadFailed) }
                     return
@@ -139,7 +139,7 @@ struct ProfileEditorView: View {
             Task {
                 var loadedImages: [Data] = []
                 for item in items.prefix(CampusLimits.maxGalleryPhotos) {
-                    if let raw = try? await item.loadTransferable(type: Data.self),
+                    if let raw = try? await item.loadImageData(),
                        let data = ImageCompression.prepareForUpload(raw) { loadedImages.append(data) }
                 }
                 await MainActor.run {

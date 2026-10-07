@@ -295,7 +295,7 @@ struct ClubEditorView: View {
         uploadingLogo = true
         defer { uploadingLogo = false; logoItem = nil }
         do {
-            guard let veri = try await item.loadTransferable(type: Data.self) else { return }
+            guard let veri = try await item.loadImageData() else { return }
             draft.logoURL = try await appState.uploadClubLogo(id, imageData: veri)
             Haptics.success()
         } catch {

@@ -208,7 +208,7 @@ struct StudyGroupCard: View {
     private func shareSpot(_ item: PhotosPickerItem) async {
         isSharingSpot = true
         defer { isSharingSpot = false; spotPickerItem = nil }
-        guard let data = try? await item.loadTransferable(type: Data.self) else {
+        guard let data = try? await item.loadImageData() else {
             appState.showError(L10n.StudyGroup.spotFailed); return
         }
         await appState.shareStudyGroupSpot(group.id, imageData: data)

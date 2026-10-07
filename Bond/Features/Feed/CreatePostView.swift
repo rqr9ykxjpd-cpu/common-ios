@@ -251,6 +251,10 @@ struct CreatePostView: View {
     /// öyle (kırpma yok, bulanık dolgu). Not fotoğrafın üstüne yazılır, yer çipi
     /// altta. Form kalktı: küçük kart, gerçek paylaşımı hiç göstermiyordu.
     private var storyComposer: some View {
+        // Seçiciler `preferredItemEncoding: .current` ile: fotoğraf/video telefondaki
+        // biçimiyle gelir. Varsayılanda sistem HEIC/HEVC'yi önce dönüştürüyordu;
+        // büyük ya da iCloud'daki öğede seçimden sonra uzun bekleme oluyordu.
+        // Sıkıştırmayı zaten uygulama yapıyor (ImageCompression, VideoCompression).
         let filter: PHPickerFilter = .any(of: [.images, .videos])
         return ZStack {
             Color.black.ignoresSafeArea()
@@ -305,7 +309,7 @@ struct CreatePostView: View {
 
     private func storyEmptyState(filter: PHPickerFilter) -> some View {
         VStack(spacing: BondTheme.Space.lg) {
-            PhotosPicker(selection: $selectedItem, matching: filter) {
+            PhotosPicker(selection: $selectedItem, matching: filter, preferredItemEncoding: .current) {
                 VStack(spacing: BondTheme.Space.sm) {
                     Image(systemName: "photo.badge.plus").font(.system(size: 40, weight: .light))
                     Text(L10n.Composer.pickStoryPhoto).font(.system(size: 17, weight: .semibold))
@@ -366,7 +370,7 @@ struct CreatePostView: View {
                         storyChip(selectedPlace?.name ?? L10n.Composer.addPlace, icon: "mappin", highlighted: selectedPlace != nil)
                     }
                     Spacer()
-                    PhotosPicker(selection: $selectedItem, matching: filter) {
+                    PhotosPicker(selection: $selectedItem, matching: filter, preferredItemEncoding: .current) {
                         // PhotosPicker etiketi Sendable kapanış; view'i dışarıda kur.
                         StoryChipLabel(title: L10n.Composer.changePhoto, icon: "photo.on.rectangle", highlighted: false)
                     }
@@ -541,10 +545,10 @@ struct CreatePostView: View {
 
         Group {
             if story {
-                PhotosPicker(selection: $selectedItem, matching: filter) { label }
+                PhotosPicker(selection: $selectedItem, matching: filter, preferredItemEncoding: .current) { label }
             } else {
                 PhotosPicker(selection: $pickedItems, maxSelectionCount: max(1, remainingPhotos),
-                             selectionBehavior: .ordered, matching: .images) { label }
+                             selectionBehavior: .ordered, matching: .images, preferredItemEncoding: .current) { label }
                     .disabled(remainingPhotos == 0)
             }
         }
@@ -584,7 +588,7 @@ struct CreatePostView: View {
                 }
                 if remainingPhotos > 0 {
                     PhotosPicker(selection: $pickedItems, maxSelectionCount: remainingPhotos,
-                                 selectionBehavior: .ordered, matching: .images) {
+                                 selectionBehavior: .ordered, matching: .images, preferredItemEncoding: .current) {
                         Image(systemName: "plus")
                             .font(.system(size: 20, weight: .semibold))
                             .foregroundStyle(BondTheme.ink)
@@ -682,7 +686,7 @@ struct CreatePostView: View {
         // saniye hiçbir şey olmuyormuş gibi bekliyordu.
         isPreparingMedia = true
         defer { isPreparingMedia = false }
-        let raw = try? await item.loadTransferable(type: Data.self)
+        let raw = try? await item.loadImageData()
         var loaded: Data?
         if let raw { loaded = await ImageCompression.prepareForUploadInBackground(raw) }
         if let loaded {
@@ -692,7 +696,9 @@ struct CreatePostView: View {
             }
             return
         }
-        if isStory, let movie = try? await item.loadTransferable(type: PickedMovie.self) {
+        // Fotoğraf açılamadıysa video yoluna düşmez (canlı fotoğrafın hareketli
+        // kısmı yükleniyordu); yalnız görseli olmayan öğe video olarak denenir.
+        if isStory, !item.hasImage, let movie = try? await item.loadTransferable(type: PickedMovie.self) {
             await ingestVideoURL(movie.url)
             return
         }
@@ -709,7 +715,7 @@ struct CreatePostView: View {
         let hazir = await withTaskGroup(of: (Int, Data?).self) { group in
             for (index, item) in items.enumerated() {
                 group.addTask {
-                    guard let raw = try? await item.loadTransferable(type: Data.self) else { return (index, nil) }
+                    guard let raw = try? await item.loadImageData() else { return (index, nil) }
                     return (index, await ImageCompression.prepareForUploadInBackground(raw))
                 }
             }
@@ -790,10 +796,7 @@ struct CreatePostView: View {
         let hasMovie = types.contains { $0.conforms(to: .movie) || $0.conforms(to: .video) }
         guard hasMovie else { return false }
         // Canlı fotoğraf hem görsel hem video taşır; story'de fotoğraf kalsın.
-        if types.contains(where: { $0.conforms(to: .image) || $0.conforms(to: .livePhoto) }) {
-            return false
-        }
-        return true
+        return !item.hasImage
     }
 
     private func showVideoFailure(_ error: Error) {
