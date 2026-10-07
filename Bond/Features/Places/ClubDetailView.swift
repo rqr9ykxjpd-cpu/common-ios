@@ -7,6 +7,8 @@ struct ClubDetailView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var editing = false
     @State private var showPeople = false
+    @State private var accountProfile: StudentProfile?
+    @State private var openingAccount = false
 
     /// Düzenlendikten sonra güncel hali görünsün; kapatılırsa açıldığı hal kalır.
     private var current: CampusClub { appState.clubs.first { $0.id == club.id } ?? club }
@@ -15,6 +17,11 @@ struct ClubDetailView: View {
     private var joined: Bool { appState.isJoined(to: club) }
     private var accent: Color { Color(hex: current.accentHex) }
     private var displayedMemberCount: Int { current.memberCount + (joined ? 1 : 0) }
+    private var nextEvent: String { current.nextEvent.trimmingCharacters(in: .whitespacesAndNewlines) }
+    /// Kulübün hesabı; kulüp hesabının kendisinde gösterilmez.
+    private var accountLink: ClubAccountLink? {
+        appState.clubAccountLink(forClub: club.id).flatMap { $0.profileID == appState.currentUserID ? nil : $0 }
+    }
 
     var body: some View {
         ZStack {
@@ -25,8 +32,10 @@ struct ClubDetailView: View {
                     header
                     identity
                     clubInfo
+                    if let accountLink { accountEntry(accountLink) }
                     if canManage { peopleEntry }
-                    upcomingEvent
+                    // Etkinlik yoksa bölüm hiç görünmez.
+                    if !nextEvent.isEmpty { upcomingEvent }
                     contact
                     benefits
                     membershipButton
@@ -42,7 +51,16 @@ struct ClubDetailView: View {
                 $0.disablesAnimations = true
             }
         }
-        .task { await appState.loadClubExtras() }
+        .task {
+            async let ek: Void = appState.loadClubExtras()
+            async let baglar: Void = appState.loadClubAccountLinks()
+            _ = await (ek, baglar)
+        }
+        .sheet(item: $accountProfile) { profile in
+            NavigationStack {
+                SocialPersonDetailView(profile: profile, place: nil, showsClose: true)
+            }
+        }
         .sheet(isPresented: $editing) {
             ClubEditorView(clubID: club.id)
         }
@@ -114,27 +132,20 @@ struct ClubDetailView: View {
         VStack(alignment: .leading, spacing: BondTheme.Space.compact) {
             Eyebrow(text: L10n.Club.upcoming, color: BondTheme.muted)
 
-            let event = current.nextEvent.trimmingCharacters(in: .whitespacesAndNewlines)
             HStack(spacing: 13) {
-                Image(systemName: event.isEmpty ? "calendar" : "calendar.badge.clock")
+                Image(systemName: "calendar.badge.clock")
                     .font(.title3)
                     .foregroundStyle(accent)
                     .frame(width: 32)
 
                 VStack(alignment: .leading, spacing: BondTheme.Space.xs) {
-                    if event.isEmpty {
-                        Text(L10n.Club.noEvent)
-                            .font(.subheadline)
+                    Text(nextEvent)
+                        .font(.headline)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if let place = current.meetingPlace {
+                        Label(place.name, systemImage: "mappin.and.ellipse")
+                            .font(.footnote)
                             .foregroundStyle(.secondary)
-                    } else {
-                        Text(event)
-                            .font(.headline)
-                            .fixedSize(horizontal: false, vertical: true)
-                        if let place = current.meetingPlace {
-                            Label(place.name, systemImage: "mappin.and.ellipse")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                        }
                     }
                 }
             }
@@ -144,6 +155,51 @@ struct ClubDetailView: View {
                 BondTheme.surface,
                 in: RoundedRectangle(cornerRadius: 16, style: .continuous)
             )
+        }
+    }
+
+    /// Kulübün paylaşımları ve mesajları için profili.
+    private func accountEntry(_ link: ClubAccountLink) -> some View {
+        Button {
+            Task { await openAccount(link) }
+        } label: {
+            HStack(spacing: 13) {
+                ClubLogoView(url: extras?.logoURL, icon: current.icon, accentHex: current.accentHex, size: 32)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L10n.ClubSwitch.clubAccountRow)
+                        .font(.headline)
+                    if let username = link.username, !username.isEmpty {
+                        Text("@" + username)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+                Spacer()
+                if openingAccount {
+                    ProgressView()
+                } else {
+                    Image(systemName: "chevron.right")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(BondTheme.Space.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+        .buttonStyle(.pressable)
+        .disabled(openingAccount)
+        .accessibilityIdentifier("club.account")
+    }
+
+    private func openAccount(_ link: ClubAccountLink) async {
+        openingAccount = true
+        defer { openingAccount = false }
+        do {
+            accountProfile = try await appState.clubAccountProfile(link.profileID)
+        } catch {
+            appState.showError(error, fallback: L10n.ClubSwitch.accountLoadFailed)
         }
     }
 

@@ -15,6 +15,16 @@ protocol ClubAccountManaging: Sendable {
     func switchToClubAccount(_ clubID: UUID) async throws
     /// Kulüp hesabının bu cihazdaki oturumunu kapatır, saklanan oturuma döner.
     func returnToSession(_ stored: Data) async throws
+    /// Açık kulüplerin hesapları: kulüp sayfası ↔ kulüp hesabı bağlantısı.
+    func clubAccountLinks() async throws -> [ClubAccountLink]
+    /// Kulüp hesabının kartı (kulüp sayfasından açmak için).
+    func clubAccountProfile(_ profileID: UUID) async throws -> StudentProfile
+}
+
+struct ClubAccountLink: Equatable, Sendable {
+    let clubID: UUID
+    let profileID: UUID
+    let username: String?
 }
 
 struct ClubAccountStatus: Equatable, Sendable {

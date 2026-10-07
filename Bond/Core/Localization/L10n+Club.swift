@@ -4,7 +4,6 @@ extension L10n {
     enum Club {
         static var yuClub: String { String(localized: "club.yuClub") }
         static var upcoming: String { String(localized: "club.upcoming") }
-        static var noEvent: String { String(localized: "club.noEvent") }
         static var whatToExpect: String { String(localized: "club.whatToExpect") }
         static var members: String { String(localized: "club.members") }
         static var status: String { String(localized: "club.status") }

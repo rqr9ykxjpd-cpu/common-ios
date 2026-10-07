@@ -30,6 +30,7 @@ struct SocialPersonDetailView: View {
     @Namespace private var portreAlani
     @State private var showSuspendConfirmation = false
     @State private var showClubManager = false
+    @State private var clubPage: CampusClub?
 
     // Kart kaydırma. Sağ = bağlantı isteği, sol = kapat. Fotoğraf destesi
     // yatay pan almıyor; bu jest kartın tamamına ait.
@@ -249,6 +250,9 @@ struct SocialPersonDetailView: View {
                 }
             }
             .withoutSharedGlass()
+        }
+        .sheet(item: $clubPage) { kulup in
+            ClubDetailView(club: kulup)
         }
         .sheet(isPresented: $showClubManager) {
             ClubManagerSheet(person: profile)
@@ -727,6 +731,28 @@ struct SocialPersonDetailView: View {
                 OfficialTick(size: 18)
             } else {
                 ProfileBadgeLabel(badge: details?.badge ?? profile.badge)
+            }
+
+            // Kulüp hesabı: kulübün sayfası (katılma, etkinlik).
+            if let kulup = appState.club(forAccount: profile.id) {
+                Button { clubPage = kulup } label: {
+                    HStack(spacing: 6) {
+                        ClubLogoView(url: appState.clubExtras[kulup.id]?.logoURL, icon: kulup.icon, accentHex: kulup.accentHex, size: 22)
+                        Text(L10n.ClubSwitch.clubPageRow)
+                            .font(BondTheme.Typography.footnote.weight(.semibold))
+                        Image(systemName: "chevron.right")
+                            .font(.caption2.weight(.bold))
+                    }
+                    .foregroundStyle(.primary)
+                    .padding(.leading, 6)
+                    .padding(.trailing, 12)
+                    .frame(minHeight: 34)
+                    .overlay(Capsule().strokeBorder(theme.rule))
+                    .contentShape(Capsule())
+                }
+                .buttonStyle(.pressable)
+                .padding(.top, 4)
+                .accessibilityIdentifier("person.clubPage")
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

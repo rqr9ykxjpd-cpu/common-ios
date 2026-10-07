@@ -159,6 +159,9 @@ final class AppState {
     var clubAccountClubID: UUID?
     /// Hesap geçişi sürerken ekranı örten perde.
     var accountSwitch: AccountSwitchCurtain?
+    /// Açık kulüplerin hesapları (kulüp sayfası ↔ kulüp hesabı). Herkese açık
+    /// bilgi; `clubs` gibi hesap değişince de korunur.
+    var clubAccountLinks: [ClubAccountLink] = []
     /// Temizlenen sohbetler; temizlikten sonra mesaj yoksa listede görünmez.
     var clearedConversationIDs: Set<UUID> = []
     /// Kim nerede'de biri geldi ya da gitti; açık kişi listesi buna bakıp yenilenir.

@@ -61,6 +61,39 @@ extension SupabaseProductService: ClubAccountManaging {
     }
 }
 
+extension SupabaseProductService {
+    func clubAccountLinks() async throws -> [ClubAccountLink] {
+        guard currentUserID != nil else { throw BackendServiceError.missingSession }
+        let rows: [ClubAccountLinkRow] = try await client.rpc("club_account_links").execute().value
+        return rows.map { ClubAccountLink(clubID: $0.clubID, profileID: $0.profileID, username: $0.username) }
+    }
+
+    func clubAccountProfile(_ profileID: UUID) async throws -> StudentProfile {
+        guard currentUserID != nil else { throw BackendServiceError.missingSession }
+        let row: SupabaseProfileRow = try await client
+            .from("profiles")
+            .select("id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified,badge")
+            .eq("id", value: profileID)
+            .single()
+            .execute()
+            .value
+        let avatar = await signedURLs(bucket: "profile-photos", paths: [row.avatarPath].compactMap { $0 })
+        return row.studentProfile(avatarURL: row.avatarPath.flatMap { avatar[$0] })
+    }
+}
+
+private struct ClubAccountLinkRow: Decodable {
+    let clubID: UUID
+    let profileID: UUID
+    let username: String?
+
+    enum CodingKeys: String, CodingKey {
+        case clubID = "club_id"
+        case profileID = "profile_id"
+        case username
+    }
+}
+
 private struct ClubAccountTarget: Encodable {
     let target: UUID
 }

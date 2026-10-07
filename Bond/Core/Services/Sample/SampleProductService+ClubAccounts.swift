@@ -27,6 +27,24 @@ extension SampleProductService: ClubAccountManaging {
         try await Task.sleep(for: .milliseconds(500))
         SampleAccountSwitch.leave()
     }
+
+    /// Örnekte ilk kulübün hesabı açılmış sayılır.
+    func clubAccountLinks() async throws -> [ClubAccountLink] {
+        guard let ilk = try await fetchClubs().clubs.first else { return [] }
+        return [ClubAccountLink(clubID: ilk.id, profileID: SampleAccountSwitch.accountID(for: ilk.id), username: "fotograf.toplu")]
+    }
+
+    func clubAccountProfile(_ profileID: UUID) async throws -> StudentProfile {
+        guard let kulup = try await fetchClubs().clubs.first(where: { SampleAccountSwitch.accountID(for: $0.id) == profileID }) else {
+            throw BackendServiceError.missingSession
+        }
+        let taslak = SampleData.clubAccountDraft(kulup.name)
+        return StudentProfile(
+            id: profileID, name: taslak.name, age: 18, university: taslak.university,
+            department: taslak.department, year: taslak.year, bio: kulup.summary, interests: [],
+            imageURL: nil, isVerified: true, badge: .verified
+        )
+    }
 }
 
 /// Common'un seçicisi: kim hangi kulübü yönetiyor.

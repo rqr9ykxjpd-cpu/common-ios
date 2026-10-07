@@ -320,6 +320,70 @@
           }
         }
       }
+    },
+    "clubAccountRow": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Club account"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kulübün hesabı"
+          }
+        }
+      }
+    },
+    "accountLoadFailed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't open the club account."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kulübün hesabı açılamadı."
+          }
+        }
+      }
+    },
+    "clubPageRow": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Club page"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kulüp sayfası"
+          }
+        }
+      }
+    },
+    "clubPageHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About, event and members"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tanıtım, etkinlik ve üyeler"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -29,6 +29,10 @@ extension L10n {
         static var managerTitle: String { String(localized: "managerTitle", table: "ClubSwitch") }
         static var managerHint: String { String(localized: "managerHint", table: "ClubSwitch") }
         static var managerOn: String { String(localized: "managerOn", table: "ClubSwitch") }
+        static var clubAccountRow: String { String(localized: "clubAccountRow", table: "ClubSwitch") }
+        static var accountLoadFailed: String { String(localized: "accountLoadFailed", table: "ClubSwitch") }
+        static var clubPageRow: String { String(localized: "clubPageRow", table: "ClubSwitch") }
+        static var clubPageHint: String { String(localized: "clubPageHint", table: "ClubSwitch") }
         static func managerAdded(_ first: String, _ second: String) -> String {
             String(format: String(localized: "managerAdded", table: "ClubSwitch"), first, second)
         }

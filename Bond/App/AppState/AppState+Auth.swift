@@ -152,8 +152,9 @@ extension AppState {
         async let abonelik: Void = refreshSubscriptions()
         async let sonAktif: Void? = try? service.touchLastActive()
         async let kulupHesabi: Void = loadClubAccountStatus()
+        async let kulupBaglari: Void = loadClubAccountLinks()
         _ = await (bildirimler, yerler, storyler, kulupler, bulusmalar, gruplar, istekler,
-                   ziyaretler, destek, yonetilenler, dogrulama, abonelik, sonAktif, kulupHesabi)
+                   ziyaretler, destek, yonetilenler, dogrulama, abonelik, sonAktif, kulupHesabi, kulupBaglari)
     }
 
     func restoreBackendSession() async {

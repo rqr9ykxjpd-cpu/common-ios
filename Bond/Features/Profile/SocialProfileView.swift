@@ -27,6 +27,7 @@ struct SocialProfileView: View {
     @State private var showVisits = false
     @State private var showRequests = false
     @State private var showPaywall = false
+    @State private var clubPage: CampusClub?
     @State private var selectedPost: SocialPost?
     @State private var profilePosts: [SocialPost] = []
     @State private var loadingPosts = true
@@ -131,6 +132,7 @@ struct SocialProfileView: View {
             .sheet(isPresented: $showVisits) { ProfileVisitorsView() }
             .sheet(isPresented: $showRequests) { ProfileRequestsHubView() }
             .sheet(isPresented: $showPaywall) { PaywallView() }
+            .sheet(item: $clubPage) { kulup in ClubDetailView(club: kulup) }
             .fullScreenCover(isPresented: $showPhoto) {
                 PhotoZoomView(url: appState.avatarURL, data: appState.avatarData)
                     .zoomTransition(sourceID: "profilFoto", in: fotoAlani)
@@ -228,6 +230,20 @@ struct SocialProfileView: View {
     /// hesabından da kendi hesabına tek dokunuşla geçer.
     @ViewBuilder
     private var accountSwitchRows: some View {
+        // Kulüp hesabı kendi kulübünün sayfasına buradan gider (düzenler, üyeleri görür).
+        if let kulupID = appState.clubAccountClubID,
+           let kulup = appState.clubs.first(where: { $0.id == kulupID }) {
+            accountSwitchRow(
+                title: L10n.ClubSwitch.clubPageRow,
+                detail: L10n.ClubSwitch.clubPageHint,
+                trailingIcon: "chevron.right"
+            ) {
+                ClubLogoView(url: appState.clubExtras[kulup.id]?.logoURL, icon: kulup.icon, accentHex: kulup.accentHex, size: 36)
+            } action: {
+                clubPage = kulup
+            }
+            .accessibilityIdentifier("profile.clubPage")
+        }
         if let ana = appState.mainAccount {
             accountSwitchRow(
                 title: L10n.ClubSwitch.switchToMain,
@@ -258,6 +274,7 @@ struct SocialProfileView: View {
     private func accountSwitchRow<Leading: View>(
         title: String,
         detail: String,
+        trailingIcon: String = "arrow.left.arrow.right",
         @ViewBuilder leading: () -> Leading,
         action: @escaping () -> Void
     ) -> some View {
@@ -274,7 +291,7 @@ struct SocialProfileView: View {
                         .lineLimit(1)
                 }
                 Spacer(minLength: BondTheme.Space.sm)
-                Image(systemName: "arrow.left.arrow.right")
+                Image(systemName: trailingIcon)
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(BondTheme.muted)
             }
