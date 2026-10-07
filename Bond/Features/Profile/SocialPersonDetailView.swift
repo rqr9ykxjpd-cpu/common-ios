@@ -712,7 +712,11 @@ struct SocialPersonDetailView: View {
                 )
             }
 
-            ProfileBadgeLabel(badge: details?.badge ?? profile.badge)
+            if profile.id == OfficialAccount.id {
+                OfficialTick(size: 18)
+            } else {
+                ProfileBadgeLabel(badge: details?.badge ?? profile.badge)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 2)

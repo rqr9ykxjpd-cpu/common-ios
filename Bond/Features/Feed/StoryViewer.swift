@@ -339,7 +339,9 @@ struct StoryViewer: View {
                                 .font(.system(size: 15, weight: .bold))
                                 .lineLimit(1)
                                 .fixedSize()
-                            if let icon = story.author.badge.systemImage {
+                            if story.author.id == OfficialAccount.id {
+                                OfficialTick(size: 13)
+                            } else if let icon = story.author.badge.systemImage {
                                 Image(systemName: icon)
                                     .font(.system(size: 12, weight: .semibold))
                                     .foregroundStyle(story.author.badge == .founder ? BondTheme.ember : .white.opacity(0.92))

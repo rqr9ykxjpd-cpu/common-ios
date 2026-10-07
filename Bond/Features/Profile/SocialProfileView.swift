@@ -386,7 +386,11 @@ struct SocialProfileView: View {
                 .fixedSize(horizontal: false, vertical: true)
             // İki rozet dar sütuna sığmayınca alt satıra insin; HStack sütunu taşırıyordu.
             FlowLayout(spacing: 6) {
-                ProfileBadgeLabel(badge: appState.myBadge, compact: true)
+                if appState.currentUserID == OfficialAccount.id {
+                    OfficialTick(size: 15)
+                } else {
+                    ProfileBadgeLabel(badge: appState.myBadge, compact: true)
+                }
                 if appState.eduStatus?.isVerified == true, appState.myBadge != .verified {
                     EduStudentChip()
                 }

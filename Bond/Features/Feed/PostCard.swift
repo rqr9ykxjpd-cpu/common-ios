@@ -132,7 +132,9 @@ struct PostCard: View {
                                 .font(Font.subheadline.weight(.semibold))
                                 .lineLimit(1)
                                 .layoutPriority(1)
-                            if let icon = post.author.badge.systemImage {
+                            if post.author.id == OfficialAccount.id {
+                                OfficialTick(size: 12)
+                            } else if let icon = post.author.badge.systemImage {
                                 Image(systemName: icon)
                                     .font(.caption2.weight(.semibold))
                                     .foregroundStyle(post.author.badge == .founder ? BondTheme.ember : BondTheme.icon)
