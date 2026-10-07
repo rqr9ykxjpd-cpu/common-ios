@@ -371,6 +371,11 @@ struct PaywallView: View {
     }
 
     private func purchase() async {
+        // Cihazdaki Apple kimliği yöneticinin; abonelik kulüp hesabına alınmaz.
+        guard !appState.isClubAccount else {
+            alertMessage = L10n.ClubSwitch.noPurchases
+            return
+        }
         let onceki = currentTier
         switch await store.purchase(selectedTier) {
         case .success(let kademe):
@@ -393,6 +398,10 @@ struct PaywallView: View {
     }
 
     private func restore() async {
+        guard !appState.isClubAccount else {
+            alertMessage = L10n.ClubSwitch.noPurchases
+            return
+        }
         let message = await store.restore()
         // Cihazda abonelik yoksa bile sunucu planı biliyor olabilir (kurucu,
         // hediye, başka cihaz). Ona sormadan "abonelik bulunamadı" demiyoruz.

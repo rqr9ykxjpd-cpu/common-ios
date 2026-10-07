@@ -13,6 +13,11 @@ extension AppState {
         guard await denetci.checkSession() == .lost else { return }
         // Kontrol sürerken kullanıcı kendisi çıkmış olabilir.
         guard defaults.bool(forKey: SessionKey.isSignedIn), !isAccountActionInProgress else { return }
+        // Kulüp hesabının oturumu bittiyse yöneticinin kendi oturumu hâlâ cihazda.
+        if mainAccount != nil {
+            await switchToMainAccount()
+            return
+        }
         await unregisterPushToken()
         try? await service.signOut()
         clearSession(keepAccountData: true)

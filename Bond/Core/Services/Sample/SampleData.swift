@@ -65,6 +65,18 @@ enum SampleData {
         return draft
     }
 
+    /// Kulübün örnek hesabı: sunucudaki provision_club_account ile aynı alanlar.
+    static func clubAccountDraft(_ clubName: String) -> ProfileDraft {
+        var draft = ProfileDraft()
+        draft.name = clubName
+        draft.username = "fotograf.toplu"
+        draft.university = me.university
+        draft.department = "Öğrenci kulübü"
+        draft.year = "Resmi hesap"
+        draft.badge = .verified
+        return draft
+    }
+
     static let profiles: [StudentProfile] = [
         StudentProfile(
             id: id(10),

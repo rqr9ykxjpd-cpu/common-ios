@@ -46,7 +46,10 @@ extension SampleProductService: ClubManaging {
         }
     }
 
-    func setClubManager(_ clubID: UUID, userID: UUID, enabled: Bool) async throws -> Bool { enabled }
+    func setClubManager(_ clubID: UUID, userID: UUID, enabled: Bool) async throws -> Bool {
+        await SampleClubManagerStore.shared.set(userID, clubID, enabled)
+        return enabled
+    }
 
     func removeClubMember(_ clubID: UUID, userID: UUID) async throws {}
 }

@@ -27,6 +27,13 @@ struct MainTabView: View {
                 .tag(3)
         }
         .tint(BondTheme.acid)
+        // Hesap geçişi: eski hesabın ekranları boşalıp yenisininkiler dolarken görünmesin.
+        .overlay {
+            if let perde = appState.accountSwitch {
+                AccountSwitchCurtainView(curtain: perde)
+                    .transition(.opacity)
+            }
+        }
 #if DEBUG
         .onAppear { selection = appState.initialTab }
 #endif

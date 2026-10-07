@@ -58,8 +58,8 @@ struct PlacesWallView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: BondTheme.Space.xl) {
-                    visibilityCard
                     clubsEntry
+                    visibilityCard
                     if let error = appState.placesError, !appState.places.isEmpty {
                         ScreenFailureView(message: error, compact: true) { Task { await appState.loadPlaces(silently: true) } }
                     }
@@ -156,23 +156,34 @@ struct PlacesWallView: View {
         }
     }
 
+    /// Sayfanın en üstünde, Common'un gönderisindeki ışıkla (`GeminiGlow`).
     private var clubsEntry: some View {
-        Button { showClubs = true } label: {
+        let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
+        return Button { showClubs = true } label: {
             HStack(spacing: BondTheme.Space.md) {
                 Image(systemName: "person.3")
                     .font(.title3)
                     .frame(width: 28)
-                Text(L10n.CampusNavigation.clubs).font(.subheadline.weight(.medium))
+                Text(L10n.CampusNavigation.clubs).font(.subheadline.weight(.semibold))
                 Spacer(minLength: BondTheme.Space.sm)
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
             .foregroundStyle(BondTheme.ink)
-            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-            .contentShape(Rectangle())
+            .padding(.horizontal, 16)
+            .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
+            .background {
+                ZStack {
+                    GeminiGlow(cornerRadius: 18, spread: 0.5)
+                    shape.fill(BondTheme.paper)
+                }
+            }
+            .contentShape(shape)
         }
         .buttonStyle(.pressable)
+        // Işık kaydırma alanının üst kenarında kesilmesin.
+        .padding(.top, 10)
         .transaction { if reduceMotion { $0.animation = nil; $0.disablesAnimations = true } }
         .accessibilityLabel(L10n.CampusNavigation.clubs)
     }

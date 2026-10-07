@@ -45,9 +45,9 @@ struct SocialProfileView: View {
             + appState.pendingMessageRequests.count
             + appState.pendingIncomingMeetingRequestCount
     }
-    /// Resmi Common hesabında ilgi alanı gösterilmiyor.
+    /// Resmi Common hesabında ve kulüp hesaplarında ilgi alanı gösterilmiyor.
     private var featuredInterests: [String] {
-        guard appState.currentUserID != OfficialAccount.id else { return [] }
+        guard appState.currentUserID != OfficialAccount.id, !appState.isClubAccount else { return [] }
         return Array(appState.draft.interests).sorted().prefix(3).map { $0 }
     }
 
@@ -219,7 +219,73 @@ struct SocialProfileView: View {
                 HStack(spacing: BondTheme.Space.sm) { shareButton; previewButton }
                 VStack(spacing: BondTheme.Space.sm) { shareButton; previewButton }
             }
+
+            accountSwitchRows
         }
+    }
+
+    /// Instagram'daki hesap değiştirme gibi: yönetici kulübün hesabına, kulüp
+    /// hesabından da kendi hesabına tek dokunuşla geçer.
+    @ViewBuilder
+    private var accountSwitchRows: some View {
+        if let ana = appState.mainAccount {
+            accountSwitchRow(
+                title: L10n.ClubSwitch.switchToMain,
+                detail: L10n.ClubSwitch.switchToMainHint(ana.name)
+            ) {
+                Image(systemName: "person.crop.circle")
+                    .font(.system(size: 22, weight: .regular))
+                    .frame(width: 36, height: 36)
+            } action: {
+                Task { await appState.switchToMainAccount() }
+            }
+            .accessibilityIdentifier("profile.switchToMain")
+        } else {
+            ForEach(appState.clubSwitchTargets) { club in
+                accountSwitchRow(
+                    title: L10n.ClubSwitch.switchToClub(club.name),
+                    detail: L10n.ClubSwitch.switchToClubHint
+                ) {
+                    ClubLogoView(url: appState.clubExtras[club.id]?.logoURL, icon: club.icon, accentHex: club.accentHex, size: 36)
+                } action: {
+                    Task { await appState.switchToClubAccount(club) }
+                }
+                .accessibilityIdentifier("profile.switchToClub")
+            }
+        }
+    }
+
+    private func accountSwitchRow<Leading: View>(
+        title: String,
+        detail: String,
+        @ViewBuilder leading: () -> Leading,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: BondTheme.Space.compact) {
+                leading()
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.subheadline.weight(.semibold))
+                        .lineLimit(2)
+                    Text(detail)
+                        .font(.footnote)
+                        .foregroundStyle(BondTheme.muted)
+                        .lineLimit(1)
+                }
+                Spacer(minLength: BondTheme.Space.sm)
+                Image(systemName: "arrow.left.arrow.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(BondTheme.muted)
+            }
+            .foregroundStyle(BondTheme.ink)
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PressableStyle())
+        .disabled(appState.isAccountActionInProgress)
     }
 
     @ViewBuilder
@@ -502,7 +568,11 @@ struct SocialProfileView: View {
 
             requestSummaryCard
 
-            if typeSize.isAccessibilitySize {
+            // Kulüp hesabı abonelik almıyor (cihazdaki Apple kimliği yöneticinin);
+            // Plus/Pro kutuları orada çıkmaz bir yola götürürdü.
+            if appState.isClubAccount {
+                EmptyView()
+            } else if typeSize.isAccessibilitySize {
                 VStack(spacing: BondTheme.Space.sm) {
                     membershipTool(
                         icon: "eye",
@@ -550,10 +620,12 @@ struct SocialProfileView: View {
                 }
             }
 
-            Text(L10n.ProfileHome.planPrivate)
-                .font(.footnote)
-                .foregroundStyle(BondTheme.muted)
-                .fixedSize(horizontal: false, vertical: true)
+            if !appState.isClubAccount {
+                Text(L10n.ProfileHome.planPrivate)
+                    .font(.footnote)
+                    .foregroundStyle(BondTheme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 

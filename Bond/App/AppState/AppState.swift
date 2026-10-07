@@ -152,6 +152,13 @@ final class AppState {
     var clubExtras: [UUID: ClubExtras] = [:]
     /// Yönetici olarak atandığım kulüpler.
     var managedClubIDs: Set<UUID> = []
+    /// Kulüp hesabındayken yöneticinin kendi hesabı (Anahtar Zinciri'nde).
+    /// Doluysa oturum kulübün hesabında; "Ana hesaba geç" buna döner.
+    var mainAccount: MainAccount?
+    /// Oturumdaki hesap bir kulübün hesabıysa kulübü (sunucudan).
+    var clubAccountClubID: UUID?
+    /// Hesap geçişi sürerken ekranı örten perde.
+    var accountSwitch: AccountSwitchCurtain?
     /// Temizlenen sohbetler; temizlikten sonra mesaj yoksa listede görünmez.
     var clearedConversationIDs: Set<UUID> = []
     /// Kim nerede'de biri geldi ya da gitti; açık kişi listesi buna bakıp yenilenir.
@@ -462,6 +469,8 @@ final class AppState {
         route = hasSession ? .app : .welcome
         email = defaults.string(forKey: SessionKey.email) ?? defaults.string(forKey: SessionKey.accountEmail) ?? ""
         currentUserID = defaults.string(forKey: SessionKey.userID).flatMap(UUID.init(uuidString:)) ?? UUID()
+        // Saklanan ana hesap oturumdaki hesapsa geçiş yarıda kalmış; kayıt eski.
+        mainAccount = hasSession ? MainAccountVault.load().flatMap { $0.userID == currentUserID ? nil : $0 } : nil
         appearance = defaults.string(forKey: SessionKey.appearance).flatMap(Appearance.init(rawValue:)) ?? .system
         loadAccountData(migratingLegacy: true)
         purgeLegacyProductCacheIfNeeded()
@@ -474,6 +483,8 @@ final class AppState {
             // Cihaz 'free' dese de sunucunun verdiği plan kalır. "Satın alımları
             // geri yükle" RevenueCat'ten boş dönünce kurucunun Pro'su, hediye
             // edilen Plus ve başka cihazdaki abonelik arayüzde siliniyordu.
+            // Kulüp hesabında cihazdaki abonelik yöneticinin; kulübe geçmez.
+            guard self.mainAccount == nil else { return }
             self.tier = max(kademe, self.serverPlan)
             guard let satinAlma else { return }
             Task { await self.syncPlanWithServer(satinAlma) }
@@ -518,7 +529,7 @@ final class AppState {
     func refreshServerPlan() async {
         guard let sunucu = try? await service.fetchMyPlan() else { return }
         serverPlan = sunucu
-        tier = max(subscriptions.tier, sunucu)
+        tier = mainAccount == nil ? max(subscriptions.tier, sunucu) : sunucu
     }
 
     /// Açılışta: ürünleri yükle, cihazdaki hakları oku, sunucuya danış.
@@ -559,11 +570,17 @@ final class AppState {
             // migration çalışmadıysa) cihazın bildiği geçerli. Kullanıcıya
             // hata göstermiyoruz: abonelik ekranıyla ilgisi olmayan bir anda
             // "abonelik okunamadı" demek kafa karıştırır.
-            tier = max(cihaz, serverPlan)
+            tier = mainAccount == nil ? max(cihaz, serverPlan) : serverPlan
             return
         }
 
         serverPlan = sunucu
+        // Kulüp hesabında yalnızca sunucunun planı: cihazdaki abonelik
+        // yöneticinin, kulüp hesabına yazılmamalı.
+        if mainAccount != nil {
+            tier = sunucu
+            return
+        }
         tier = max(cihaz, sunucu)
         if cihaz > sunucu {
             await subscriptions.refreshEntitlements(forceSync: true)

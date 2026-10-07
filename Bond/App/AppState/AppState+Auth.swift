@@ -89,7 +89,8 @@ extension AppState {
             email = sessionEmail.lowercased()
         }
         restoreOrCreateAccount(for: email)
-        await subscriptions.identify(userID: currentUserID)
+        // Kulüp hesabında abonelik kimliği yöneticide kalır (bkz. refreshSubscriptions).
+        if mainAccount == nil { await subscriptions.identify(userID: currentUserID) }
 
         let profile: ProfileDraft?
         do {
@@ -150,8 +151,9 @@ extension AppState {
         async let dogrulama: Void = loadEduStatus()
         async let abonelik: Void = refreshSubscriptions()
         async let sonAktif: Void? = try? service.touchLastActive()
+        async let kulupHesabi: Void = loadClubAccountStatus()
         _ = await (bildirimler, yerler, storyler, kulupler, bulusmalar, gruplar, istekler,
-                   ziyaretler, destek, yonetilenler, dogrulama, abonelik, sonAktif)
+                   ziyaretler, destek, yonetilenler, dogrulama, abonelik, sonAktif, kulupHesabi)
     }
 
     func restoreBackendSession() async {
@@ -167,7 +169,7 @@ extension AppState {
                 return
             }
             currentUserID = userID
-            await subscriptions.identify(userID: currentUserID)
+            if mainAccount == nil { await subscriptions.identify(userID: currentUserID) }
             // Uygulama silinip yeniden kurulduğunda yerel kayıt sıfırlanır ama Supabase oturumu
             // Keychain'de kaldığı için hâlâ geçerlidir. E-postayı oturumdan geri almazsak
             // `persistSession` boş e-posta yüzünden hiçbir şey yazmaz ve kullanıcı geçerli bir
@@ -286,9 +288,17 @@ extension AppState {
     /// Fotoğraf zorunlu. Eski sürümlerde "şimdilik atla" ile geçilmiş ya da bir şekilde
     /// fotoğrafsız kalmış hesaplar uygulamaya değil, fotoğraf adımına düşer.
     func requiresAvatarStep(photosLoaded: Bool) -> Bool {
-        photosLoaded && avatarURL == nil && avatarData == nil
+        // Kulüp hesabının fotoğrafı kulübün logosu; logosuz kulüp de içeri girer,
+        // fotoğrafı yönetici sonra profilden ekler.
+        photosLoaded && avatarURL == nil && avatarData == nil && mainAccount == nil
     }
     func signOut() async {
+        // Kulüp hesabından çıkış ana hesaba dönüştür: kulüp oturumunu her yerde
+        // kapatmak öbür yöneticileri de çıkarırdı.
+        if mainAccount != nil {
+            await switchToMainAccount()
+            return
+        }
         guard !isAccountActionInProgress else { return }
         isAccountActionInProgress = true
         defer { isAccountActionInProgress = false }
@@ -377,10 +387,6 @@ extension AppState {
     }
 
     func clearSession(keepAccountData: Bool) {
-        stopMessageListener()
-        stopPlaceListener()
-        stopPresenceHeartbeat()
-        supportThreads = []
         Task { await subscriptions.resetIdentity() }
         let accountID = currentUserID
         if !keepAccountData {
@@ -394,6 +400,23 @@ extension AppState {
         defaults.set(false, forKey: SessionKey.isSignedIn)
         defaults.removeObject(forKey: SessionKey.email)
         defaults.removeObject(forKey: SessionKey.userID)
+        MainAccountVault.clear()
+        mainAccount = nil
+        resetSessionState()
+
+        // `places`, `clubs` herkese açık referans verisi; `appearance` kullanıcının
+        // cihaz tercihi. Bunlar kasıtlı olarak korunuyor.
+        route = .welcome
+        Haptics.success()
+    }
+
+    /// Oturuma bağlı ekran verisi: çıkışta ve hesap değiştirirken (bkz.
+    /// `switchToClubAccount`) boşalır. Giriş kaydına ve cihaz tercihlerine dokunmaz.
+    func resetSessionState() {
+        stopMessageListener()
+        stopPlaceListener()
+        stopPresenceHeartbeat()
+        supportThreads = []
         email = ""
         currentUserID = UUID()
         draft = ProfileDraft()
@@ -437,14 +460,13 @@ extension AppState {
         cardThemes = [:]
         suggestions = []
 
+        managedClubIDs = []
+        clubAccountClubID = nil
+        referralSummary = nil
+
         isFinishingOnboarding = false
         onboardingFailure = nil
         toast = nil
-
-        // `places`, `clubs` herkese açık referans verisi; `appearance` kullanıcının
-        // cihaz tercihi. Bunlar kasıtlı olarak korunuyor.
-        route = .welcome
-        Haptics.success()
     }
 
     func restoreOrCreateAccount(for signedInEmail: String) {

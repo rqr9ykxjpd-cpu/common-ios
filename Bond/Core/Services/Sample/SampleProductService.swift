@@ -21,7 +21,8 @@ struct SampleProductService: ProductService {
         self.store = SampleStore(eduStatus: eduStatus)
     }
 
-    var currentUserID: UUID? { SampleData.me.id }
+    /// Kulüp hesabına geçilince kulübün örnek hesabı (bkz. `SampleAccountSwitch`).
+    var currentUserID: UUID? { SampleAccountSwitch.accountID ?? SampleData.me.id }
     var currentUserEmail: String? { "ornek@yalova.edu.tr" }
 
     // Oturum
@@ -30,7 +31,7 @@ struct SampleProductService: ProductService {
     func requestEmailSignInLink(email: String) async throws {}
     func completeEmailSignIn(url: URL) async throws {}
     func signInWithEmail(email: String, password: String) async throws {}
-    func restoreSession() async throws -> UUID? { SampleData.me.id }
+    func restoreSession() async throws -> UUID? { currentUserID }
     func signOut() async throws {}
     func deleteAccount() async throws {}
 
@@ -41,7 +42,10 @@ struct SampleProductService: ProductService {
     func submitPurchase(jws: String, productID: String) async throws {}
     func fetchMyPlan() async throws -> SubscriptionTier { .free }
 
-    func fetchMyProfile() async throws -> ProfileDraft? { hasProfile ? await store.myDraft() : nil }
+    func fetchMyProfile() async throws -> ProfileDraft? {
+        if let kulup = SampleAccountSwitch.clubName { return SampleData.clubAccountDraft(kulup) }
+        return hasProfile ? await store.myDraft() : nil
+    }
     func isUsernameAvailable(_ candidate: String) async throws -> Bool { await store.isUsernameAvailable(candidate) }
     func claimUsername(_ candidate: String) async throws { try await store.claimUsername(candidate) }
     func setCardTheme(_ theme: CardTheme) async throws { await store.setCardTheme(theme) }
@@ -58,7 +62,9 @@ struct SampleProductService: ProductService {
     func syncEduVerification() async throws -> Bool { await store.completeEdu() }
     /// Örnek veride imzalı adres yok. BondApp yerel görseli avatarData'ya yükler.
     func fetchMyProfilePhotos() async throws -> ProfilePhotosResult {
-        ProfilePhotosResult(avatarURL: SampleData.me.imageURL, galleryURLs: SampleData.profiles[0].galleryImageURLs)
+        if SampleAccountSwitch.clubID != nil { return ProfilePhotosResult(avatarURL: nil, galleryURLs: []) }
+        return ProfilePhotosResult(avatarURL: SampleData.me.imageURL ?? SampleAccountSwitch.mainAvatarFileURL,
+                                   galleryURLs: SampleData.profiles[0].galleryImageURLs)
     }
     func updateAvatar(_ imageData: Data?) async throws -> URL? { nil }
     func updateGallery(_ images: [Data]) async throws -> [URL] {

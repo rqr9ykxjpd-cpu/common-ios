@@ -1,27 +1,24 @@
 import SwiftUI
 
-/// Common hesabı → bir kişinin kartı → ⋯ → "Kulüp hesabı yap". Kişinin
-/// hesabını seçilen kulübün resmi hesabı yapar ya da bağı kaldırır.
-struct ClubAccountSheet: View {
+/// Common hesabı → bir kişinin kartı → ⋯ → "Kulüp yöneticisi yap". Dokunulan
+/// kulübün yöneticiliği açılır ya da kapanır. Yönetici kendi profilinden
+/// kulübün hesabına geçer; hesap ilk geçişte sunucuda açılır.
+struct ClubManagerSheet: View {
     let person: StudentProfile
 
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
     @State private var clubs: [ClubAdminEntry] = []
-    /// Kişinin şu an bağlı olduğu kulüp.
-    @State private var current: UUID?
+    @State private var managed: Set<UUID> = []
     @State private var loaded = false
-    @State private var working = false
-    @State private var pending: ClubAdminEntry?
+    @State private var working: UUID?
     @State private var failure: String?
-
-    private var personLabel: String { person.name }
 
     var body: some View {
         NavigationStack {
             List {
                 Section {
-                    Text(L10n.ClubAdmin.clubAccountHint)
+                    Text(L10n.ClubSwitch.managerHint)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -42,48 +39,30 @@ struct ClubAccountSheet: View {
                         clubRow(club)
                     }
                 }
-                if current != nil {
-                    Section {
-                        Button(L10n.ClubAdmin.removeClubAccount, role: .destructive) {
-                            Task { await remove() }
-                        }
-                        .disabled(working)
-                    }
-                }
             }
-            .navigationTitle(L10n.ClubAdmin.clubAccountTitle)
+            .navigationTitle(L10n.ClubSwitch.managerTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(L10n.Common.done) { dismiss() }
                 }
             }
-            .confirmationDialog(
-                pending.map { L10n.ClubAdmin.clubAccountConfirm(personLabel, $0.draft.name) } ?? "",
-                isPresented: Binding(get: { pending != nil }, set: { if !$0 { pending = nil } }),
-                titleVisibility: .visible
-            ) {
-                Button(L10n.ClubAdmin.makeClubAccount) {
-                    if let club = pending { Task { await make(club) } }
-                }
-                Button(L10n.Common.cancel, role: .cancel) {}
-            }
             .task { await load() }
         }
     }
 
     private func clubRow(_ club: ClubAdminEntry) -> some View {
-        let secili = club.id == current
+        let yonetici = managed.contains(club.id)
         return Button {
-            if !secili { pending = club }
+            Task { await toggle(club, enabled: !yonetici) }
         } label: {
             HStack(spacing: BondTheme.Space.compact) {
                 ClubLogoView(url: club.draft.logoURL, icon: club.draft.icon, accentHex: club.draft.accentHex, size: 36)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(club.draft.name)
                         .foregroundStyle(.primary)
-                    if secili {
-                        Text(L10n.ClubAdmin.clubAccountCurrent)
+                    if yonetici {
+                        Text(L10n.ClubSwitch.managerOn)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } else if !club.draft.isActive {
@@ -93,52 +72,43 @@ struct ClubAccountSheet: View {
                     }
                 }
                 Spacer(minLength: 0)
-                if secili {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(BondTheme.ink)
+                if working == club.id {
+                    ProgressView()
+                } else {
+                    Image(systemName: yonetici ? "checkmark.circle.fill" : "circle")
+                        .font(.title3)
+                        .foregroundStyle(yonetici ? BondTheme.ink : BondTheme.muted)
                 }
             }
             .contentShape(Rectangle())
         }
-        .disabled(working)
-        .accessibilityAddTraits(secili ? .isSelected : [])
+        .disabled(working != nil)
+        .accessibilityAddTraits(yonetici ? .isSelected : [])
     }
 
     private func load() async {
         do {
             async let liste = appState.fetchAdminClubs()
-            async let bag = appState.clubAccountClub(of: person.id)
+            async let yonettikleri = appState.managedClubs(of: person.id)
             clubs = try await liste
-            current = try await bag
+            managed = try await yonettikleri
         } catch {
             failure = UserFacingError.message(error, fallback: L10n.ClubAdmin.saveFailed)
         }
         loaded = true
     }
 
-    private func make(_ club: ClubAdminEntry) async {
-        working = true
-        defer { working = false; pending = nil }
+    private func toggle(_ club: ClubAdminEntry, enabled: Bool) async {
+        working = club.id
+        defer { working = nil }
         do {
-            let ad = try await appState.makeClubAccount(person.id, clubID: club.id)
-            current = club.id
+            let simdi = try await appState.setClubManager(club.id, userID: person.id, enabled: enabled)
+            if simdi { managed.insert(club.id) } else { managed.remove(club.id) }
             failure = nil
             Haptics.success()
-            appState.show(L10n.ClubAdmin.clubAccountDone(ad))
-        } catch {
-            failure = UserFacingError.message(error, fallback: L10n.ClubAdmin.saveFailed)
-        }
-    }
-
-    private func remove() async {
-        working = true
-        defer { working = false }
-        do {
-            try await appState.removeClubAccount(person.id)
-            current = nil
-            failure = nil
-            Haptics.success()
-            appState.show(L10n.ClubAdmin.clubAccountRemoved)
+            appState.show(simdi
+                          ? L10n.ClubSwitch.managerAdded(person.name, club.draft.name)
+                          : L10n.ClubSwitch.managerRemoved(club.draft.name))
         } catch {
             failure = UserFacingError.message(error, fallback: L10n.ClubAdmin.saveFailed)
         }

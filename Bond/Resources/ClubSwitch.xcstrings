@@ -1,0 +1,326 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "switchToClub": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switch to %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ hesabına geç"
+          }
+        }
+      }
+    },
+    "switchToClubHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Post and message as the club"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kulüp olarak paylaş ve mesajlaş"
+          }
+        }
+      }
+    },
+    "switchToMain": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switch to your account"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ana hesaba geç"
+          }
+        }
+      }
+    },
+    "switchToMainHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue as %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ olarak devam et"
+          }
+        }
+      }
+    },
+    "switchingTo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switching to %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ hesabına geçiliyor"
+          }
+        }
+      }
+    },
+    "switchingBack": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switching to your account"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ana hesabına geçiliyor"
+          }
+        }
+      }
+    },
+    "switched": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're now %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ hesabındasın"
+          }
+        }
+      }
+    },
+    "backToMain": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to your account"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ana hesabına döndün"
+          }
+        }
+      }
+    },
+    "failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't switch accounts. Try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hesaba geçilemedi. Tekrar dene."
+          }
+        }
+      }
+    },
+    "notManager": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're not a manager of this club."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu kulübün yöneticisi değilsin."
+          }
+        }
+      }
+    },
+    "noLongerManager": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're no longer a manager of this club, so you're back on your account."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu kulübün yöneticiliğin kaldırıldı; ana hesabına döndün."
+          }
+        }
+      }
+    },
+    "mainSessionLost": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your account's session has ended. Sign in again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ana hesabının oturumu kapanmış. Yeniden giriş yap."
+          }
+        }
+      }
+    },
+    "noPurchases": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchases aren't available on a club account. Switch to your account and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kulüp hesabında satın alma yapılmaz. Ana hesabına geçip tekrar dene."
+          }
+        }
+      }
+    },
+    "clubAccountNote": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is a club account. Switch back to your account to sign out or delete it."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu bir kulüp hesabı. Çıkış ya da hesap silme için ana hesabına geç."
+          }
+        }
+      }
+    },
+    "makeManager": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Make club manager"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kulüp yöneticisi yap"
+          }
+        }
+      }
+    },
+    "managerTitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Club manager"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kulüp yöneticisi"
+          }
+        }
+      }
+    },
+    "managerHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They'll manage the clubs you pick: edit the club page and switch to the club's account from their profile. The club account is created on the first switch."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçtiğin kulüplerin yöneticisi olur: kulübün sayfasını düzenler ve profilinden kulübün hesabına geçer. Kulübün hesabı ilk geçişte kendiliğinden açılır."
+          }
+        }
+      }
+    },
+    "managerOn": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manager"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yönetici"
+          }
+        }
+      }
+    },
+    "managerAdded": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ now manages “%2$@”"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ artık “%2$@” yöneticisi"
+          }
+        }
+      }
+    },
+    "managerRemoved": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Removed as manager of “%@”"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” yöneticiliği kaldırıldı"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

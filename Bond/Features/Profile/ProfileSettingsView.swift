@@ -30,7 +30,7 @@ struct ProfileSettingsView: View {
             List {
                 // Abonelik girişi en üstte ve açık adla: App Review 2.1(b) "satın almayı
                 // bulamadık" dedi; Planım kartı ve kilitli satırlar yetmemiş.
-                if appState.tier != .pro {
+                if appState.tier != .pro, !appState.isClubAccount {
                     Section {
                         settingsButton(
                             icon: "crown.fill",
@@ -52,14 +52,16 @@ struct ProfileSettingsView: View {
                         showUsernameEditor = true
                     }
                     .accessibilityIdentifier("settings.username")
-                    settingsButton(
-                        icon: "person.badge.plus",
-                        title: L10n.Referral.rowTitle,
-                        detail: L10n.Referral.rowHint
-                    ) {
-                        showInvite = true
+                    if !appState.isClubAccount {
+                        settingsButton(
+                            icon: "person.badge.plus",
+                            title: L10n.Referral.rowTitle,
+                            detail: L10n.Referral.rowHint
+                        ) {
+                            showInvite = true
+                        }
+                        .accessibilityIdentifier("settings.invite")
                     }
-                    .accessibilityIdentifier("settings.invite")
                     if appState.isModerator {
                         // Rozet: bekleyen şikâyetler + açık "Sorun bildir" kayıtları.
                         let bekleyen = appState.pendingReports.count + appState.openProblemCount
@@ -156,26 +158,41 @@ struct ProfileSettingsView: View {
                 }
 
                 Section {
-                    settingsButton(
-                        icon: "rectangle.portrait.and.arrow.right",
-                        title: L10n.Profile.signOut,
-                        detail: L10n.Profile.signOutHint,
-                        disabled: appState.isAccountActionInProgress
-                    ) {
-                        showSignOutAlert = true
+                    if let ana = appState.mainAccount {
+                        // Kulüp hesabı: çıkış ana hesaba dönüş; silme yok.
+                        settingsButton(
+                            icon: "arrow.left.arrow.right",
+                            title: L10n.ClubSwitch.switchToMain,
+                            detail: L10n.ClubSwitch.switchToMainHint(ana.name),
+                            disabled: appState.isAccountActionInProgress
+                        ) {
+                            dismiss()
+                            Task { await appState.switchToMainAccount() }
+                        }
+                    } else {
+                        settingsButton(
+                            icon: "rectangle.portrait.and.arrow.right",
+                            title: L10n.Profile.signOut,
+                            detail: L10n.Profile.signOutHint,
+                            disabled: appState.isAccountActionInProgress
+                        ) {
+                            showSignOutAlert = true
+                        }
                     }
 
-                    settingsButton(
-                        icon: "trash",
-                        title: L10n.Profile.deletePermanent,
-                        detail: L10n.Profile.irreversible,
-                        destructive: true,
-                        disabled: appState.isAccountActionInProgress
-                    ) {
-                        if appState.hasAppleIdentity {
-                            showAppleDeleteAccount = true
-                        } else {
-                            showDeleteAccountAlert = true
+                    if !appState.isClubAccount {
+                        settingsButton(
+                            icon: "trash",
+                            title: L10n.Profile.deletePermanent,
+                            detail: L10n.Profile.irreversible,
+                            destructive: true,
+                            disabled: appState.isAccountActionInProgress
+                        ) {
+                            if appState.hasAppleIdentity {
+                                showAppleDeleteAccount = true
+                            } else {
+                                showDeleteAccountAlert = true
+                            }
                         }
                     }
 

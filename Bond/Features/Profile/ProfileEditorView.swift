@@ -25,8 +25,9 @@ struct ProfileEditorView: View {
         draft.username == appState.draft.username || usernameStatus.allowsSave
     }
 
-    /// Resmi Common hesabında bölüm, sınıf, doğum tarihi ve ilgi alanı yok.
-    private var isOfficial: Bool { appState.currentUserID == OfficialAccount.id }
+    /// Resmi Common hesabında ve kulüp hesaplarında bölüm, sınıf, doğum tarihi
+    /// ve ilgi alanı yok.
+    private var isOfficial: Bool { appState.currentUserID == OfficialAccount.id || appState.isClubAccount }
 
     /// Görünen ad isteğe bağlı: boşsa kullanıcı adı görünür (AppState.saveProfile).
     private var valid: Bool {
