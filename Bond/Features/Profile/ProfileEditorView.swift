@@ -81,7 +81,8 @@ struct ProfileEditorView: View {
                 basicInformation
                 about
                 if !isOfficial { interestSelection }
-                accountInformation
+                // Kulüp hesabının giriş adresi iç kullanım için (…@hesap.common.invalid).
+                if !appState.isClubAccount { accountInformation }
             }
             .padding(.horizontal, BondTheme.Space.lg)
             .padding(.top, BondTheme.Space.sm)

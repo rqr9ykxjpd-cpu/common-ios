@@ -153,8 +153,10 @@ extension AppState {
         async let sonAktif: Void? = try? service.touchLastActive()
         async let kulupHesabi: Void = loadClubAccountStatus()
         async let kulupBaglari: Void = loadClubAccountLinks()
+        // Kayıtta yazılıp bağlantı yüzünden kaydedilemeyen davet eden.
+        async let davetEden: Void = applyInviterIfNeeded()
         _ = await (bildirimler, yerler, storyler, kulupler, bulusmalar, gruplar, istekler,
-                   ziyaretler, destek, yonetilenler, dogrulama, abonelik, sonAktif, kulupHesabi, kulupBaglari)
+                   ziyaretler, destek, yonetilenler, dogrulama, abonelik, sonAktif, kulupHesabi, kulupBaglari, davetEden)
     }
 
     func restoreBackendSession() async {

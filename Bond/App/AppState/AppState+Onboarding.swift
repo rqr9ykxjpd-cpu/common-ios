@@ -75,9 +75,8 @@ extension AppState {
         await loadMyProfilePhotos()
         onboardingFailure = nil
         withAnimation(.smooth(duration: 0.55)) { route = .app }
+        // Davet eden de burada kaydedilir (profil satırı artık var; bkz. applyInviterIfNeeded).
         await loadSessionData()
-        // Davet eden: profil satırı artık var. Bulunamazsa yalnızca kısa uyarı.
-        await applyInviterIfNeeded()
         await startPushRegistration()
         // Yeni öğrenci: kayıt biter bitmez "Kampüse son bir adım". Geçebilir;
         // o zaman gezinti modunda kalır, kilitli bir şeye dokununca pencere yine açılır.
@@ -89,7 +88,10 @@ extension AppState {
             // Kilit penceresi açılıyorsa izin sonraki açılışta: iki pencere üst üste binmesin.
             promptForPushIfNeeded()
         }
-        show(chosenName.isEmpty ? L10n.Auth.welcome : L10n.Auth.welcomeName(chosenName))
+        // Kayıt sırasında çıkan uyarı (ör. "davet eden bulunamadı") karşılamanın altında kalmasın.
+        if toast == nil {
+            show(chosenName.isEmpty ? L10n.Auth.welcome : L10n.Auth.welcomeName(chosenName))
+        }
     }
 
     func goBack(from step: OnboardingStep) {
