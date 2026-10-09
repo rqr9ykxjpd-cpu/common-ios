@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Kullanıcı ekrana dokunmazken çalışan hafif hareketlerin ortak kuralı.
 ///
@@ -42,58 +43,169 @@ extension View {
 
 /// Şu an bir yerde kişi varken yanında duran yeşil nokta; etrafından yavaşça
 /// genişleyip sönen bir halka yayılır (~2,4 sn).
+///
+/// Halka Core Animation'da: SwiftUI'daki sonsuz animasyon her karede görünüm
+/// ağacını güncelliyordu; Kim nerede boşta beklerken uygulama sürekli işlemci
+/// harcıyordu. Artık hareketi sistem yapıyor.
 struct LiveDot: View {
     var size: CGFloat = 7
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var pulse = false
 
     var body: some View {
         Circle()
             .fill(IdleMotion.liveGreen)
             .frame(width: size, height: size)
             .background {
-                Circle()
-                    .fill(IdleMotion.liveGreen.opacity(0.35))
-                    .scaleEffect(pulse ? 2.6 : 1)
-                    .opacity(pulse ? 0 : 1)
-            }
-            .task {
-                guard IdleMotion.allowed(reduceMotion: reduceMotion) else { return }
-                withAnimation(.easeOut(duration: 2.4).repeatForever(autoreverses: false)) { pulse = true }
+                LivePulse(moving: IdleMotion.allowed(reduceMotion: reduceMotion))
+                    .frame(width: size, height: size)
             }
             .accessibilityHidden(true)
+    }
+}
+
+private struct LivePulse: UIViewRepresentable {
+    let moving: Bool
+
+    func makeUIView(context: Context) -> LivePulseView { LivePulseView() }
+    func updateUIView(_ view: LivePulseView, context: Context) { view.moving = moving }
+}
+
+final class LivePulseView: UIView {
+    private let halo = CAShapeLayer()
+
+    var moving = true {
+        didSet { if moving != oldValue { updateAnimation() } }
+    }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        isUserInteractionEnabled = false
+        backgroundColor = .clear
+        clipsToBounds = false
+        layer.addSublayer(halo)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) kullanılmıyor") }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        halo.frame = bounds
+        halo.path = UIBezierPath(ovalIn: bounds).cgPath
+        halo.fillColor = UIColor.systemGreen.withAlphaComponent(0.35).resolvedColor(with: traitCollection).cgColor
+        CATransaction.commit()
+        updateAnimation()
+    }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        updateAnimation()
+    }
+
+    private func updateAnimation() {
+        guard moving, window != nil, bounds.width > 0 else {
+            halo.removeAnimation(forKey: "nabiz")
+            halo.opacity = moving ? 1 : 0
+            return
+        }
+        halo.opacity = 0
+        guard halo.animation(forKey: "nabiz") == nil else { return }
+        let buyume = CABasicAnimation(keyPath: "transform.scale")
+        buyume.fromValue = 1
+        buyume.toValue = 2.6
+        let sonme = CABasicAnimation(keyPath: "opacity")
+        sonme.fromValue = 1
+        sonme.toValue = 0
+        let nabiz = CAAnimationGroup()
+        nabiz.animations = [buyume, sonme]
+        nabiz.duration = 2.4
+        nabiz.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        nabiz.repeatCount = .infinity
+        nabiz.isRemovedOnCompletion = false
+        halo.add(nabiz, forKey: "nabiz")
     }
 }
 
 // MARK: - Hikâye halkasındaki ışık
 
 /// İzlenmemiş hikâye halkasının üstünde ~8 saniyede bir tur dönen ince ışık.
+/// Dönüş Core Animation'da (bkz. `LiveDot`); akışta birkaç halka aynı anda
+/// dönerken uygulama her karede çalışmıyor.
 struct RingGlint: View {
     var lineWidth: CGFloat = 3
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var running = false
-    @State private var spin = false
 
     var body: some View {
-        Circle()
-            .strokeBorder(
-                AngularGradient(
-                    colors: [.white.opacity(0), .white.opacity(0.85), .white.opacity(0)],
-                    center: .center,
-                    startAngle: .degrees(0),
-                    endAngle: .degrees(70)
-                ),
-                lineWidth: lineWidth
-            )
-            .rotationEffect(.degrees(spin ? 360 : 0))
-            .opacity(running ? 1 : 0)
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
-            .task {
-                guard IdleMotion.allowed(reduceMotion: reduceMotion) else { return }
-                running = true
-                withAnimation(.linear(duration: 8).repeatForever(autoreverses: false)) { spin = true }
-            }
+        if IdleMotion.allowed(reduceMotion: reduceMotion) {
+            RingGlintLayer(lineWidth: lineWidth)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+    }
+}
+
+private struct RingGlintLayer: UIViewRepresentable {
+    let lineWidth: CGFloat
+
+    func makeUIView(context: Context) -> RingGlintView { RingGlintView() }
+    func updateUIView(_ view: RingGlintView, context: Context) { view.lineWidth = lineWidth }
+}
+
+final class RingGlintView: UIView {
+    private let gradient = CAGradientLayer()
+    private let ring = CAShapeLayer()
+
+    var lineWidth: CGFloat = 3 {
+        didSet { if lineWidth != oldValue { setNeedsLayout() } }
+    }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        isUserInteractionEnabled = false
+        backgroundColor = .clear
+        gradient.type = .conic
+        gradient.startPoint = CGPoint(x: 0.5, y: 0.5)
+        gradient.endPoint = CGPoint(x: 1, y: 0.5)
+        // 0–70°: saydam → beyaz → saydam; turun geri kalanı boş.
+        gradient.colors = [UIColor.white.withAlphaComponent(0), UIColor.white.withAlphaComponent(0.85),
+                           UIColor.white.withAlphaComponent(0), UIColor.white.withAlphaComponent(0)].map(\.cgColor)
+        gradient.locations = [0, NSNumber(value: 35.0 / 360), NSNumber(value: 70.0 / 360), 1]
+        layer.addSublayer(gradient)
+        ring.fillColor = nil
+        ring.strokeColor = UIColor.black.cgColor
+        // Halka dönmez; altındaki ışık döner.
+        layer.mask = ring
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) kullanılmıyor") }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        gradient.frame = bounds
+        ring.frame = bounds
+        ring.lineWidth = lineWidth
+        ring.path = UIBezierPath(ovalIn: bounds.insetBy(dx: lineWidth / 2, dy: lineWidth / 2)).cgPath
+        CATransaction.commit()
+        addSpinIfNeeded()
+    }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        addSpinIfNeeded()
+    }
+
+    private func addSpinIfNeeded() {
+        guard window != nil, gradient.animation(forKey: "donus") == nil else { return }
+        let donus = CABasicAnimation(keyPath: "transform.rotation.z")
+        donus.fromValue = 0
+        donus.toValue = CGFloat.pi * 2
+        donus.duration = 8
+        donus.repeatCount = .infinity
+        donus.isRemovedOnCompletion = false
+        gradient.add(donus, forKey: "donus")
     }
 }
 
