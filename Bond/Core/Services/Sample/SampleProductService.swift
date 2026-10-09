@@ -68,6 +68,7 @@ struct SampleProductService: ProductService {
     }
     func updateAvatar(_ imageData: Data?) async throws -> URL? { nil }
     func updateGallery(_ images: [Data]) async throws -> [URL] {
+        if await store.takeGalleryFailure() { throw URLError(.networkConnectionLost) }
         await store.replaceGalleryCount(images.count)
         return []
     }

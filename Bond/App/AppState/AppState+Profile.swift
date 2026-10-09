@@ -150,9 +150,11 @@ extension AppState {
                 // İmzalı URL üretimi geçici olarak başarısızsa yeni fotoğrafları
                 // ekranda tut; veritabanı değişimi yine başarıyla tamamlanmıştır.
                 profileGalleryData = galleryURLs.isEmpty && !gallery.isEmpty ? gallery : []
+                galleryUploadPending = false
             } catch {
                 galleryFailed = true
                 profileGalleryData = gallery
+                galleryUploadPending = true
             }
         }
 

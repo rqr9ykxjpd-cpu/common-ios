@@ -497,18 +497,20 @@ struct ProfileEditorView: View {
         if avatarData == nil, avatarItem == nil { avatarData = existingAvatar }
         baselineAvatarData = existingAvatar
 
-        // Taban sunucudaki galeri. `galleryData` alınırsa, ana fotoğraf inerken
-        // seçilen yeni fotoğraflar taban oluyordu; kaydet "galeri değişmedi"
-        // sanıp yeni fotoğrafları hiç göndermiyordu.
-        var existingGallery = appState.profileGalleryData
-        if existingGallery.isEmpty, !appState.galleryURLs.isEmpty {
-            var hydrated: [Data] = []
+        // Taban sunucudaki galeri. Önceden yüklemesi başarısız olmuş fotoğraflar da
+        // (`profileGalleryData`) taban sayılıyordu: editör yeniden açılınca
+        // "kaydedilmiş" görünüyor, kaydet galeriyi bir daha hiç göndermiyordu ve
+        // kartta eski fotoğraflar kalıyordu. Artık bekleyen fotoğraf değişiklik
+        // sayılır, kaydet yeniden yükler. Ana fotoğraf inerken seçilen yeniler de
+        // taban olmaz.
+        var existingGallery: [Data] = []
+        if !appState.galleryURLs.isEmpty {
             for url in appState.galleryURLs {
-                if let data = await compactedRemoteImage(url) { hydrated.append(data) }
+                if let data = await compactedRemoteImage(url) { existingGallery.append(data) }
             }
-            existingGallery = hydrated
-        } else if !existingGallery.isEmpty {
-            existingGallery = existingGallery.map { ImageCompression.prepareForUpload($0) ?? $0 }
+        } else if !appState.galleryUploadPending {
+            // Kaydedildi ama imzalı adres alınamadı: yerel kopya sunucudakiyle aynı.
+            existingGallery = appState.profileGalleryData.map { ImageCompression.prepareForUpload($0) ?? $0 }
         }
         if galleryData.isEmpty, galleryItems.isEmpty {
             galleryData = existingGallery

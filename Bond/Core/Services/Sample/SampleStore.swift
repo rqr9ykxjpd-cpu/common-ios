@@ -608,6 +608,15 @@ actor SampleStore {
         galleryPhotoCount = min(count, CampusLimits.maxGalleryPhotos)
     }
 
+    private var galleryFailureUsed = false
+
+    /// `-galleryfail`: ilk galeri kaydı başarısız olsun (yeniden deneme akışı).
+    func takeGalleryFailure() -> Bool {
+        guard ProcessInfo.processInfo.arguments.contains("-galleryfail"), !galleryFailureUsed else { return false }
+        galleryFailureUsed = true
+        return true
+    }
+
     func appendGalleryPhoto() throws -> URL {
         guard galleryPhotoCount < CampusLimits.maxGalleryPhotos else {
             throw BackendServiceError.galleryFull

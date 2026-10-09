@@ -206,6 +206,9 @@ final class AppState {
     var clubs: [CampusClub] = []
     var avatarData: Data?
     var profileGalleryData: [Data] = []
+    /// `profileGalleryData` yüklenemedi, sunucuda değil; editör bunu değişiklik
+    /// sayar ki kaydet yeniden göndersin.
+    var galleryUploadPending = false
     var avatarURL: URL?
     var galleryURLs: [URL] = []
     var selectedConversation: Conversation?

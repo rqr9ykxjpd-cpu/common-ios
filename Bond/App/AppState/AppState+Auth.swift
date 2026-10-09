@@ -425,6 +425,7 @@ extension AppState {
         draft = ProfileDraft()
         avatarData = nil
         profileGalleryData = []
+        galleryUploadPending = false
         avatarURL = nil
         galleryURLs = []
         conversations = []
