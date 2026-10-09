@@ -1379,13 +1379,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Right and left swipes on your card; only you can see this"
+            "value" : "Who swiped or dismissed your card; only you can see this"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kartını sağa ve sola kaydıranlar; yalnızca sen görürsün"
+            "value" : "Kartını kaydıranlar ve önerilerde kapatanlar; yalnızca sen görürsün"
           }
         }
       }
@@ -2002,6 +2002,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Oy ver"
+          }
+        }
+      }
+    },
+    "founder.swipedDismissed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dismissed in suggestions"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Önerilerde kapattı"
           }
         }
       }

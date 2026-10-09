@@ -257,13 +257,16 @@ struct SampleProductService: ProductService {
     }
 
     func fetchProfileSwipers() async throws -> [ProfileSwiper] {
-        // Demo: iki sağa, bir sola, bir de bağlantı kurulmuş.
+        // Demo: iki sağa, iki sola (biri aynı kişinin ikinci satırı), bir bağlantı,
+        // bir de öneride X ile kapatma.
         let p = SampleData.profiles
         return [
             ProfileSwiper(id: p[0].id, name: p[0].name, avatarURL: nil, swipedRight: true, swipedAt: SampleData.hours(1), isMatched: true, avatarAssetName: p[0].imageAssetName),
             ProfileSwiper(id: p[2].id, name: p[2].name, avatarURL: nil, swipedRight: false, swipedAt: SampleData.hours(3), isMatched: false, avatarAssetName: p[2].imageAssetName),
             ProfileSwiper(id: p[3].id, name: p[3].name, avatarURL: nil, swipedRight: true, swipedAt: SampleData.hours(7), isMatched: false, avatarAssetName: p[3].imageAssetName),
             ProfileSwiper(id: p[4].id, name: p[4].name, avatarURL: nil, swipedRight: false, swipedAt: SampleData.date(1.2), isMatched: false, avatarAssetName: p[4].imageAssetName),
+            ProfileSwiper(id: p[3].id, name: p[3].name, avatarURL: nil, swipedRight: false, swipedAt: SampleData.date(2), isMatched: false, avatarAssetName: p[3].imageAssetName),
+            ProfileSwiper(id: p[5].id, name: p[5].name, avatarURL: nil, swipedRight: false, swipedAt: SampleData.date(3), isMatched: false, avatarAssetName: p[5].imageAssetName, dismissed: true),
         ]
     }
     func sendRightSwipe(to profileID: UUID) async throws -> RightSwipeOutcome {

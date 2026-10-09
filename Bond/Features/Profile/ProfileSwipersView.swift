@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// Kurucu: "Beni kaydıranlar" — kartımı sağa/sola kimin kaydırdığı, en yeni
-/// önce. Başka kimse için böyle bir ekran yok; sunucu rozeti kontrol eder.
+/// Kurucu: "Beni kaydıranlar" — kartımı sağa/sola kimin kaydırdığı ve öneri
+/// listesinde kimin X ile kapattığı, en yeni önce. Başka kimse için böyle bir
+/// ekran yok; sunucu rozeti kontrol eder.
 struct ProfileSwipersView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
@@ -23,7 +24,7 @@ struct ProfileSwipersView: View {
                 } else if swipers.isEmpty {
                     ContentUnavailableView(L10n.Board.swipersEmpty, systemImage: "hand.draw")
                 } else {
-                    List(swipers) { kisi in
+                    List(swipers, id: \.rowID) { kisi in
                         HStack(spacing: BondTheme.Space.compact) {
                             ProfileMedia(url: kisi.avatarURL, data: nil, assetName: kisi.avatarAssetName)
                                 .frame(width: 40, height: 40)
@@ -31,16 +32,20 @@ struct ProfileSwipersView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(kisi.name)
                                     .font(.subheadline.weight(.semibold))
-                                Text(kisi.isMatched ? L10n.Board.swiperMatched : kisi.swipedAt.relativeTurkish)
+                                // Kapatma yalnızca simgeyle anlaşılmıyor; hangi X olduğunu yazıyoruz.
+                                Text(kisi.dismissed ? "\(L10n.Board.swipedDismissed) · \(kisi.swipedAt.relativeTurkish)"
+                                     : (kisi.isMatched ? L10n.Board.swiperMatched : kisi.swipedAt.relativeTurkish))
                                     .font(.caption)
                                     .foregroundStyle(BondTheme.muted)
                             }
                             Spacer()
-                            // Sağ: dolu ok, turuncu. Sol: soluk ok. Kurucu tek bakışta ayırır.
-                            Image(systemName: kisi.swipedRight ? "arrow.right.circle.fill" : "arrow.left.circle")
+                            // Sağ: dolu ok, turuncu. Sol: soluk ok. X ile kapatma: soluk çarpı.
+                            Image(systemName: kisi.dismissed ? "xmark.circle"
+                                  : (kisi.swipedRight ? "arrow.right.circle.fill" : "arrow.left.circle"))
                                 .font(.system(size: 22, weight: .regular))
                                 .foregroundStyle(kisi.swipedRight ? BondTheme.burntOrange : BondTheme.muted)
-                                .accessibilityLabel(kisi.swipedRight ? L10n.Board.swipedRight : L10n.Board.swipedLeft)
+                                .accessibilityLabel(kisi.dismissed ? L10n.Board.swipedDismissed
+                                                    : (kisi.swipedRight ? L10n.Board.swipedRight : L10n.Board.swipedLeft))
                         }
                         .foregroundStyle(BondTheme.ink)
                         .listRowBackground(BondTheme.paper)

@@ -122,6 +122,13 @@ struct ProfileSwiper: Identifiable, Hashable, Sendable {
     let swipedAt: Date
     let isMatched: Bool
     var avatarAssetName: String? = nil
+    /// Öneri listesinde kartını X ile kapattı (kaydırma değil).
+    var dismissed: Bool = false
+
+    /// Liste satırının kimliği. Aynı kişi hem sağa hem sola kaydırmış
+    /// olabilir; kişi kimliği tek başına satır kimliği olunca ikinci satır
+    /// hiç görünmüyordu.
+    var rowID: String { "\(id)-\(dismissed ? "x" : (swipedRight ? "r" : "l"))" }
 }
 
 /// Oy veren (yalnızca kurucu/moderatör görür).

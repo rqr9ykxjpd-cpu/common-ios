@@ -1019,6 +1019,20 @@ struct RightSwipeParams: Encodable {
     let subject: UUID
 }
 
+struct ProfileDismisserRow: Decodable {
+    let id: UUID
+    let name: String
+    let avatarPath: String?
+    let dismissedAt: Date
+    let isMatched: Bool
+    enum CodingKeys: String, CodingKey {
+        case id, name
+        case avatarPath = "avatar_path"
+        case dismissedAt = "dismissed_at"
+        case isMatched = "is_matched"
+    }
+}
+
 struct ProfileSwiperRow: Decodable {
     let id: UUID
     let name: String

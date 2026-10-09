@@ -50,11 +50,21 @@ extension SupabaseProductService {
     /// Kurucu: kartımı kim sağa/sola kaydırdı.
     func fetchProfileSwipers() async throws -> [ProfileSwiper] {
         let rows: [ProfileSwiperRow] = try await client.rpc("who_swiped_me").execute().value
-        let avatars = await signedURLs(bucket: "profile-photos", paths: rows.compactMap(\.avatarPath))
-        return rows.map {
+        // Öneride X ile kapatanlar ayrı fonksiyonda; sunucuda yoksa (eski) liste kaydırmalarla kalır.
+        let kapatanlar: [ProfileDismisserRow] = (try? await client.rpc("who_dismissed_me").execute().value) ?? []
+        let avatars = await signedURLs(
+            bucket: "profile-photos",
+            paths: rows.compactMap(\.avatarPath) + kapatanlar.compactMap(\.avatarPath)
+        )
+        let kaydiranlar = rows.map {
             ProfileSwiper(id: $0.id, name: $0.name, avatarURL: $0.avatarPath.flatMap { avatars[$0] },
                           swipedRight: $0.direction == "right", swipedAt: $0.swipedAt, isMatched: $0.isMatched)
         }
+        let kapatma = kapatanlar.map {
+            ProfileSwiper(id: $0.id, name: $0.name, avatarURL: $0.avatarPath.flatMap { avatars[$0] },
+                          swipedRight: false, swipedAt: $0.dismissedAt, isMatched: $0.isMatched, dismissed: true)
+        }
+        return (kaydiranlar + kapatma).sorted { $0.swipedAt > $1.swipedAt }
     }
 
     /// Kurucu: "Veriler". Sunucu rozeti kontrol eder.

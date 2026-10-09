@@ -109,6 +109,7 @@ extension L10n {
         }
         static var swipedRight: String { String(localized: "founder.swipedRight", table: "Board") }
         static var swipedLeft: String { String(localized: "founder.swipedLeft", table: "Board") }
+        static var swipedDismissed: String { String(localized: "founder.swipedDismissed", table: "Board") }
         static var swiperMatched: String { String(localized: "founder.swiperMatched", table: "Board") }
     }
 }
