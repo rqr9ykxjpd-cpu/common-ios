@@ -9,6 +9,7 @@ extension L10n {
         static var dismiss: String { String(localized: "dismiss", table: "Suggestions") }
         static var dismissFailed: String { String(localized: "dismissFailed", table: "Suggestions") }
         static var openHint: String { String(localized: "openHint", table: "Suggestions") }
+        static var sent: String { String(localized: "sent", table: "Suggestions") }
         static func mutual(_ count: Int) -> String {
             String(format: String(localized: "mutual", table: "Suggestions"), locale: L10n.appLocale, Int64(count))
         }

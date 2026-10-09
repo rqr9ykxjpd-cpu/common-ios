@@ -5,7 +5,7 @@ extension SupabaseProductService: PeopleSuggesting {
     func fetchSuggestions(limit: Int) async throws -> [PersonSuggestion] {
         guard currentUserID != nil else { throw BackendServiceError.missingSession }
         let rows: [SuggestionRow] = try await client
-            .rpc("get_people_you_may_know", params: SuggestionParams(maxCount: limit))
+            .rpc("get_people_you_may_know", params: SuggestionParams(maxCount: limit, includeSent: true))
             .execute()
             .value
         let avatarURLs = await signedURLs(bucket: "profile-photos", paths: rows.compactMap(\.avatarPath))
@@ -21,7 +21,7 @@ extension SupabaseProductService: PeopleSuggesting {
                 imageURL: row.avatarPath.flatMap { avatarURLs[$0] },
                 isVerified: row.isVerified, badge: row.badge ?? .none
             )
-            return PersonSuggestion(profile: profile, reason: reason)
+            return PersonSuggestion(profile: profile, reason: reason, sent: row.sent ?? false)
         }
     }
 
@@ -33,7 +33,13 @@ extension SupabaseProductService: PeopleSuggesting {
 
 private struct SuggestionParams: Encodable {
     let maxCount: Int
-    enum CodingKeys: String, CodingKey { case maxCount = "max_count" }
+    /// Sağa geçilenler de gelsin ("Gönderildi" ile). 1.1.3 ve öncesi göndermiyor;
+    /// onlarda sunucu bu kişileri eskisi gibi listeden çıkarıyor.
+    let includeSent: Bool
+    enum CodingKeys: String, CodingKey {
+        case maxCount = "max_count"
+        case includeSent = "include_sent"
+    }
 }
 
 private struct DismissSuggestionParams: Encodable {
@@ -55,9 +61,10 @@ private struct SuggestionRow: Decodable {
     let reason: String
     let reasonDetail: String?
     let reasonCount: Int
+    let sent: Bool?
 
     enum CodingKeys: String, CodingKey {
-        case id, name, university, department, bio, interests, badge, reason
+        case id, name, university, department, bio, interests, badge, reason, sent
         case birthDate = "birth_date"
         case academicYear = "academic_year"
         case avatarPath = "avatar_path"

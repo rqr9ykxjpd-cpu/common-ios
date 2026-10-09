@@ -3,9 +3,9 @@ import SwiftUI
 /// Sohbet sekmesinin üstünde "Tanıyor olabileceğin kişiler": yuvarlak foto,
 /// ad ve ortak nokta. Dokununca kişinin kartı açılır; × öneriyi kaldırır.
 ///
-/// Kartı açan pencere burada değil, sohbet ekranında: son öneriye sağa
-/// kaydırınca satır kayboluyor, pencere burada olsaydı kartla birlikte
-/// aniden kapanırdı.
+/// Kartı açan pencere burada değil, sohbet ekranında: son öneri kapatılınca
+/// satır kayboluyor, pencere burada olsaydı kartla birlikte aniden kapanırdı.
+/// Sağa geçilen kişi satırda kalır, altında "Gönderildi" yazar.
 struct PeopleYouMayKnowRail: View {
     let suggestions: [PersonSuggestion]
     let open: (StudentProfile) -> Void
@@ -69,7 +69,8 @@ private struct SuggestionBubble: View {
 
     /// Ekranda yazmasa da VoiceOver kurucu olduğunu söylesin.
     private var spokenReason: String {
-        isFounder ? (suggestion.profile.badge.title ?? "") : subtitle
+        if suggestion.sent { return L10n.Suggestions.sent }
+        return isFounder ? (suggestion.profile.badge.title ?? "") : subtitle
     }
 
     var body: some View {
@@ -101,7 +102,14 @@ private struct SuggestionBubble: View {
                         }
                     }
 
-                    if !isFounder {
+                    if suggestion.sent {
+                        // Bölüm yerine durum: istek gitti, yanıt bekleniyor.
+                        Label(L10n.Suggestions.sent, systemImage: "paperplane.fill")
+                            .labelStyle(.titleAndIcon)
+                            .font(BondTheme.Typography.caption2.weight(.semibold))
+                            .foregroundStyle(BondTheme.burntOrangeText)
+                            .lineLimit(1)
+                    } else if !isFounder {
                         VStack(spacing: 1) {
                             ForEach(Array(subtitleLines.enumerated()), id: \.offset) { sira, satir in
                                 Text(satir)

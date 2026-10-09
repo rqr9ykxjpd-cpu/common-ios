@@ -128,6 +128,22 @@
           }
         }
       }
+    },
+    "sent": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gönderildi"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

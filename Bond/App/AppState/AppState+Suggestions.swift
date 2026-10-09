@@ -3,18 +3,23 @@ import SwiftUI
 // MARK: - AppState+Suggestions
 extension AppState {
     /// Satırda gösterilenler. Liste açılışta bir kez geliyor; bu arada bağlantı
-    /// kurulan, kartı sağa geçilen ya da engellenen kişi hemen düşüyor.
-    /// Kurucu sağa geçtiği kişiyi görmeye devam eder (sunucu da öyle döner).
+    /// kurulan ya da engellenen kişi hemen düşüyor. Kartı sağa geçilen kişi
+    /// düşmüyor, "Gönderildi" ile kalıyor (kurucunun isteği).
     var visibleSuggestions: [PersonSuggestion] {
         // Listede görünen sohbetler; temizlenmiş bağlantı satırda başta kalır.
         let baglantilar = Set(listedConversations.map(\.profile.id))
         let engellenenler = Set(blockedProfiles.map(\.id))
-        return suggestions.filter {
-            !baglantilar.contains($0.id)
-                && (isFounder || !rightSwipedProfileIDs.contains($0.id))
-                && !engellenenler.contains($0.id)
-                && $0.id != currentUserID
-        }
+        return suggestions
+            .filter {
+                !baglantilar.contains($0.id)
+                    && !engellenenler.contains($0.id)
+                    && $0.id != currentUserID
+            }
+            .map { oneri in
+                var oneri = oneri
+                if rightSwipedProfileIDs.contains(oneri.id) { oneri.sent = true }
+                return oneri
+            }
     }
 
     /// Sessiz: öneri gelmezse satır görünmüyor, hata şeridi sohbetleri kirletmesin.
@@ -24,6 +29,9 @@ extension AppState {
         guard let oneren = service as? any PeopleSuggesting else { return }
         do {
             suggestions = try await oneren.fetchSuggestions(limit: 50)
+            // Önceki açılışlarda gönderilenler: kart da "istek gönderildi" göstersin,
+            // ikinci kez gönderilmesin.
+            rightSwipedProfileIDs.formUnion(suggestions.filter(\.sent).map(\.id))
         } catch {
             guard !isCancellation(error) else { return }
         }

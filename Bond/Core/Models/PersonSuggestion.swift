@@ -7,6 +7,9 @@ import Foundation
 struct PersonSuggestion: Identifiable, Hashable, Sendable {
     let profile: StudentProfile
     let reason: Reason
+    /// Kartı sağa geçildi, yanıt bekleniyor. Öneriden düşmüyor; altında
+    /// "Gönderildi" yazıyor (kurucunun isteği).
+    var sent: Bool = false
 
     var id: UUID { profile.id }
 

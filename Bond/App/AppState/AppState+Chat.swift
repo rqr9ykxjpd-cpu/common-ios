@@ -77,7 +77,14 @@ extension AppState {
         await startPushRegistration()
         await checkForNewPosts()
         // Kullanıcı maildeki doğrulama bağlantısına Safari'de dokunup geri gelmiş olabilir.
-        if eduStatus?.isPending == true { await syncEduVerification() }
+        if eduStatus?.isPending == true {
+            await syncEduVerification()
+        } else if eduNeedsAttention {
+            // Kurucu bu arada öğrenci olarak doğrulamış ya da muaf tutmuş olabilir.
+            // Önceden durum yalnızca açılışta okunuyordu: uygulama kapatılıp
+            // açılana kadar "okul e-postanı doğrula" demeye devam ediyordu.
+            await loadEduStatus()
+        }
     }
     /// Engellediğin kişiler. Ayarlardaki liste bunu okuyor.
     ///

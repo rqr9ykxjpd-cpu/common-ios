@@ -10,20 +10,22 @@ extension SampleProductService: PeopleSuggesting {
         // Engellenenler önerilmiyor; sunucudaki fonksiyonla aynı kural.
         let kaldirilan = await SampleSuggestionStore.shared.dismissed
             .union(SampleData.blockedProfiles.map(\.id))
-        let kisiler: [(String, PersonSuggestion.Reason)] = [
-            ("Duru", .club("Fotoğraf Kulübü")),
-            ("Arda", .mutual(2)),
-            ("Selin", .interests(3))
+        // Üçüncü değer: önceki açılışta sağa geçilmiş ("Gönderildi"). Arda'ya
+        // sağa kaydırınca istek gider (Duru'da bağlantı olur, satırdan çıkar).
+        let kisiler: [(String, PersonSuggestion.Reason, Bool)] = [
+            ("Duru", .club("Fotoğraf Kulübü"), false),
+            ("Arda", .mutual(2), false),
+            ("Selin", .interests(3), false)
         ]
         // Sohbeti temizlenen ve sonra yazışılmayan bağlantılar en başta.
         let temizlenen = await SampleClearedStore.shared.ids
         let baglantilar = try await fetchConversations()
             .filter { temizlenen.contains($0.id) && $0.messages.isEmpty }
             .map { PersonSuggestion(profile: $0.profile, reason: .connection) }
-        let digerleri = kisiler.compactMap { ad, sebep -> PersonSuggestion? in
+        let digerleri = kisiler.compactMap { ad, sebep, gonderildi -> PersonSuggestion? in
             guard let profil = SampleData.profiles.first(where: { $0.name == ad }),
                   !kaldirilan.contains(profil.id) else { return nil }
-            return PersonSuggestion(profile: profil, reason: sebep)
+            return PersonSuggestion(profile: profil, reason: sebep, sent: gonderildi)
         }
         return Array((baglantilar + digerleri).prefix(limit))
     }
