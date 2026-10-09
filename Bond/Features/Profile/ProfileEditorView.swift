@@ -497,7 +497,10 @@ struct ProfileEditorView: View {
         if avatarData == nil, avatarItem == nil { avatarData = existingAvatar }
         baselineAvatarData = existingAvatar
 
-        var existingGallery = galleryData
+        // Taban sunucudaki galeri. `galleryData` alınırsa, ana fotoğraf inerken
+        // seçilen yeni fotoğraflar taban oluyordu; kaydet "galeri değişmedi"
+        // sanıp yeni fotoğrafları hiç göndermiyordu.
+        var existingGallery = appState.profileGalleryData
         if existingGallery.isEmpty, !appState.galleryURLs.isEmpty {
             var hydrated: [Data] = []
             for url in appState.galleryURLs {
