@@ -2021,6 +2021,22 @@
           }
         }
       }
+    },
+    "founder.officeAppointment" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please book an appointment before visiting the office."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ofis ziyareti öncesi randevu alınız."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

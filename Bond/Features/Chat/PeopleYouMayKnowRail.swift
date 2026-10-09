@@ -83,15 +83,9 @@ private struct SuggestionBubble: View {
                     )
                     .frame(width: avatar, height: avatar)
                     .clipShape(Circle())
+                    // Kurucunun fotoğrafındaki kırmızı halka kaldırıldı (kurucunun isteği);
+                    // adın yanındaki tik kalıyor.
                     .overlay(Circle().strokeBorder(BondTheme.hairline, lineWidth: 0.5))
-                    .overlay {
-                        // Halka fotoğrafın dışında, arada kâğıt rengi boşluk (story halkası gibi).
-                        if isFounder {
-                            Circle()
-                                .strokeBorder(BondTheme.ember, lineWidth: 2.5)
-                                .padding(-5)
-                        }
-                    }
 
                     HStack(spacing: 3) {
                         Text(suggestion.profile.name)

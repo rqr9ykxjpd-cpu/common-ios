@@ -483,14 +483,14 @@ struct ProfileEditorView: View {
     // indirip yerel baseline'a alıyoruz — böylece "değişiklik var mı?" karşılaştırması yanlış pozitif
     // vermez ve kaydetmeden çıkıldığında mevcut fotoğraflar kaybolmuş gibi görünmez.
     private func hydrateExistingPhotos() async {
-        let existingAvatar: Data?
-        if let localAvatar = avatarData {
-            existingAvatar = ImageCompression.prepareForUpload(localAvatar) ?? localAvatar
-        } else if let url = appState.avatarURL {
-            existingAvatar = await compactedRemoteImage(url)
-        } else {
-            existingAvatar = nil
-        }
+        // Ana fotoğraf ve galerinin hepsi aynı anda iner, küçültme arka planda.
+        // Önceden tek tek iniyor, her biri ana iş parçacığında yeniden
+        // sıkıştırılıyordu: fotoğraflar bölümü saniyelerce boş kalıyor, ekran takılıyordu.
+        let galleryURLs = appState.galleryURLs
+        async let avatarIndi = existingAvatarData(local: avatarData, url: appState.avatarURL)
+        async let galeriIndi = downloadedGallery(galleryURLs)
+
+        let existingAvatar = await avatarIndi
 
         // İndirme sürerken kullanıcı yeni fotoğraf seçmiş olabilir. Eski sunucu
         // görseli baseline olur ama yeni seçim asla onunla ezilmez.
@@ -503,14 +503,12 @@ struct ProfileEditorView: View {
         // kartta eski fotoğraflar kalıyordu. Artık bekleyen fotoğraf değişiklik
         // sayılır, kaydet yeniden yükler. Ana fotoğraf inerken seçilen yeniler de
         // taban olmaz.
-        var existingGallery: [Data] = []
-        if !appState.galleryURLs.isEmpty {
-            for url in appState.galleryURLs {
-                if let data = await compactedRemoteImage(url) { existingGallery.append(data) }
-            }
-        } else if !appState.galleryUploadPending {
+        var existingGallery = await galeriIndi
+        if galleryURLs.isEmpty, !appState.galleryUploadPending {
             // Kaydedildi ama imzalı adres alınamadı: yerel kopya sunucudakiyle aynı.
-            existingGallery = appState.profileGalleryData.map { ImageCompression.prepareForUpload($0) ?? $0 }
+            for data in appState.profileGalleryData {
+                existingGallery.append(await ImageCompression.prepareForUploadInBackground(data) ?? data)
+            }
         }
         if galleryData.isEmpty, galleryItems.isEmpty {
             galleryData = existingGallery
@@ -526,7 +524,31 @@ struct ProfileEditorView: View {
     /// ekran boyutuna indirgenmezse beş kare telefonda onlarca MB eder.
     private func compactedRemoteImage(_ url: URL) async -> Data? {
         guard let data = await appState.remoteImageData(for: url) else { return nil }
-        return ImageCompression.prepareForUpload(data) ?? data
+        return await ImageCompression.prepareForUploadInBackground(data) ?? data
+    }
+
+    private func existingAvatarData(local: Data?, url: URL?) async -> Data? {
+        if let local { return await ImageCompression.prepareForUploadInBackground(local) ?? local }
+        guard let url else { return nil }
+        return await compactedRemoteImage(url)
+    }
+
+    /// Galerinin hepsi aynı anda iner; sıra korunur, inmeyen atlanır.
+    private func downloadedGallery(_ urls: [URL]) async -> [Data] {
+        guard !urls.isEmpty else { return [] }
+        let appState = appState
+        let inenler = await withTaskGroup(of: (Int, Data?).self) { group in
+            for (sira, url) in urls.enumerated() {
+                group.addTask {
+                    guard let ham = await appState.remoteImageData(for: url) else { return (sira, nil) }
+                    return (sira, await ImageCompression.prepareForUploadInBackground(ham) ?? ham)
+                }
+            }
+            var hepsi: [(Int, Data?)] = []
+            for await inen in group { hepsi.append(inen) }
+            return hepsi
+        }
+        return inenler.sorted { $0.0 < $1.0 }.compactMap(\.1)
     }
 
     private func save() {

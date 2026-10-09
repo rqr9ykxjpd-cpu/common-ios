@@ -12,8 +12,5 @@ extension L10n {
         static var founderCredFocus: String { String(localized: "badge.founderCredFocus") }
         static var founderOffice: String { String(localized: "badge.founderOffice") }
         static var founderOfficePlace: String { String(localized: "badge.founderOfficePlace") }
-        static func founderCallA11y(_ phone: String) -> String {
-            L10n.format("badge.founderCallA11y", phone)
-        }
     }
 }

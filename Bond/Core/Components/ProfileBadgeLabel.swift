@@ -81,13 +81,10 @@ struct FounderCredLine: View {
     }
 }
 
-/// Kurucuya özel iletişim — ofis, adres, telefon.
+/// Kurucuya özel iletişim — ofis ve adres.
 ///
 /// Kart/kırmızı kutu yok; profil metninin devamı gibi durur.
 struct FounderContactCard: View {
-    private static let phoneDisplay = "+90 546 875 85 73"
-    private static let phoneURL = URL(string: "tel:+905468758573")
-
     /// "Ofis" başlığının rengi; renkli kartta kartın ikincil yazısı.
     var secondary: Color = BondTheme.muted
 
@@ -113,16 +110,12 @@ struct FounderContactCard: View {
             .accessibilityElement(children: .combine)
             .accessibilityLabel(L10n.Badge.founderOfficePlace)
 
-            if let phoneURL = Self.phoneURL {
-                Link(destination: phoneURL) {
-                    Text(Self.phoneDisplay)
-                        .font(.system(size: 15, weight: .semibold, design: .monospaced))
-                        .foregroundStyle(BondTheme.ink.opacity(0.78))
-                        .underline(true, pattern: .dot)
-                }
+            // Telefon numarası kaldırıldı (kurucunun isteği); ziyaret randevuyla.
+            Text(L10n.Board.officeAppointment)
+                .font(.system(size: 14))
+                .foregroundStyle(secondary)
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.leading, 36)
-                .accessibilityLabel(L10n.Badge.founderCallA11y(Self.phoneDisplay))
-            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
