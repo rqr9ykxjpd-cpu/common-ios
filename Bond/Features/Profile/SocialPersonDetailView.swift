@@ -31,6 +31,8 @@ struct SocialPersonDetailView: View {
     @State private var showSuspendConfirmation = false
     @State private var showClubManager = false
     @State private var clubPage: CampusClub?
+    /// Kişinin üye olduğu kulüpler; kartın en altında.
+    @State private var memberClubs: [CampusClub] = []
 
     // Kart kaydırma. Sağ = bağlantı isteği, sol = kapat. Fotoğraf destesi
     // yatay pan almıyor; bu jest kartın tamamına ait.
@@ -278,6 +280,7 @@ struct SocialPersonDetailView: View {
             await renk
         }
         .task(id: profile.id) { await peekSwipeIfNeeded() }
+        .task(id: profile.id) { memberClubs = await appState.personClubs(profile.id) }
         .fullScreenCover(item: $conversationRoute) { route in
             NavigationStack { ConversationView(conversationID: route.id, showsClose: true) }
         }
@@ -591,6 +594,8 @@ struct SocialPersonDetailView: View {
                     }
                 }
 
+                memberClubList
+
                 meetHere
             }
             .foregroundStyle(BondTheme.ink)
@@ -831,6 +836,36 @@ struct SocialPersonDetailView: View {
             try? await Task.sleep(for: .milliseconds(450))
         }
         cardPeeking = false
+    }
+
+    /// Üye olduğu kulüpler; dokununca kulüp sayfası (katıl, etkinlik).
+    /// Kulüp hesabının kendi kartında yok: orada "Kulüp sayfası" zaten var.
+    @ViewBuilder private var memberClubList: some View {
+        if !memberClubs.isEmpty, appState.club(forAccount: profile.id) == nil {
+            VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
+                profileSectionTitle(L10n.CampusNavigation.clubs)
+                FlowLayout(spacing: BondTheme.Space.sm) {
+                    ForEach(memberClubs) { kulup in
+                        Button { clubPage = kulup } label: {
+                            HStack(spacing: 6) {
+                                ClubLogoView(url: appState.clubExtras[kulup.id]?.logoURL, icon: kulup.icon,
+                                             accentHex: kulup.accentHex, size: 22)
+                                Text(kulup.name)
+                                    .font(BondTheme.Typography.footnote.weight(.semibold))
+                                    .lineLimit(1)
+                            }
+                            .foregroundStyle(.primary)
+                            .padding(.leading, 6)
+                            .padding(.trailing, 12)
+                            .frame(minHeight: 34)
+                            .overlay(Capsule().strokeBorder(theme.rule))
+                            .contentShape(Capsule())
+                        }
+                        .buttonStyle(.pressable)
+                    }
+                }
+            }
+        }
     }
 
     private func profileSectionTitle(_ title: String) -> some View {

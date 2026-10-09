@@ -23,6 +23,11 @@ extension SupabaseProductService: ClubManaging {
         return Set(ids)
     }
 
+    func fetchPersonClubIDs(_ profileID: UUID) async throws -> [UUID] {
+        guard currentUserID != nil else { return [] }
+        return try await client.rpc("person_clubs", params: PersonClubsParams(target: profileID)).execute().value
+    }
+
     func fetchAdminClubs() async throws -> [ClubAdminEntry] {
         let rows: [AdminClubRow] = try await client.rpc("founder_list_clubs").execute().value
         return rows.map { row in
@@ -204,4 +209,8 @@ struct ClubMemberParams: Encodable {
     let clubID: UUID
     let userID: UUID
     enum CodingKeys: String, CodingKey { case clubID = "club_id"; case userID = "user_id" }
+}
+
+private struct PersonClubsParams: Encodable {
+    let target: UUID
 }

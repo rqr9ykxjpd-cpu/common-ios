@@ -52,6 +52,11 @@ extension SampleProductService: ClubManaging {
     }
 
     func removeClubMember(_ clubID: UUID, userID: UUID) async throws {}
+
+    /// Örnekte herkes ilk iki kulübün üyesi.
+    func fetchPersonClubIDs(_ profileID: UUID) async throws -> [UUID] {
+        Array(try await fetchClubs().clubs.prefix(2).map(\.id))
+    }
 }
 
 private actor SampleClubStore {

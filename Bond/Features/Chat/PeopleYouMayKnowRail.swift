@@ -55,9 +55,21 @@ private struct SuggestionBubble: View {
     /// tik; altında yazı yok. Parlama ya da hareket yok; göz rengi bulur.
     private var isFounder: Bool { suggestion.profile.badge == .founder }
 
+    /// Fotoğrafın altında bölüm ve sınıf; kulüp, ortak bağlantı ya da ilgi
+    /// değil (kurucunun isteği). Sohbetini temizlediğin bağlantında "Bağlantın".
+    /// Sınıf kendi satırında: uzun bölüm adı iki satırı doldurunca kesiliyordu.
+    private var subtitleLines: [String] {
+        if case .connection = suggestion.reason { return [suggestion.reason.label] }
+        let kisi = suggestion.profile
+        let bolum = DepartmentCatalog.educationParts(kisi.department).first ?? kisi.department
+        return [bolum, AcademicYear.display(kisi.year)].filter { !$0.isEmpty }
+    }
+
+    private var subtitle: String { subtitleLines.joined(separator: " · ") }
+
     /// Ekranda yazmasa da VoiceOver kurucu olduğunu söylesin.
     private var spokenReason: String {
-        isFounder ? (suggestion.profile.badge.title ?? "") : suggestion.reason.label
+        isFounder ? (suggestion.profile.badge.title ?? "") : subtitle
     }
 
     var body: some View {
@@ -96,12 +108,16 @@ private struct SuggestionBubble: View {
                     }
 
                     if !isFounder {
-                        Text(suggestion.reason.label)
-                            .font(BondTheme.Typography.caption2)
-                            .foregroundStyle(BondTheme.muted)
-                            .multilineTextAlignment(.center)
-                            .lineLimit(2)
-                            .fixedSize(horizontal: false, vertical: true)
+                        VStack(spacing: 1) {
+                            ForEach(Array(subtitleLines.enumerated()), id: \.offset) { sira, satir in
+                                Text(satir)
+                                    .lineLimit(sira == 0 ? 2 : 1)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                        .font(BondTheme.Typography.caption2)
+                        .foregroundStyle(BondTheme.muted)
+                        .multilineTextAlignment(.center)
                     }
                 }
                 .frame(width: 84)

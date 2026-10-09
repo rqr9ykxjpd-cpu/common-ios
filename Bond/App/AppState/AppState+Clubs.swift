@@ -52,6 +52,13 @@ extension AppState {
         return try await masa.setClubManager(clubID, userID: userID, enabled: enabled)
     }
 
+    /// Kişinin kartının altındaki kulüpler. Sessiz: gelmezse bölüm görünmez.
+    func personClubs(_ profileID: UUID) async -> [CampusClub] {
+        guard let masa = service as? any ClubManaging,
+              let ids = try? await masa.fetchPersonClubIDs(profileID) else { return [] }
+        return ids.compactMap { id in clubs.first { $0.id == id } }
+    }
+
     func removeClubMember(_ clubID: UUID, userID: UUID) async throws {
         guard let masa = service as? any ClubManaging else { throw BackendServiceError.missingSession }
         try await masa.removeClubMember(clubID, userID: userID)

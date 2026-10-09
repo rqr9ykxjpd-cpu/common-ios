@@ -17,4 +17,6 @@ protocol ClubManaging: Sendable {
     /// Kurucu: yönetici ata / kaldır.
     func setClubManager(_ clubID: UUID, userID: UUID, enabled: Bool) async throws -> Bool
     func removeClubMember(_ clubID: UUID, userID: UUID) async throws
+    /// Kişinin üye olduğu açık kulüpler (kartın altında).
+    func fetchPersonClubIDs(_ profileID: UUID) async throws -> [UUID]
 }
