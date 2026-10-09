@@ -27,6 +27,10 @@ struct MainTabView: View {
                 .tag(3)
         }
         .tint(BondTheme.acid)
+        // Bildirime dokunuldu: Bildirimler Akış'ta açılıyor.
+        .onChange(of: appState.opensNotifications) { _, open in
+            if open { selection = 0 }
+        }
         // Hesap geçişi: eski hesabın ekranları boşalıp yenisininkiler dolarken görünmesin.
         .overlay {
             if let perde = appState.accountSwitch {

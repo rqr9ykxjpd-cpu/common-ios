@@ -80,6 +80,15 @@ struct BondApp: App {
                 state.opensProfileOf = .some(ad)
             }
             if arguments.contains("-paywall") { state.opensPaywall = true }
+            // `-notiftap 8`: 8 sn sonra bildirime dokunulmuş gibi (başka sekmedeyken
+            // ya da bir pencere açıkken bildirimin açılışını denemek için).
+            if let i = arguments.firstIndex(of: "-notiftap"), i + 1 < arguments.count,
+               let saniye = Double(arguments[i + 1]) {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(saniye))
+                    PushTokenStore.shared.handleNotificationTap()
+                }
+            }
             // `-username ece`: kayıt ekranındaki kullanıcı adı alanını bu değerle
             // açar ("alınmış" uyarısını denemek için; örnek veride ece alınmış).
             if let i = arguments.firstIndex(of: "-username"), i + 1 < arguments.count {

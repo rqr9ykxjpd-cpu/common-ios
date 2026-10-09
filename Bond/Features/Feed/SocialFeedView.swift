@@ -283,8 +283,12 @@ struct SocialFeedView: View {
             .sheet(isPresented: $showNotifications) {
                 NotificationsView()
             }
+            // Bildirime dokunuldu: sekme Akış'a geçer (MainTabView), pencere
+            // Akış ekrandayken açılır. Başka sekmede ya da bir pencere açıkken
+            // açmaya çalışmak sunumu düşürüyor, `showNotifications` true kalıyor
+            // ve zil bir daha açılmıyordu.
             .onChange(of: appState.opensNotifications) { _, open in
-                guard open else { return }
+                guard open, feedOnScreen else { return }
                 showNotifications = true
                 appState.opensNotifications = false
             }
@@ -588,7 +592,16 @@ struct SocialFeedView: View {
             Wordmark(shine: wordmarkShine)
         }
         ToolbarItem(placement: .topBarTrailing) {
-            Button { showNotifications = true } label: {
+            Button {
+                // Önceki bir açılış düştüyse durum true kalmış olabilir; önce
+                // kapat, sonra aç ki zil her zaman çalışsın.
+                if showNotifications {
+                    showNotifications = false
+                    Task { @MainActor in showNotifications = true }
+                } else {
+                    showNotifications = true
+                }
+            } label: {
                 // Rozet eskiden offset ile toolbar kapsülünün dışına taşıyordu;
                 // kenar clip yüzünden kırmızı daire yarım görünüyordu. İkonun
                 // etrafında boşluk bırakıp rozeti bu alanın içinde tutuyoruz.

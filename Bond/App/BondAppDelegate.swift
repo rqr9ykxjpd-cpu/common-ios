@@ -75,7 +75,12 @@ final class BondAppDelegate: NSObject, UIApplicationDelegate, UNUserNotification
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        completionHandler([.banner, .sound, .badge])
+        // Uygulama açıkken bildirim kutusu ve ses yok (kurucunun isteği): mesaj
+        // zaten ekranda, zil ve sekme rozeti de anında güncelleniyor. Uygulama
+        // dışındayken sistem bildirimi her zamanki gibi gelir. Açıkken kutuya
+        // dokunmak, başka bir pencere açıkken Bildirimler'i açamıyor ve zili
+        // kilitliyordu.
+        completionHandler([.badge])
         Task { @MainActor in
             PushTokenStore.shared.handleForegroundBanner()
         }
