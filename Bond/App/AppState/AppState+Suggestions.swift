@@ -4,13 +4,14 @@ import SwiftUI
 extension AppState {
     /// Satırda gösterilenler. Liste açılışta bir kez geliyor; bu arada bağlantı
     /// kurulan, kartı sağa geçilen ya da engellenen kişi hemen düşüyor.
+    /// Kurucu sağa geçtiği kişiyi görmeye devam eder (sunucu da öyle döner).
     var visibleSuggestions: [PersonSuggestion] {
         // Listede görünen sohbetler; temizlenmiş bağlantı satırda başta kalır.
         let baglantilar = Set(listedConversations.map(\.profile.id))
         let engellenenler = Set(blockedProfiles.map(\.id))
         return suggestions.filter {
             !baglantilar.contains($0.id)
-                && !rightSwipedProfileIDs.contains($0.id)
+                && (isFounder || !rightSwipedProfileIDs.contains($0.id))
                 && !engellenenler.contains($0.id)
                 && $0.id != currentUserID
         }
@@ -18,7 +19,7 @@ extension AppState {
 
     /// Sessiz: öneri gelmezse satır görünmüyor, hata şeridi sohbetleri kirletmesin.
     /// 50: kampüsteki herkes (yeni katılanlar önde) yatay şeritte gezilebilsin;
-    /// 12'de son katılanlar sığmıyordu. Sunucu da 50'ye kadar veriyor.
+    /// 12'de son katılanlar sığmıyordu. Sunucu artık sayıya bakmıyor, herkesi veriyor.
     func loadSuggestions() async {
         guard let oneren = service as? any PeopleSuggesting else { return }
         do {
