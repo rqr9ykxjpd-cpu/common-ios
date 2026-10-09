@@ -17,10 +17,12 @@ extension AppState {
     }
 
     /// Sessiz: öneri gelmezse satır görünmüyor, hata şeridi sohbetleri kirletmesin.
+    /// 50: kampüsteki herkes (yeni katılanlar önde) yatay şeritte gezilebilsin;
+    /// 12'de son katılanlar sığmıyordu. Sunucu da 50'ye kadar veriyor.
     func loadSuggestions() async {
         guard let oneren = service as? any PeopleSuggesting else { return }
         do {
-            suggestions = try await oneren.fetchSuggestions(limit: 12)
+            suggestions = try await oneren.fetchSuggestions(limit: 50)
         } catch {
             guard !isCancellation(error) else { return }
         }
