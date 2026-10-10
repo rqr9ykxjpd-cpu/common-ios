@@ -6,6 +6,17 @@ extension AppState {
         notifications.filter { !$0.isRead }.count
     }
 
+    /// Zildeki liste: mesajlar hariç. Mesaj Sohbet sekmesinde, kendi rozetiyle
+    /// görünüyor; zilde de durunca her yazışma Bildirimler'i dolduruyordu.
+    /// Uygulama simgesindeki sayı (`unreadNotificationCount`) mesajları sayıyor.
+    var bellNotifications: [AppNotification] {
+        notifications.filter { $0.kind != .message }
+    }
+
+    var unreadBellCount: Int {
+        bellNotifications.filter { !$0.isRead }.count
+    }
+
     /// Bildirimleri sunucudan yükler. Bu ekran şimdiye kadar yalnızca demo örneklerinden
     /// besleniyordu; gerçek kullanıcı eşleşme veya mesaj aldığında hiçbir şey görmüyordu.
     func loadNotifications() async {

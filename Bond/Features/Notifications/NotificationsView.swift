@@ -31,7 +31,7 @@ struct NotificationsView: View {
                        pushAuthorizationStatus == .notDetermined || pushAuthorizationStatus == .denied {
                         pushPermissionCard(status: pushAuthorizationStatus)
                     }
-                    if appState.notifications.isEmpty {
+                    if appState.bellNotifications.isEmpty {
                         notificationState
                     }
                 }
@@ -40,7 +40,7 @@ struct NotificationsView: View {
                 .listRowSeparator(.hidden)
                 .listRowBackground(BondTheme.paper)
 
-                ForEach(Array(appState.notifications.sorted(by: { $0.createdAt > $1.createdAt }).enumerated()),
+                ForEach(Array(appState.bellNotifications.sorted(by: { $0.createdAt > $1.createdAt }).enumerated()),
                         id: \.element.id) { index, notification in
                     Button { open(notification) } label: {
                         notificationRow(notification)
@@ -72,7 +72,7 @@ struct NotificationsView: View {
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
-            .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: appState.notifications.map(\.id))
+            .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: appState.bellNotifications.map(\.id))
             .task {
                 try? await Task.sleep(for: .seconds(1.2))
                 listSettled = true
@@ -93,7 +93,7 @@ struct NotificationsView: View {
                 // Bildirimler zaten akışta yüklüyse burada tekrar çekmek, satıra
                 // basıp okundu yaptıktan hemen sonra rozeti geri getiriyordu.
                 async let conversations: Void = appState.loadConversations()
-                if appState.notifications.isEmpty {
+                if appState.bellNotifications.isEmpty {
                     async let notifications: Void = appState.loadNotifications()
                     _ = await (conversations, notifications)
                 } else {
@@ -103,7 +103,7 @@ struct NotificationsView: View {
                 // "1" diye kalıyordu; açılınca hepsini okundu sayıyoruz.
                 // Yeniler önce bir an vurgulu görünsün, sonra renkleri yumuşakça
                 // sönsün; ekran kapanırsa uyku kesilir ve hemen okundu sayılır.
-                if appState.unreadNotificationCount > 0 {
+                if appState.unreadBellCount > 0 {
                     if !reduceMotion { try? await Task.sleep(for: .seconds(1.4)) }
                     withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.8)) {
                         appState.markAllNotificationsRead()

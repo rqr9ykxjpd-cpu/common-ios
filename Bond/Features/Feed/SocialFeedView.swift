@@ -608,14 +608,14 @@ struct SocialFeedView: View {
                 Image(systemName: "bell")
                     // Yeni bildirim geldiği an zil bir kez sallanır; okununca sallanmaz.
                     .symbolEffect(.wiggle, options: .nonRepeating, value: bellRings)
-                    .onChange(of: appState.unreadNotificationCount) { eski, yeni in
+                    .onChange(of: appState.unreadBellCount) { eski, yeni in
                         if yeni > eski, !reduceMotion { bellRings += 1 }
                     }
                     .padding(.top, 5)
                     .padding(.trailing, 7)
                     .overlay(alignment: .topTrailing) {
-                        if appState.unreadNotificationCount > 0 {
-                            Text("\(min(appState.unreadNotificationCount, 9))")
+                        if appState.unreadBellCount > 0 {
+                            Text("\(min(appState.unreadBellCount, 9))")
                                 .font(.system(size: 10, weight: .bold))
                                 .foregroundStyle(.white)
                                 .frame(minWidth: 15, minHeight: 15)
@@ -625,9 +625,9 @@ struct SocialFeedView: View {
                         }
                     }
                     // Yeni bildirim: rozet sekerek belirir, sayı yuvarlanarak değişir.
-                    .animation(reduceMotion ? nil : BondTheme.Motion.bouncy, value: appState.unreadNotificationCount)
+                    .animation(reduceMotion ? nil : BondTheme.Motion.bouncy, value: appState.unreadBellCount)
             }
-            .accessibilityLabel(L10n.Feed.notificationsA11y(appState.unreadNotificationCount))
+            .accessibilityLabel(L10n.Feed.notificationsA11y(appState.unreadBellCount))
         }
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
