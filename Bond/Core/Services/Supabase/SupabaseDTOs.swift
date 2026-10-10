@@ -1193,6 +1193,10 @@ struct UsernameRow: Decodable {
     let username: String?
 }
 
+struct ProfileUsernameParams: Encodable {
+    let target: UUID
+}
+
 struct CardThemeRow: Decodable {
     let cardTheme: String?
     enum CodingKeys: String, CodingKey { case cardTheme = "card_theme" }

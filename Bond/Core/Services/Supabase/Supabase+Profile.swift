@@ -83,6 +83,23 @@ extension SupabaseProductService {
         try await client.rpc("set_my_card_theme", params: CardThemeParams(theme: theme.serverValue)).execute()
     }
 
+    private func profileUsername(_ profileID: UUID) async -> String? {
+        if let ad: String? = try? await client
+            .rpc("profile_username", params: ProfileUsernameParams(target: profileID))
+            .execute()
+            .value {
+            return ad
+        }
+        let rows: [UsernameRow] = (try? await client
+            .from("profiles")
+            .select("username")
+            .eq("id", value: profileID)
+            .limit(1)
+            .execute()
+            .value) ?? []
+        return rows.first?.username
+    }
+
     private func myUsername() async throws -> String {
         guard let userID = currentUserID else { throw BackendServiceError.missingSession }
         let rows: [UsernameRow] = try await client
@@ -345,15 +362,10 @@ extension SupabaseProductService {
             .execute()
             .value
         async let badgeTask = badges(for: [profileID])[profileID]
-        // Ayrı sorgu: avatar sorgusuna eklenseydi, sütunu henüz olmayan bir
-        // sunucuda avatar da gelmezdi.
-        async let usernameTask: [UsernameRow] = (try? await client
-            .from("profiles")
-            .select("username")
-            .eq("id", value: profileID)
-            .limit(1)
-            .execute()
-            .value) ?? []
+        // Kullanıcı adı `profile_username` ile: tablonun okuma kuralı yalnızca
+        // bağlantılı ya da paylaşım yapmış kişilerin satırını açıyor, çoğu
+        // kartta @nick boş kalıyordu. Fonksiyon yoksa (eski sunucu) tablodan dener.
+        async let usernameTask: String? = profileUsername(profileID)
         async let themeTask = try? cardTheme(of: profileID)
 
         let interestRows = await interestRowsTask
@@ -367,7 +379,7 @@ extension SupabaseProductService {
             avatarURL: media?.avatarPath.flatMap { urls[$0] },
             badge: await badgeTask,
             posts: [],
-            username: await usernameTask.first?.username,
+            username: await usernameTask,
             cardTheme: await themeTask
         )
     }
