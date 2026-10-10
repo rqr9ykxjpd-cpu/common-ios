@@ -213,7 +213,10 @@ extension AppState {
 
     /// Birinin profili kasıtlı olarak açıldığında çağrılır.
     func recordProfileVisit(_ profile: StudentProfile) {
-        guard !(ghostMode && tier.hasGhostMode) else { return }
+        // Hayalet mod kararını sunucu veriyor (`record_profile_visit`): ziyareti
+        // kaydetmez, yalnız kurucunun profiline yapılan ziyareti kaydeder. Önceden
+        // uygulama hayalet moddayken isteği hiç göndermiyordu; kurucu istisnası
+        // bu yüzden hiç işlemiyordu.
         // Kilitliyken kimsenin "Profilini görüntüleyenler"inde görünmesin.
         guard !isEduLocked else { return }
         guard profile.id != currentUserID else { return }
