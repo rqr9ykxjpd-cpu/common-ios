@@ -25,7 +25,7 @@ Bağlantı ve sohbet
 Tanımak istediğin bir öğrenciye bağlantı isteği gönder; karşılıklı olursa sohbet açılır. Story'ye yanıt mesaj isteği olarak gider, kabul eden yazışır. Rahatsız eden birini tek dokunuşla engelleyebilir, şikayet edebilirsin.
 
 Common Plus ve Pro
-Haftalık abonelikle daha fazla bağlantı ve buluşma isteği, sınırsız gönderi, profiline bakanlar, mesaj düzenleme/silme, story izlenme detayları ve hayalet mod. Abonelik App Store hesabından yönetilir; dönem bitiminden en az 24 saat önce iptal edilmezse kendiliğinden yenilenir.
+Aylık abonelikle daha fazla bağlantı ve buluşma isteği, sınırsız gönderi, profiline bakanlar, mesaj düzenleme/silme, story izlenme detayları ve hayalet mod. Abonelik App Store hesabından yönetilir; dönem bitiminden en az 24 saat önce iptal edilmezse kendiliğinden yenilenir.
 
 Kullanım Koşulları (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 Ayrıntılı koşullar: https://rqr9ykxjpd-cpu.github.io/common-ios/kosullar.html

@@ -17,6 +17,9 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const PLAN_BY_PRODUCT: Record<string, string> = {
+  "com.campus.social.plus.monthly": "plus",
+  "com.campus.social.pro.monthly": "pro",
+  // 1.1.4'ten önce satılan haftalık abonelikler; yenilenenler hakkını korur.
   "com.campus.social.plus.weekly": "plus",
   "com.campus.social.pro.weekly": "pro",
 };

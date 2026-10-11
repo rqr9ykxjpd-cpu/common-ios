@@ -8413,13 +8413,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Weekly subscriptions renew automatically. You’ll be charged again unless you cancel at least 24 hours before the period ends. Cancel in App Store account settings."
+            "value" : "Monthly subscriptions renew automatically. You’ll be charged again unless you cancel at least 24 hours before the period ends. Cancel in App Store account settings."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Haftalık abonelik otomatik yenilenir; dönem bitmeden 24 saat önce iptal etmezsen yeniden ücretlendirilirsin. İptal: App Store hesap ayarları."
+            "value" : "Aylık abonelik otomatik yenilenir; dönem bitmeden 24 saat önce iptal etmezsen yeniden ücretlendirilirsin. İptal: App Store hesap ayarları."
           }
         }
       }
@@ -8492,19 +8492,19 @@
         }
       }
     },
-    "paywall.perWeek" : {
+    "paywall.perMonth" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "/ week"
+            "value" : "/ month"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "/ hafta"
+            "value" : "/ ay"
           }
         }
       }

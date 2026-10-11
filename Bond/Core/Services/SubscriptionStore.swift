@@ -16,14 +16,19 @@ import StoreKit
 @Observable
 final class SubscriptionStore {
     enum ProductID {
-        static let plus = "com.campus.social.plus.weekly"
-        static let pro = "com.campus.social.pro.weekly"
+        static let plus = "com.campus.social.plus.monthly"
+        static let pro = "com.campus.social.pro.monthly"
         static let all = [plus, pro]
+
+        /// 1.1.4'e kadar satılan haftalık abonelikler. Artık satılmıyor ama
+        /// süresi dolmamış ya da yenilenen haftalık aboneler hakkını korumalı.
+        static let legacyPlus = "com.campus.social.plus.weekly"
+        static let legacyPro = "com.campus.social.pro.weekly"
 
         static func tier(for id: String) -> SubscriptionTier? {
             switch id {
-            case plus: .plus
-            case pro: .pro
+            case plus, legacyPlus: .plus
+            case pro, legacyPro: .pro
             default: nil
             }
         }

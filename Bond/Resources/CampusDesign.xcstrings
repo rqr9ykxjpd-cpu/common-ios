@@ -337,22 +337,6 @@
         }
       }
     },
-    "weekly": {
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Haftalık abonelik · Otomatik yenilenir"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Weekly subscription · Renews automatically"
-          }
-        }
-      }
-    },
     "priceLoading": {
       "localizations": {
         "tr": {

@@ -68,7 +68,7 @@ yönergeleri gösterir.
 ## Abonelikler
 
 Common'un temel özellikleri ücretsizdir. Common Plus ve Common Pro, isteğe
-bağlı haftalık aboneliklerdir; abone olmadan da uygulamayı kullanmaya devam
+bağlı aylık aboneliklerdir; abone olmadan da uygulamayı kullanmaya devam
 edebilirsin.
 
 Satın alma App Store üzerinden yapılır ve ücret App Store hesabına yansır.

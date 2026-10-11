@@ -68,7 +68,7 @@ instructions for removing that permission from your Apple account.
 ## Subscriptions
 
 Common's core features are free. Common Plus and Common Pro are optional
-weekly subscriptions; you can keep using the app without subscribing.
+monthly subscriptions; you can keep using the app without subscribing.
 
 Purchases are made through the App Store and charged to your App Store
 account. A subscription renews automatically and is charged again unless you

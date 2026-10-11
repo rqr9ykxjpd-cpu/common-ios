@@ -15,7 +15,7 @@ extension L10n {
             L10n.format("paywall.currentPlan", planName(tier))
         }
         static var unlimited: String { String(localized: "paywall.unlimited") }
-        static var perWeek: String { String(localized: "paywall.perWeek") }
+        static var perMonth: String { String(localized: "paywall.perMonth") }
         static var handNote: String { String(localized: "paywall.handNote") }
         static var legal: String { String(localized: "paywall.legal") }
         static var restoring: String { String(localized: "paywall.restoring") }

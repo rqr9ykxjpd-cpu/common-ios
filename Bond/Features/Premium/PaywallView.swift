@@ -240,7 +240,7 @@ struct PaywallView: View {
                     .font(.system(.footnote, design: .rounded).weight(.bold))
                     .lineLimit(1)
                     .minimumScaleFactor(0.65)
-                Text(L10n.Paywall.perWeek)
+                Text(L10n.Paywall.perMonth)
                     .font(.caption2)
                     .opacity(0.72)
             }

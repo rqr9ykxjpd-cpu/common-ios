@@ -48,8 +48,8 @@ tested for access without a second-factor or new-device approval prompt.
 To find subscriptions: open Profile, open the settings gear, then tap
 "Visitors" ("Ziyaretçiler" on a Turkish device) on a free account. The
 locked "Ghost mode" ("Hayalet mod") row also opens the paywall. Choose Common Plus or Common Pro and use the
-purchase button. Both subscriptions renew weekly. Products are
-com.campus.social.plus.weekly and com.campus.social.pro.weekly. Prices are
+purchase button. Both subscriptions renew monthly. Products are
+com.campus.social.plus.monthly and com.campus.social.pro.monthly. Prices are
 provided by StoreKit for the tester's storefront. Restore Purchases, Terms
 and Privacy are available at the bottom of the paywall.
 

@@ -24,7 +24,6 @@ extension L10n {
         static var expandPhoto: String { String(localized: "expandPhoto", table: "CampusDesign") }
         static var proGhost: String { String(localized: "proGhost", table: "CampusDesign") }
         static var choosePlan: String { String(localized: "choosePlan", table: "CampusDesign") }
-        static var weekly: String { String(localized: "weekly", table: "CampusDesign") }
         static var priceLoading: String { String(localized: "priceLoading", table: "CampusDesign") }
         static var retryPrices: String { String(localized: "retryPrices", table: "CampusDesign") }
         static var manualPlace: String { String(localized: "manualPlace", table: "CampusDesign") }
