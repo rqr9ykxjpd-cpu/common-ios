@@ -161,6 +161,9 @@ enum SampleData {
                 id: UUID(),
                 profile: mina,
                 messages: [
+                    // Mesajla gelen gönderi: balonda gönderinin kendisi görünür.
+                    Message(body: "Bir gönderi paylaştı.", isMine: false, sentAt: hours(0.8),
+                            sharedPostID: stableID("post:Vize haftası kütüphane kampı başladı. İkinci kahve gidiyor.")),
                     Message(body: "Veri Yapıları notlarını attım, hash kısmına özellikle bak 📎", isMine: false, sentAt: hours(0.6)),
                     Message(body: "Yarın kütüphanede 15.00'te birlikte bakalım mı?", isMine: false, sentAt: hours(0.4))
                 ],

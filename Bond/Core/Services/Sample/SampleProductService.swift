@@ -171,6 +171,9 @@ struct SampleProductService: ProductService {
     }
 
     func fetchSavedPosts() async throws -> [BackendPost] { await store.allPosts().filter(\.saved) }
+    func fetchPosts(ids: [UUID]) async throws -> [BackendPost] {
+        await store.allPosts().filter { ids.contains($0.id) }
+    }
 
     // Güvenlik
     func blockUser(_ profileID: UUID) async throws { await store.block(profileID) }

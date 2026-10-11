@@ -297,6 +297,19 @@ extension AppState {
         }
     }
 
+    /// Gönderi sayfası `posts` içinden okuyor; akış ise yalnızca son 100 gönderiyi
+    /// getiriyor. Mesajla gelen (ya da kaydedilmiş) daha eski bir gönderi açılınca
+    /// sunucudan getirilip listeye eklenir. Görülemiyorsa (silinmiş, gizlenmiş) false.
+    @discardableResult
+    func loadPostIfNeeded(_ postID: UUID) async -> Bool {
+        if posts.contains(where: { $0.id == postID }) { return true }
+        guard let gelen = try? await service.fetchPosts(ids: [postID]).first else { return false }
+        if !posts.contains(where: { $0.id == postID }) {
+            posts.append(socialPost(from: gelen))
+        }
+        return true
+    }
+
     /// Kaydedilen gönderiler. Yer imi butonu yalnızca yerel durumu değiştiriyordu ve
     /// kaydedilenleri görecek bir ekran da yoktu; buton hiçbir işe yaramıyordu.
     /// Kaydedilen gönderiler sunucudan ayrıca çekiliyor; akıştan süzmek yetmiyordu

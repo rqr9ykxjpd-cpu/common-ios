@@ -27,6 +27,8 @@ struct PostCard: View {
     @State private var showBlockConfirmation = false
     /// Gönderideki düğmenin açtığı ekran.
     @State private var presentedAction: PostAction?
+    /// Kâğıt uçak: gönderiyi bir bağlantıya sohbetten yollama ekranı.
+    @State private var showSendSheet = false
 
     /// Düğmeyi yalnızca Common hesabı kendi gönderisine ekler.
     private var canSetAction: Bool {
@@ -87,6 +89,9 @@ struct PostCard: View {
                 .presentationDragIndicator(.visible)
                 .presentationCornerRadius(28)
                 .zoomTransition(sourceID: "gonderi-\(post.id)", in: zoomNamespace)
+        }
+        .sheet(isPresented: $showSendSheet) {
+            SharePostSheet(post: post)
         }
         .confirmationDialog(L10n.Moderation.removePostConfirm, isPresented: $showModeratorRemove, titleVisibility: .visible) {
             Button(L10n.Moderation.removePost, role: .destructive) {
@@ -165,6 +170,9 @@ struct PostCard: View {
 
     private var menu: some View {
         Menu {
+            Button(L10n.SharePost.sendButton, systemImage: "paperplane") {
+                showSendSheet = true
+            }
             ShareLink(item: shareText) {
                 Label(L10n.Feed.share, systemImage: "square.and.arrow.up")
             }
@@ -454,12 +462,18 @@ struct PostCard: View {
             Spacer(minLength: 0)
 
             if !compact {
-                ShareLink(item: shareText) {
+                // Uygulama içinden bir bağlantıya gönderir. Uygulama dışına
+                // paylaşım "…" menüsünde.
+                Button {
+                    showSendSheet = true
+                } label: {
                     Image(systemName: "paperplane")
                         .font(.body.weight(.regular))
                         .frame(width: 36, height: 36)
                 }
-                .accessibilityLabel(L10n.Feed.share)
+                .buttonStyle(.pressable)
+                .accessibilityLabel(L10n.SharePost.sendButton)
+                .accessibilityIdentifier("post.send.\(post.id)")
             }
             Button(action: toggleSaved) {
                 Image(systemName: post.saved ? "bookmark.fill" : "bookmark")

@@ -21,6 +21,8 @@ struct ConversationView: View {
     @State private var showBlockConfirmation = false
     @State private var messagePendingDeletion: UUID?
     @State private var messagePendingReport: UUID?
+    /// Mesajla gelen gönderiye dokunulunca açılan gönderi sayfası.
+    @State private var openedPostID: UUID?
     @FocusState private var focused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Mesaj sınırına her dayanışta artar; yazma alanı titrer.
@@ -78,6 +80,10 @@ struct ConversationView: View {
                                     openEmojiPicker: {
                                         activeMessageActions = nil
                                         emojiPickerMessage = message
+                                    },
+                                    openPost: { postID in
+                                        activeMessageActions = nil
+                                        openedPostID = postID
                                     }
                                 )
                                 // Açık tepki çubuğu komşu balonların üstünde kalsın.
@@ -242,6 +248,9 @@ struct ConversationView: View {
             Text(L10n.Chat.deleteMessageBody)
         }
         .sheet(isPresented: $showPaywall) { PaywallView() }
+        .navigationDestination(item: $openedPostID) { postID in
+            PostDetailView(postID: postID)
+        }
         .sheet(isPresented: $showProfile) {
             if let profile = conversation?.profile {
                 NavigationStack {
@@ -549,6 +558,8 @@ private struct MessageBubble: View {
     @State private var quickReactions = ReactionEmoji.quick
     /// "+": seçici sohbet ekranından açılır (satırdaki sheet tembel listede açılmıyordu).
     var openEmojiPicker: () -> Void = {}
+    /// Mesajla gelen gönderiyi açar.
+    var openPost: (UUID) -> Void = { _ in }
     @State private var dragOffset: CGFloat = 0
     /// Kaydırma yanıt eşiğini geçti mi: geçince ok büyüyor ve hafif titreşim
     /// geliyor, bırakınca yanıtlanacağını parmak hissediyor.
@@ -577,9 +588,13 @@ private struct MessageBubble: View {
                         .background(message.isMine ? BondTheme.paper.opacity(0.13) : BondTheme.ink.opacity(0.055), in: RoundedRectangle(cornerRadius: 10))
                     }
 
-                    Text(message.body)
-                        .font(.subheadline)
-                        .lineSpacing(3)
+                    if let postID = message.sharedPostID {
+                        SharedPostPreview(postID: postID, isMine: message.isMine) { openPost(postID) }
+                    } else {
+                        Text(message.body)
+                            .font(.subheadline)
+                            .lineSpacing(3)
+                    }
                     if message.editedAt != nil {
                         // Renk zaman damgasıyla aynı kuralı izliyor: kendi mesajın
                         // koyu zeminde, karşınınki açık zeminde.
@@ -781,13 +796,16 @@ private struct MessageBubble: View {
             }
 
             if message.isMine, canEdit {
-                Button(action: edit) {
-                    Image(systemName: "pencil")
-                        .font(.subheadline.weight(.semibold))
-                        .frame(width: 38, height: 38)
+                // Gönderi mesajında düzenlenecek yazı yok; yalnızca silinir.
+                if message.sharedPostID == nil {
+                    Button(action: edit) {
+                        Image(systemName: "pencil")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(width: 38, height: 38)
+                    }
+                    .buttonStyle(PressableStyle())
+                    .accessibilityLabel(L10n.Common.edit)
                 }
-                .buttonStyle(PressableStyle())
-                .accessibilityLabel(L10n.Common.edit)
 
                 Button(action: delete) {
                     Image(systemName: "trash")

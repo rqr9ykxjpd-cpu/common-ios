@@ -46,7 +46,8 @@ extension AppState {
         }
         let isMine = payload.senderID == currentUserID
         let message = Message(id: payload.id, body: payload.body, isMine: isMine, sentAt: payload.createdAt,
-                              reaction: payload.reaction, senderReaction: payload.senderReaction, replyTo: replyTo)
+                              reaction: payload.reaction, senderReaction: payload.senderReaction, replyTo: replyTo,
+                              sharedPostID: payload.sharedPostID)
         withAnimation(.snappy) { conversations[index].messages.append(message) }
         conversations[index].updatedAt = message.sentAt
         if !isMine {
@@ -320,19 +321,23 @@ extension AppState {
         service.typingChannel(matchID: conversationID)
     }
 
-    func send(_ body: String, in conversationID: UUID, replyTo: MessageReply? = nil) async {
+    @discardableResult
+    func send(_ body: String, in conversationID: UUID, replyTo: MessageReply? = nil,
+              sharedPostID: UUID? = nil) async -> Bool {
         let cleanBody = body.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanBody.isEmpty,
-              let index = conversations.firstIndex(where: { $0.id == conversationID }) else { return }
-        let message = Message(body: cleanBody, isMine: true, sentAt: .now, replyTo: replyTo)
+              let index = conversations.firstIndex(where: { $0.id == conversationID }) else { return false }
+        let message = Message(body: cleanBody, isMine: true, sentAt: .now, replyTo: replyTo,
+                              sharedPostID: sharedPostID)
         withAnimation(.snappy) { conversations[index].messages.append(message) }
         conversations[index].updatedAt = .now
         do {
             let saved = try await service.sendMessage(message, matchID: conversationID)
             guard let refreshedIndex = conversations.firstIndex(where: { $0.id == conversationID }),
-                  let messageIndex = conversations[refreshedIndex].messages.firstIndex(where: { $0.id == message.id }) else { return }
+                  let messageIndex = conversations[refreshedIndex].messages.firstIndex(where: { $0.id == message.id }) else { return true }
             conversations[refreshedIndex].messages[messageIndex] = saved
             promptForPushIfNeeded()
+            return true
         } catch {
             if let refreshedIndex = conversations.firstIndex(where: { $0.id == conversationID }) {
                 withAnimation(.snappy) {
@@ -340,7 +345,16 @@ extension AppState {
                 }
             }
             showError(error, fallback: L10n.Chat.sendFailed)
+            return false
         }
+    }
+
+    /// Gönderiyi bir bağlantıya sohbet mesajı olarak yollar. Yalnızca mevcut
+    /// sohbetlere: mesajlaşma bağlantıya bağlı, gönderi yeni bir istek yolu açmıyor.
+    func sharePost(_ postID: UUID, to conversationID: UUID) async -> Bool {
+        let ok = await send(L10n.SharePost.messageBody, in: conversationID, sharedPostID: postID)
+        if ok { Haptics.success() }
+        return ok
     }
 
     /// Kendi mesajını siler; silme eşleşmeyi de bitirir. Sohbet iyimser

@@ -29,6 +29,7 @@ struct RealtimeMessage: Sendable {
     let reaction: String?
     let senderReaction: String?
     let createdAt: Date
+    var sharedPostID: UUID? = nil
 }
 
 enum ReportReason: String, CaseIterable, Identifiable, Sendable {
@@ -165,6 +166,9 @@ protocol ProductService: Sendable {
     /// Kaydedilen gönderiler. Akıştan süzmek yetmiyor: akış yalnızca son 100 gönderiyi
     /// getirdiği için eski bir gönderiyi kaydeden kişi onu yer imlerinde bulamıyordu.
     func fetchSavedPosts() async throws -> [BackendPost]
+    /// Kimliği bilinen gönderiler (mesajla gelen gönderi). Akış yalnızca son
+    /// 100 gönderiyi getiriyor; daha eski bir gönderi buradan yükleniyor.
+    func fetchPosts(ids: [UUID]) async throws -> [BackendPost]
     /// Bir kişinin ilgi alanları ve galeri fotoğrafları. Gönderi ve story
     /// sorguları yazar için yalnızca temel alanları getiriyor; kişinin profiline
     /// girildiğinde kart bu yüzden bomboş görünüyordu.
@@ -339,6 +343,7 @@ struct UnconfiguredProductService: ProductService {
     func fetchCommentVoters(_ commentID: UUID) async throws -> [PostVoter] { try fail() }
     func setPostSaved(_ postID: UUID, saved: Bool) async throws { try fail() }
     func fetchSavedPosts() async throws -> [BackendPost] { try fail() }
+    func fetchPosts(ids: [UUID]) async throws -> [BackendPost] { try fail() }
     func fetchPersonDetails(_ profileID: UUID) async throws -> PersonDetails { try fail() }
     func fetchPersonPosts(_ profileID: UUID) async -> [BackendPost] { [] }
     func fetchNotifications() async throws -> [BackendNotification] { try fail() }

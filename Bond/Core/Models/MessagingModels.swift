@@ -20,9 +20,14 @@ struct Message: Identifiable, Hashable, Codable {
     /// Doluysa mesaj sonradan düzenlenmiş; arayüz "düzenlendi" yazıyor.
     var editedAt: Date?
     let replyTo: MessageReply?
+    /// Gönderi düğmesiyle yollanan mesajda gönderinin kimliği. `body` yine dolu
+    /// ("Bir gönderi paylaştı."): eski sürümler, sohbet listesi ve bildirim onu
+    /// gösteriyor; bu sürüm balonda gönderinin kendisini çiziyor.
+    var sharedPostID: UUID?
 
     init(id: UUID = UUID(), body: String, isMine: Bool, sentAt: Date, reaction: String? = nil,
-         senderReaction: String? = nil, editedAt: Date? = nil, replyTo: MessageReply? = nil) {
+         senderReaction: String? = nil, editedAt: Date? = nil, replyTo: MessageReply? = nil,
+         sharedPostID: UUID? = nil) {
         self.id = id
         self.body = body
         self.isMine = isMine
@@ -31,6 +36,7 @@ struct Message: Identifiable, Hashable, Codable {
         self.senderReaction = senderReaction
         self.editedAt = editedAt
         self.replyTo = replyTo
+        self.sharedPostID = sharedPostID
     }
 
     /// Benim bu mesaja tepkim; yalnızca bunu değiştirebilirim.
@@ -50,7 +56,15 @@ struct Conversation: Identifiable, Hashable {
     var updatedAt: Date
     var unreadCount: Int
 
-    var lastMessage: String { messages.last?.body ?? "" }
+    var lastMessage: String {
+        guard let son = messages.last else { return "" }
+        // Gönderi mesajının metni gönderenin ağzından ("Bir gönderi paylaştı.");
+        // kendi gönderdiğinde listede karşı taraf paylaşmış gibi okunmasın.
+        if son.sharedPostID != nil {
+            return son.isMine ? L10n.SharePost.previewMine : L10n.SharePost.messageBody
+        }
+        return son.body
+    }
 
 }
 

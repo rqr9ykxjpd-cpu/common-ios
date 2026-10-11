@@ -52,6 +52,17 @@ extension SupabaseProductService {
         return await hydratePosts(rows, savedIDs: Set(ids))
     }
 
+    func fetchPosts(ids: [UUID]) async throws -> [BackendPost] {
+        guard !ids.isEmpty else { return [] }
+        let rows: [PostRow] = try await client
+            .from("posts")
+            .select(postListSelect)
+            .`in`("id", values: ids)
+            .execute()
+            .value
+        return await hydratePosts(rows, savedIDs: nil)
+    }
+
     /// Gönderi görsellerini tek tek indirmiyoruz: profil ızgarasıyla aynı
     /// toplu imzalı URL. Aksi halde akış, fotoğraf sayısı kadar sıralı
     /// `download` bekliyordu.

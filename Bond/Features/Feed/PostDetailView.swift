@@ -22,6 +22,9 @@ struct PostDetailView: View {
     @State private var votersTarget: SocialComment?
     @FocusState private var focused: Bool
     @State private var selectedAuthor: StudentProfile?
+    /// Gönderi akışta yoksa (mesajla gelen ya da eski kaydedilen) sunucudan
+    /// getirilirken "yok" demesin.
+    @State private var fetchingMissing = true
 
     private var post: SocialPost? { appState.posts.first { $0.id == postID } }
     private var canSend: Bool {
@@ -82,9 +85,16 @@ struct PostDetailView: View {
                         }
                     }
                 }
+            } else if fetchingMissing {
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 AppEmptyState(systemImage: "exclamationmark.bubble", title: L10n.Comments.missingPost)
             }
+        }
+        .task(id: postID) {
+            if post == nil { await appState.loadPostIfNeeded(postID) }
+            fetchingMissing = false
         }
         .background(BondTheme.paper.ignoresSafeArea())
         .navigationTitle(L10n.Board.postTitle)

@@ -652,6 +652,8 @@ struct MessageRow: Decodable {
     let createdAt: Date
     let readAt: Date?
     let editedAt: Date?
+    /// Sorguda yoksa (eski sorgu, anlık kanal) nil.
+    let sharedPostID: UUID?
 
     enum CodingKeys: String, CodingKey {
         case id, body, reaction
@@ -662,6 +664,7 @@ struct MessageRow: Decodable {
         case editedAt = "edited_at"
         case createdAt = "created_at"
         case readAt = "read_at"
+        case sharedPostID = "shared_post_id"
     }
 
     func message(currentUserID: UUID, allRows: [MessageRow], peerName: String) -> Message {
@@ -671,7 +674,8 @@ struct MessageRow: Decodable {
             }
         }
         return Message(id: id, body: body, isMine: senderID == currentUserID, sentAt: createdAt, reaction: reaction,
-                       senderReaction: senderReaction, editedAt: editedAt, replyTo: reply)
+                       senderReaction: senderReaction, editedAt: editedAt, replyTo: reply,
+                       sharedPostID: sharedPostID)
     }
 }
 
@@ -681,12 +685,15 @@ struct MessageInsert: Encodable {
     let senderID: UUID
     let body: String
     let replyToID: UUID?
+    /// nil ise anahtar hiç gönderilmiyor; düz mesaj eskisi gibi.
+    let sharedPostID: UUID?
 
     enum CodingKeys: String, CodingKey {
         case id, body
         case matchID = "match_id"
         case senderID = "sender_id"
         case replyToID = "reply_to_id"
+        case sharedPostID = "shared_post_id"
     }
 }
 

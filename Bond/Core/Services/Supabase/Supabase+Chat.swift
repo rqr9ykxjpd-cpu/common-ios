@@ -23,7 +23,7 @@ extension SupabaseProductService {
         for match in matches {
             let tumu: [MessageRow] = try await client
                 .from("messages")
-                .select("id,match_id,sender_id,body,reply_to_id,reaction,sender_reaction,created_at,read_at,edited_at")
+                .select("id,match_id,sender_id,body,reply_to_id,reaction,sender_reaction,created_at,read_at,edited_at,shared_post_id")
                 .eq("match_id", value: match.id)
                 .order("created_at", ascending: true)
                 .execute()
@@ -50,12 +50,13 @@ extension SupabaseProductService {
             matchID: matchID,
             senderID: userID,
             body: message.body,
-            replyToID: message.replyTo?.messageID
+            replyToID: message.replyTo?.messageID,
+            sharedPostID: message.sharedPostID
         )
         let row: MessageRow = try await client
             .from("messages")
             .insert(payload)
-            .select("id,match_id,sender_id,body,reply_to_id,reaction,sender_reaction,created_at,read_at,edited_at")
+            .select("id,match_id,sender_id,body,reply_to_id,reaction,sender_reaction,created_at,read_at,edited_at,shared_post_id")
             .single()
             .execute()
             .value
@@ -68,7 +69,8 @@ extension SupabaseProductService {
             isMine: row.senderID == userID,
             sentAt: row.createdAt,
             reaction: row.reaction,
-            replyTo: message.replyTo
+            replyTo: message.replyTo,
+            sharedPostID: row.sharedPostID ?? message.sharedPostID
         )
     }
 
@@ -165,7 +167,7 @@ extension SupabaseProductService {
                                         matchID: row.matchID, id: row.id, senderID: row.senderID,
                                         body: row.body, replyToID: row.replyToID,
                                         reaction: row.reaction, senderReaction: row.senderReaction,
-                                        createdAt: row.createdAt
+                                        createdAt: row.createdAt, sharedPostID: row.sharedPostID
                                     ))
                                 }
                             }
@@ -176,7 +178,7 @@ extension SupabaseProductService {
                                         matchID: row.matchID, id: row.id, senderID: row.senderID,
                                         body: row.body, replyToID: row.replyToID,
                                         reaction: row.reaction, senderReaction: row.senderReaction,
-                                        createdAt: row.createdAt
+                                        createdAt: row.createdAt, sharedPostID: row.sharedPostID
                                     ))
                                 }
                             }
