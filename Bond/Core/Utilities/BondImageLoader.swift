@@ -18,8 +18,11 @@ actor BondImageLoader {
     private var availableSlots = 2
     private var waiters: [CheckedContinuation<Void, Never>] = []
 
-    private let maxCount = 24
-    private let maxCost = 18 * 1024 * 1024
+    /// Akış karesi 1200 px ≈ 7,7 MB; 18 MB'ta yalnızca 2-3 kare kalıyordu,
+    /// yukarı kaydırınca her kart diskten yeniden okunup çiziliyordu. Bellek
+    /// uyarısında tamamen boşaltılıyor (BondAppDelegate).
+    private let maxCount = 80
+    private let maxCost = 72 * 1024 * 1024
     /// 2 iken hızlı kaydırmada kartlar boş kalıyordu. Çözme boyutu sınırlı ve
     /// görsellerin çoğu artık diskten geliyor; 4 bellek açısından güvenli.
     private let maxConcurrent = 4
@@ -64,15 +67,15 @@ actor BondImageLoader {
             if !url.isFileURL, MediaDiskCache.isCacheable(diskKey),
                let data = MediaDiskCache.read(diskKey),
                let image = ImageCompression.imageForDisplay(data, maxDimension: maxDimension) {
-                return image
+                return Self.readyForScreen(image)
             }
             return await BondImageLoader.shared.withConcurrencyLimit {
                 if url.isFileURL, let image = ImageCompression.imageForDisplay(at: url, maxDimension: maxDimension) {
-                    return image
+                    return Self.readyForScreen(image)
                 }
                 guard let data = await fetch(url) else { return nil }
                 if MediaDiskCache.isCacheable(diskKey) { MediaDiskCache.write(data, for: diskKey) }
-                return ImageCompression.imageForDisplay(data, maxDimension: maxDimension)
+                return ImageCompression.imageForDisplay(data, maxDimension: maxDimension).map(Self.readyForScreen)
             }
         }
         inflight[key] = task
@@ -80,6 +83,13 @@ actor BondImageLoader {
         if inflight[key] != nil { inflight[key] = nil }
         if let image, gen == generation { insert(image, key: key) }
         return gen == generation ? image : nil
+    }
+
+    /// Ekranın beklediği biçime arka planda çevrilir. Yoksa görsel ilk kez
+    /// çizildiğinde bu dönüşüm ana iş parçacığında yapılıyor, kaydırırken
+    /// her yeni kart bir kare takıyordu.
+    nonisolated static func readyForScreen(_ image: UIImage) -> UIImage {
+        image.preparingForDisplay() ?? image
     }
 
     /// Token ve cacheNonce yok: aynı dosyanın yeni imzalı adresi önbelleği vurur.

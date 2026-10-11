@@ -71,12 +71,21 @@ private struct DecodedProfileImage: View {
             }
         }
         .task(id: identity) {
-            if let data {
-                image = ImageCompression.imageForDisplay(data, maxDimension: kind.displayDimension)
-            } else if let assetName, let loaded = UIImage(named: assetName) {
-                image = ImageCompression.capped(loaded, maxDimension: kind.displayDimension)
-            }
-            failed = image == nil
+            // Çözme ve küçültme arka planda: görünümün görevi ana iş parçacığında
+            // çalışıyor, kaydırırken yerel fotoğraflı her kart bir kare takıyordu.
+            let veri = data, ad = assetName, boyut = kind.displayDimension
+            let hazir = await Task.detached(priority: .userInitiated) { () -> UIImage? in
+                if let veri {
+                    return ImageCompression.imageForDisplay(veri, maxDimension: boyut).map(BondImageLoader.readyForScreen)
+                }
+                if let ad, let loaded = UIImage(named: ad) {
+                    return BondImageLoader.readyForScreen(ImageCompression.capped(loaded, maxDimension: boyut))
+                }
+                return nil
+            }.value
+            guard !Task.isCancelled else { return }
+            image = hazir
+            failed = hazir == nil
         }
     }
 
@@ -165,31 +174,84 @@ private struct RemoteProfileImage: View {
 }
 
 
-/// Görsel yüklenirken yüzeyin üstünden geçen yumuşak ışık. Hareket azaltmada durağan.
+/// Görsel yüklenirken yüzeyin üstünden geçen yumuşak ışık. Hareket azaltmada
+/// ve Düşük Güç Modu'nda durağan.
+///
+/// Önceden SwiftUI'da her karede yeniden çiziliyordu; kaydırırken ekranda
+/// birkaç tane olunca ana iş parçacığı her karede bunlarla uğraşıyordu. Artık
+/// ışık Core Animation'da kayıyor, uygulama karelerde hiçbir şey yapmıyor.
 struct ShimmerPlaceholder: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var faz: CGFloat = -1
 
     var body: some View {
         BondTheme.surface
             .overlay {
-                if !reduceMotion {
-                    GeometryReader { geo in
-                        LinearGradient(
-                            colors: [.clear, .white.opacity(0.35), .clear],
-                            startPoint: .leading, endPoint: .trailing
-                        )
-                        .frame(width: geo.size.width * 0.6)
-                        .offset(x: faz * geo.size.width * 1.4)
-                        .blendMode(.plusLighter)
-                    }
-                    .allowsHitTesting(false)
+                if IdleMotion.allowed(reduceMotion: reduceMotion) {
+                    ShimmerSweep()
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
                 }
             }
             .clipped()
-            .onAppear {
-                guard !reduceMotion else { return }
-                withAnimation(.linear(duration: 1.25).repeatForever(autoreverses: false)) { faz = 1 }
-            }
+    }
+}
+
+private struct ShimmerSweep: UIViewRepresentable {
+    func makeUIView(context: Context) -> ShimmerSweepView { ShimmerSweepView() }
+    func updateUIView(_ view: ShimmerSweepView, context: Context) {}
+}
+
+final class ShimmerSweepView: UIView {
+    private let band = CAGradientLayer()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        isUserInteractionEnabled = false
+        backgroundColor = .clear
+        clipsToBounds = true
+        band.colors = [UIColor.white.withAlphaComponent(0).cgColor,
+                       UIColor.white.withAlphaComponent(0.35).cgColor,
+                       UIColor.white.withAlphaComponent(0).cgColor]
+        band.startPoint = CGPoint(x: 0, y: 0.5)
+        band.endPoint = CGPoint(x: 1, y: 0.5)
+        band.compositingFilter = "plusL"
+        layer.addSublayer(band)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) kullanılmıyor") }
+
+    private var kurulanBoyut: CGSize = .zero
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        // Kaydırırken yerleşim sık çağrılıyor; animasyon yalnızca boyut
+        // değişince baştan kurulur.
+        guard bounds.size != kurulanBoyut else { return }
+        kurulanBoyut = bounds.size
+        let genislik = bounds.width * 0.6
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        band.frame = CGRect(x: 0, y: 0, width: genislik, height: bounds.height)
+        CATransaction.commit()
+        restartAnimation()
+    }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        // Arka plandan dönünce sistem animasyonu kaldırmış olabilir.
+        if band.animation(forKey: "kay") == nil { restartAnimation() }
+    }
+
+    private func restartAnimation() {
+        band.removeAnimation(forKey: "kay")
+        guard window != nil, bounds.width > 1 else { return }
+        let genislik = bounds.width * 0.6
+        let kay = CABasicAnimation(keyPath: "position.x")
+        kay.fromValue = -genislik / 2 - bounds.width * 0.4
+        kay.toValue = bounds.width * 1.4 + genislik / 2
+        kay.duration = 1.25
+        kay.repeatCount = .infinity
+        kay.isRemovedOnCompletion = false
+        band.add(kay, forKey: "kay")
     }
 }
