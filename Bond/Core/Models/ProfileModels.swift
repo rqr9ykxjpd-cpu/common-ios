@@ -29,8 +29,10 @@ enum ProfileBadge: String, Codable, Hashable {
         }
     }
 
-    /// Üç zemin de koyu ya da doygun; üstlerine beyaz gidiyor.
-    var accentForeground: Color { .white }
+    /// Kurucunun kırmızısı her temada doygun, üstüne beyaz. Moderatörün zemini
+    /// mürekkep: koyu kartta açığa dönüyor, yazı beyaz kalınca rozet
+    /// okunmuyordu (koyu temalı kart, 15 Ekim). Yazı mürekkebin tersi.
+    var accentForeground: Color { self == .founder ? .white : BondTheme.onAccent }
 
     var systemImage: String? {
         switch self {

@@ -155,8 +155,12 @@ struct PostKindChipRow<Trailing: View>: View {
 struct PostKindBadge: View {
     let kind: PostKind
 
+    /// Anı ve düz fotoğraf etiketsiz: fotoğraf kendini anlatıyor; "Galerimden
+    /// fotoğraflar/videolar" akışta kategori değil menü düğmesi gibi okunuyordu.
+    static func isShown(_ kind: PostKind) -> Bool { kind != .moment && kind != .photo }
+
     var body: some View {
-        if kind != .moment {
+        if Self.isShown(kind) {
             HStack(spacing: 4) {
                 BadgeGlyph(kind: kind, size: 14)
                 Text(kind.title)

@@ -208,6 +208,22 @@
           }
         }
       }
+    },
+    "noMessagesYet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No messages yet. Say hello."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Henüz mesaj yok. Merhaba de."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

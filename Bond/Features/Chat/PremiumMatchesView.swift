@@ -267,7 +267,8 @@ struct PremiumMatchesView: View {
                         .foregroundStyle(BondTheme.muted)
                 }
                 HStack {
-                    Text(conversation.lastMessage)
+                    // Bağlantı kuruldu ama henüz yazılmadıysa satır boş kalıyordu.
+                    Text(conversation.lastMessage.isEmpty ? L10n.Inbox.noMessagesYet : conversation.lastMessage)
                         .font(.subheadline.weight(conversation.unreadCount > 0 ? .semibold : .regular))
                         .foregroundStyle(conversation.unreadCount > 0 ? BondTheme.ink : BondTheme.muted)
                         .lineLimit(2)

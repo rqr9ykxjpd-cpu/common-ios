@@ -42,8 +42,9 @@ struct PostCard: View {
     /// kartın boyu değişmez; liste aşağı-yukarı sıçramaz. Tam görsel detayda açılır.
     private let imageAspect: CGFloat = 0.75
 
-    /// İkinci satır: yer varsa yer, yoksa bölüm ve sınıf; sonunda zaman.
-    private var metaLine: String {
+    /// İkinci satırın başı: yer varsa yer, yoksa bölüm ve sınıf. Zaman ayrı
+    /// çiziliyor (başlıkta), sığmazsa bu kısım kısalır.
+    private var metaPrefix: String {
         var parcalar: [String] = []
         if post.isPinned { parcalar.append(L10n.Board.pinnedAt(post.pinSlot)) }
         if let place = post.place {
@@ -54,8 +55,7 @@ struct PostCard: View {
             let bolum = [post.author.department, AcademicYear.display(post.author.year)].filter { !$0.isEmpty }
             parcalar.append(bolum.isEmpty ? post.author.university : bolum.joined(separator: " · "))
         }
-        parcalar.append(post.createdAt.relativeTurkish)
-        return parcalar.joined(separator: " · ")
+        return parcalar.filter { !$0.isEmpty }.joined(separator: " · ")
     }
 
     private var replyCountText: String {
@@ -146,10 +146,21 @@ struct PostCard: View {
                                     .accessibilityLabel(post.author.badge.title ?? "")
                             }
                         }
-                        Text(metaLine)
-                            .font(Font.caption)
-                            .foregroundStyle(BondTheme.muted)
-                            .lineLimit(1)
+                        // Zaman ayrı ve sabit: uzun bölüm adı sığmayınca kesilen
+                        // bölüm olsun, "15 saat önce" değil.
+                        HStack(spacing: 0) {
+                            if !metaPrefix.isEmpty {
+                                Text(metaPrefix)
+                                    .lineLimit(1)
+                                    .truncationMode(.tail)
+                            }
+                            Text((metaPrefix.isEmpty ? "" : " · ") + post.createdAt.relativeTurkish)
+                                .lineLimit(1)
+                                .fixedSize()
+                        }
+                        .font(Font.caption)
+                        .foregroundStyle(BondTheme.muted)
+                        .accessibilityElement(children: .combine)
                     }
                 }
                 .foregroundStyle(BondTheme.ink)
@@ -300,7 +311,7 @@ struct PostCard: View {
         VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
             // Rozet başlık satırından buraya indi: ad ve bölüm kesilmesin,
             // tür de metnin hemen üstünde okunsun (Reddit'in flair'i gibi).
-            if post.kind != .moment {
+            if PostKindBadge.isShown(post.kind) {
                 PostKindBadge(kind: post.kind)
             }
             if !post.caption.trimmed.isEmpty {
@@ -325,7 +336,10 @@ struct PostCard: View {
             } else if hasImage {
                 Color.clear
                     .aspectRatio(isDetail ? detailAspect : 1 / imageAspect, contentMode: .fit)
-                    .overlay {
+                    // Akış kutusu sabit 4:3; dik fotoğraf ortadan kırpılınca baş ve
+                    // görselin üstündeki yazı gidiyordu (davet görseli, 15 Ekim).
+                    // Üstten hizalı: alt kesilir, yatay görsel yine ortalı.
+                    .overlay(alignment: .top) {
                         if post.localImageData != nil || post.imageAssetName != nil {
                             ProfileMedia(url: nil, data: post.localImageData,
                                          assetName: post.imageAssetName, kind: .content)

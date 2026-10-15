@@ -4,6 +4,7 @@ extension L10n {
     /// Bildirim ve sohbet silme (1.1.1).
     enum Inbox {
         static var deleteAll: String { String(localized: "deleteAll", table: "Inbox") }
+        static var noMessagesYet: String { String(localized: "noMessagesYet", table: "Inbox") }
         static var deleteAllConfirm: String { String(localized: "deleteAllConfirm", table: "Inbox") }
         static var deleteAllBody: String { String(localized: "deleteAllBody", table: "Inbox") }
         static var deleteFailed: String { String(localized: "deleteFailed", table: "Inbox") }

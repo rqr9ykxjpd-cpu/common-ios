@@ -89,10 +89,14 @@ private struct SuggestionBubble: View {
                     .overlay(Circle().strokeBorder(BondTheme.hairline, lineWidth: 0.5))
 
                     HStack(spacing: 3) {
+                        // İki satır: "Alperen Kuvvet", "Emre Karadaş" tek satırda
+                        // "Alperen…" diye kesiliyordu.
                         Text(suggestion.profile.name)
                             .font(BondTheme.Typography.footnote.weight(.semibold))
                             .foregroundStyle(BondTheme.ink)
-                            .lineLimit(1)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
                         if isFounder {
                             Image(systemName: "checkmark.seal.fill")
                                 .font(.system(size: 11, weight: .semibold))
@@ -109,6 +113,8 @@ private struct SuggestionBubble: View {
                             .font(BondTheme.Typography.caption2.weight(.semibold))
                             .foregroundStyle(BondTheme.burntOrangeText)
                             .lineLimit(1)
+                            // Büyük yazı boyunda "Gönde…" olmasın.
+                            .minimumScaleFactor(0.75)
                     } else if !isFounder {
                         VStack(spacing: 1) {
                             ForEach(Array(subtitleLines.enumerated()), id: \.offset) { sira, satir in
@@ -122,7 +128,7 @@ private struct SuggestionBubble: View {
                         .multilineTextAlignment(.center)
                     }
                 }
-                .frame(width: 84)
+                .frame(width: 92)
                 .contentShape(Rectangle())
             }
             .buttonStyle(PressableStyle())
