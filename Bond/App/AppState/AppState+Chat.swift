@@ -47,8 +47,9 @@ extension AppState {
         let isMine = payload.senderID == currentUserID
         let message = Message(id: payload.id, body: payload.body, isMine: isMine, sentAt: payload.createdAt,
                               reaction: payload.reaction, senderReaction: payload.senderReaction, replyTo: replyTo,
-                              sharedPostID: payload.sharedPostID)
+                              sharedPostID: payload.sharedPostID, style: payload.style)
         withAnimation(.snappy) { conversations[index].messages.append(message) }
+        if let style = payload.style { applyIncomingStyle(style, at: index) }
         conversations[index].updatedAt = message.sentAt
         if !isMine {
             conversations[index].unreadCount += 1

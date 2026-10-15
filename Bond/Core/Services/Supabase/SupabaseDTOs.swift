@@ -603,6 +603,9 @@ struct MatchRow: Decodable {
     let createdAt: Date
     let userAProfile: SupabaseProfileRow
     let userBProfile: SupabaseProfileRow
+    /// Sohbetin ortak teması ve hızlı tepkisi (20261015020000).
+    let chatTheme: String?
+    let quickReaction: String?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -611,6 +614,8 @@ struct MatchRow: Decodable {
         case createdAt = "created_at"
         case userAProfile = "user_a_profile"
         case userBProfile = "user_b_profile"
+        case chatTheme = "chat_theme"
+        case quickReaction = "quick_reaction"
     }
 
     func peer(for userID: UUID) -> SupabaseProfileRow {
@@ -654,9 +659,15 @@ struct MessageRow: Decodable {
     let editedAt: Date?
     /// Sorguda yoksa (eski sorgu, anlık kanal) nil.
     let sharedPostID: UUID?
+    /// 'text' ya da sohbetin görünümündeki değişiklik ('theme', 'reaction').
+    let kind: String?
+    let styleValue: String?
+
+    var style: ChatStyleChange? { ChatStyleChange(kind: kind, value: styleValue) }
 
     enum CodingKeys: String, CodingKey {
-        case id, body, reaction
+        case id, body, reaction, kind
+        case styleValue = "style_value"
         case senderReaction = "sender_reaction"
         case matchID = "match_id"
         case senderID = "sender_id"
@@ -675,7 +686,7 @@ struct MessageRow: Decodable {
         }
         return Message(id: id, body: body, isMine: senderID == currentUserID, sentAt: createdAt, reaction: reaction,
                        senderReaction: senderReaction, editedAt: editedAt, replyTo: reply,
-                       sharedPostID: sharedPostID)
+                       sharedPostID: sharedPostID, style: style)
     }
 }
 

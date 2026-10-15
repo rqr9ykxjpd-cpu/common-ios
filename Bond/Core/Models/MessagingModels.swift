@@ -24,10 +24,13 @@ struct Message: Identifiable, Hashable, Codable {
     /// ("Bir gönderi paylaştı."): eski sürümler, sohbet listesi ve bildirim onu
     /// gösteriyor; bu sürüm balonda gönderinin kendisini çiziyor.
     var sharedPostID: UUID?
+    /// Doluysa bu bir mesaj değil, sohbetin görünümünde yapılan değişiklik
+    /// (tema ya da hızlı tepki); ortada bilgi satırı olarak çiziliyor.
+    var style: ChatStyleChange?
 
     init(id: UUID = UUID(), body: String, isMine: Bool, sentAt: Date, reaction: String? = nil,
          senderReaction: String? = nil, editedAt: Date? = nil, replyTo: MessageReply? = nil,
-         sharedPostID: UUID? = nil) {
+         sharedPostID: UUID? = nil, style: ChatStyleChange? = nil) {
         self.id = id
         self.body = body
         self.isMine = isMine
@@ -37,6 +40,7 @@ struct Message: Identifiable, Hashable, Codable {
         self.editedAt = editedAt
         self.replyTo = replyTo
         self.sharedPostID = sharedPostID
+        self.style = style
     }
 
     /// Benim bu mesaja tepkim; yalnızca bunu değiştirebilirim.
@@ -49,15 +53,26 @@ struct Message: Identifiable, Hashable, Codable {
     var theirReaction: String? { isMine ? reaction : senderReaction }
 }
 
+enum ChatStyleDefaults {
+    /// Sunucudaki `matches.quick_reaction` varsayılanı; eskiden çift dokunuş hep kalpti.
+    static let quickReaction = "❤️"
+}
+
 struct Conversation: Identifiable, Hashable {
     let id: UUID
     let profile: StudentProfile
     var messages: [Message]
     var updatedAt: Date
     var unreadCount: Int
+    /// Sohbetin ortak teması ve çift dokunuş tepkisi; iki taraf da aynısını görür.
+    var theme: CardTheme = .classic
+    var quickReaction: String = ChatStyleDefaults.quickReaction
 
     var lastMessage: String {
         guard let son = messages.last else { return "" }
+        if let style = son.style {
+            return style.note(isMine: son.isMine, peerName: profile.name)
+        }
         // Gönderi mesajının metni gönderenin ağzından ("Bir gönderi paylaştı.");
         // kendi gönderdiğinde listede karşı taraf paylaşmış gibi okunmasın.
         if son.sharedPostID != nil {

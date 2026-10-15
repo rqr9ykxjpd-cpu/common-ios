@@ -154,6 +154,9 @@ struct SendArrowButton: View {
     let canSend: Bool
     var isEditing = false
     let accessibilityLabel: String
+    /// Sohbet temasında temanın balon rengi; başka yerlerde mürekkep.
+    var fill: Color = BondTheme.ink
+    var iconColor: Color = BondTheme.paper
     let action: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var launches = 0
@@ -166,7 +169,7 @@ struct SendArrowButton: View {
         } label: {
             Image(systemName: isEditing ? "checkmark" : "arrow.up")
                 .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(BondTheme.paper)
+                .foregroundStyle(iconColor)
                 .contentTransition(.symbolEffect(.replace))
                 .keyframeAnimator(initialValue: SendLaunch(), trigger: launches) { icon, frame in
                     icon.offset(y: frame.y).opacity(frame.opacity)
@@ -183,7 +186,7 @@ struct SendArrowButton: View {
                     }
                 }
                 .frame(width: 44, height: 44)
-                .background(canSend ? BondTheme.ink : BondTheme.ink.opacity(0.22), in: Circle())
+                .background(canSend ? fill : BondTheme.ink.opacity(0.22), in: Circle())
                 .clipShape(Circle())
                 .scaleEffect(canSend || reduceMotion ? 1 : 0.86)
         }

@@ -30,6 +30,8 @@ struct RealtimeMessage: Sendable {
     let senderReaction: String?
     let createdAt: Date
     var sharedPostID: UUID? = nil
+    /// Doluysa sohbetin teması ya da hızlı tepkisi değişti.
+    var style: ChatStyleChange? = nil
 }
 
 enum ReportReason: String, CaseIterable, Identifiable, Sendable {

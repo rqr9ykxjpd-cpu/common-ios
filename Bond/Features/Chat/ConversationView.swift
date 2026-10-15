@@ -32,8 +32,15 @@ struct ConversationView: View {
     @State private var typingChannel: (any TypingChannel)?
     @State private var lastTypingPing = Date.distantPast
     @State private var typingHideTask: Task<Void, Never>?
+    @State private var showCustomize = false
+    /// Sohbetteki yazı boyutu; kişisel, bütün sohbetlerde aynı.
+    @AppStorage(ChatTextSize.storageKey) private var textSizeRaw = ChatTextSize.normal.rawValue
+    @Environment(\.colorScheme) private var systemScheme
 
     private var conversation: Conversation? { appState.conversations.first { $0.id == conversationID } }
+    /// Sohbetin ortak teması; iki taraf da aynısını görüyor.
+    private var theme: CardTheme { conversation?.theme ?? .classic }
+    private var textSize: ChatTextSize { ChatTextSize(rawValue: textSizeRaw) ?? .normal }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -49,8 +56,19 @@ struct ConversationView: View {
                             }
                             connectionNote
                             ForEach(conversation.messages) { message in
+                                if let style = message.style {
+                                    ChatStyleNote(
+                                        text: style.note(isMine: message.isMine, peerName: conversation.profile.name),
+                                        change: style
+                                    ) { showCustomize = true }
+                                    .id(message.id)
+                                    .transition(.opacity.combined(with: .scale(scale: 0.92)))
+                                } else {
                                 MessageBubble(
                                     message: message,
+                                    theme: theme,
+                                    textSize: textSize,
+                                    quickReaction: conversation.quickReaction,
                                     actionsVisible: activeMessageActions == message.id,
                                     react: { reaction in
                                         appState.react(to: message.id, in: conversationID, with: reaction)
@@ -92,16 +110,16 @@ struct ConversationView: View {
                                 // Mesajlar belirip kaybolurken kayıyor: eskiden aniden
                                 // beliriyor ve gönderilemeyip geri alınan mesaj hiç iz
                                 // bırakmadan yok oluyordu.
-                                // Balon kendi köşesinden büyüyerek geliyor: gönderdiğin
-                                // sağ alttan, gelen sol alttan — mesajlaşmanın alıştığımız dili.
+                                // Gönderdiğin balon yazma alanından kalkıp yerine oturuyor
+                                // (iMessage gibi); gelen balon sol alt köşesinden büyüyor.
                                 .transition(.asymmetric(
-                                    insertion: .scale(scale: 0.5, anchor: message.isMine ? .bottomTrailing : .bottomLeading)
-                                        .combined(with: .opacity),
+                                    insertion: message.isMine ? sentInsertion : receivedInsertion,
                                     removal: .scale(scale: 0.85).combined(with: .opacity)
                                 ))
+                                }
                             }
                             if otherIsTyping {
-                                TypingBubble()
+                                TypingBubble(theme: theme)
                                     .id("typing-indicator")
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .transition(.scale(scale: 0.5, anchor: .bottomLeading).combined(with: .opacity))
@@ -148,10 +166,14 @@ struct ConversationView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .background(BondTheme.paper.ignoresSafeArea())
+        .background(theme.chatBackground.ignoresSafeArea())
         .foregroundStyle(BondTheme.ink)
         .toolbar(.hidden, for: .navigationBar)
-        .sohbetUstCubugu { sohbetUstCubugu }
+        .sohbetUstCubugu(zemin: theme.chatBackground) { sohbetUstCubugu }
+        // Koyu temada uygulamanın uyarlanan renkleri açığa döner; yazılar tek
+        // tek boyanmıyor. Sayfalar (profil, emoji, özelleştirme) bunun dışında.
+        .environment(\.colorScheme, theme.scheme ?? systemScheme)
+        .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: theme)
         .onAppear { appState.markConversationRead(conversationID) }
         // "Yazıyor…": sohbet açıkken karşı tarafın sinyallerini dinle, ekran
         // kapanınca kanalı kapat. Kayıt tutulmuyor; sinyal anlık.
@@ -248,6 +270,12 @@ struct ConversationView: View {
             Text(L10n.Chat.deleteMessageBody)
         }
         .sheet(isPresented: $showPaywall) { PaywallView() }
+        .sheet(isPresented: $showCustomize) {
+            ChatCustomizeView(conversationID: conversationID)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+                .presentationCornerRadius(28)
+        }
         .navigationDestination(item: $openedPostID) { postID in
             PostDetailView(postID: postID)
         }
@@ -298,6 +326,7 @@ struct ConversationView: View {
             Spacer(minLength: 0)
 
             Menu {
+                Button(L10n.ChatStyle.title, systemImage: "paintpalette") { showCustomize = true }
                 Menu {
                     ForEach(ReportReason.allCases) { reason in
                         Button(reason.title) {
@@ -424,7 +453,7 @@ struct ConversationView: View {
 
             HStack(alignment: .bottom, spacing: 9) {
                 TextField(L10n.Chat.placeholder, text: $draft, axis: .vertical)
-                    .font(.subheadline)
+                    .font(textSize.font)
                     .lineLimit(1...5)
                     .focused($focused)
                     .padding(.horizontal, 14).padding(.vertical, 12)
@@ -436,6 +465,8 @@ struct ConversationView: View {
                     canSend: canSend,
                     isEditing: editingMessage != nil,
                     accessibilityLabel: editingMessage == nil ? L10n.Common.send : L10n.Common.edit,
+                    fill: theme.sendButton,
+                    iconColor: theme.sendButtonIcon,
                     action: send
                 )
             }
@@ -443,12 +474,26 @@ struct ConversationView: View {
         }
         .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: replyingTo?.id)
         .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: editingMessage?.id)
-        .background(BondTheme.surface)
+        .background(theme.composerBackground)
         .overlay(alignment: .top) { Rectangle().fill(BondTheme.hairline).frame(height: 0.5) }
     }
 
     private var canSend: Bool {
         !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && TextLimit.fits(draft, TextLimit.message)
+    }
+
+    /// Gönderilen balon: kaydırma alanının alt kenarından (yazma alanının
+    /// hemen üstü) kalkıp hafif bir yayla yerine oturuyor. Alan kenarı balonu
+    /// kestiği için yazma alanının içinden çıkıyormuş gibi görünüyor.
+    private var sentInsertion: AnyTransition {
+        guard !reduceMotion else { return .opacity }
+        return .modifier(active: SentLiftOff(progress: 0), identity: SentLiftOff(progress: 1))
+            .animation(.spring(response: 0.46, dampingFraction: 0.78))
+    }
+
+    private var receivedInsertion: AnyTransition {
+        guard !reduceMotion else { return .opacity }
+        return .scale(scale: 0.5, anchor: .bottomLeading).combined(with: .opacity)
     }
 
     /// Yanıt ve düzenleme şeridi yazma alanının üstünden kayarak açılıp kapanıyor.
@@ -529,17 +574,22 @@ private struct CubukDugmesi: ViewModifier {
 private extension View {
     /// iOS 26'da mesajlar çubuğun altına kayarken sistem çubuğu gibi soluyor.
     @ViewBuilder
-    func sohbetUstCubugu<C: View>(@ViewBuilder _ content: () -> C) -> some View {
+    func sohbetUstCubugu<C: View>(zemin: Color, @ViewBuilder _ content: () -> C) -> some View {
         if #available(iOS 26.0, *) {
             safeAreaBar(edge: .top, spacing: 0, content: content)
         } else {
-            safeAreaInset(edge: .top, spacing: 0) { content().background(BondTheme.paper) }
+            safeAreaInset(edge: .top, spacing: 0) { content().background(zemin) }
         }
     }
 }
 
 private struct MessageBubble: View {
     let message: Message
+    /// Sohbetin teması: balon renkleri ondan.
+    var theme: CardTheme = .classic
+    var textSize: ChatTextSize = .normal
+    /// Çift dokununca giden tepki; sohbete özel, iki taraf da aynısını görür.
+    var quickReaction: String = ChatStyleDefaults.quickReaction
     let actionsVisible: Bool
     let react: (String) -> Void
     let reply: () -> Void
@@ -576,23 +626,23 @@ private struct MessageBubble: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(quoted.authorName)
                                 .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(message.isMine ? BondTheme.acid : BondTheme.violet)
+                                .foregroundStyle(message.isMine ? myAccent : BondTheme.violet)
                             Text(quoted.body)
                                 .font(.caption2)
                                 .lineLimit(2)
-                                .foregroundStyle(message.isMine ? BondTheme.paper.opacity(0.66) : BondTheme.muted)
+                                .foregroundStyle(message.isMine ? myText.opacity(0.66) : BondTheme.muted)
                         }
                         .padding(.horizontal, 9)
                         .padding(.vertical, 7)
                         .frame(maxWidth: 230, alignment: .leading)
-                        .background(message.isMine ? BondTheme.paper.opacity(0.13) : BondTheme.ink.opacity(0.055), in: RoundedRectangle(cornerRadius: 10))
+                        .background(message.isMine ? myText.opacity(0.13) : BondTheme.ink.opacity(0.055), in: RoundedRectangle(cornerRadius: 10))
                     }
 
                     if let postID = message.sharedPostID {
                         SharedPostPreview(postID: postID, isMine: message.isMine) { openPost(postID) }
                     } else {
                         Text(message.body)
-                            .font(.subheadline)
+                            .font(textSize.font)
                             .lineSpacing(3)
                     }
                     if message.editedAt != nil {
@@ -600,18 +650,18 @@ private struct MessageBubble: View {
                         // koyu zeminde, karşınınki açık zeminde.
                         Text(L10n.Chat.edited)
                             .font(.system(size: 10))
-                            .foregroundStyle(message.isMine ? BondTheme.paper.opacity(0.52) : BondTheme.muted)
+                            .foregroundStyle(message.isMine ? myText.opacity(0.52) : BondTheme.muted)
                     }
                     Text(message.sentAt.shortTimeTurkish)
                         .font(.system(size: 10))
-                        .foregroundStyle(message.isMine ? BondTheme.paper.opacity(0.52) : BondTheme.muted)
+                        .foregroundStyle(message.isMine ? myText.opacity(0.52) : BondTheme.muted)
                 }
-                .foregroundStyle(message.isMine ? BondTheme.paper : BondTheme.ink)
+                .foregroundStyle(message.isMine ? myText : BondTheme.ink)
                 .padding(.horizontal, 13).padding(.vertical, 10)
-                .background(message.isMine ? BondTheme.ink : BondTheme.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .background(message.isMine ? theme.myBubble : theme.theirBubble, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                 .overlay {
                     if !message.isMine {
-                        RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(BondTheme.hairline)
+                        RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(theme.theirBubbleStroke)
                     }
                 }
                 .overlay(alignment: badgeAlignment) {
@@ -651,13 +701,17 @@ private struct MessageBubble: View {
                     showActions()
                 }
                 .simultaneousGesture(replyGesture)
-                // Çift dokunuşla kalp: tepki vermenin tek yolu menüyü açmaktı.
+                // Çift dokunuşla sohbetin hızlı tepkisi (varsayılan kalp): tepki
+                // vermenin tek yolu menüyü açmaktı.
                 .onTapGesture(count: 2) {
                     Haptics.impact(.light)
-                    react("❤️")
+                    react(quickReaction)
                 }
                 .accessibilityAction(named: L10n.Chat.reply, reply)
-                .accessibilityAction(named: L10n.Chat.sendHeart) { react("❤️") }
+                .accessibilityAction(named: quickReaction == ChatStyleDefaults.quickReaction
+                                     ? L10n.Chat.sendHeart : L10n.ChatStyle.sendQuickReaction(quickReaction)) {
+                    react(quickReaction)
+                }
                 .accessibilityActions {
                     if !message.isMine {
                         Button(L10n.Common.report, action: report)
@@ -676,6 +730,9 @@ private struct MessageBubble: View {
     }
 
     private var hasReaction: Bool { message.theirReaction != nil || message.myReaction != nil }
+    /// Kendi balonundaki yazı ve vurgu; klasikte bugünkü kâğıt ve asit.
+    private var myText: Color { theme.myBubbleText }
+    private var myAccent: Color { theme == .classic ? BondTheme.acid : theme.myBubbleText }
 
     /// Seçilen emojiyi gönderir; yeni bir tepkiyse son kullanılanlara ekler.
     private func choose(_ emoji: String) {
@@ -709,7 +766,7 @@ private struct MessageBubble: View {
             .background(BondTheme.surface, in: Capsule())
             .overlay(Capsule().stroke(mine != nil ? BondTheme.ink.opacity(0.22) : BondTheme.hairline, lineWidth: 0.75))
             // Sohbet zemini renginde ince halka: rozet balondan kesilmiş gibi temiz durur.
-            .background(Capsule().fill(BondTheme.paper).padding(-2.5))
+            .background(Capsule().fill(theme.chatBackground).padding(-2.5))
             .shadow(color: .black.opacity(0.10), radius: 3, y: 1)
             .contentShape(Rectangle().inset(by: -10))
         }
@@ -718,8 +775,16 @@ private struct MessageBubble: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(reactionAccessibilityLabel)
         .accessibilityAddTraits(mine != nil ? .isButton : [])
-        .transition(.scale(scale: 0.2, anchor: badgeAlignment.unitPoint).combined(with: .opacity))
+        // Tepki köşeye zıplayarak oturuyor: küçükten biraz büyüğüne taşıp yerine.
+        .transition(reactionTransition)
         .id("tepki-\(theirs ?? "")-\(mine ?? "")")
+    }
+
+    private var reactionTransition: AnyTransition {
+        guard !reduceMotion else { return .opacity }
+        return .scale(scale: 0.2, anchor: badgeAlignment.unitPoint)
+            .combined(with: .opacity)
+            .animation(.spring(response: 0.38, dampingFraction: 0.5))
     }
 
     private var reactionAccessibilityLabel: String {
@@ -857,9 +922,53 @@ private extension Alignment {
     }
 }
 
+/// Gönderilen balonun kalkışı: 0'da kaydırma alanının altında ve biraz küçük,
+/// 1'de yerinde. Sağ alt köşe sabit; balon yazma alanının sağından çıkıyor.
+private struct SentLiftOff: ViewModifier {
+    let progress: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(0.82 + 0.18 * progress, anchor: .bottomTrailing)
+            .offset(y: (1 - progress) * 72)
+    }
+}
+
+/// Sohbetin görünümü değiştiğinde ortaya düşen satır: "Ulaş sohbet temasını
+/// Gece mavisi yaptı." Yanında temanın küçük rengi; dokununca özelleştirme açılır.
+private struct ChatStyleNote: View {
+    let text: String
+    let change: ChatStyleChange
+    let open: () -> Void
+
+    var body: some View {
+        Button(action: open) {
+            HStack(spacing: 6) {
+                if case .theme(let tema) = change {
+                    Circle()
+                        .fill(tema.myBubble)
+                        .frame(width: 10, height: 10)
+                        .overlay(Circle().stroke(BondTheme.ink.opacity(0.15), lineWidth: 0.5))
+                }
+                Text(text)
+                    .font(.caption)
+                    .foregroundStyle(BondTheme.muted)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint(L10n.ChatStyle.title)
+    }
+}
+
 /// Karşı taraf yazarken beliren balon: üç nokta sırayla hafifçe yükselip iner.
 /// Yalnızca göründüğü sürece çiziliyor; "Hareketi Azalt" açıksa noktalar durur.
 private struct TypingBubble: View {
+    var theme: CardTheme = .classic
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -873,8 +982,8 @@ private struct TypingBubble: View {
         }
         .padding(.horizontal, 15)
         .padding(.vertical, 14)
-        .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(BondTheme.hairline))
+        .background(theme.theirBubble, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(theme.theirBubbleStroke))
         .accessibilityElement()
         .accessibilityLabel(L10n.Chat.typing)
     }

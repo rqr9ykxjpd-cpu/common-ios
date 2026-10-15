@@ -6,7 +6,7 @@ extension SupabaseProductService {
         guard let userID = currentUserID else { throw BackendServiceError.missingSession }
         let matches: [MatchRow] = try await client
             .from("matches")
-            .select("id,user_a,user_b,created_at,user_a_profile:profiles!matches_user_a_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),user_b_profile:profiles!matches_user_b_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified)")
+            .select("id,user_a,user_b,created_at,chat_theme,quick_reaction,user_a_profile:profiles!matches_user_a_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified),user_b_profile:profiles!matches_user_b_fkey(id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified)")
             .is("unmatched_at", value: nil)
             .order("created_at", ascending: false)
             .execute()
@@ -23,7 +23,7 @@ extension SupabaseProductService {
         for match in matches {
             let tumu: [MessageRow] = try await client
                 .from("messages")
-                .select("id,match_id,sender_id,body,reply_to_id,reaction,sender_reaction,created_at,read_at,edited_at,shared_post_id")
+                .select("id,match_id,sender_id,body,reply_to_id,reaction,sender_reaction,created_at,read_at,edited_at,shared_post_id,kind,style_value")
                 .eq("match_id", value: match.id)
                 .order("created_at", ascending: true)
                 .execute()
@@ -36,7 +36,9 @@ extension SupabaseProductService {
                 profile: peer.studentProfile(avatarURL: peer.avatarPath.flatMap { urlMap[$0] }),
                 messages: messages,
                 updatedAt: messages.last?.sentAt ?? match.createdAt,
-                unreadCount: rows.filter { $0.senderID != userID && $0.readAt == nil }.count
+                unreadCount: rows.filter { $0.senderID != userID && $0.readAt == nil }.count,
+                theme: CardTheme(server: match.chatTheme),
+                quickReaction: match.quickReaction ?? ChatStyleDefaults.quickReaction
             ))
         }
         return conversations.sorted { $0.updatedAt > $1.updatedAt }
@@ -56,7 +58,7 @@ extension SupabaseProductService {
         let row: MessageRow = try await client
             .from("messages")
             .insert(payload)
-            .select("id,match_id,sender_id,body,reply_to_id,reaction,sender_reaction,created_at,read_at,edited_at,shared_post_id")
+            .select("id,match_id,sender_id,body,reply_to_id,reaction,sender_reaction,created_at,read_at,edited_at,shared_post_id,kind,style_value")
             .single()
             .execute()
             .value
@@ -167,7 +169,8 @@ extension SupabaseProductService {
                                         matchID: row.matchID, id: row.id, senderID: row.senderID,
                                         body: row.body, replyToID: row.replyToID,
                                         reaction: row.reaction, senderReaction: row.senderReaction,
-                                        createdAt: row.createdAt, sharedPostID: row.sharedPostID
+                                        createdAt: row.createdAt, sharedPostID: row.sharedPostID,
+                                        style: row.style
                                     ))
                                 }
                             }
@@ -178,7 +181,8 @@ extension SupabaseProductService {
                                         matchID: row.matchID, id: row.id, senderID: row.senderID,
                                         body: row.body, replyToID: row.replyToID,
                                         reaction: row.reaction, senderReaction: row.senderReaction,
-                                        createdAt: row.createdAt, sharedPostID: row.sharedPostID
+                                        createdAt: row.createdAt, sharedPostID: row.sharedPostID,
+                                        style: row.style
                                     ))
                                 }
                             }
