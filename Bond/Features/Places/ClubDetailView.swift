@@ -62,7 +62,8 @@ struct ClubDetailView: View {
                     if !nextEvent.isEmpty { upcomingEvent }
                     contact
                     benefits
-                    membershipButton
+                    // Kulübün hesabı kendi kulübünden ayrılamaz (sunucu da reddediyor).
+                    if appState.clubAccountClubID != club.id { membershipButton }
                 }
                 .foregroundStyle(BondTheme.ink)
                 .padding(BondTheme.Space.lg)

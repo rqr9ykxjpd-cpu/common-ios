@@ -84,26 +84,28 @@ struct CampusPersonRow: Decodable {
     }
 }
 
-struct ClubMemberIDRow: Decodable {
-    let userID: UUID
-    enum CodingKeys: String, CodingKey { case userID = "user_id" }
-}
-
-struct ClubRow: Decodable {
+/// `get_campus_clubs` satırı.
+struct CampusClubRow: Decodable {
     let id: UUID
     let name: String
     let summary: String
     let icon: String
     let nextEvent: String
     let accentHex: String
-    let place: PlaceRow?
-    let members: [ClubMemberIDRow]?
+    let placeID: UUID?
+    let placeName: String?
+    let placeArea: String?
+    let memberCount: Int
+    let joined: Bool
 
     enum CodingKeys: String, CodingKey {
-        case id, name, summary, icon, place
+        case id, name, summary, icon, joined
         case nextEvent = "next_event"
         case accentHex = "accent_hex"
-        case members = "club_members"
+        case placeID = "place_id"
+        case placeName = "place_name"
+        case placeArea = "place_area"
+        case memberCount = "member_count"
     }
 }
 

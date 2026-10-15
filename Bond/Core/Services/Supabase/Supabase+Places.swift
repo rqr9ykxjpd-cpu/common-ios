@@ -119,28 +119,26 @@ extension SupabaseProductService {
         }
     }
 
+    /// Sayı sunucudan (`get_campus_clubs`, 20261015040000): aktif üyeler,
+    /// kulübün hesabı hariç. Eskiden `club_members` satırları sayılıyordu;
+    /// kulüp hesabı ve kapatılmış hesaplar da giriyordu, kartta 9 sayfada 8
+    /// görünüyordu.
     func fetchClubs() async throws -> (clubs: [CampusClub], joinedIDs: Set<UUID>) {
-        guard let userID = currentUserID else { throw BackendServiceError.missingSession }
-        let rows: [ClubRow] = try await client
-            .from("clubs")
-            .select("id,name,summary,icon,next_event,accent_hex,place:places!clubs_place_id_fkey(id,name,area),club_members(user_id)")
-            .order("name")
-            .execute()
-            .value
+        guard currentUserID != nil else { throw BackendServiceError.missingSession }
+        let rows: [CampusClubRow] = try await client.rpc("get_campus_clubs").execute().value
         let clubs = rows.map { row in
             CampusClub(
                 id: row.id,
                 name: row.name,
                 summary: row.summary,
                 icon: row.icon,
-                memberCount: row.members?.count ?? 0,
+                memberCount: row.memberCount,
                 nextEvent: row.nextEvent,
-                meetingPlace: row.place.map { CampusPlace(id: $0.id, name: $0.name, area: $0.area) },
+                meetingPlace: row.placeID.map { CampusPlace(id: $0, name: row.placeName ?? "", area: row.placeArea ?? "") },
                 accentHex: row.accentHex
             )
         }
-        let joined = Set(rows.filter { $0.members?.contains { $0.userID == userID } ?? false }.map(\.id))
-        return (clubs, joined)
+        return (clubs, Set(rows.filter(\.joined).map(\.id)))
     }
 
     func setClubMembership(_ clubID: UUID, joined: Bool) async throws {
