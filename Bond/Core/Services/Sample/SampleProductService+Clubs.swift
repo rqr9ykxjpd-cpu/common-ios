@@ -46,6 +46,17 @@ extension SampleProductService: ClubManaging {
         }
     }
 
+    /// Örnekte herkes ilk iki kulübün üyesi (kartın altındakiyle tutarlı);
+    /// ilk kulübün yöneticisi Ece.
+    func fetchClubMembers(_ clubID: UUID) async throws -> [ClubMember] {
+        let kulupler = try await fetchClubs().clubs
+        guard kulupler.prefix(2).contains(where: { $0.id == clubID }) else { return [] }
+        let engelli = Set(SampleData.blockedProfiles.map(\.id))
+        return SampleData.profiles.filter { !engelli.contains($0.id) }.enumerated().map { sira, kisi in
+            ClubMember(profile: kisi, isManager: sira == 0 && clubID == kulupler.first?.id)
+        }
+    }
+
     func setClubManager(_ clubID: UUID, userID: UUID, enabled: Bool) async throws -> Bool {
         await SampleClubManagerStore.shared.set(userID, clubID, enabled)
         return enabled

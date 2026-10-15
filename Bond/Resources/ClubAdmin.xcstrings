@@ -816,6 +816,38 @@
           }
         }
       }
+    },
+    "manageMembers": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage members"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Üyeleri yönet"
+          }
+        }
+      }
+    },
+    "allMembers": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All members (%lld)"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm üyeler (%lld)"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

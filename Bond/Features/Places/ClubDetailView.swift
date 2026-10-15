@@ -7,8 +7,15 @@ struct ClubDetailView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var editing = false
     @State private var showPeople = false
-    @State private var accountProfile: StudentProfile?
+    /// Açılan kart: kulüp hesabı ya da bir üye.
+    @State private var cardProfile: StudentProfile?
     @State private var openingAccount = false
+    @State private var members: [ClubMember] = []
+    @State private var membersLoaded = false
+    @State private var showAllMembers = false
+
+    /// Sayfada gösterilen üye sayısı; fazlası "Tüm üyeler"de.
+    private static let inlineMemberLimit = 5
 
     /// Düzenlendikten sonra güncel hali görünsün; kapatılırsa açıldığı hal kalır.
     private var current: CampusClub { appState.clubs.first { $0.id == club.id } ?? club }
@@ -16,7 +23,20 @@ struct ClubDetailView: View {
     private var canManage: Bool { appState.canManage(club.id) }
     private var joined: Bool { appState.isJoined(to: club) }
     private var accent: Color { Color(hex: current.accentHex) }
-    private var displayedMemberCount: Int { current.memberCount + (joined ? 1 : 0) }
+    /// Liste geldiyse onun sayısı: kartta "9 üye" yazıp listede 8 kişi
+    /// görünmesin (kulüp hesabı ve engelliler listede yok). Sunucunun sayısında
+    /// ben de varım; eskiden üstüne bir daha ekleniyordu.
+    private var displayedMemberCount: Int { membersLoaded ? shownMembers.count : current.memberCount }
+    /// Katılınca hemen listede olayım, ayrılınca hemen çıkayım; sunucuyu
+    /// beklemeden. Kulüp hesabı kendi kulübünün listesinde yok.
+    private var shownMembers: [ClubMember] {
+        let ben = appState.currentUserID
+        if members.contains(where: { $0.id == ben }) {
+            return joined ? members : members.filter { $0.id != ben }
+        }
+        guard joined, !appState.isClubAccount else { return members }
+        return members + [ClubMember(profile: appState.currentUserProfile, isManager: false)]
+    }
     private var nextEvent: String { current.nextEvent.trimmingCharacters(in: .whitespacesAndNewlines) }
     /// Kulübün hesabı; kulüp hesabının kendisinde gösterilmez.
     private var accountLink: ClubAccountLink? {
@@ -33,6 +53,7 @@ struct ClubDetailView: View {
                     identity
                     clubInfo
                     if let accountLink { accountEntry(accountLink) }
+                    if !shownMembers.isEmpty { membersSection }
                     if canManage { peopleEntry }
                     // Etkinlik yoksa bölüm hiç görünmez.
                     if !nextEvent.isEmpty { upcomingEvent }
@@ -56,7 +77,10 @@ struct ClubDetailView: View {
             async let baglar: Void = appState.loadClubAccountLinks()
             _ = await (ek, baglar)
         }
-        .sheet(item: $accountProfile) { profile in
+        // Katılınca/ayrılınca kulüpler yeniden yüklenip sayı değişiyor; liste
+        // de tazelensin.
+        .task(id: current.memberCount) { await loadMembers() }
+        .sheet(item: $cardProfile) { profile in
             NavigationStack {
                 SocialPersonDetailView(profile: profile, place: nil, showsClose: true)
             }
@@ -66,6 +90,9 @@ struct ClubDetailView: View {
         }
         .sheet(isPresented: $showPeople) {
             ClubPeopleView(clubID: club.id, clubName: current.name)
+        }
+        .sheet(isPresented: $showAllMembers) {
+            ClubMembersView(clubName: current.name, members: shownMembers)
         }
     }
 
@@ -197,13 +224,57 @@ struct ClubDetailView: View {
         openingAccount = true
         defer { openingAccount = false }
         do {
-            accountProfile = try await appState.clubAccountProfile(link.profileID)
+            cardProfile = try await appState.clubAccountProfile(link.profileID)
         } catch {
             appState.showError(error, fallback: L10n.ClubSwitch.accountLoadFailed)
         }
     }
 
-    /// Yönetici ve kurucu: üye listesi.
+    /// Sessiz: sunucu eskiyse ya da ağ yoksa bölüm görünmez.
+    private func loadMembers() async {
+        do {
+            members = try await appState.fetchClubMembers(club.id)
+            membersLoaded = true
+        } catch {}
+    }
+
+    /// Herkes için: kulüpte kim var. Dokununca kişinin kartı açılıyor.
+    private var membersSection: some View {
+        let liste = shownMembers
+        return VStack(alignment: .leading, spacing: BondTheme.Space.compact) {
+            Eyebrow(text: L10n.ClubAdmin.members.lowercased(with: L10n.appLocale), color: BondTheme.muted)
+            VStack(spacing: 0) {
+                ForEach(liste.prefix(Self.inlineMemberLimit)) { uye in
+                    if uye.id != liste.first?.id {
+                        Divider().padding(.leading, 68)
+                    }
+                    ClubMemberRowView(member: uye) { cardProfile = uye.profile }
+                }
+                if liste.count > Self.inlineMemberLimit {
+                    Divider()
+                    Button { showAllMembers = true } label: {
+                        HStack {
+                            Text(L10n.ClubAdmin.allMembers(liste.count))
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(BondTheme.ink)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(BondTheme.muted)
+                        }
+                        .padding(.horizontal, BondTheme.Space.md)
+                        .frame(minHeight: 48)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.pressable)
+                    .accessibilityIdentifier("club.members.all")
+                }
+            }
+            .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+    }
+
+    /// Yönetici ve kurucu: üyeleri yönetme (çıkarma) listesi.
     private var peopleEntry: some View {
         Button { showPeople = true } label: {
             HStack(spacing: 13) {
@@ -211,7 +282,7 @@ struct ClubDetailView: View {
                     .font(.title3)
                     .foregroundStyle(accent)
                     .frame(width: 32)
-                Text(L10n.ClubAdmin.members)
+                Text(L10n.ClubAdmin.manageMembers)
                     .font(.headline)
                 Spacer()
                 Image(systemName: "chevron.right")

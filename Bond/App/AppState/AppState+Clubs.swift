@@ -47,6 +47,13 @@ extension AppState {
         return try await masa.fetchClubPeople(clubID)
     }
 
+    /// Kulüp sayfasındaki üyeler. Sunucu eskiyse ya da ağ yoksa hata fırlatır;
+    /// sayfa bölümü göstermez.
+    func fetchClubMembers(_ clubID: UUID) async throws -> [ClubMember] {
+        guard let masa = service as? any ClubManaging else { return [] }
+        return try await masa.fetchClubMembers(clubID)
+    }
+
     func setClubManager(_ clubID: UUID, userID: UUID, enabled: Bool) async throws -> Bool {
         guard let masa = service as? any ClubManaging else { throw BackendServiceError.missingSession }
         return try await masa.setClubManager(clubID, userID: userID, enabled: enabled)

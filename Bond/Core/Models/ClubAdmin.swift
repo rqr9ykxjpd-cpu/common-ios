@@ -41,6 +41,14 @@ struct ClubPerson: Identifiable, Equatable, Sendable {
     let joinedAt: Date
 }
 
+/// Kulüp sayfasındaki üye: herkes görür, dokununca kartı açılır. Kart
+/// beklemesin diye profil hazır geliyor.
+struct ClubMember: Identifiable, Equatable, Sendable {
+    let profile: StudentProfile
+    let isManager: Bool
+    var id: UUID { profile.id }
+}
+
 /// Kulüp ekranlarında seçilebilen simgeler ve renkler: sade, uygulamanın diliyle.
 enum ClubPalette {
     static let icons = [

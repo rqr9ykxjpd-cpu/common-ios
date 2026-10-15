@@ -16,6 +16,9 @@ struct ProfileBadgeLabel: View {
             VerifiedTick(size: compact ? 15 : 18)
         } else if let icon = badge.systemImage, let title = badge.title {
             Label(title, systemImage: icon)
+                // Liste satırında `Label` kendiliğinden yalnız simgeye
+                // dönüyordu; kapsül yazısız kalıyordu (kulüp üyeleri, 15 Ekim).
+                .labelStyle(.titleAndIcon)
                 .font(.system(size: compact ? 10 : 11, weight: .semibold))
                 .foregroundStyle(badge.accentForeground)
                 .padding(.horizontal, compact ? 8 : 10)

@@ -70,6 +70,18 @@ extension SupabaseProductService: ClubManaging {
         }
     }
 
+    func fetchClubMembers(_ clubID: UUID) async throws -> [ClubMember] {
+        guard currentUserID != nil else { return [] }
+        let rows: [ClubMemberRow] = try await client
+            .rpc("get_club_members", params: ClubIDParams(clubID: clubID))
+            .execute().value
+        let fotolar = await signedURLs(bucket: "profile-photos", paths: rows.compactMap(\.profile.avatarPath))
+        return rows.map {
+            ClubMember(profile: $0.profile.studentProfile(avatarURL: $0.profile.avatarPath.flatMap { fotolar[$0] }),
+                       isManager: $0.isManager)
+        }
+    }
+
     func setClubManager(_ clubID: UUID, userID: UUID, enabled: Bool) async throws -> Bool {
         try await client
             .rpc("founder_set_club_manager", params: ClubManagerParams(clubID: clubID, userID: userID, enabled: enabled))
@@ -125,6 +137,19 @@ struct AdminClubRow: Decodable {
         case contactEmail = "contact_email"
         case memberCount = "member_count"
         case managerCount = "manager_count"
+    }
+}
+
+/// `get_club_members` satırı: profil alanları ve yönetici mi.
+struct ClubMemberRow: Decodable {
+    let profile: SupabaseProfileRow
+    let isManager: Bool
+
+    enum CodingKeys: String, CodingKey { case isManager = "is_manager" }
+
+    init(from decoder: Decoder) throws {
+        profile = try SupabaseProfileRow(from: decoder)
+        isManager = try decoder.container(keyedBy: CodingKeys.self).decode(Bool.self, forKey: .isManager)
     }
 }
 

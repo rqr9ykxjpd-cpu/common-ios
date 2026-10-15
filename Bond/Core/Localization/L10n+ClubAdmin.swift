@@ -36,6 +36,10 @@ extension L10n {
         static var managerSearch: String { String(localized: "managerSearch", table: "ClubAdmin") }
         static var managerChip: String { String(localized: "managerChip", table: "ClubAdmin") }
         static var members: String { String(localized: "members", table: "ClubAdmin") }
+        static var manageMembers: String { String(localized: "manageMembers", table: "ClubAdmin") }
+        static func allMembers(_ n: Int) -> String {
+            String(format: String(localized: "allMembers", table: "ClubAdmin"), Int64(n))
+        }
         static var removeMember: String { String(localized: "removeMember", table: "ClubAdmin") }
         static var membersEmpty: String { String(localized: "membersEmpty", table: "ClubAdmin") }
         static var inactive: String { String(localized: "inactive", table: "ClubAdmin") }

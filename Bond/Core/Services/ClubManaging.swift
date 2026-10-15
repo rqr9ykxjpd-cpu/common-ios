@@ -14,6 +14,8 @@ protocol ClubManaging: Sendable {
     /// Logoyu yükler ve kulübe bağlar; yeni adresi döner.
     func uploadClubLogo(_ clubID: UUID, imageData: Data) async throws -> URL?
     func fetchClubPeople(_ clubID: UUID) async throws -> [ClubPerson]
+    /// Açık kulübün üyeleri, herkes için (yöneticiler önce, kulüp hesabı hariç).
+    func fetchClubMembers(_ clubID: UUID) async throws -> [ClubMember]
     /// Kurucu: yönetici ata / kaldır.
     func setClubManager(_ clubID: UUID, userID: UUID, enabled: Bool) async throws -> Bool
     func removeClubMember(_ clubID: UUID, userID: UUID) async throws
