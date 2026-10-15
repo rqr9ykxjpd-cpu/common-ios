@@ -14,6 +14,7 @@ struct PremiumMatchesView: View {
     @State private var suggestedProfile: StudentProfile?
     @State private var pendingClear: Conversation?
     @State private var pendingRemove: Conversation?
+    @State private var showInvite = false
 
     private var sortedConversations: [Conversation] {
         appState.listedConversations.sorted { $0.updatedAt > $1.updatedAt }
@@ -36,6 +37,11 @@ struct PremiumMatchesView: View {
                             dismiss: { appState.dismissSuggestion($0) }
                         )
                         .transition(.opacity)
+                    }
+                    // Kart gizlenince yenilensin diye sayaç da okunuyor.
+                    if appState.showsPushOffCard, appState.pushOffHiddenTick >= 0 {
+                        PushOffCard()
+                            .transition(.opacity.combined(with: .move(edge: .top)))
                     }
                     introductions
                     acceptedIntroductions
@@ -83,6 +89,10 @@ struct PremiumMatchesView: View {
                             listSettled = true
                         }
                     }
+                    // Sohbetin sonunda: kampüste tanıdık az olunca en anlamlı yer.
+                    if !appState.isClubAccount {
+                        InviteRow(title: L10n.Engage.chatsInviteTitle) { showInvite = true }
+                    }
                 }
                 .padding(.horizontal, BondTheme.Space.lg)
                 .padding(.top, BondTheme.Space.md)
@@ -102,6 +112,9 @@ struct PremiumMatchesView: View {
                 _ = await (conversations, requests, suggestions)
                 await appState.loadNotifications()
             }
+            .task { await appState.refreshPushStatus() }
+            .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: appState.showsPushOffCard)
+            .sheet(isPresented: $showInvite) { InviteFriendsView() }
             .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: appState.visibleSuggestions.isEmpty)
             // Kart kapanınca yenile: sola geçilen kişi sunucuda eleniyor.
             .sheet(item: $suggestedProfile, onDismiss: { Task { await appState.loadSuggestions() } }) { profile in

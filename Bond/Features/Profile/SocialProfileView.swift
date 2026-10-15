@@ -27,6 +27,7 @@ struct SocialProfileView: View {
     @State private var showVisits = false
     @State private var showRequests = false
     @State private var showPaywall = false
+    @State private var showInvite = false
     @State private var clubPage: CampusClub?
     @State private var selectedPost: SocialPost?
     @State private var profilePosts: [SocialPost] = []
@@ -132,6 +133,7 @@ struct SocialProfileView: View {
             .sheet(isPresented: $showVisits) { ProfileVisitorsView() }
             .sheet(isPresented: $showRequests) { ProfileRequestsHubView() }
             .sheet(isPresented: $showPaywall) { PaywallView() }
+            .sheet(isPresented: $showInvite) { InviteFriendsView() }
             .sheet(item: $clubPage) { kulup in ClubDetailView(club: kulup) }
             .fullScreenCover(isPresented: $showPhoto) {
                 PhotoZoomView(url: appState.avatarURL, data: appState.avatarData)
@@ -223,6 +225,11 @@ struct SocialProfileView: View {
             }
 
             accountSwitchRows
+
+            // Ayarların içindeydi; kimse bulmuyordu (15 Ekim: 0 davet).
+            if !appState.isClubAccount {
+                InviteRow { showInvite = true }
+            }
         }
     }
 

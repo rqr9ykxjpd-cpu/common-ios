@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import UserNotifications
 
 @MainActor
 @Observable
@@ -8,6 +9,11 @@ final class AppState {
         static let isSignedIn = "session.isSignedIn"
         /// Sistem bildirim izni bir kez, kullanıcı cevap bekleyen bir şey yaptığında soruldu.
         static let pushPrompted = "push.promptedOnce"
+        /// Açıklamalı izin kartı: son gösterildiği an ve kaç kez gösterildiği.
+        static let pushAskLast = "push.ask.last"
+        static let pushAskCount = "push.ask.count"
+        /// Sohbet'teki "Bildirimler kapalı" kartı gizlendiği an.
+        static let pushOffHidden = "push.off.hiddenAt"
         static let ghostMode = "session.ghostMode"
         static let email = "session.email"
         static let accountEmail = "account.email"
@@ -297,6 +303,12 @@ final class AppState {
         }
     }
     var toast: AppToastMessage?
+    /// Bildirim izni için açıklamalı kart: cevap bekleyen bir şey yapılınca açılır.
+    var pushAsk: PushAskReason?
+    /// Son okunan bildirim izni; Sohbet'teki kart buna bakar.
+    var pushStatus: UNAuthorizationStatus?
+    /// Kart gizlenince görünüm yenilensin (UserDefaults gözlenmiyor).
+    var pushOffHiddenTick = 0
     /// Kilit ekranındaki bildirime basınca bildirim listesini açmak için.
     var opensNotifications = false
 

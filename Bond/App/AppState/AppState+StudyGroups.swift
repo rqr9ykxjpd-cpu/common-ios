@@ -113,7 +113,7 @@ extension AppState {
             scheduleStudySpotReminder(for: group)
             show(L10n.StudyGroup.created)
             Haptics.success()
-            promptForPushIfNeeded()
+            promptForPushIfNeeded(.group)
             return true
         } catch {
             let ham = String(describing: error) + error.localizedDescription
@@ -165,7 +165,7 @@ extension AppState {
                     try await service.joinStudyGroup(groupID)
                     scheduleStudyGroupReminder(for: onceki)
                     show(L10n.StudyGroup.joinedToast)
-                    promptForPushIfNeeded()
+                    promptForPushIfNeeded(.group)
                 } else {
                     try await service.leaveStudyGroup(groupID)
                     cancelStudyGroupReminder(groupID)

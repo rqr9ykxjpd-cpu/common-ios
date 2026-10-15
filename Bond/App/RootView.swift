@@ -63,6 +63,19 @@ struct RootView: View {
             await appState.restoreBackendSession()
             await appState.handleAppleCredentialRevocation()
         }
+        // Bildirim izni: cevap bekleyen bir şey yapılınca, neden istendiği yazılı.
+        .sheet(item: Binding(
+            get: { isInApp ? appState.pushAsk : nil },
+            set: { appState.pushAsk = $0 }
+        )) { reason in
+            PushAskView(reason: reason)
+                .presentationDetents([.height(380)])
+                // Sayfanın zemini kartın tamamı: iOS 26'nın cam zemini üstte
+                // ve altta gri şerit bırakıyordu.
+                .presentationBackground(BondTheme.paper)
+                .presentationDragIndicator(.visible)
+                .presentationCornerRadius(28)
+        }
         // Kullanıcı adı otomatik verilmiş hesaplara bir kez sorulur.
         .task(id: isInApp) {
             if isInApp { await appState.checkUsernameChoice() }

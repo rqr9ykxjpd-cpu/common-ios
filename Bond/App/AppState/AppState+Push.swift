@@ -30,20 +30,59 @@ extension AppState {
         }
     }
 
-    /// Bildirim iznini bir kez sorar: uygulamaya girer girmez (giriş, oturum
-    /// açılışı, kayıt sonu) ve yedek olarak cevap bekleyen ilk eylemde (soru,
-    /// cevap, sağa kaydırma, mesaj). Bildirimler sekmesine girmeyen kişiye hiç
-    /// sorulmuyordu, push hiç gelmiyordu. İzin zaten kararlıysa hiçbir şey olmaz.
-    func promptForPushIfNeeded() {
-        guard !defaults.bool(forKey: SessionKey.pushPrompted) else { return }
+    /// Bildirim izni, cevap bekleyen bir şey yapılınca (mesaj, bağlantı isteği,
+    /// gönderi, yorum, çalışma grubu) önce kısa bir açıklamayla sorulur; sistem
+    /// penceresi "Bildirimleri aç"a basınca gelir. Eskiden uygulamaya girer
+    /// girmez soruluyordu: neden istendiği belli olmadan reddediliyor, iOS bir
+    /// daha sormuyordu (15 Ekim: 30 kişiden 14'ünde açık).
+    ///
+    /// Açıklama en fazla üç kez ve üç gün arayla gelir; izin kararlıysa hiç.
+    func promptForPushIfNeeded(_ reason: PushAskReason = .message) {
+        guard pushAsk == nil, !isClubAccount else { return }
+        let sayi = defaults.integer(forKey: SessionKey.pushAskCount)
+        let son = defaults.object(forKey: SessionKey.pushAskLast) as? Date ?? .distantPast
+        guard sayi < 3, Date().timeIntervalSince(son) > 3 * 24 * 3600 else { return }
         Task {
             let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
             guard status == .notDetermined else { return }
-            defaults.set(true, forKey: SessionKey.pushPrompted)
-            // Eylemin kendi animasyonu/tost'u bitsin, pencere üstüne binmesin.
+            // Eylemin kendi animasyonu/tost'u bitsin, kart üstüne binmesin.
             try? await Task.sleep(for: .seconds(1.2))
-            await startPushRegistration(requestAuthorization: true)
+            guard pushAsk == nil else { return }
+            defaults.set(sayi + 1, forKey: SessionKey.pushAskCount)
+            defaults.set(Date(), forKey: SessionKey.pushAskLast)
+            pushAsk = reason
         }
+    }
+
+    /// Açıklama kartında "Bildirimleri aç": sistem penceresi.
+    func acceptPushAsk() {
+        pushAsk = nil
+        defaults.set(true, forKey: SessionKey.pushPrompted)
+        Task {
+            // Kart kapanırken sistem penceresi üstüne binmesin.
+            try? await Task.sleep(for: .seconds(0.4))
+            await startPushRegistration(requestAuthorization: true)
+            await refreshPushStatus()
+        }
+    }
+
+    /// Sohbet'teki kart için: izin durumu (açık, kapalı, hiç sorulmadı).
+    func refreshPushStatus() async {
+        let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+        if pushStatus != status { pushStatus = status }
+    }
+
+    /// Sohbet'teki "Bildirimler kapalı" kartı: kapalıysa ya da hiç sorulmadıysa,
+    /// gizlendikten 14 gün sonra yeniden.
+    var showsPushOffCard: Bool {
+        guard !isClubAccount, pushStatus == .denied || pushStatus == .notDetermined else { return false }
+        let gizlendi = defaults.object(forKey: SessionKey.pushOffHidden) as? Date ?? .distantPast
+        return Date().timeIntervalSince(gizlendi) > 14 * 24 * 3600
+    }
+
+    func hidePushOffCard() {
+        defaults.set(Date(), forKey: SessionKey.pushOffHidden)
+        pushOffHiddenTick += 1
     }
 
     func registerPushToken(_ token: String) async {

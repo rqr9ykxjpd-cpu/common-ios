@@ -137,7 +137,7 @@ extension AppState {
                 return .matched(matchID: matchID)
             }
             show(L10n.CampusDesign.rightSwipeSent)
-            promptForPushIfNeeded()
+            promptForPushIfNeeded(.connection)
             return .sent
         } catch {
             let ham = String(describing: error) + error.localizedDescription

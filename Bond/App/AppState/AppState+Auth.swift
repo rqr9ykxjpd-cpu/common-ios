@@ -127,7 +127,6 @@ extension AppState {
         show(name.isEmpty ? L10n.Auth.welcome : L10n.Auth.welcomeName(name))
         await loadSessionData()
         await startPushRegistration()
-        promptForPushIfNeeded()
         return true
     }
 
@@ -202,7 +201,6 @@ extension AppState {
             }
             await oturumVerisi
             await startPushRegistration()
-            if route == .app { promptForPushIfNeeded() }
         } catch {
             // Ağın kopması oturumun bittiği anlamına gelmiyor. Kampüs wifi'ında bir istek
             // zaman aşımına uğradığında kullanıcıyı karşılama ekranına atmak, girişi

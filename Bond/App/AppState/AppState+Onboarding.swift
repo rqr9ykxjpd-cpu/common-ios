@@ -81,12 +81,11 @@ extension AppState {
         // Yeni öğrenci: kayıt biter bitmez "Kampüse son bir adım". Geçebilir;
         // o zaman gezinti modunda kalır, kilitli bir şeye dokununca pencere yine açılır.
         // Doğrulama durumu `loadSessionData` ile geldi.
+        // Bildirim izni burada sorulmuyor: ilk mesajda, bağlantı isteğinde ya da
+        // gönderide, neden istendiği belliyken soruluyor (`promptForPushIfNeeded`).
         if isEduLocked {
             try? await Task.sleep(for: .seconds(0.9))
             presentEduGate(.welcome)
-        } else {
-            // Kilit penceresi açılıyorsa izin sonraki açılışta: iki pencere üst üste binmesin.
-            promptForPushIfNeeded()
         }
         // Kayıt sırasında çıkan uyarı (ör. "davet eden bulunamadı") karşılamanın altında kalmasın.
         if toast == nil {
