@@ -17,8 +17,10 @@ protocol ClubAccountManaging: Sendable {
     func returnToSession(_ stored: Data) async throws
     /// Açık kulüplerin hesapları: kulüp sayfası ↔ kulüp hesabı bağlantısı.
     func clubAccountLinks() async throws -> [ClubAccountLink]
-    /// Kulüp hesabının kartı (kulüp sayfasından açmak için).
-    func clubAccountProfile(_ profileID: UUID) async throws -> StudentProfile
+    /// Kulüp hesabının kartı (kulüp sayfasından açmak için). Yalnızca kulübü
+    /// yönetenlere; hesap henüz bir şey paylaşmadıysa profil kuralı onu
+    /// göstermiyor, sunucudaki fonksiyon getiriyor.
+    func clubAccountProfile(forClub clubID: UUID) async throws -> StudentProfile
 }
 
 struct ClubAccountLink: Equatable, Sendable {

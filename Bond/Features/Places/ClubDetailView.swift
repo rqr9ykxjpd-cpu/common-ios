@@ -38,9 +38,12 @@ struct ClubDetailView: View {
         return members + [ClubMember(profile: appState.currentUserProfile, isManager: false)]
     }
     private var nextEvent: String { current.nextEvent.trimmingCharacters(in: .whitespacesAndNewlines) }
-    /// Kulübün hesabı; kulüp hesabının kendisinde gösterilmez.
+    /// Kulübün hesabı: yalnızca kulübü yönetenler (kurucu ve kulübün
+    /// yöneticileri) görür; üyeler kulübü sayfasından ve paylaşımlarından tanıyor.
+    /// Kulüp hesabının kendisinde gösterilmez.
     private var accountLink: ClubAccountLink? {
-        appState.clubAccountLink(forClub: club.id).flatMap { $0.profileID == appState.currentUserID ? nil : $0 }
+        guard canManage else { return nil }
+        return appState.clubAccountLink(forClub: club.id).flatMap { $0.profileID == appState.currentUserID ? nil : $0 }
     }
 
     var body: some View {
@@ -224,7 +227,7 @@ struct ClubDetailView: View {
         openingAccount = true
         defer { openingAccount = false }
         do {
-            cardProfile = try await appState.clubAccountProfile(link.profileID)
+            cardProfile = try await appState.clubAccountProfile(forClub: link.clubID)
         } catch {
             appState.showError(error, fallback: L10n.ClubSwitch.accountLoadFailed)
         }

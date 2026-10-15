@@ -68,12 +68,12 @@ extension SupabaseProductService {
         return rows.map { ClubAccountLink(clubID: $0.clubID, profileID: $0.profileID, username: $0.username) }
     }
 
-    func clubAccountProfile(_ profileID: UUID) async throws -> StudentProfile {
+    /// `profiles` tablosundan okunmuyor: profil kuralı henüz paylaşım yapmamış
+    /// kulüp hesabını kurucuya bile göstermiyordu (20261015030000).
+    func clubAccountProfile(forClub clubID: UUID) async throws -> StudentProfile {
         guard currentUserID != nil else { throw BackendServiceError.missingSession }
         let row: SupabaseProfileRow = try await client
-            .from("profiles")
-            .select("id,name,birth_date,university,department,academic_year,bio,avatar_path,is_verified,badge")
-            .eq("id", value: profileID)
+            .rpc("club_account_profile", params: ClubIDParams(clubID: clubID))
             .single()
             .execute()
             .value

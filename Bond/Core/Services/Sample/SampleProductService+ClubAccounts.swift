@@ -34,10 +34,11 @@ extension SampleProductService: ClubAccountManaging {
         return [ClubAccountLink(clubID: ilk.id, profileID: SampleAccountSwitch.accountID(for: ilk.id), username: "fotograf.toplu")]
     }
 
-    func clubAccountProfile(_ profileID: UUID) async throws -> StudentProfile {
-        guard let kulup = try await fetchClubs().clubs.first(where: { SampleAccountSwitch.accountID(for: $0.id) == profileID }) else {
+    func clubAccountProfile(forClub clubID: UUID) async throws -> StudentProfile {
+        guard let kulup = try await fetchClubs().clubs.first(where: { $0.id == clubID }) else {
             throw BackendServiceError.missingSession
         }
+        let profileID = SampleAccountSwitch.accountID(for: clubID)
         let taslak = SampleData.clubAccountDraft(kulup.name)
         return StudentProfile(
             id: profileID, name: taslak.name, age: 18, university: taslak.university,

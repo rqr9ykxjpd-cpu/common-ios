@@ -22,7 +22,7 @@ extension AppState {
         return clubs.filter { managedClubIDs.contains($0.id) }
     }
 
-    /// Kulüp sayfasındaki "Kulübün hesabı" satırı için.
+    /// Kulüp sayfasındaki "Kulübün hesabı" satırı için (yalnızca yönetenler görür).
     func clubAccountLink(forClub clubID: UUID) -> ClubAccountLink? {
         clubAccountLinks.first { $0.clubID == clubID }
     }
@@ -40,9 +40,9 @@ extension AppState {
         catch { guard !isCancellation(error) else { return } }
     }
 
-    func clubAccountProfile(_ profileID: UUID) async throws -> StudentProfile {
+    func clubAccountProfile(forClub clubID: UUID) async throws -> StudentProfile {
         guard let masa = service as? any ClubAccountManaging else { throw BackendServiceError.missingSession }
-        return try await masa.clubAccountProfile(profileID)
+        return try await masa.clubAccountProfile(forClub: clubID)
     }
 
     func managedClubs(of userID: UUID) async throws -> Set<UUID> {
