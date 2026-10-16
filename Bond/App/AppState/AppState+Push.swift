@@ -63,6 +63,7 @@ extension AppState {
             try? await Task.sleep(for: .seconds(0.4))
             await startPushRegistration(requestAuthorization: true)
             await refreshPushStatus()
+            await syncEventReminders()
         }
     }
 

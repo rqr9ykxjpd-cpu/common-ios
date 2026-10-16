@@ -8,6 +8,7 @@ extension L10n {
         static var pushAskConnection: String { String(localized: "pushAskConnection", table: "Engage") }
         static var pushAskPost: String { String(localized: "pushAskPost", table: "Engage") }
         static var pushAskGroup: String { String(localized: "pushAskGroup", table: "Engage") }
+        static var pushAskEvent: String { String(localized: "pushAskEvent", table: "Engage") }
         static var pushAskAllow: String { String(localized: "pushAskAllow", table: "Engage") }
         static var pushAskLater: String { String(localized: "pushAskLater", table: "Engage") }
         static var pushOffTitle: String { String(localized: "pushOffTitle", table: "Engage") }

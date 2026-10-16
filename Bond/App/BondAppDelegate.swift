@@ -34,6 +34,11 @@ final class PushTokenStore {
     func handleForegroundBanner() {
         Task { await appState?.loadNotifications() }
     }
+
+    /// Etkinlik hatırlatmasına dokunuldu: kulübün sayfası.
+    func handleEventReminderTap(clubID: UUID) {
+        appState?.openClubFromReminder(clubID)
+    }
 }
 
 final class BondAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
@@ -80,6 +85,11 @@ final class BondAppDelegate: NSObject, UIApplicationDelegate, UNUserNotification
         // dışındayken sistem bildirimi her zamanki gibi gelir. Açıkken kutuya
         // dokunmak, başka bir pencere açıkken Bildirimler'i açamıyor ve zili
         // kilitliyordu.
+        // Etkinlik hatırlatması mesaj değil: uygulama açıkken de görünsün.
+        if notification.request.identifier.hasPrefix("kulup-etkinlik-") {
+            completionHandler([.banner, .sound])
+            return
+        }
         completionHandler([.badge])
         Task { @MainActor in
             PushTokenStore.shared.handleForegroundBanner()
@@ -91,6 +101,15 @@ final class BondAppDelegate: NSObject, UIApplicationDelegate, UNUserNotification
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
+        let istek = response.notification.request
+        if istek.identifier.hasPrefix("kulup-etkinlik-"),
+           let kimlik = (istek.content.userInfo["clubID"] as? String).flatMap(UUID.init(uuidString:)) {
+            Task { @MainActor in
+                PushTokenStore.shared.handleEventReminderTap(clubID: kimlik)
+            }
+            completionHandler()
+            return
+        }
         Task { @MainActor in
             PushTokenStore.shared.handleNotificationTap()
         }

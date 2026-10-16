@@ -69,6 +69,8 @@ extension AppState {
         guard route == .app else { return }
         // Ayarlar'dan bildirimi açıp dönmüş olabilir: Sohbet'teki kart kalksın.
         await refreshPushStatus()
+        // Etkinliğin saati değişmiş ya da iptal edilmiş olabilir.
+        await syncEventReminders()
         // Arka plandayken kaçırılan "geldi/gitti"ler.
         await loadPlacePresence()
         await loadConversations()

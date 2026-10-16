@@ -3,7 +3,7 @@ import SwiftUI
 /// Neden bildirim izni istendiği: cevap bekleyen bir şey yapıldığında açılan
 /// kısa kart. Sistem penceresi "Bildirimleri aç"tan sonra geliyor.
 enum PushAskReason: String, Identifiable {
-    case message, connection, post, group
+    case message, connection, post, group, event
 
     var id: String { rawValue }
 
@@ -13,6 +13,7 @@ enum PushAskReason: String, Identifiable {
         case .connection: L10n.Engage.pushAskConnection
         case .post: L10n.Engage.pushAskPost
         case .group: L10n.Engage.pushAskGroup
+        case .event: L10n.Engage.pushAskEvent
         }
     }
 }

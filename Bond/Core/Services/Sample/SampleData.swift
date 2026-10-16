@@ -196,8 +196,20 @@ enum SampleData {
         ]
     }
 
+    /// İlk kulübün hesabı: kulüp sayfasındaki "paylaşımlar" ve akıştan
+    /// kulübe geçiş örnekte de görünsün.
+    static var photoClubAccount: StudentProfile {
+        StudentProfile(id: SampleAccountSwitch.accountID(for: id(30)), name: "Fotoğraf Kulübü", age: 18,
+                       university: "YÜ", department: "Öğrenci kulübü", year: "Resmi hesap", bio: "",
+                       interests: [], imageURL: nil, isVerified: true, badge: .verified)
+    }
+
     static var posts: [BackendPost] {
         [
+            post(author: photoClubAccount,
+                 caption: "Pazar 17.00'de kampüs fotoğraf yürüyüşü. Hazırlık binasının önünden başlıyoruz, telefon da olur.",
+                 place: nil, asset: "post-campus", createdAt: hours(9), likes: 12, liked: false,
+                 kind: .announcement, comments: []),
             post(author: profiles[0], caption: "Ders sonrası planı: kendimizi dışarı atmak.",
                  place: "Hazırlık Kantini", asset: "post-cafe", createdAt: hours(2), likes: 34, liked: true, comments: [
                     ("Defne", "Ben de geliyorum!", 2),
@@ -399,7 +411,8 @@ enum SampleData {
 /// Avatar tarafında ise model yalnızca `URL` taşıyor — asset adı taşımıyor — bu
 /// yüzden görsel bir kez geçici dizine yazılıp `file://` adresi veriliyor.
 /// Böylece örnek akış gerçek akışla aynı yolu (`AsyncImage`) kullanıyor.
-private enum UIImageAsset {
+/// Örnek etkinliklerin katılımcı fotoğrafları da bunu kullanıyor.
+enum UIImageAsset {
     static func data(named: String) -> Data? {
         UIImage(named: named)?.jpegData(compressionQuality: 0.8)
     }

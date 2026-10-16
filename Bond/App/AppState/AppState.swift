@@ -156,6 +156,10 @@ final class AppState {
     var supportThreads: [SupportThread] = []
     /// Kulüplerin logosu ve iletişimi (1.2); kulüp kimliğine göre.
     var clubExtras: [UUID: ClubExtras] = [:]
+    /// Kulüp etkinlikleri, kulübe göre (kulüp sayfası açılınca yüklenir).
+    var clubEvents: [UUID: [ClubEvent]] = [:]
+    /// Etkinlik hatırlatmasına dokunulunca açılacak kulüp.
+    var reminderClub: CampusClub?
     /// Yönetici olarak atandığım kulüpler.
     var managedClubIDs: Set<UUID> = []
     /// Kulüp hesabındayken yöneticinin kendi hesabı (Anahtar Zinciri'nde).

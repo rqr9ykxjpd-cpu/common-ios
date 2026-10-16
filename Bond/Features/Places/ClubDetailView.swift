@@ -13,6 +13,12 @@ struct ClubDetailView: View {
     @State private var members: [ClubMember] = []
     @State private var membersLoaded = false
     @State private var showAllMembers = false
+    @State private var selectedEvent: ClubRoute?
+    @State private var composer: ClubEventComposerRoute?
+    /// Etkinlikler bir kez denendi mi: sunucu eskiyse eski "yaklaşan etkinlik" metni.
+    @State private var eventsChecked = false
+    @State private var clubPosts: [SocialPost] = []
+    @State private var openedPost: ClubRoute?
 
     /// Sayfada gösterilen üye sayısı; fazlası "Tüm üyeler"de.
     private static let inlineMemberLimit = 5
@@ -38,6 +44,13 @@ struct ClubDetailView: View {
         return members + [ClubMember(profile: appState.currentUserProfile, isManager: false)]
     }
     private var nextEvent: String { current.nextEvent.trimmingCharacters(in: .whitespacesAndNewlines) }
+    private var events: [ClubEvent] { appState.clubEvents[club.id] ?? [] }
+    /// Kulübün hesabı (herkes için): sayfadaki paylaşımlar onun gönderileri.
+    private var accountProfileID: UUID? { appState.clubAccountLink(forClub: club.id)?.profileID }
+    /// Gösterilecek paylaşımlar: silinenler düşer, en çok beş.
+    private var visiblePosts: [SocialPost] {
+        Array(clubPosts.filter { !appState.deletedPostIDs.contains($0.id) }.prefix(5))
+    }
     /// Kulübün hesabı: yalnızca kulübü yönetenler (kurucu ve kulübün
     /// yöneticileri) görür; üyeler kulübü sayfasından ve paylaşımlarından tanıyor.
     /// Kulüp hesabının kendisinde gösterilmez.
@@ -56,10 +69,12 @@ struct ClubDetailView: View {
                     identity
                     clubInfo
                     if let accountLink { accountEntry(accountLink) }
+                    if !events.isEmpty || canManage { eventsSection }
+                    // Sunucuda etkinlikler yoksa (eski sunucu) eski düz metin.
+                    if eventsChecked, appState.clubEvents[club.id] == nil, !nextEvent.isEmpty { upcomingEvent }
+                    if !visiblePosts.isEmpty { postsSection }
                     if !shownMembers.isEmpty { membersSection }
                     if canManage { peopleEntry }
-                    // Etkinlik yoksa bölüm hiç görünmez.
-                    if !nextEvent.isEmpty { upcomingEvent }
                     contact
                     benefits
                     // Kulübün hesabı kendi kulübünden ayrılamaz (sunucu da reddediyor).
@@ -79,7 +94,14 @@ struct ClubDetailView: View {
         .task {
             async let ek: Void = appState.loadClubExtras()
             async let baglar: Void = appState.loadClubAccountLinks()
-            _ = await (ek, baglar)
+            async let etkinlikler: Void = appState.loadClubEvents(club.id)
+            _ = await (ek, baglar, etkinlikler)
+            eventsChecked = true
+        }
+        .task(id: accountProfileID) {
+            guard let accountProfileID else { return }
+            let gelen = await appState.personPosts(for: accountProfileID)
+            withAnimation(reduceMotion ? nil : BondTheme.Motion.smooth) { clubPosts = gelen }
         }
         // Katılınca/ayrılınca kulüpler yeniden yüklenip sayı değişiyor; liste
         // de tazelensin.
@@ -97,6 +119,17 @@ struct ClubDetailView: View {
         }
         .sheet(isPresented: $showAllMembers) {
             ClubMembersView(clubName: current.name, members: shownMembers)
+        }
+        .sheet(item: $selectedEvent) { route in
+            ClubEventDetailView(clubID: club.id, eventID: route.id, clubName: current.name,
+                                accent: accent, canManage: canManage)
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(item: $composer) { route in
+            ClubEventComposer(draft: route.draft)
+        }
+        .sheet(item: $openedPost) { route in
+            NavigationStack { PostDetailView(postID: route.id, showsClose: true) }
         }
     }
 
@@ -278,6 +311,85 @@ struct ClubDetailView: View {
         }
     }
 
+    /// Yaklaşan etkinlikler; yönetenler buradan yenisini açar.
+    private var eventsSection: some View {
+        VStack(alignment: .leading, spacing: BondTheme.Space.compact) {
+            HStack {
+                Eyebrow(text: L10n.ClubEvents.sectionTitle, color: BondTheme.muted)
+                Spacer()
+                if canManage, !events.isEmpty {
+                    Button {
+                        composer = ClubEventComposerRoute(draft: ClubEventDraft(clubID: club.id))
+                    } label: {
+                        Label(L10n.ClubEvents.add, systemImage: "plus")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(accent)
+                    }
+                    .buttonStyle(.pressable)
+                    .accessibilityIdentifier("club.event.add")
+                }
+            }
+            ForEach(events) { etkinlik in
+                ClubEventCard(event: etkinlik, accent: accent) {
+                    selectedEvent = ClubRoute(id: etkinlik.id)
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+            if events.isEmpty, canManage {
+                Button {
+                    composer = ClubEventComposerRoute(draft: ClubEventDraft(clubID: club.id))
+                } label: {
+                    HStack(spacing: 13) {
+                        Image(systemName: "calendar.badge.plus")
+                            .font(.title3)
+                            .foregroundStyle(accent)
+                            .frame(width: 32)
+                        Text(L10n.ClubEvents.add)
+                            .font(.headline)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(BondTheme.Space.md)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                }
+                .buttonStyle(.pressable)
+                .accessibilityIdentifier("club.event.add")
+            }
+        }
+        .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: events.map(\.id))
+    }
+
+    /// Kulübün hesabının son paylaşımları; dokununca gönderi açılır.
+    private var postsSection: some View {
+        VStack(alignment: .leading, spacing: BondTheme.Space.compact) {
+            Eyebrow(text: L10n.ClubEvents.postsTitle, color: BondTheme.muted)
+            VStack(spacing: 0) {
+                ForEach(visiblePosts) { gonderi in
+                    if gonderi.id != visiblePosts.first?.id {
+                        Divider().padding(.leading, BondTheme.Space.md)
+                    }
+                    Button {
+                        Task {
+                            if await appState.loadPostIfNeeded(gonderi.id) {
+                                openedPost = ClubRoute(id: gonderi.id)
+                            }
+                        }
+                    } label: {
+                        ProfilePostRow(post: gonderi)
+                            .padding(.horizontal, BondTheme.Space.md)
+                            .padding(.vertical, 12)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.pressable)
+                }
+            }
+            .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+    }
+
     /// Yönetici ve kurucu: üyeleri yönetme (çıkarma) listesi.
     private var peopleEntry: some View {
         Button { showPeople = true } label: {
@@ -422,4 +534,14 @@ struct ClubDetailView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
+}
+
+/// Sayfadan açılan sayfa için kimlik (etkinlik ya da gönderi).
+struct ClubRoute: Identifiable, Hashable {
+    let id: UUID
+}
+
+struct ClubEventComposerRoute: Identifiable {
+    let id = UUID()
+    let draft: ClubEventDraft
 }

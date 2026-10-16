@@ -192,6 +192,22 @@
           }
         }
       }
+    },
+    "pushAskEvent": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We'll remind you an hour before it starts."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlamadan bir saat önce hatırlatalım."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

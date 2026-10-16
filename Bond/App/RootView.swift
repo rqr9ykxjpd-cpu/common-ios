@@ -76,6 +76,13 @@ struct RootView: View {
                 .presentationDragIndicator(.visible)
                 .presentationCornerRadius(28)
         }
+        // Etkinlik hatırlatmasına dokunuldu: hangi sekmede olursan ol kulüp sayfası.
+        .sheet(item: Binding(
+            get: { isInApp ? appState.reminderClub : nil },
+            set: { appState.reminderClub = $0 }
+        )) { kulup in
+            ClubDetailView(club: kulup)
+        }
         // Kullanıcı adı otomatik verilmiş hesaplara bir kez sorulur.
         .task(id: isInApp) {
             if isInApp { await appState.checkUsernameChoice() }

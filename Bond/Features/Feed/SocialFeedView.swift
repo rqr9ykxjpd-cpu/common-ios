@@ -174,6 +174,11 @@ struct SocialFeedView: View {
                                             toggleLike: { appState.toggleLike(postID: post.id) },
                                             toggleSaved: { appState.toggleSaved(postID: post.id) },
                                             openProfile: {
+                                                // Kulübün hesabı: profil yerine kulübün sayfası.
+                                                if let kulup = appState.club(forAccount: post.author.id) {
+                                                    selectedClub = kulup
+                                                    return
+                                                }
                                                 profileSourceID = "yazar-\(post.id)"
                                                 selectedPostAuthor = post.author
                                             },

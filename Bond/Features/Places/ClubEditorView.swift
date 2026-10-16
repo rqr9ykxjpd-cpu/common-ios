@@ -44,7 +44,9 @@ struct ClubEditorView: View {
                             .id("hata")
                         }
                         identitySection
-                        eventSection
+                        // "Yaklaşan etkinlik" metni kalktı: etkinlikler kulüp
+                        // sayfasından açılıyor, eski sürümler için metin
+                        // sunucuda en yakın etkinlikten yazılıyor.
                         lookSection
                         contactSection
                         if founder { activeSection }
@@ -116,18 +118,6 @@ struct ClubEditorView: View {
                 Text(L10n.ClubAdmin.logoAfterSave)
             } else if !founder {
                 Text(L10n.ClubAdmin.managerNote)
-            }
-        }
-    }
-
-    private var eventSection: some View {
-        Section(L10n.ClubAdmin.nextEvent) {
-            TextField(L10n.ClubAdmin.nextEventPlaceholder, text: $draft.nextEvent)
-            Picker(L10n.ClubAdmin.place, selection: $draft.placeID) {
-                Text(L10n.ClubAdmin.noPlace).tag(UUID?.none)
-                ForEach(appState.places) { yer in
-                    Text(yer.name).tag(Optional(yer.id))
-                }
             }
         }
     }
