@@ -67,7 +67,6 @@ struct ClubDetailView: View {
                 VStack(alignment: .leading, spacing: BondTheme.Space.lg) {
                     header
                     identity
-                    clubInfo
                     if let accountLink { accountEntry(accountLink) }
                     if !events.isEmpty || canManage { eventsSection }
                     // Sunucuda etkinlikler yoksa (eski sunucu) eski düz metin.
@@ -76,7 +75,6 @@ struct ClubDetailView: View {
                     if !shownMembers.isEmpty { membersSection }
                     if canManage { peopleEntry }
                     contact
-                    benefits
                     // Kulübün hesabı kendi kulübünden ayrılamaz (sunucu da reddediyor).
                     if appState.clubAccountClubID != club.id { membershipButton }
                 }
@@ -164,7 +162,7 @@ struct ClubDetailView: View {
 
     private var identity: some View {
         VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
-            Eyebrow(text: L10n.Club.yuClub, color: accent)
+            Eyebrow(text: L10n.Club.yuClub, color: BondTheme.muted)
             Text(current.name)
                 .editorialTitle(40)
                 .fixedSize(horizontal: false, vertical: true)
@@ -173,22 +171,14 @@ struct ClubDetailView: View {
                 .foregroundStyle(.secondary)
                 .lineSpacing(4)
                 .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    private var clubInfo: some View {
-        HStack(spacing: 10) {
-            infoCard(
-                value: "\(displayedMemberCount)",
-                label: L10n.Club.members,
-                icon: "person.2.fill",
-                numeric: true
-            )
-            infoCard(
-                value: joined ? L10n.Club.joinedStatus : L10n.Club.openStatus,
-                label: L10n.Club.status,
-                icon: joined ? "checkmark.circle.fill" : "door.left.hand.open"
-            )
+            // Kaç kişi, nerede buluşuyor: tek satır. Üyelik durumu alttaki
+            // düğmede; ayrı bir "Durum: Açık" kartı yok.
+            Text([L10n.ClubAdmin.memberCount(displayedMemberCount), current.meetingPlace?.name]
+                .compactMap { $0 }.joined(separator: " · "))
+                .font(.subheadline)
+                .foregroundStyle(BondTheme.muted)
+                .contentTransition(.numericText())
+                .animation(reduceMotion ? nil : BondTheme.Motion.snappy, value: displayedMemberCount)
         }
     }
 
@@ -199,7 +189,7 @@ struct ClubDetailView: View {
             HStack(spacing: 13) {
                 Image(systemName: "calendar.badge.clock")
                     .font(.title3)
-                    .foregroundStyle(accent)
+                    .foregroundStyle(BondTheme.icon)
                     .frame(width: 32)
 
                 VStack(alignment: .leading, spacing: BondTheme.Space.xs) {
@@ -323,7 +313,7 @@ struct ClubDetailView: View {
                     } label: {
                         Label(L10n.ClubEvents.add, systemImage: "plus")
                             .font(.footnote.weight(.semibold))
-                            .foregroundStyle(accent)
+                            .foregroundStyle(BondTheme.ink)
                     }
                     .buttonStyle(.pressable)
                     .accessibilityIdentifier("club.event.add")
@@ -342,7 +332,7 @@ struct ClubDetailView: View {
                     HStack(spacing: 13) {
                         Image(systemName: "calendar.badge.plus")
                             .font(.title3)
-                            .foregroundStyle(accent)
+                            .foregroundStyle(BondTheme.icon)
                             .frame(width: 32)
                         Text(L10n.ClubEvents.add)
                             .font(.headline)
@@ -396,7 +386,7 @@ struct ClubDetailView: View {
             HStack(spacing: 13) {
                 Image(systemName: "person.2.badge.gearshape")
                     .font(.title3)
-                    .foregroundStyle(accent)
+                    .foregroundStyle(BondTheme.icon)
                     .frame(width: 32)
                 Text(L10n.ClubAdmin.manageMembers)
                     .font(.headline)
@@ -435,7 +425,7 @@ struct ClubDetailView: View {
             HStack(spacing: 13) {
                 Image(systemName: icon)
                     .font(.title3)
-                    .foregroundStyle(accent)
+                    .foregroundStyle(BondTheme.icon)
                     .frame(width: 32)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
@@ -458,81 +448,22 @@ struct ClubDetailView: View {
         .buttonStyle(.pressable)
     }
 
-    private var benefits: some View {
-        VStack(alignment: .leading, spacing: BondTheme.Space.compact) {
-            Eyebrow(text: L10n.Club.whatToExpect, color: BondTheme.muted)
-            benefit(L10n.Club.benefitMeet)
-            benefit(L10n.Club.benefitEvents)
-            benefit(L10n.Club.benefitProjects)
-        }
-    }
-
     private var membershipButton: some View {
         Button {
             withAnimation(reduceMotion ? nil : BondTheme.Motion.bouncy) {
                 appState.toggleClubMembership(club)
             }
         } label: {
-            HStack(spacing: BondTheme.Space.sm) {
-                Image(systemName: joined ? "checkmark.circle.fill" : "plus.circle.fill")
-                    .contentTransition(.symbolEffect(.replace))
-                Text(joined ? L10n.Club.leave : L10n.Club.join)
-                    .font(.headline)
-                Spacer()
-                Image(systemName: "arrow.right")
-                    .font(.subheadline.weight(.semibold))
-            }
-            .foregroundStyle(joined ? BondTheme.ink : Color.white)
-            .padding(.horizontal, BondTheme.Space.md)
-            .frame(maxWidth: .infinity, minHeight: 56)
-            .background(
-                joined ? BondTheme.surface : accent,
-                in: Capsule()
-            )
+            Text(joined ? L10n.Club.leave : L10n.Club.join)
+                .font(.headline)
+                .foregroundStyle(joined ? BondTheme.ink : BondTheme.paper)
+                .frame(maxWidth: .infinity, minHeight: 52)
+                .background(joined ? BondTheme.surface : BondTheme.ink, in: Capsule())
+                .contentTransition(.opacity)
         }
         .buttonStyle(.pressable)
         .accessibilityIdentifier("club.membership")
         .animation(reduceMotion ? nil : BondTheme.Motion.bouncy, value: joined)
-    }
-
-    private func infoCard(
-        value: String,
-        label: String,
-        icon: String,
-        numeric: Bool = false
-    ) -> some View {
-        VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
-            Image(systemName: icon)
-                .foregroundStyle(accent)
-                .contentTransition(.symbolEffect(.replace))
-            Text(value)
-                .font(.headline)
-                .contentTransition(numeric ? .numericText() : .opacity)
-                .animation(reduceMotion ? nil : BondTheme.Motion.snappy, value: value)
-            Text(label)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(BondTheme.Space.md)
-        .background(
-            BondTheme.surface,
-            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-        )
-    }
-
-    private func benefit(_ text: String) -> some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "checkmark")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(accent)
-                .frame(width: 24, height: 24)
-                .background(accent.opacity(0.12), in: Circle())
-            Text(text)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
     }
 }
 

@@ -99,7 +99,7 @@ struct ClubEventComposer: View {
             ClubEventDateBlock(date: draft.startsAt, accent: accent)
                 .animation(reduceMotion ? nil : BondTheme.Motion.snappy, value: draft.startsAt)
             VStack(alignment: .leading, spacing: 4) {
-                Eyebrow(text: clubName, color: accent)
+                Eyebrow(text: clubName, color: BondTheme.muted)
                 TextField(L10n.ClubEvents.titlePlaceholder, text: $draft.title, axis: .vertical)
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(BondTheme.ink)
@@ -155,7 +155,7 @@ struct ClubEventComposer: View {
                 DatePicker(L10n.ClubEvents.time, selection: timeBinding, displayedComponents: .hourAndMinute)
                     .labelsHidden()
                     .environment(\.locale, L10n.appLocale)
-                    .tint(accent)
+                    .tint(BondTheme.ink)
                     .accessibilityIdentifier("event.time")
             }
             .padding(.leading, BondTheme.Space.md)
@@ -201,16 +201,16 @@ struct ClubEventComposer: View {
             VStack(spacing: 3) {
                 Text(calendar.isDateInToday(gun) ? L10n.ClubEvents.todayShort : ClubEventFormat.weekdayShort(gun))
                     .font(.caption2.weight(.semibold))
-                    .foregroundStyle(secili ? Color.white.opacity(0.85) : BondTheme.muted)
+                    .foregroundStyle(secili ? BondTheme.paper.opacity(0.7) : BondTheme.muted)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                 Text(ClubEventFormat.day(gun))
                     .font(.system(size: 20, weight: .semibold, design: .rounded))
                     .monospacedDigit()
-                    .foregroundStyle(secili ? Color.white : BondTheme.ink)
+                    .foregroundStyle(secili ? BondTheme.paper : BondTheme.ink)
             }
             .frame(width: 52, height: 60)
-            .background(secili ? accent : BondTheme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(secili ? BondTheme.ink : BondTheme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .contentShape(Rectangle())
         }
         .buttonStyle(.pressable)
@@ -225,11 +225,11 @@ struct ClubEventComposer: View {
                 if pickedBeyondStrip {
                     Text(ClubEventFormat.month(draft.startsAt))
                         .font(.caption2.weight(.semibold))
-                        .foregroundStyle(Color.white.opacity(0.85))
+                        .foregroundStyle(BondTheme.paper.opacity(0.7))
                     Text(ClubEventFormat.day(draft.startsAt))
                         .font(.system(size: 20, weight: .semibold, design: .rounded))
                         .monospacedDigit()
-                        .foregroundStyle(Color.white)
+                        .foregroundStyle(BondTheme.paper)
                 } else {
                     Image(systemName: "calendar")
                         .font(.system(size: 17, weight: .semibold))
@@ -240,7 +240,7 @@ struct ClubEventComposer: View {
                 }
             }
             .frame(width: 60, height: 60)
-            .background(pickedBeyondStrip ? accent : BondTheme.surface,
+            .background(pickedBeyondStrip ? BondTheme.ink : BondTheme.surface,
                         in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .contentShape(Rectangle())
         }
@@ -267,7 +267,7 @@ struct ClubEventComposer: View {
                     }
                 }
         }
-        .tint(accent)
+        .tint(BondTheme.ink)
         .presentationDetents([.medium, .large])
         .presentationBackground(BondTheme.paper)
     }
@@ -349,10 +349,10 @@ struct ClubEventComposer: View {
                     .lineLimit(1)
             }
             .font(.subheadline.weight(.medium))
-            .foregroundStyle(secili ? Color.white : BondTheme.ink)
+            .foregroundStyle(secili ? BondTheme.paper : BondTheme.ink)
             .padding(.horizontal, 14)
             .frame(minHeight: 40)
-            .background(secili ? accent : BondTheme.surface, in: Capsule())
+            .background(secili ? BondTheme.ink : BondTheme.surface, in: Capsule())
             .contentShape(Capsule())
         }
         .buttonStyle(.pressable)
@@ -398,15 +398,15 @@ struct ClubEventComposer: View {
             Button { Task { await save() } } label: {
                 ZStack {
                     if saving {
-                        ProgressView().tint(.white)
+                        ProgressView().tint(BondTheme.paper)
                     } else {
                         Text(isNew ? L10n.ClubEvents.create : L10n.ClubEvents.saveChanges)
                     }
                 }
                 .font(.headline)
-                .foregroundStyle(Color.white)
+                .foregroundStyle(canSave || saving ? BondTheme.paper : BondTheme.muted)
                 .frame(maxWidth: .infinity, minHeight: 52)
-                .background(accent.opacity(canSave || saving ? 1 : 0.35), in: Capsule())
+                .background(canSave || saving ? BondTheme.ink : BondTheme.surface, in: Capsule())
                 .contentShape(Capsule())
             }
             .buttonStyle(.pressable)

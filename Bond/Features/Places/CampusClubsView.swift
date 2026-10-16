@@ -114,7 +114,6 @@ struct CampusClubsView: View {
     }
 
     private func clubCard(_ club: CampusClub) -> some View {
-        let accent = Color(hex: club.accentHex)
         let event = club.nextEvent.trimmingCharacters(in: .whitespacesAndNewlines)
 
         return Button { selectedClub = club } label: {
@@ -148,7 +147,7 @@ struct CampusClubsView: View {
                 if appState.isJoined(to: club) {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.title3)
-                        .foregroundStyle(accent)
+                        .foregroundStyle(BondTheme.ink)
                         .accessibilityLabel(L10n.Club.joinedStatus)
                         .transition(.scale.combined(with: .opacity))
                 }

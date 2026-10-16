@@ -44,7 +44,7 @@ enum ClubEventFormat {
         return gunFarki < 7
     }
 
-    /// Bugün ya da başlamış: kartta kulübün renginde.
+    /// Bugün ya da başlamış: kartta koyu yazılıyor.
     static func isSoon(_ date: Date) -> Bool {
         date <= .now || Calendar.current.isDateInToday(date)
     }
@@ -108,11 +108,11 @@ struct ClubEventCard: View {
         .accessibilityIdentifier("club.event.\(event.id)")
     }
 
-    /// "Bugün 19:00 · Kütüphane": bugünse saat kulübün renginde.
+    /// "Bugün 19:00 · Kütüphane": bugünse saat koyu.
     private var whenLine: Text {
         let ne = ClubEventFormat.when(event.startsAt)
         let zaman = ClubEventFormat.isSoon(event.startsAt)
-            ? Text(ne).foregroundStyle(accent).fontWeight(.semibold)
+            ? Text(ne).foregroundStyle(BondTheme.ink).fontWeight(.semibold)
             : Text(ne)
         guard let yer = event.placeLabel else { return zaman }
         return Text("\(zaman) · \(yer)")
@@ -161,11 +161,11 @@ struct ClubEventGoingButton: View {
                 Text(event.going ? L10n.ClubEvents.youreGoing : L10n.ClubEvents.going)
             }
             .font(compact ? .subheadline.weight(.semibold) : .headline)
-            .foregroundStyle(event.going ? BondTheme.ink : Color.white)
+            .foregroundStyle(event.going ? BondTheme.ink : BondTheme.paper)
             .padding(.horizontal, compact ? 14 : 20)
             .frame(maxWidth: compact ? nil : .infinity)
             .frame(minHeight: compact ? 36 : 52)
-            .background(event.going ? BondTheme.paper : accent, in: Capsule())
+            .background(event.going ? BondTheme.paper : BondTheme.ink, in: Capsule())
             .overlay(Capsule().stroke(event.going ? BondTheme.hairline : .clear))
             .contentShape(Capsule())
         }
@@ -288,7 +288,7 @@ struct ClubEventDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: BondTheme.Space.lg) {
                 VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
-                    Eyebrow(text: clubName, color: accent)
+                    Eyebrow(text: clubName, color: BondTheme.muted)
                     Text(event.title)
                         .editorialTitle(32)
                         .fixedSize(horizontal: false, vertical: true)
@@ -371,7 +371,7 @@ struct ClubEventDetailView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(ClubEventFormat.when(event.startsAt))
                         .font(.headline)
-                        .foregroundStyle(ClubEventFormat.isSoon(event.startsAt) ? accent : BondTheme.ink)
+                        .foregroundStyle(BondTheme.ink)
                     if ClubEventFormat.isWithinWeek(event.startsAt), !event.hasStarted {
                         Text(ClubEventFormat.fullDate(event.startsAt))
                             .font(.subheadline)
@@ -386,7 +386,7 @@ struct ClubEventDetailView: View {
                 HStack(spacing: 14) {
                     Image(systemName: "mappin.and.ellipse")
                         .font(.title3)
-                        .foregroundStyle(accent)
+                        .foregroundStyle(BondTheme.icon)
                         .frame(width: 50)
                     Text(yer)
                         .font(.body.weight(.medium))
