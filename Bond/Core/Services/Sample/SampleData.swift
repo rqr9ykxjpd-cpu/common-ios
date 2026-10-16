@@ -221,9 +221,53 @@ enum SampleData {
         )
     }
 
+    /// Örnek ders notu: sayfalar çizgili kâğıda yazı olarak çiziliyor (kafe
+    /// fotoğrafı not gibi durmuyordu). Yalnızca örnek mod.
+    static func notePost(author: StudentProfile, caption: String, pages: [[String]], createdAt: Date, likes: Int) -> BackendPost {
+        let resimler = pages.compactMap(notePage)
+        var post = BackendPost(
+            id: stableID("note:" + caption), authorID: author.id, authorName: author.name,
+            authorBirthDate: Calendar.current.date(byAdding: .year, value: -author.age, to: .now) ?? .now,
+            authorUniversity: author.university, authorDepartment: author.department, authorYear: author.year,
+            authorBio: author.bio, authorVerified: author.isVerified, authorBadge: author.badge,
+            authorAvatarURL: author.imageAssetName.flatMap(UIImageAsset.fileURL(named:)),
+            caption: caption, placeName: nil, kind: .notes, imageData: resimler.first,
+            createdAt: createdAt, comments: [], likeCount: likes, liked: false, saved: false
+        )
+        if resimler.count > 1 { post.galleryData = resimler }
+        return post
+    }
+
+    private static func notePage(_ lines: [String]) -> Data? {
+        let boyut = CGSize(width: 900, height: 1200)
+        let resim = UIGraphicsImageRenderer(size: boyut).image { ctx in
+            UIColor(red: 0.99, green: 0.98, blue: 0.95, alpha: 1).setFill()
+            ctx.fill(CGRect(origin: .zero, size: boyut))
+            UIColor(red: 0.62, green: 0.75, blue: 0.9, alpha: 0.5).setStroke()
+            for y in stride(from: 150.0, to: boyut.height - 40, by: 56) {
+                let cizgi = UIBezierPath()
+                cizgi.move(to: CGPoint(x: 40, y: y)); cizgi.addLine(to: CGPoint(x: boyut.width - 40, y: y))
+                cizgi.lineWidth = 2; cizgi.stroke()
+            }
+            let yazi = UIFont(name: "Noteworthy-Light", size: 38) ?? .systemFont(ofSize: 38)
+            for (i, satir) in lines.enumerated() {
+                (satir as NSString).draw(at: CGPoint(x: 70, y: 98 + Double(i) * 56),
+                                         withAttributes: [.font: yazi, .foregroundColor: UIColor(red: 0.12, green: 0.2, blue: 0.45, alpha: 1)])
+            }
+        }
+        return resim.jpegData(compressionQuality: 0.8)
+    }
+
     static var posts: [BackendPost] {
         [
             clubEventPost(id: photoClubEventPostID, caption: photoClubEventCaption, createdAt: hours(1)),
+            notePost(author: profiles[4], caption: "BLM203 Veri Yapıları · Hash tabloları ve çakışma çözümü",
+                     pages: [["Hash tabloları", "h(k) = k mod m", "Çakışma: iki anahtar aynı yuvaya", "1) Zincirleme (linked list)", "2) Açık adresleme", "   - doğrusal: h(k)+i", "   - karesel: h(k)+i²", "Yük faktörü α = n/m"],
+                             ["Ortalama arama O(1+α)", "α > 0.7 ise yeniden boyutlandır", "Silmede 'tombstone' bırak", "Vizede çıkar: zincirleme vs açık", "adreslemede en kötü durum O(n)"]],
+                     createdAt: hours(10), likes: 9),
+            notePost(author: me, caption: "END201 Yöneylem Araştırması · Simpleks yöntemi özet",
+                     pages: [["Simpleks yöntemi", "1) Standart forma çevir", "2) Başlangıç tablosu", "3) Giren değişken: en negatif c", "4) Çıkan: en küçük oran testi", "5) Pivot, tekrar et", "Optimal: tüm c ≥ 0"]],
+                     createdAt: hours(30), likes: 4),
             post(author: photoClubAccount,
                  caption: "Pazar 17.00'de kampüs fotoğraf yürüyüşü. Hazırlık binasının önünden başlıyoruz, telefon da olur.",
                  place: nil, asset: "post-campus", createdAt: hours(9), likes: 12, liked: false,

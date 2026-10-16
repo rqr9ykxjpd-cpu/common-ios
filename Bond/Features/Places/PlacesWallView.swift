@@ -30,6 +30,7 @@ struct PlacesWallView: View {
 
     @State private var selectedPeoplePlace: CampusPlace?
     @State private var showClubs = false
+    @State private var showNotes = false
     @State private var hasStartedEntrance = false
     @State private var entranceIDs: [UUID] = []
     @State private var entranceVisible = false
@@ -59,6 +60,7 @@ struct PlacesWallView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: BondTheme.Space.xl) {
                     clubsEntry
+                    notesEntry
                     visibilityCard
                     if let error = appState.placesError, !appState.places.isEmpty {
                         ScreenFailureView(message: error, compact: true) { Task { await appState.loadPlaces(silently: true) } }
@@ -127,6 +129,9 @@ struct PlacesWallView: View {
             .sheet(item: $selectedPeoplePlace) { place in
                 PlacePeopleView(place: place)
             }
+            .sheet(isPresented: $showNotes) {
+                NotesView()
+            }
             .sheet(isPresented: $showClubs) {
                 CampusClubsView(showsCloseButton: true)
             }
@@ -186,6 +191,36 @@ struct PlacesWallView: View {
         .padding(.top, 10)
         .transaction { if reduceMotion { $0.animation = nil; $0.disablesAnimations = true } }
         .accessibilityLabel(L10n.CampusNavigation.clubs)
+    }
+
+    /// Kulüplerin altında: bölümlere göre ders notları.
+    private var notesEntry: some View {
+        Button { showNotes = true } label: {
+            HStack(spacing: BondTheme.Space.md) {
+                Image(systemName: "doc.text")
+                    .font(.title3)
+                    .foregroundStyle(BondTheme.icon)
+                    .frame(width: 28)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L10n.Notes.title).font(.subheadline.weight(.semibold))
+                    Text(L10n.Notes.entrySubtitle)
+                        .font(.footnote)
+                        .foregroundStyle(BondTheme.muted)
+                }
+                Spacer(minLength: BondTheme.Space.sm)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .foregroundStyle(BondTheme.ink)
+            .padding(.horizontal, 16)
+            .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
+            .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        }
+        .buttonStyle(.pressable)
+        .padding(.top, -BondTheme.Space.sm)
+        .accessibilityIdentifier("places.notes")
     }
 
     /// Kendi görünürlüğün. Akıştaki kartta bu bilgi küçük bir satırdı ve ne işe

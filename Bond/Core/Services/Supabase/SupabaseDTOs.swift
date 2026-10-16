@@ -772,10 +772,12 @@ struct PostInsert: Encodable {
     /// Yalnız çoklu fotoğrafta dolu; nil iken anahtar hiç gönderilmez.
     let mediaPaths: [String]?
     let kind: PostKind
+    /// Yalnızca ders notunda dolu (20261017020000); nil iken anahtar gönderilmez.
+    var department: String? = nil
 
     enum CodingKeys: String, CodingKey {
         case authorID = "author_id"
-        case caption, kind
+        case caption, kind, department
         case placeName = "place_name"
         case mediaPath = "media_path"
         case mediaPaths = "media_paths"

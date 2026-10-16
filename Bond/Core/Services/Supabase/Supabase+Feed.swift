@@ -17,10 +17,12 @@ extension SupabaseProductService {
 
     func countMyPosts() async throws -> Int {
         guard let userID = currentUserID else { throw BackendServiceError.missingSession }
+        // Ders notları tavana sayılmıyor (sunucu da öyle, 20261017020000).
         let response = try await client
             .from("posts")
             .select("id", head: true, count: .exact)
             .eq("author_id", value: userID)
+            .neq("kind", value: PostKind.notes.rawValue)
             .execute()
         return response.count ?? 0
     }
@@ -154,10 +156,16 @@ extension SupabaseProductService {
     /// kırılıyordu. Ayrı ve `try?` ile: kolon varsa rozet gelir, yoksa uygulama
     /// hiçbir şey kaybetmeden çalışmaya devam eder.
     func createPost(caption: String, placeName: String?, images: [Data], kind: PostKind) async throws -> BackendPost {
+        try await createPost(caption: caption, placeName: placeName, images: images, kind: kind, department: nil)
+    }
+
+    /// Ders notunda bölüm de yazılır; not gönderi tavanına takılmaz.
+    func createPost(caption: String, placeName: String?, images: [Data], kind: PostKind, department: String?) async throws -> BackendPost {
         guard let userID = currentUserID else { throw BackendServiceError.missingSession }
         try ContentSafety.validate(caption)
         try ContentSafety.validate(placeName ?? "")
-        if try await countMyPosts() >= CampusLimits.maxPostsPerUser {
+        try ContentSafety.validate(department ?? "")
+        if kind != .notes, try await countMyPosts() >= CampusLimits.maxPostsPerUser {
             let plan = try await fetchMyPlan()
             if plan.maxPosts != nil { throw BackendServiceError.postLimit }
         }
@@ -187,7 +195,8 @@ extension SupabaseProductService {
             mediaPath: paths.first,
             // Eski sürümler `media_path`'e bakar ve ilk fotoğrafı görür.
             mediaPaths: paths.count > 1 ? paths : nil,
-            kind: kind
+            kind: kind,
+            department: department?.trimmingCharacters(in: .whitespacesAndNewlines)
         )
         let row: PostRow
         do {
