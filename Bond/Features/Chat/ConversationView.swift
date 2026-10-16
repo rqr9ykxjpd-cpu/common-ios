@@ -129,6 +129,13 @@ struct ConversationView: View {
                         .padding(.vertical, 18)
                     }
                     .scrollDismissesKeyboard(.interactively)
+                    // Sohbet en alttan, son mesajdan açılır. Tek başına `scrollTo`
+                    // tembel listede uzun sohbetlerde ıskalıyordu (satırlar henüz
+                    // ölçülmemiş, fotoğraflar sonradan büyüyor) ve sohbet en eski
+                    // mesajdan başlıyordu. Mesaj ya da fotoğraf sonradan yüklenince
+                    // de alt kenar yerinde kalır.
+                    .defaultScrollAnchor(.bottom, for: .initialOffset)
+                    .defaultScrollAnchor(.bottom, for: .sizeChanges)
                     .onAppear { scrollToBottom(proxy, conversation: conversation, animated: false) }
                     .onChange(of: conversation.messages.count) { _, _ in
                         // Karşıdan mesaj geldiyse "yazıyor" balonu yerini mesaja bırakır.
