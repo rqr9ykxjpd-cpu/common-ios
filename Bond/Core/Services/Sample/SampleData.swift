@@ -204,8 +204,26 @@ enum SampleData {
                        interests: [], imageURL: nil, isVerified: true, badge: .verified)
     }
 
+    /// İlk etkinliğin akıştaki gönderisi (kartı `SampleEventStore` çizer).
+    static let photoClubEventCaption = "Kampüs fotoğraf yürüyüşü"
+    static var photoClubEventPostID: UUID { stableID("post:" + photoClubEventCaption) }
+
+    /// Kulübün hesabının etkinlik gönderisi: akışta metin yerine etkinlik kartı.
+    static func clubEventPost(id: UUID, caption: String, createdAt: Date) -> BackendPost {
+        let author = photoClubAccount
+        return BackendPost(
+            id: id, authorID: author.id, authorName: author.name,
+            authorBirthDate: Calendar.current.date(byAdding: .year, value: -author.age, to: .now) ?? .now,
+            authorUniversity: author.university, authorDepartment: author.department, authorYear: author.year,
+            authorBio: author.bio, authorVerified: author.isVerified, authorBadge: author.badge,
+            authorAvatarURL: nil, caption: caption, placeName: nil, kind: .event, imageData: nil,
+            createdAt: createdAt, comments: [], likeCount: 0, liked: false, saved: false
+        )
+    }
+
     static var posts: [BackendPost] {
         [
+            clubEventPost(id: photoClubEventPostID, caption: photoClubEventCaption, createdAt: hours(1)),
             post(author: photoClubAccount,
                  caption: "Pazar 17.00'de kampüs fotoğraf yürüyüşü. Hazırlık binasının önünden başlıyoruz, telefon da olur.",
                  place: nil, asset: "post-campus", createdAt: hours(9), likes: 12, liked: false,

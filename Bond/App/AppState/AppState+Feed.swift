@@ -169,13 +169,18 @@ extension AppState {
         do {
             let result = try await service.fetchFeed()
             guard generation == feedLoadGeneration, userID == currentUserID, !Task.isCancelled else { return }
+            let gelen = feedPosts(from: result)
+            // Etkinlik gönderisi metniyle görünüp sonra karta dönmesin: kart
+            // bilgisi listeyle birlikte gelsin.
+            await loadPostEvents(for: gelen)
+            guard generation == feedLoadGeneration, userID == currentUserID, !Task.isCancelled else { return }
             justPublishedPostIDs.removeAll()
             seenCounts = FeedSeenTracker.snapshot()
             feedRankVersion += 1
             pendingPosts = []
             newPostCount = 0
             lastFeedFetch = .now
-            posts = feedPosts(from: result)
+            posts = gelen
             feedError = nil
         } catch {
             guard generation == feedLoadGeneration, userID == currentUserID, !isCancellation(error) else { return }
@@ -208,6 +213,7 @@ extension AppState {
         let mevcut = Set(posts.map(\.id))
         let sayi = yeniler.filter { !mevcut.contains($0.id) && !$0.isMine }.count
         guard sayi > 0 else { return }
+        await loadPostEvents(for: yeniler)
         pendingPosts = yeniler
         newPostCount = sayi
     }
@@ -305,7 +311,9 @@ extension AppState {
         if posts.contains(where: { $0.id == postID }) { return true }
         guard let gelen = try? await service.fetchPosts(ids: [postID]).first else { return false }
         if !posts.contains(where: { $0.id == postID }) {
-            posts.append(socialPost(from: gelen))
+            let gonderi = socialPost(from: gelen)
+            await loadPostEvents(for: [gonderi])
+            posts.append(gonderi)
         }
         return true
     }

@@ -412,6 +412,12 @@ struct ClubEventComposer: View {
             .buttonStyle(.pressable)
             .disabled(!canSave)
             .accessibilityIdentifier("event.save")
+            if isNew, appState.clubAccountLink(forClub: draft.clubID) != nil {
+                Text(L10n.ClubEvents.feedNote)
+                    .font(.footnote)
+                    .foregroundStyle(BondTheme.muted)
+                    .frame(maxWidth: .infinity)
+            }
         }
         .padding(.horizontal, BondTheme.Space.lg)
         .padding(.top, BondTheme.Space.sm)

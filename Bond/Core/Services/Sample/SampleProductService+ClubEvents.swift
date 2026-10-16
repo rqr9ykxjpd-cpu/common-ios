@@ -21,7 +21,14 @@ extension SampleProductService: ClubEventsManaging {
 
     func saveClubEvent(_ draft: ClubEventDraft) async throws -> UUID {
         let yer = SampleData.places.first { $0.id == draft.placeID }
-        return await SampleEventStore.shared.save(draft, placeName: yer?.name)
+        let id = await SampleEventStore.shared.save(draft, placeName: yer?.name)
+        // Sunucudaki gibi: yeni etkinlik, hesabı olan kulüpte akışa gönderi.
+        if draft.id == nil, draft.clubID == (try? await fetchClubs().clubs.first?.id) {
+            let gonderi = UUID()
+            await store.insert(SampleData.clubEventPost(id: gonderi, caption: draft.title, createdAt: .now))
+            await SampleEventStore.shared.link(id, post: gonderi)
+        }
+        return id
     }
 
     func cancelClubEvent(_ eventID: UUID) async throws {
@@ -32,6 +39,13 @@ extension SampleProductService: ClubEventsManaging {
         let kulupler = try await fetchClubs().clubs
         return await SampleEventStore.shared.mine(clubs: kulupler)
     }
+
+    func fetchPostEvents(_ postIDs: [UUID]) async throws -> [PostEvent] {
+        let kulupler = try await fetchClubs().clubs
+        await SampleEventStore.shared.seedIfNeeded(firstClub: kulupler.first?.id,
+                                                    place: SampleData.places.first)
+        return await SampleEventStore.shared.postEvents(postIDs, clubs: kulupler)
+    }
 }
 
 private actor SampleEventStore {
@@ -40,6 +54,10 @@ private actor SampleEventStore {
     private var seeded = false
     /// Örnekte etkinliğe gelenler: ilk birkaç örnek kişi.
     private var others: [UUID: [StudentProfile]] = [:]
+    /// Etkinlik → akıştaki gönderisi.
+    private var posts: [UUID: UUID] = [:]
+    /// İptal edilenler listeden düşer, akıştaki kartta "iptal" yazar.
+    private var cancelled: Set<UUID> = []
 
     func seedIfNeeded(firstClub: UUID?, place: CampusPlace?) {
         guard !seeded, let firstClub else { return }
@@ -60,12 +78,13 @@ private actor SampleEventStore {
                                placeNote: "Güzel Sanatlar B blok 204", attendeeCount: 2, going: false,
                                attendeeAvatars: kisiler.suffix(2).compactMap { $0.imageAssetName.flatMap(UIImageAsset.fileURL(named:)) })
         events = [ilk, ikinci]
+        posts[ilk.id] = SampleData.photoClubEventPostID
         others[ilk.id] = kisiler
         others[ikinci.id] = Array(kisiler.suffix(2))
     }
 
     func events(for clubID: UUID) -> [ClubEvent] {
-        events.filter { $0.clubID == clubID && $0.startsAt > .now.addingTimeInterval(-3 * 3600) }
+        events.filter { $0.clubID == clubID && !cancelled.contains($0.id) && $0.startsAt > .now.addingTimeInterval(-3 * 3600) }
             .sorted { $0.startsAt < $1.startsAt }
     }
 
@@ -101,10 +120,22 @@ private actor SampleEventStore {
         return yeni.id
     }
 
-    func cancel(_ eventID: UUID) { events.removeAll { $0.id == eventID } }
+    func cancel(_ eventID: UUID) { cancelled.insert(eventID) }
+
+    func link(_ eventID: UUID, post: UUID) { posts[eventID] = post }
+
+    func postEvents(_ postIDs: [UUID], clubs: [CampusClub]) -> [PostEvent] {
+        let istenen = Set(postIDs)
+        return events.compactMap { e in
+            guard let gonderi = posts[e.id], istenen.contains(gonderi),
+                  let kulup = clubs.first(where: { $0.id == e.clubID }) else { return nil }
+            return PostEvent(postID: gonderi, event: e, clubName: kulup.name, clubIcon: kulup.icon,
+                             accentHex: kulup.accentHex, cancelled: cancelled.contains(e.id))
+        }
+    }
 
     func mine(clubs: [CampusClub]) -> [MyClubEvent] {
-        events.filter { $0.going && $0.startsAt > .now }.map { e in
+        events.filter { $0.going && !cancelled.contains($0.id) && $0.startsAt > .now }.map { e in
             MyClubEvent(id: e.id, clubID: e.clubID, clubName: clubs.first { $0.id == e.clubID }?.name ?? "",
                         title: e.title, startsAt: e.startsAt, placeLabel: e.placeLabel)
         }

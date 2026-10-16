@@ -11,4 +11,6 @@ protocol ClubEventsManaging: Sendable {
     func saveClubEvent(_ draft: ClubEventDraft) async throws -> UUID
     func cancelClubEvent(_ eventID: UUID) async throws
     func fetchMyUpcomingEvents() async throws -> [MyClubEvent]
+    /// Akıştaki gönderilerden etkinlik gönderisi olanların etkinlikleri.
+    func fetchPostEvents(_ postIDs: [UUID]) async throws -> [PostEvent]
 }

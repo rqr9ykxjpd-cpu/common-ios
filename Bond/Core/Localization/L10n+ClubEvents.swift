@@ -49,6 +49,8 @@ extension L10n {
         static var addedToCalendar: String { String(localized: "addedToCalendar", table: "ClubEvents") }
         static var share: String { String(localized: "share", table: "ClubEvents") }
         static var about: String { String(localized: "about", table: "ClubEvents") }
+        static var cancelledLabel: String { String(localized: "cancelledLabel", table: "ClubEvents") }
+        static var feedNote: String { String(localized: "feedNote", table: "ClubEvents") }
         static func shareFooter(_ link: String) -> String {
             String(format: String(localized: "shareFooter", table: "ClubEvents"), link)
         }

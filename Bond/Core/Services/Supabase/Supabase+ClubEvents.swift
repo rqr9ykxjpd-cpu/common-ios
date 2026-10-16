@@ -43,6 +43,23 @@ extension SupabaseProductService: ClubEventsManaging {
             .execute()
     }
 
+    func fetchPostEvents(_ postIDs: [UUID]) async throws -> [PostEvent] {
+        guard currentUserID != nil, !postIDs.isEmpty else { return [] }
+        let rows: [PostEventRow] = try await client
+            .rpc("get_post_events", params: PostIDsParams(postIDs: postIDs))
+            .execute().value
+        let fotolar = await signedURLs(bucket: "profile-photos", paths: rows.flatMap(\.attendeeAvatars))
+        return rows.map { row in
+            PostEvent(postID: row.postID,
+                      event: ClubEvent(id: row.id, clubID: row.clubID, title: row.title, details: row.details,
+                                       startsAt: row.startsAt, placeID: row.placeID, placeName: row.placeName,
+                                       placeNote: row.placeNote, attendeeCount: row.attendeeCount, going: row.going,
+                                       attendeeAvatars: row.attendeeAvatars.compactMap { fotolar[$0] }),
+                      clubName: row.clubName, clubIcon: row.clubIcon, accentHex: row.accentHex,
+                      cancelled: row.cancelled)
+        }
+    }
+
     func fetchMyUpcomingEvents() async throws -> [MyClubEvent] {
         guard currentUserID != nil else { return [] }
         let rows: [MyClubEventRow] = try await client.rpc("get_my_club_events").execute().value
@@ -74,6 +91,45 @@ private struct ClubEventRow: Decodable {
         case attendeeCount = "attendee_count"
         case attendeeAvatars = "attendee_avatars"
     }
+}
+
+private struct PostEventRow: Decodable {
+    let postID: UUID
+    let id: UUID
+    let clubID: UUID
+    let clubName: String
+    let clubIcon: String
+    let accentHex: String
+    let title: String
+    let details: String
+    let startsAt: Date
+    let placeID: UUID?
+    let placeName: String?
+    let placeNote: String
+    let attendeeCount: Int
+    let going: Bool
+    let attendeeAvatars: [String]
+    let cancelled: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, details, going, cancelled
+        case postID = "post_id"
+        case clubID = "club_id"
+        case clubName = "club_name"
+        case clubIcon = "club_icon"
+        case accentHex = "accent_hex"
+        case startsAt = "starts_at"
+        case placeID = "place_id"
+        case placeName = "place_name"
+        case placeNote = "place_note"
+        case attendeeCount = "attendee_count"
+        case attendeeAvatars = "attendee_avatars"
+    }
+}
+
+private struct PostIDsParams: Encodable {
+    let postIDs: [UUID]
+    enum CodingKeys: String, CodingKey { case postIDs = "post_ids" }
 }
 
 private struct MyClubEventRow: Decodable {

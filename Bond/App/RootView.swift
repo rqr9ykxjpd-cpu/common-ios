@@ -35,7 +35,13 @@ struct RootView: View {
                 case .onboarding(let step):
                     OnboardingFlow(step: step)
                 case .app:
-                    MainTabView()
+                    if appState.accountFrozen {
+                        // Dondurulan hesap uygulamayı kullanamaz; ne olduğu ve
+                        // itiraz yolu yazar.
+                        FrozenAccountView()
+                    } else {
+                        MainTabView()
+                    }
                 }
             }
         }

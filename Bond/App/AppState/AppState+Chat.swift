@@ -67,6 +67,8 @@ extension AppState {
         // Arka planda geçen sürede oturum bitmiş olabilir; önce onu öğren.
         await verifySession()
         guard route == .app else { return }
+        // Arka plandayken hesap dondurulmuş ya da açılmış olabilir.
+        await refreshAccountState()
         // Ayarlar'dan bildirimi açıp dönmüş olabilir: Sohbet'teki kart kalksın.
         await refreshPushStatus()
         // Etkinliğin saati değişmiş ya da iptal edilmiş olabilir.

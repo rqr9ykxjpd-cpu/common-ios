@@ -49,7 +49,8 @@ struct ClubDetailView: View {
     private var accountProfileID: UUID? { appState.clubAccountLink(forClub: club.id)?.profileID }
     /// Gösterilecek paylaşımlar: silinenler düşer, en çok beş.
     private var visiblePosts: [SocialPost] {
-        Array(clubPosts.filter { !appState.deletedPostIDs.contains($0.id) }.prefix(5))
+        // Etkinlik gönderileri burada yok: etkinlikler zaten yukarıda.
+        Array(clubPosts.filter { !appState.deletedPostIDs.contains($0.id) && appState.postEvents[$0.id] == nil }.prefix(5))
     }
     /// Kulübün hesabı: yalnızca kulübü yönetenler (kurucu ve kulübün
     /// yöneticileri) görür; üyeler kulübü sayfasından ve paylaşımlarından tanıyor.
@@ -99,6 +100,7 @@ struct ClubDetailView: View {
         .task(id: accountProfileID) {
             guard let accountProfileID else { return }
             let gelen = await appState.personPosts(for: accountProfileID)
+            await appState.loadPostEvents(for: gelen)
             withAnimation(reduceMotion ? nil : BondTheme.Motion.smooth) { clubPosts = gelen }
         }
         // Katılınca/ayrılınca kulüpler yeniden yüklenip sayı değişiyor; liste

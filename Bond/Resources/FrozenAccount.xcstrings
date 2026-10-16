@@ -1,0 +1,70 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your account is frozen"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hesabın donduruldu"
+          }
+        }
+      }
+    },
+    "body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your account can't be used right now because of a review under the community guidelines. While it's frozen, your profile and posts aren't visible to others."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Topluluk kurallarıyla ilgili bir inceleme nedeniyle hesabın şu an kullanılamıyor. Bu sürede profilin ve paylaşımların başkalarına görünmüyor."
+          }
+        }
+      }
+    },
+    "appeal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If you think this is a mistake, write to us and we'll review it."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir yanlışlık olduğunu düşünüyorsan bize yaz; inceleyip dönüş yapacağız."
+          }
+        }
+      }
+    },
+    "contact": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Message support"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Destekle yazış"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

@@ -11,6 +11,20 @@ extension AppState {
         catch { guard !isCancellation(error) else { return } }
     }
 
+    /// Akıştaki etkinlik gönderilerinin kartı. Yalnızca "etkinlik" türündeki
+    /// gönderilere sorulur; sunucu eskiyse ya da ağ yoksa gönderi metniyle kalır.
+    func loadPostEvents(for posts: [SocialPost]) async {
+        guard let masa = service as? any ClubEventsManaging else { return }
+        let ids = posts.filter { $0.kind == .event }.map(\.id)
+        guard !ids.isEmpty, let gelen = try? await masa.fetchPostEvents(ids) else { return }
+        for olay in gelen { postEvents[olay.postID] = olay }
+    }
+
+    /// Akıştan açılan etkinlik (kulüp sayfası yüklenmemiş olabilir).
+    func postEvent(for eventID: UUID) -> ClubEvent? {
+        postEvents.values.first { $0.event.id == eventID && !$0.cancelled }?.event
+    }
+
     func fetchEventAttendees(_ eventID: UUID) async throws -> [StudentProfile] {
         guard let masa = service as? any ClubEventsManaging else { return [] }
         return try await masa.fetchEventAttendees(eventID)
@@ -49,6 +63,9 @@ extension AppState {
         await loadClubEvents(draft.clubID)
         await loadClubs(silently: true)
         await syncEventReminders()
+        // Yeni etkinlik akışa kulübün gönderisi olarak düştü; düzenlenince
+        // kart da değişti.
+        if draft.id == nil { await loadFeed() } else { await loadPostEvents(for: posts) }
     }
 
     func cancelClubEvent(_ event: ClubEvent) async throws {
@@ -56,14 +73,28 @@ extension AppState {
         try await masa.cancelClubEvent(event.id)
         withAnimation(BondTheme.Motion.smooth) {
             clubEvents[event.clubID]?.removeAll { $0.id == event.id }
+            for anahtar in postEvents.filter({ $0.value.event.id == event.id }).map(\.key) {
+                postEvents[anahtar]?.cancelled = true
+            }
         }
         await loadClubs(silently: true)
         await syncEventReminders()
     }
 
+    /// Etkinlik hem kulüp sayfasında hem akıştaki kartında aynı anda değişir.
     private func updateEvent(_ id: UUID, in clubID: UUID, _ change: (inout ClubEvent) -> Void) {
-        guard let i = clubEvents[clubID]?.firstIndex(where: { $0.id == id }) else { return }
-        withAnimation(BondTheme.Motion.snappy) { change(&clubEvents[clubID]![i]) }
+        let akistakiler = postEvents.filter { $0.value.event.id == id }.map(\.key)
+        withAnimation(BondTheme.Motion.snappy) {
+            if let i = clubEvents[clubID]?.firstIndex(where: { $0.id == id }) {
+                change(&clubEvents[clubID]![i])
+            }
+            for anahtar in akistakiler {
+                if var olay = postEvents[anahtar] {
+                    change(&olay.event)
+                    postEvents[anahtar] = olay
+                }
+            }
+        }
     }
 
     // MARK: Hatırlatma

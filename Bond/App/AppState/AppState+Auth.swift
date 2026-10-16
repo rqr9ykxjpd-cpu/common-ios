@@ -134,6 +134,7 @@ extension AppState {
     /// gidiyor: sırayla gittiklerinde 14 tur bekleniyordu (açılışta 1–3 saniye),
     /// anlık mesaj ve Kim nerede dinleyicileri de en sona kalıyordu.
     func loadSessionData() async {
+        await refreshAccountState()
         startMessageListener()
         startPlaceListener()
         startPresenceHeartbeat()

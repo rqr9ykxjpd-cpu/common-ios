@@ -158,6 +158,10 @@ final class AppState {
     var clubExtras: [UUID: ClubExtras] = [:]
     /// Kulüp etkinlikleri, kulübe göre (kulüp sayfası açılınca yüklenir).
     var clubEvents: [UUID: [ClubEvent]] = [:]
+    /// Akıştaki kulüp gönderilerinin etkinlikleri, gönderiye göre.
+    var postEvents: [UUID: PostEvent] = [:]
+    /// Kurucu ya da moderatör hesabı dondurdu: uygulama yerine açıklama ekranı.
+    var accountFrozen = false
     /// Etkinlik hatırlatmasına dokunulunca açılacak kulüp.
     var reminderClub: CampusClub?
     /// Yönetici olarak atandığım kulüpler.
@@ -337,6 +341,11 @@ final class AppState {
         guard !isCancellation(error) else { return }
         // "Yetki yok" çoğu zaman oturumun sessizce düştüğü demek; öyleyse giriş ekranı.
         verifySessionIfAuthError(error)
+        // Hesap kullanırken donduruldu: hata yerine açıklama ekranı.
+        if (String(describing: error) + error.localizedDescription).contains("ACCOUNT_SUSPENDED") {
+            accountFrozen = true
+            return
+        }
         // Öğrenci kilidi: sunucu reddettiyse ham hata yerine doğrulama penceresi.
         if (String(describing: error) + error.localizedDescription).contains("EDU_REQUIRED") {
             presentEduGate(.action)

@@ -64,6 +64,21 @@ struct ClubEventDraft: Equatable, Sendable {
     }
 }
 
+/// Akıştaki kulüp gönderisinin etkinliği: gönderi metni yerine kart çizilir.
+/// Sunucuda `get_post_events`; gönderiyi etkinlik açılınca kulübün hesabı yazar.
+struct PostEvent: Equatable, Sendable {
+    let postID: UUID
+    var event: ClubEvent
+    let clubName: String
+    let clubIcon: String
+    let accentHex: String
+    /// İptal edildi ya da kulüp kapandı: katılım düğmesi yok.
+    var cancelled: Bool
+
+    /// Katılım düğmesi: iptal edilmemiş ve henüz başlamamış.
+    var acceptsAttendance: Bool { !cancelled && !event.hasStarted }
+}
+
 /// Hatırlatma için: katıldığım, henüz başlamamış etkinlik.
 struct MyClubEvent: Identifiable, Equatable, Sendable {
     let id: UUID

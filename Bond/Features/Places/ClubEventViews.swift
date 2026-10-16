@@ -6,7 +6,10 @@ import SwiftUI
 /// daha ilerisi "25 Ekim Cumartesi 19:00". Başladıysa "Şimdi".
 enum ClubEventFormat {
     static func when(_ date: Date, now: Date = .now) -> String {
-        if date <= now { return L10n.ClubEvents.now }
+        if date <= now {
+            // Başlayalı üç saat olmadıysa "Şimdi"; akıştaki eski etkinlik tarihiyle.
+            return now.timeIntervalSince(date) < 3 * 3600 ? L10n.ClubEvents.now : absolute(date)
+        }
         let takvim = Calendar.current
         let saat = time(date)
         if takvim.isDateInToday(date) { return L10n.ClubEvents.today(saat) }
@@ -175,6 +178,81 @@ struct ClubEventGoingButton: View {
     }
 }
 
+/// Akışta kulübün etkinlik gönderisi: metin yerine etkinliğin kendisi.
+/// Dokununca etkinlik sayfası açılır; Katılıyorum kartın içinde.
+struct ClubEventPostBlock: View {
+    @Environment(AppState.self) private var appState
+    let postEvent: PostEvent
+    @State private var showsDetail = false
+
+    private var event: ClubEvent { postEvent.event }
+    private var accent: Color { Color(hex: postEvent.accentHex) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: BondTheme.Space.compact) {
+            Button { showsDetail = true } label: {
+                HStack(alignment: .top, spacing: 14) {
+                    ClubEventDateBlock(date: event.startsAt, accent: accent)
+                        .opacity(postEvent.cancelled ? 0.5 : 1)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(event.title)
+                            .font(.headline)
+                            .foregroundStyle(postEvent.cancelled ? BondTheme.muted : BondTheme.ink)
+                            .strikethrough(postEvent.cancelled)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text([ClubEventFormat.when(event.startsAt), event.placeLabel].compactMap { $0 }.joined(separator: " · "))
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                        if !event.details.isEmpty, !postEvent.cancelled {
+                            Text(event.details)
+                                .font(.subheadline)
+                                .foregroundStyle(BondTheme.ink)
+                                .lineLimit(3)
+                                .multilineTextAlignment(.leading)
+                                .padding(.top, 2)
+                        }
+                    }
+                    Spacer(minLength: 0)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(postEvent.cancelled)
+
+            HStack(spacing: 10) {
+                if postEvent.cancelled {
+                    Text(L10n.ClubEvents.cancelledLabel)
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(BondTheme.muted)
+                } else {
+                    ClubEventAttendeeStack(avatars: event.attendeeAvatars)
+                    Text(event.attendeeCount == 0 ? L10n.ClubEvents.noneYet : L10n.ClubEvents.attendeeCount(event.attendeeCount))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .contentTransition(.numericText())
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 8)
+                if postEvent.acceptsAttendance {
+                    ClubEventGoingButton(event: event, accent: accent, compact: true)
+                }
+            }
+        }
+        .padding(BondTheme.Space.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("feed.event.\(event.id)")
+        .sheet(isPresented: $showsDetail) {
+            ClubEventDetailView(clubID: event.clubID, eventID: event.id, clubName: postEvent.clubName,
+                                accent: accent, canManage: appState.canManage(event.clubID))
+                .presentationDragIndicator(.visible)
+        }
+    }
+}
+
 /// Katılanların ilk üçünün fotoğrafı, üst üste.
 struct ClubEventAttendeeStack: View {
     let avatars: [URL]
@@ -212,7 +290,10 @@ struct ClubEventDetailView: View {
     @State private var cardProfile: StudentProfile?
     @State private var addingToCalendar = false
 
-    private var event: ClubEvent? { appState.clubEvents[clubID]?.first { $0.id == eventID } }
+    /// Kulüp sayfasından ya da akıştaki gönderiden açılmış olabilir.
+    private var event: ClubEvent? {
+        appState.clubEvents[clubID]?.first { $0.id == eventID } ?? appState.postEvent(for: eventID)
+    }
 
     var body: some View {
         NavigationStack {

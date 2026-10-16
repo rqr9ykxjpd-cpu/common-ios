@@ -268,7 +268,10 @@ struct PostCard: View {
     /// Yazı ve varsa fotoğraf. Akışta dokununca gönderi sayfası açılır;
     /// sayfanın kendisinde düz içerik, metin seçilebilir.
     @ViewBuilder private var content: some View {
-        if isDetail {
+        if let olay = appState.postEvents[post.id] {
+            // Kulübün etkinlik gönderisi: metin eski sürümler için; burada kart.
+            ClubEventPostBlock(postEvent: olay)
+        } else if isDetail {
             contentBody
                 .textSelection(.enabled)
         } else {
