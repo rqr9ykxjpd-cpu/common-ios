@@ -34,6 +34,24 @@ extension L10n {
         static var reminderNote: String { String(localized: "reminderNote", table: "ClubEvents") }
         static var postsTitle: String { String(localized: "postsTitle", table: "ClubEvents") }
         static var attendeesEmpty: String { String(localized: "attendeesEmpty", table: "ClubEvents") }
+        static var time: String { String(localized: "time", table: "ClubEvents") }
+        static var otherDate: String { String(localized: "otherDate", table: "ClubEvents") }
+        static var pickDate: String { String(localized: "pickDate", table: "ClubEvents") }
+        static var todayShort: String { String(localized: "todayShort", table: "ClubEvents") }
+        static var timePast: String { String(localized: "timePast", table: "ClubEvents") }
+        static var placeNoteExtraPlaceholder: String { String(localized: "placeNoteExtraPlaceholder", table: "ClubEvents") }
+        static var create: String { String(localized: "create", table: "ClubEvents") }
+        static var saveChanges: String { String(localized: "saveChanges", table: "ClubEvents") }
+        static var discardTitle: String { String(localized: "discardTitle", table: "ClubEvents") }
+        static var discard: String { String(localized: "discard", table: "ClubEvents") }
+        static var keepEditing: String { String(localized: "keepEditing", table: "ClubEvents") }
+        static var addToCalendar: String { String(localized: "addToCalendar", table: "ClubEvents") }
+        static var addedToCalendar: String { String(localized: "addedToCalendar", table: "ClubEvents") }
+        static var share: String { String(localized: "share", table: "ClubEvents") }
+        static var about: String { String(localized: "about", table: "ClubEvents") }
+        static func shareFooter(_ link: String) -> String {
+            String(format: String(localized: "shareFooter", table: "ClubEvents"), link)
+        }
         static func attendeeCount(_ n: Int) -> String {
             String(format: String(localized: "attendeeCount", table: "ClubEvents"), Int64(n))
         }

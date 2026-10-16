@@ -310,13 +310,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "What's happening?"
+            "value": "Event name"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ne yapıyorsunuz?"
+            "value": "Etkinliğin adı"
           }
         }
       }
@@ -422,13 +422,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Optional"
+            "value": "What's the plan? What should people bring? (optional)"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "İsteğe bağlı"
+            "value": "Neler olacak, yanına ne almalı? (isteğe bağlı)"
           }
         }
       }
@@ -573,6 +573,262 @@
           "stringUnit": {
             "state": "translated",
             "value": "Henüz kimse yok"
+          }
+        }
+      }
+    },
+    "time": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saat"
+          }
+        }
+      }
+    },
+    "otherDate": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diğer"
+          }
+        }
+      }
+    },
+    "pickDate": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a date"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarih seç"
+          }
+        }
+      }
+    },
+    "todayShort": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bugün"
+          }
+        }
+      }
+    },
+    "timePast": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That time has passed. Pick a later one."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu saat geçti, daha ileri bir saat seç."
+          }
+        }
+      }
+    },
+    "placeNoteExtraPlaceholder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Room, floor… (optional)"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salon, kat… (isteğe bağlı)"
+          }
+        }
+      }
+    },
+    "create": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create event"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Etkinliği oluştur"
+          }
+        }
+      }
+    },
+    "saveChanges": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save changes"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Değişiklikleri kaydet"
+          }
+        }
+      }
+    },
+    "discardTitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your changes aren't saved"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Değişiklikler kaydedilmedi"
+          }
+        }
+      }
+    },
+    "discard": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discard"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vazgeç"
+          }
+        }
+      }
+    },
+    "keepEditing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep editing"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Düzenlemeye devam et"
+          }
+        }
+      }
+    },
+    "addToCalendar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add to Calendar"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takvime ekle"
+          }
+        }
+      }
+    },
+    "addedToCalendar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added to your calendar"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takvime eklendi"
+          }
+        }
+      }
+    },
+    "share": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paylaş"
+          }
+        }
+      }
+    },
+    "shareFooter": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join on Common: %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Common'da katıl: %@"
+          }
+        }
+      }
+    },
+    "about": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "about"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "hakkında"
           }
         }
       }

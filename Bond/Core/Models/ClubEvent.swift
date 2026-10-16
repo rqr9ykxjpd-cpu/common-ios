@@ -16,11 +16,13 @@ struct ClubEvent: Identifiable, Equatable, Sendable {
     /// İlk üç katılımcının fotoğrafı (kartta üst üste).
     var attendeeAvatars: [URL]
 
-    /// Kartta ve hatırlatmada görünen yer: kampüs noktası ya da yazılan yer.
-    var placeLabel: String? {
-        if let placeName, !placeName.isEmpty { return placeName }
-        let not = placeNote.trimmingCharacters(in: .whitespacesAndNewlines)
-        return not.isEmpty ? nil : not
+    /// Kartta ve hatırlatmada görünen yer: kampüs noktası, yazılan yer ya da
+    /// ikisi birden ("Kütüphane, 2. kat").
+    var placeLabel: String? { Self.placeLabel(name: placeName, note: placeNote) }
+
+    static func placeLabel(name: String?, note: String) -> String? {
+        let parcalar = [name ?? "", note].map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+        return parcalar.isEmpty ? nil : parcalar.joined(separator: ", ")
     }
 
     /// Başlamış (3 saate kadar listede kalıyor, "Şimdi" diye).
@@ -37,9 +39,11 @@ struct ClubEventDraft: Equatable, Sendable {
     var placeID: UUID?
     var placeNote = ""
 
-    init(clubID: UUID, startsAt: Date = ClubEventDraft.defaultStart()) {
+    /// Yeni etkinlik; yer olarak kulübün her zamanki buluşma noktası gelir.
+    init(clubID: UUID, startsAt: Date = ClubEventDraft.defaultStart(), placeID: UUID? = nil) {
         self.clubID = clubID
         self.startsAt = startsAt
+        self.placeID = placeID
     }
 
     init(event: ClubEvent) {

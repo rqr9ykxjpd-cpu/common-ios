@@ -1,3 +1,5 @@
+import EventKit
+import EventKitUI
 import SwiftUI
 
 /// Etkinlik tarihinin yazılışı: "Bugün 19:00", "Yarın 19:00", "Cuma 19:00",
@@ -6,7 +8,7 @@ enum ClubEventFormat {
     static func when(_ date: Date, now: Date = .now) -> String {
         if date <= now { return L10n.ClubEvents.now }
         let takvim = Calendar.current
-        let saat = date.formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits).locale(L10n.appLocale))
+        let saat = time(date)
         if takvim.isDateInToday(date) { return L10n.ClubEvents.today(saat) }
         if takvim.isDateInTomorrow(date) { return L10n.ClubEvents.tomorrow(saat) }
         let gunFarki = takvim.dateComponents([.day], from: takvim.startOfDay(for: now), to: takvim.startOfDay(for: date)).day ?? 0
@@ -14,6 +16,37 @@ enum ClubEventFormat {
             return date.formatted(.dateTime.weekday(.wide).locale(L10n.appLocale)) + " " + saat
         }
         return date.formatted(.dateTime.day().month(.wide).weekday(.wide).locale(L10n.appLocale)) + " " + saat
+    }
+
+    /// "18 Ekim Cumartesi"
+    static func fullDate(_ date: Date) -> String {
+        date.formatted(.dateTime.day().month(.wide).weekday(.wide).locale(L10n.appLocale))
+    }
+
+    /// "18 Ekim Cumartesi, 19:00": paylaşırken, okunduğu gün değişse de doğru.
+    static func absolute(_ date: Date) -> String {
+        fullDate(date) + ", " + time(date)
+    }
+
+    static func time(_ date: Date) -> String {
+        date.formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits).locale(L10n.appLocale))
+    }
+
+    /// Gün şeridinde: "Cmt"
+    static func weekdayShort(_ date: Date) -> String {
+        date.formatted(.dateTime.weekday(.abbreviated).locale(L10n.appLocale))
+    }
+
+    /// Bir haftadan yakın: "Cumartesi 19:00" yazılıyor, tam tarih ayrıca gerekiyor.
+    static func isWithinWeek(_ date: Date, now: Date = .now) -> Bool {
+        let takvim = Calendar.current
+        let gunFarki = takvim.dateComponents([.day], from: takvim.startOfDay(for: now), to: takvim.startOfDay(for: date)).day ?? 0
+        return gunFarki < 7
+    }
+
+    /// Bugün ya da başlamış: kartta kulübün renginde.
+    static func isSoon(_ date: Date) -> Bool {
+        date <= .now || Calendar.current.isDateInToday(date)
     }
 
     static func day(_ date: Date) -> String {
@@ -39,14 +72,14 @@ struct ClubEventCard: View {
         VStack(alignment: .leading, spacing: BondTheme.Space.compact) {
             Button(action: open) {
                 HStack(alignment: .top, spacing: 14) {
-                    dateBlock
+                    ClubEventDateBlock(date: event.startsAt, accent: accent)
                     VStack(alignment: .leading, spacing: 4) {
                         Text(event.title)
                             .font(.headline)
                             .foregroundStyle(BondTheme.ink)
                             .multilineTextAlignment(.leading)
                             .fixedSize(horizontal: false, vertical: true)
-                        Text([ClubEventFormat.when(event.startsAt), event.placeLabel].compactMap { $0 }.joined(separator: " · "))
+                        whenLine
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                             .lineLimit(2)
@@ -75,18 +108,36 @@ struct ClubEventCard: View {
         .accessibilityIdentifier("club.event.\(event.id)")
     }
 
-    private var dateBlock: some View {
+    /// "Bugün 19:00 · Kütüphane": bugünse saat kulübün renginde.
+    private var whenLine: Text {
+        let ne = ClubEventFormat.when(event.startsAt)
+        let zaman = ClubEventFormat.isSoon(event.startsAt)
+            ? Text(ne).foregroundStyle(accent).fontWeight(.semibold)
+            : Text(ne)
+        guard let yer = event.placeLabel else { return zaman }
+        return Text("\(zaman) · \(yer)")
+    }
+}
+
+/// Kartın solundaki tarih: ay kulübün renginde, gün büyük.
+struct ClubEventDateBlock: View {
+    let date: Date
+    let accent: Color
+    var background: Color = BondTheme.paper
+
+    var body: some View {
         VStack(spacing: 0) {
-            Text(ClubEventFormat.month(event.startsAt))
+            Text(ClubEventFormat.month(date))
                 .font(.caption2.weight(.bold))
                 .foregroundStyle(accent)
-            Text(ClubEventFormat.day(event.startsAt))
+            Text(ClubEventFormat.day(date))
                 .font(.system(size: 24, weight: .bold, design: .rounded))
                 .foregroundStyle(BondTheme.ink)
                 .monospacedDigit()
+                .contentTransition(.numericText())
         }
         .frame(width: 50, height: 54)
-        .background(BondTheme.paper, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(background, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .accessibilityHidden(true)
     }
 }
@@ -159,6 +210,7 @@ struct ClubEventDetailView: View {
     @State private var editing = false
     @State private var confirmCancel = false
     @State private var cardProfile: StudentProfile?
+    @State private var addingToCalendar = false
 
     private var event: ClubEvent? { appState.clubEvents[clubID]?.first { $0.id == eventID } }
 
@@ -194,7 +246,16 @@ struct ClubEventDetailView: View {
                 }
             }
             .sheet(isPresented: $editing) {
-                if let event { ClubEventComposer(draft: ClubEventDraft(event: event)) }
+                if let event { ClubEventComposer(draft: ClubEventDraft(event: event), clubName: clubName, accent: accent) }
+            }
+            .sheet(isPresented: $addingToCalendar) {
+                if let event {
+                    ClubEventCalendarSheet(event: event, clubName: clubName) { eklendi in
+                        addingToCalendar = false
+                        if eklendi { appState.show(L10n.ClubEvents.addedToCalendar) }
+                    }
+                    .ignoresSafeArea()
+                }
             }
             .sheet(item: $cardProfile) { profile in
                 NavigationStack {
@@ -233,22 +294,7 @@ struct ClubEventDetailView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                VStack(alignment: .leading, spacing: 10) {
-                    Label(ClubEventFormat.when(event.startsAt), systemImage: "calendar")
-                    if let yer = event.placeLabel {
-                        Label(yer, systemImage: "mappin.and.ellipse")
-                    }
-                }
-                .font(.body.weight(.medium))
-                .foregroundStyle(BondTheme.ink)
-
-                if !event.details.isEmpty {
-                    Text(event.details)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .lineSpacing(3)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                infoCard(event)
 
                 VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
                     ClubEventGoingButton(event: event, accent: accent)
@@ -256,13 +302,40 @@ struct ClubEventDetailView: View {
                         Text(L10n.ClubEvents.reminderNote)
                             .font(.footnote)
                             .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity)
                             .transition(.opacity)
                     }
+                    HStack(spacing: BondTheme.Space.sm) {
+                        Button { addingToCalendar = true } label: {
+                            Label(L10n.ClubEvents.addToCalendar, systemImage: "calendar.badge.plus")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .accessibilityIdentifier("club.event.calendar")
+                        ShareLink(item: shareText(event)) {
+                            Label(L10n.ClubEvents.share, systemImage: "square.and.arrow.up")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .accessibilityIdentifier("club.event.share")
+                    }
+                    .buttonStyle(.secondaryCapsule)
+                    .disabled(event.hasStarted)
                 }
                 .animation(BondTheme.Motion.smooth, value: event.going)
 
+                if !event.details.isEmpty {
+                    VStack(alignment: .leading, spacing: BondTheme.Space.sm) {
+                        Eyebrow(text: L10n.ClubEvents.about, color: BondTheme.muted)
+                        Text(event.details)
+                            .font(.body)
+                            .foregroundStyle(BondTheme.ink)
+                            .lineSpacing(3)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
                 VStack(alignment: .leading, spacing: BondTheme.Space.compact) {
                     Eyebrow(text: L10n.ClubEvents.attendees + " · \(event.attendeeCount)", color: BondTheme.muted)
+                        .contentTransition(.numericText())
                     if attendees.isEmpty {
                         if attendeesLoaded {
                             Text(L10n.ClubEvents.attendeesEmpty)
@@ -289,6 +362,54 @@ struct ClubEventDetailView: View {
         }
     }
 
+    /// Ne zaman ve nerede, kartın diliyle: solda tarih bloğu, yanında
+    /// "Yarın 19:00" ve tam tarih; altında yer.
+    private func infoCard(_ event: ClubEvent) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 14) {
+                ClubEventDateBlock(date: event.startsAt, accent: accent)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(ClubEventFormat.when(event.startsAt))
+                        .font(.headline)
+                        .foregroundStyle(ClubEventFormat.isSoon(event.startsAt) ? accent : BondTheme.ink)
+                    if ClubEventFormat.isWithinWeek(event.startsAt), !event.hasStarted {
+                        Text(ClubEventFormat.fullDate(event.startsAt))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(BondTheme.Space.md)
+            if let yer = event.placeLabel {
+                Divider().padding(.leading, 64 + BondTheme.Space.md)
+                HStack(spacing: 14) {
+                    Image(systemName: "mappin.and.ellipse")
+                        .font(.title3)
+                        .foregroundStyle(accent)
+                        .frame(width: 50)
+                    Text(yer)
+                        .font(.body.weight(.medium))
+                        .foregroundStyle(BondTheme.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                }
+                .padding(BondTheme.Space.md)
+            }
+        }
+        .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .accessibilityElement(children: .combine)
+    }
+
+    /// WhatsApp grubuna, hikâyeye: tarih göreli değil, okunduğu gün de doğru.
+    private func shareText(_ event: ClubEvent) -> String {
+        var satirlar = ["\(clubName) · \(event.title)"]
+        satirlar.append([ClubEventFormat.absolute(event.startsAt), event.placeLabel].compactMap { $0 }.joined(separator: " · "))
+        satirlar.append("")
+        satirlar.append(L10n.ClubEvents.shareFooter(AppLinks.appStore.absoluteString))
+        return satirlar.joined(separator: "\n")
+    }
+
     private func loadAttendees() async {
         guard let liste = try? await appState.fetchEventAttendees(eventID) else {
             attendeesLoaded = true
@@ -299,97 +420,40 @@ struct ClubEventDetailView: View {
     }
 }
 
-/// Etkinlik aç / düzenle: başlık, ne zaman, nerede, açıklama.
-struct ClubEventComposer: View {
-    @Environment(AppState.self) private var appState
-    @Environment(\.dismiss) private var dismiss
-    @State var draft: ClubEventDraft
-    @State private var saving = false
-    @State private var failure: String?
+/// "Takvime ekle": iOS'un kendi etkinlik ekranı. iOS 17'den beri uygulamanın
+/// dışında açılıyor; takvim izni istemiyor, kişi kaydederse eklenir.
+struct ClubEventCalendarSheet: UIViewControllerRepresentable {
+    let event: ClubEvent
+    let clubName: String
+    let finished: (Bool) -> Void
 
-    private var canSave: Bool {
-        !saving && !draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    func makeCoordinator() -> Coordinator { Coordinator(finished: finished) }
+
+    func makeUIViewController(context: Context) -> EKEventEditViewController {
+        let depo = EKEventStore()
+        let kayit = EKEvent(eventStore: depo)
+        kayit.title = event.title
+        kayit.startDate = event.startsAt
+        kayit.endDate = event.startsAt.addingTimeInterval(2 * 3600)
+        kayit.location = event.placeLabel
+        kayit.notes = event.details.isEmpty ? clubName : clubName + "\n\n" + event.details
+        kayit.addAlarm(EKAlarm(relativeOffset: -3600))
+        let ekran = EKEventEditViewController()
+        ekran.eventStore = depo
+        ekran.event = kayit
+        ekran.editViewDelegate = context.coordinator
+        return ekran
     }
 
-    var body: some View {
-        NavigationStack {
-            Form {
-                if let failure {
-                    Section {
-                        Label(failure, systemImage: "exclamationmark.circle")
-                            .font(.footnote)
-                            .foregroundStyle(BondTheme.burntOrangeText)
-                    }
-                }
-                Section {
-                    TextField(L10n.ClubEvents.titlePlaceholder, text: $draft.title, axis: .vertical)
-                        .font(.headline)
-                        .lineLimit(1...3)
-                        .onChange(of: draft.title) { _, yeni in
-                            if yeni.count > 80 { draft.title = String(yeni.prefix(80)) }
-                        }
-                        .accessibilityIdentifier("event.title")
-                }
-                Section {
-                    DatePicker(L10n.ClubEvents.when, selection: $draft.startsAt,
-                               in: Date.now.addingTimeInterval(-3600)...Date.now.addingTimeInterval(365 * 24 * 3600),
-                               displayedComponents: [.date, .hourAndMinute])
-                        .environment(\.locale, L10n.appLocale)
-                }
-                Section(L10n.ClubEvents.place) {
-                    Picker(L10n.ClubEvents.campusPlace, selection: $draft.placeID) {
-                        Text(L10n.ClubEvents.noPlace).tag(UUID?.none)
-                        ForEach(appState.places) { yer in
-                            Text(yer.name).tag(Optional(yer.id))
-                        }
-                    }
-                    TextField(L10n.ClubEvents.placeNotePlaceholder, text: $draft.placeNote)
-                        .onChange(of: draft.placeNote) { _, yeni in
-                            if yeni.count > 80 { draft.placeNote = String(yeni.prefix(80)) }
-                        }
-                }
-                Section(L10n.ClubEvents.details) {
-                    TextField(L10n.ClubEvents.detailsPlaceholder, text: $draft.details, axis: .vertical)
-                        .lineLimit(3...8)
-                        .onChange(of: draft.details) { _, yeni in
-                            if yeni.count > 500 { draft.details = String(yeni.prefix(500)) }
-                        }
-                }
-            }
-            .scrollDismissesKeyboard(.interactively)
-            .navigationTitle(draft.id == nil ? L10n.ClubEvents.newTitle : L10n.ClubEvents.editTitle)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(L10n.Common.close) { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    if saving {
-                        ProgressView()
-                    } else {
-                        Button(L10n.ClubEvents.save) { Task { await save() } }
-                            .disabled(!canSave)
-                            .accessibilityIdentifier("event.save")
-                    }
-                }
-            }
-            .task { if appState.places.isEmpty { await appState.loadPlaces(silently: true) } }
-        }
-    }
+    func updateUIViewController(_ uiViewController: EKEventEditViewController, context: Context) {}
 
-    private func save() async {
-        guard canSave else { return }
-        saving = true
-        defer { saving = false }
-        failure = nil
-        do {
-            try await appState.saveClubEvent(draft)
-            Haptics.success()
-            appState.show(L10n.ClubEvents.saved)
-            dismiss()
-        } catch {
-            Haptics.warning()
-            failure = UserFacingError.message(error, fallback: L10n.ClubEvents.saveFailed)
+    @MainActor
+    final class Coordinator: NSObject, @preconcurrency EKEventEditViewDelegate {
+        let finished: (Bool) -> Void
+        init(finished: @escaping (Bool) -> Void) { self.finished = finished }
+
+        func eventEditViewController(_ controller: EKEventEditViewController, didCompleteWith action: EKEventEditViewAction) {
+            finished(action == .saved)
         }
     }
 }

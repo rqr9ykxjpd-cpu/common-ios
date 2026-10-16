@@ -126,7 +126,7 @@ struct ClubDetailView: View {
                 .presentationDragIndicator(.visible)
         }
         .sheet(item: $composer) { route in
-            ClubEventComposer(draft: route.draft)
+            ClubEventComposer(draft: route.draft, clubName: current.name, accent: accent)
         }
         .sheet(item: $openedPost) { route in
             NavigationStack { PostDetailView(postID: route.id, showsClose: true) }
@@ -319,7 +319,7 @@ struct ClubDetailView: View {
                 Spacer()
                 if canManage, !events.isEmpty {
                     Button {
-                        composer = ClubEventComposerRoute(draft: ClubEventDraft(clubID: club.id))
+                        composer = ClubEventComposerRoute(draft: ClubEventDraft(clubID: club.id, placeID: current.meetingPlace?.id))
                     } label: {
                         Label(L10n.ClubEvents.add, systemImage: "plus")
                             .font(.footnote.weight(.semibold))
@@ -337,7 +337,7 @@ struct ClubDetailView: View {
             }
             if events.isEmpty, canManage {
                 Button {
-                    composer = ClubEventComposerRoute(draft: ClubEventDraft(clubID: club.id))
+                    composer = ClubEventComposerRoute(draft: ClubEventDraft(clubID: club.id, placeID: current.meetingPlace?.id))
                 } label: {
                     HStack(spacing: 13) {
                         Image(systemName: "calendar.badge.plus")

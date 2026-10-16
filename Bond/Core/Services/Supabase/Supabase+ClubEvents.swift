@@ -47,9 +47,8 @@ extension SupabaseProductService: ClubEventsManaging {
         guard currentUserID != nil else { return [] }
         let rows: [MyClubEventRow] = try await client.rpc("get_my_club_events").execute().value
         return rows.map {
-            let not = $0.placeNote.trimmingCharacters(in: .whitespacesAndNewlines)
-            return MyClubEvent(id: $0.id, clubID: $0.clubID, clubName: $0.clubName, title: $0.title,
-                               startsAt: $0.startsAt, placeLabel: $0.placeName ?? (not.isEmpty ? nil : not))
+            MyClubEvent(id: $0.id, clubID: $0.clubID, clubName: $0.clubName, title: $0.title,
+                        startsAt: $0.startsAt, placeLabel: ClubEvent.placeLabel(name: $0.placeName, note: $0.placeNote))
         }
     }
 }
