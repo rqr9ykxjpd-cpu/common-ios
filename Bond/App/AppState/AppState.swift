@@ -160,6 +160,10 @@ final class AppState {
     var clubEvents: [UUID: [ClubEvent]] = [:]
     /// Akıştaki kulüp gönderilerinin etkinlikleri, gönderiye göre.
     var postEvents: [UUID: PostEvent] = [:]
+    /// Ekranda açık olan sohbet: oraya gelen mesajda ses ve titreşim.
+    var openConversationID: UUID?
+    /// Notların dersi, sayfa sayısı ve PDF'i, gönderiye göre.
+    var noteExtras: [UUID: NoteExtra] = [:]
     /// Kurucu ya da moderatör hesabı dondurdu: uygulama yerine açıklama ekranı.
     var accountFrozen = false
     /// Etkinlik hatırlatmasına dokunulunca açılacak kulüp.

@@ -48,17 +48,20 @@ enum ChatStyleChange: Hashable, Codable, Sendable {
 }
 
 /// Sohbetteki yazı boyutu. Kişisel: yalnızca bu telefonda, bütün sohbetlerde.
+/// Varsayılan küçük (kurucunun kararı, 17 Ekim); orta eski varsayılan, kayıtlı
+/// değeri "normal" kaldı ki seçmiş olanlarınki değişmesin.
 enum ChatTextSize: String, CaseIterable, Identifiable {
-    case small, normal, large
+    case small, medium = "normal", large
 
     static let storageKey = "chatTextSize"
+    static let standard = ChatTextSize.small
 
     var id: String { rawValue }
 
     var font: Font {
         switch self {
         case .small: .footnote
-        case .normal: .subheadline
+        case .medium: .subheadline
         case .large: .body
         }
     }
@@ -66,7 +69,7 @@ enum ChatTextSize: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .small: L10n.ChatStyle.sizeSmall
-        case .normal: L10n.ChatStyle.sizeNormal
+        case .medium: L10n.ChatStyle.sizeNormal
         case .large: L10n.ChatStyle.sizeLarge
         }
     }

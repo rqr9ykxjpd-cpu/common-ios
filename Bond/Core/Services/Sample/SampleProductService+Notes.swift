@@ -1,8 +1,8 @@
 #if DEBUG
 import Foundation
 
-/// Örnek modda notlar: türü `.notes` olan örnek gönderiler, bölümü yazarın
-/// bölümü; yeni not bu açılış boyunca kalır.
+/// Örnek modda notlar: türü `.notes` olan örnek gönderiler. Ders, bölüm ve
+/// PDF `SampleData.sampleNotes`ten; yeni not bu açılış boyunca kalır.
 extension SampleProductService: NotesManaging {
     func fetchNoteDepartments() async throws -> [NoteDepartment] {
         let notlar = await notePairs()
@@ -22,20 +22,55 @@ extension SampleProductService: NotesManaging {
             .map(\.post.id)
     }
 
-    func createNote(caption: String, department: String, images: [Data]) async throws -> BackendPost {
-        var post = SampleData.newPost(caption: caption, placeName: nil, imageData: images.first, kind: .notes)
-        if images.count > 1 { post.galleryData = Array(images.prefix(CampusLimits.maxPostPhotos)) }
+    func searchNoteIDs(_ query: String) async throws -> [UUID] {
+        let aranan = query.trimmingCharacters(in: .whitespaces).lowercased(with: L10n.appLocale)
+        guard aranan.count >= 2 else { return [] }
+        let ekler = await SampleNoteStore.shared.extras()
+        return await notePairs()
+            .filter { cift in
+                [cift.post.caption, ekler[cift.post.id]?.course ?? "", cift.department]
+                    .contains { $0.lowercased(with: L10n.appLocale).contains(aranan) }
+            }
+            .sorted { $0.post.createdAt > $1.post.createdAt }
+            .map(\.post.id)
+    }
+
+    func fetchNoteExtras(_ postIDs: [UUID]) async throws -> [NoteExtra] {
+        let ekler = await SampleNoteStore.shared.extras()
+        let istenen = Set(postIDs)
+        return await store.allPosts()
+            .filter { istenen.contains($0.id) && $0.kind == .notes }
+            .map { post in
+                ekler[post.id] ?? NoteExtra(postID: post.id, course: "",
+                                           pageCount: max(1, post.galleryData.count), documentURL: nil)
+            }
+    }
+
+    func createNote(_ note: NoteUpload) async throws -> BackendPost {
+        let sayfalar = Array(note.pages.prefix(NoteLimits.maxPages))
+        var post = SampleData.newPost(caption: note.title, placeName: nil,
+                                      imageData: note.pdfThumbnail ?? sayfalar.first, kind: .notes)
+        if note.pdf == nil, sayfalar.count > 1 { post.galleryData = sayfalar }
+        var dosya: URL?
+        if let pdf = note.pdf {
+            let yer = FileManager.default.temporaryDirectory.appendingPathComponent("sample-note-\(post.id).pdf")
+            try pdf.write(to: yer)
+            dosya = yer
+        }
         await store.insert(post)
-        await SampleNoteStore.shared.set(department.trimmingCharacters(in: .whitespaces), for: post.id)
+        await SampleNoteStore.shared.set(
+            NoteExtra(postID: post.id, course: note.course, pageCount: note.pageCount, documentURL: dosya),
+            department: note.department.trimmingCharacters(in: .whitespaces)
+        )
         return post
     }
 
     private func notePairs() async -> [(post: BackendPost, department: String)] {
-        let yazilan = await SampleNoteStore.shared.all()
+        let bolumler = await SampleNoteStore.shared.departments()
         return await store.allPosts()
             .filter { $0.kind == .notes }
             .compactMap { post in
-                let bolum = yazilan[post.id] ?? post.authorDepartment
+                let bolum = bolumler[post.id] ?? post.authorDepartment
                 return bolum.isEmpty ? nil : (post, bolum)
             }
     }
@@ -43,8 +78,27 @@ extension SampleProductService: NotesManaging {
 
 private actor SampleNoteStore {
     static let shared = SampleNoteStore()
-    private var departments: [UUID: String] = [:]
-    func set(_ department: String, for postID: UUID) { departments[postID] = department }
-    func all() -> [UUID: String] { departments }
+    private var departmentsByPost: [UUID: String] = [:]
+    private var extrasByPost: [UUID: NoteExtra] = [:]
+
+    init() {
+        for not in SampleData.sampleNotes {
+            if let bolum = not.department { departmentsByPost[not.id] = bolum }
+            var dosya: URL?
+            if not.isPDF {
+                let yer = FileManager.default.temporaryDirectory.appendingPathComponent("sample-note-\(not.id).pdf")
+                if (try? SampleData.samplePDF(not).write(to: yer)) != nil { dosya = yer }
+            }
+            extrasByPost[not.id] = NoteExtra(postID: not.id, course: not.course,
+                                             pageCount: not.pages.count, documentURL: dosya)
+        }
+    }
+
+    func set(_ extra: NoteExtra, department: String) {
+        extrasByPost[extra.postID] = extra
+        departmentsByPost[extra.postID] = department
+    }
+    func departments() -> [UUID: String] { departmentsByPost }
+    func extras() -> [UUID: NoteExtra] { extrasByPost }
 }
 #endif

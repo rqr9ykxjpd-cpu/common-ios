@@ -221,21 +221,100 @@ enum SampleData {
         )
     }
 
-    /// Örnek ders notu: sayfalar çizgili kâğıda yazı olarak çiziliyor (kafe
-    /// fotoğrafı not gibi durmuyordu). Yalnızca örnek mod.
-    static func notePost(author: StudentProfile, caption: String, pages: [[String]], createdAt: Date, likes: Int) -> BackendPost {
-        let resimler = pages.compactMap(notePage)
+    /// Örnek ders notu (yalnızca örnek mod): ders, konu, bölüm; sayfalar
+    /// çizgili kâğıda yazı olarak ya da daktilo PDF olarak çiziliyor.
+    struct SampleNote {
+        let author: StudentProfile
+        let course: String
+        let title: String
+        /// Boşsa yazarın bölümü.
+        var department: String?
+        let pages: [[String]]
+        var isPDF = false
+        let hoursAgo: Double
+        let likes: Int
+        var id: UUID { stableID("note:" + title) }
+    }
+
+    static var sampleNotes: [SampleNote] {
+        [
+            SampleNote(author: profiles[4], course: "BLM203 Veri Yapıları", title: "Hash tabloları ve çakışma çözümü",
+                       pages: [["Hash tabloları", "h(k) = k mod m", "Çakışma: iki anahtar aynı yuvaya", "1) Zincirleme (linked list)", "2) Açık adresleme", "   - doğrusal: h(k)+i", "   - karesel: h(k)+i²", "Yük faktörü α = n/m"],
+                               ["Ortalama arama O(1+α)", "α > 0.7 ise yeniden boyutlandır", "Silmede 'tombstone' bırak", "Vizede çıkar: zincirleme vs açık", "adreslemede en kötü durum O(n)"]],
+                       hoursAgo: 10, likes: 9),
+            SampleNote(author: profiles[5], course: "END301 Üretim Planlama", title: "Talep tahmini, vize özeti",
+                       department: me.department,
+                       pages: [["Talep tahmini", "Hareketli ortalama: son n dönemin ortalaması", "Ağırlıklı hareketli ortalama: yakın dönem daha ağır", "Üstel düzeltme: F(t+1) = αD(t) + (1-α)F(t)", "α büyükse tahmin talebe hızlı tepki verir"],
+                               ["Hata ölçüleri", "MAD = Σ|D - F| / n", "MSE = Σ(D - F)² / n", "MAPE = (100/n) Σ|D - F| / D", "İzleme sinyali = Σ(D - F) / MAD", "±4 dışına çıkarsa model gözden geçirilir"],
+                               ["Trend ve mevsimsellik", "Holt: düzey + trend, iki düzeltme sabiti", "Winters: düzey + trend + mevsim", "Mevsim endeksi = dönem ortalaması / genel ortalama", "Vizede: üstel düzeltmeyi elle bir tablo üzerinde hesaplama"],
+                               ["Çözülmüş örnek", "D: 120, 132, 128, 141   α = 0.3   F1 = 120", "F2 = 0.3·120 + 0.7·120 = 120,0", "F3 = 0.3·132 + 0.7·120 = 123,6", "F4 = 0.3·128 + 0.7·123,6 = 124,9", "F5 = 0.3·141 + 0.7·124,9 = 129,8"]],
+                       isPDF: true, hoursAgo: 5, likes: 14),
+            SampleNote(author: profiles[2], course: "END201 Yöneylem Araştırması", title: "Duyarlılık analizi",
+                       department: me.department,
+                       pages: [["Duyarlılık analizi", "Amaç katsayısı değişirse", "temel çözüm aynı kalır mı?", "İndirgenmiş maliyet: c - zB⁻¹A", "Gölge fiyat = ikil değişken"],
+                               ["Sağ taraf değişimi", "B⁻¹b ≥ 0 kaldıkça", "temel aynı, değer değişir", "Aralık: her b için ayrı", "Örnek: 2. kısıt 40 → 46"],
+                               ["Sınavda çıkan", "1) Gölge fiyat yorumu", "2) Yeni değişken eklemek", "3) Yeni kısıt eklemek", "İkil simpleks ile düzelt"]],
+                       hoursAgo: 20, likes: 6),
+            SampleNote(author: me, course: "END201 Yöneylem Araştırması", title: "Simpleks yöntemi özet",
+                       pages: [["Simpleks yöntemi", "1) Standart forma çevir", "2) Başlangıç tablosu", "3) Giren değişken: en negatif c", "4) Çıkan: en küçük oran testi", "5) Pivot, tekrar et", "Optimal: tüm c ≥ 0"]],
+                       hoursAgo: 30, likes: 4),
+        ]
+    }
+
+    static func notePost(_ note: SampleNote) -> BackendPost {
+        let author = note.author
+        let resimler = note.isPDF ? [samplePDFCover(note)].compactMap { $0 } : note.pages.compactMap(notePage)
         var post = BackendPost(
-            id: stableID("note:" + caption), authorID: author.id, authorName: author.name,
+            id: note.id, authorID: author.id, authorName: author.name,
             authorBirthDate: Calendar.current.date(byAdding: .year, value: -author.age, to: .now) ?? .now,
             authorUniversity: author.university, authorDepartment: author.department, authorYear: author.year,
             authorBio: author.bio, authorVerified: author.isVerified, authorBadge: author.badge,
             authorAvatarURL: author.imageAssetName.flatMap(UIImageAsset.fileURL(named:)),
-            caption: caption, placeName: nil, kind: .notes, imageData: resimler.first,
-            createdAt: createdAt, comments: [], likeCount: likes, liked: false, saved: false
+            caption: note.title, placeName: nil, kind: .notes, imageData: resimler.first,
+            createdAt: hours(note.hoursAgo), comments: [], likeCount: note.likes, liked: false, saved: false
         )
         if resimler.count > 1 { post.galleryData = resimler }
         return post
+    }
+
+    /// Örnek PDF: A4, daktilo yazısı, sayfa altında ders ve sayfa no.
+    static func samplePDF(_ note: SampleNote) -> Data {
+        let sayfa = CGRect(x: 0, y: 0, width: 595, height: 842)
+        return UIGraphicsPDFRenderer(bounds: sayfa).pdfData { ctx in
+            for (no, satirlar) in note.pages.enumerated() {
+                ctx.beginPage()
+                let baslik = UIFont(name: "Georgia-Bold", size: 24) ?? .boldSystemFont(ofSize: 24)
+                let govde = UIFont(name: "Georgia", size: 15) ?? .systemFont(ofSize: 15)
+                let kucuk = UIFont.systemFont(ofSize: 9)
+                var y: CGFloat = 72
+                for (i, satir) in satirlar.enumerated() {
+                    let font = i == 0 ? baslik : govde
+                    (satir as NSString).draw(in: CGRect(x: 64, y: y, width: sayfa.width - 128, height: 80),
+                                             withAttributes: [.font: font, .foregroundColor: UIColor.black])
+                    y += i == 0 ? 52 : 30
+                }
+                let alt = "\(note.course) · \(no + 1)/\(note.pages.count)" as NSString
+                alt.draw(at: CGPoint(x: 64, y: sayfa.height - 48), withAttributes: [.font: kucuk, .foregroundColor: UIColor.gray])
+            }
+        }
+    }
+
+    private static func samplePDFCover(_ note: SampleNote) -> Data? {
+        guard let ilk = note.pages.first else { return nil }
+        let boyut = CGSize(width: 900, height: 1273)
+        let olcek = boyut.width / 595
+        return UIGraphicsImageRenderer(size: boyut).image { ctx in
+            UIColor.white.setFill()
+            ctx.fill(CGRect(origin: .zero, size: boyut))
+            var y: CGFloat = 72 * olcek
+            for (i, satir) in ilk.enumerated() {
+                let font = i == 0 ? (UIFont(name: "Georgia-Bold", size: 24 * olcek) ?? .boldSystemFont(ofSize: 36))
+                                  : (UIFont(name: "Georgia", size: 15 * olcek) ?? .systemFont(ofSize: 22))
+                (satir as NSString).draw(in: CGRect(x: 64 * olcek, y: y, width: boyut.width - 128 * olcek, height: 120),
+                                         withAttributes: [.font: font, .foregroundColor: UIColor.black])
+                y += (i == 0 ? 52 : 30) * olcek
+            }
+        }.jpegData(compressionQuality: 0.8)
     }
 
     private static func notePage(_ lines: [String]) -> Data? {
@@ -261,13 +340,10 @@ enum SampleData {
     static var posts: [BackendPost] {
         [
             clubEventPost(id: photoClubEventPostID, caption: photoClubEventCaption, createdAt: hours(1)),
-            notePost(author: profiles[4], caption: "BLM203 Veri Yapıları · Hash tabloları ve çakışma çözümü",
-                     pages: [["Hash tabloları", "h(k) = k mod m", "Çakışma: iki anahtar aynı yuvaya", "1) Zincirleme (linked list)", "2) Açık adresleme", "   - doğrusal: h(k)+i", "   - karesel: h(k)+i²", "Yük faktörü α = n/m"],
-                             ["Ortalama arama O(1+α)", "α > 0.7 ise yeniden boyutlandır", "Silmede 'tombstone' bırak", "Vizede çıkar: zincirleme vs açık", "adreslemede en kötü durum O(n)"]],
-                     createdAt: hours(10), likes: 9),
-            notePost(author: me, caption: "END201 Yöneylem Araştırması · Simpleks yöntemi özet",
-                     pages: [["Simpleks yöntemi", "1) Standart forma çevir", "2) Başlangıç tablosu", "3) Giren değişken: en negatif c", "4) Çıkan: en küçük oran testi", "5) Pivot, tekrar et", "Optimal: tüm c ≥ 0"]],
-                     createdAt: hours(30), likes: 4),
+            notePost(sampleNotes[0]),
+            notePost(sampleNotes[1]),
+            notePost(sampleNotes[2]),
+            notePost(sampleNotes[3]),
             post(author: photoClubAccount,
                  caption: "Pazar 17.00'de kampüs fotoğraf yürüyüşü. Hazırlık binasının önünden başlıyoruz, telefon da olur.",
                  place: nil, asset: "post-campus", createdAt: hours(9), likes: 12, liked: false,

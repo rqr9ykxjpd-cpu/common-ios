@@ -34,13 +34,13 @@ struct ConversationView: View {
     @State private var typingHideTask: Task<Void, Never>?
     @State private var showCustomize = false
     /// Sohbetteki yazı boyutu; kişisel, bütün sohbetlerde aynı.
-    @AppStorage(ChatTextSize.storageKey) private var textSizeRaw = ChatTextSize.normal.rawValue
+    @AppStorage(ChatTextSize.storageKey) private var textSizeRaw = ChatTextSize.standard.rawValue
     @Environment(\.colorScheme) private var systemScheme
 
     private var conversation: Conversation? { appState.conversations.first { $0.id == conversationID } }
     /// Sohbetin ortak teması; iki taraf da aynısını görüyor.
     private var theme: CardTheme { conversation?.theme ?? .classic }
-    private var textSize: ChatTextSize { ChatTextSize(rawValue: textSizeRaw) ?? .normal }
+    private var textSize: ChatTextSize { ChatTextSize(rawValue: textSizeRaw) ?? .standard }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -181,7 +181,13 @@ struct ConversationView: View {
         // tek boyanmıyor. Sayfalar (profil, emoji, özelleştirme) bunun dışında.
         .environment(\.colorScheme, theme.scheme ?? systemScheme)
         .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: theme)
-        .onAppear { appState.markConversationRead(conversationID) }
+        .onAppear {
+            appState.markConversationRead(conversationID)
+            appState.openConversationID = conversationID
+        }
+        .onDisappear {
+            if appState.openConversationID == conversationID { appState.openConversationID = nil }
+        }
         // "Yazıyor…": sohbet açıkken karşı tarafın sinyallerini dinle, ekran
         // kapanınca kanalı kapat. Kayıt tutulmuyor; sinyal anlık.
         .task(id: conversationID) {
@@ -529,6 +535,7 @@ struct ConversationView: View {
         draft = ""
         replyingTo = nil
         Haptics.impact(.light)
+        ChatSounds.sent()
         Task { await appState.send(body, in: conversationID, replyTo: reply) }
     }
 
@@ -594,7 +601,7 @@ private struct MessageBubble: View {
     let message: Message
     /// Sohbetin teması: balon renkleri ondan.
     var theme: CardTheme = .classic
-    var textSize: ChatTextSize = .normal
+    var textSize: ChatTextSize = .standard
     /// Çift dokununca giden tepki; sohbete özel, iki taraf da aynısını görür.
     var quickReaction: String = ChatStyleDefaults.quickReaction
     let actionsVisible: Bool

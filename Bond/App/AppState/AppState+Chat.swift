@@ -53,6 +53,10 @@ extension AppState {
         conversations[index].updatedAt = message.sentAt
         if !isMine {
             conversations[index].unreadCount += 1
+            if openConversationID == payload.matchID {
+                ChatSounds.received()
+                Haptics.impact(.light)
+            }
         }
         conversations.sort { $0.updatedAt > $1.updatedAt }
     }

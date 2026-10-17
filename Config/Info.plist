@@ -12,7 +12,7 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSCameraUsageDescription</key>
-	<string>Gönderi ve story paylaşırken fotoğraf çekmek, story için de kısa video kaydetmek için kameraya erişmemiz gerekiyor.</string>
+	<string>Gönderi ve story paylaşırken fotoğraf çekmek, story için kısa video kaydetmek ve ders notlarını taramak için kameraya erişmemiz gerekiyor.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Story için kısa video kaydederken sesini ekleyebilmen için mikrofona erişmemiz gerekiyor.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

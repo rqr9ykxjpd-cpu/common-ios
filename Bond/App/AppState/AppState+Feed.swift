@@ -172,7 +172,7 @@ extension AppState {
             let gelen = feedPosts(from: result)
             // Etkinlik gönderisi metniyle görünüp sonra karta dönmesin: kart
             // bilgisi listeyle birlikte gelsin.
-            await loadPostEvents(for: gelen)
+            await loadPostExtras(for: gelen)
             guard generation == feedLoadGeneration, userID == currentUserID, !Task.isCancelled else { return }
             justPublishedPostIDs.removeAll()
             seenCounts = FeedSeenTracker.snapshot()
@@ -213,7 +213,7 @@ extension AppState {
         let mevcut = Set(posts.map(\.id))
         let sayi = yeniler.filter { !mevcut.contains($0.id) && !$0.isMine }.count
         guard sayi > 0 else { return }
-        await loadPostEvents(for: yeniler)
+        await loadPostExtras(for: yeniler)
         pendingPosts = yeniler
         newPostCount = sayi
     }
@@ -312,7 +312,7 @@ extension AppState {
         guard let gelen = try? await service.fetchPosts(ids: [postID]).first else { return false }
         if !posts.contains(where: { $0.id == postID }) {
             let gonderi = socialPost(from: gelen)
-            await loadPostEvents(for: [gonderi])
+            await loadPostExtras(for: [gonderi])
             posts.append(gonderi)
         }
         return true

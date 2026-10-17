@@ -279,6 +279,16 @@ extension SupabaseProductService {
             .value
         let paths = Array(Set([rows?.first?.mediaPath].compactMap { $0 } + (rows?.first?.mediaPaths ?? [])))
         if !paths.isEmpty { _ = try? await client.storage.from("post-media").remove(paths: paths) }
+        // Notun PDF'i ayrı alanda; sütun yoksa (eski sunucu) sorgu düşer, silme sürer.
+        let belge: [NoteDocumentRow]? = try? await client
+            .from("posts")
+            .select("document_path")
+            .eq("id", value: postID)
+            .execute()
+            .value
+        if let yol = belge?.first?.documentPath {
+            _ = try? await client.storage.from("note-files").remove(paths: [yol])
+        }
         try await client.from("posts").delete(returning: .minimal).eq("id", value: postID).execute()
     }
 
@@ -508,5 +518,13 @@ extension SupabaseProductService {
                 returning: .minimal
             )
             .execute()
+    }
+}
+
+private struct NoteDocumentRow: Decodable {
+    let documentPath: String?
+
+    enum CodingKeys: String, CodingKey {
+        case documentPath = "document_path"
     }
 }

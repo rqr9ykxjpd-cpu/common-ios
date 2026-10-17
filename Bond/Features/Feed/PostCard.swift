@@ -29,6 +29,8 @@ struct PostCard: View {
     @State private var presentedAction: PostAction?
     /// Kâğıt uçak: gönderiyi bir bağlantıya sohbetten yollama ekranı.
     @State private var showSendSheet = false
+    /// Ders notunun tam ekran okuyucusu.
+    @State private var readingNote = false
 
     /// Düğmeyi yalnızca Common hesabı kendi gönderisine ekler.
     private var canSetAction: Bool {
@@ -70,6 +72,9 @@ struct PostCard: View {
         VStack(alignment: .leading, spacing: BondTheme.Space.md) {
             header
             content
+            if NotesRollout.isEnabled, post.kind == .notes, let not = appState.noteExtras[post.id] {
+                noteOpenRow(not)
+            }
             if !isDetail, let top = post.topComment, top.voteCount >= 0 {
                 topReply(top)
             }
@@ -92,6 +97,9 @@ struct PostCard: View {
         }
         .sheet(isPresented: $showSendSheet) {
             SharePostSheet(post: post)
+        }
+        .fullScreenCover(isPresented: $readingNote) {
+            NoteReaderView(postID: post.id)
         }
         .confirmationDialog(L10n.Moderation.removePostConfirm, isPresented: $showModeratorRemove, titleVisibility: .visible) {
             Button(L10n.Moderation.removePost, role: .destructive) {
@@ -263,6 +271,38 @@ struct PostCard: View {
                 .frame(width: 36, height: 36)
         }
         .accessibilityLabel(L10n.Common.options)
+    }
+
+    /// Notun bütün sayfaları okuyucuda: ders ve sayfa sayısı burada.
+    private func noteOpenRow(_ not: NoteExtra) -> some View {
+        Button { readingNote = true } label: {
+            HStack(spacing: BondTheme.Space.compact) {
+                Image(systemName: not.isPDF ? "doc.text" : "book.pages")
+                    .font(.body)
+                    .frame(width: 24)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(L10n.Notes.open)
+                        .font(.subheadline.weight(.semibold))
+                    Text([not.course == post.caption ? "" : not.course,
+                          (not.isPDF ? "PDF · " : "") + L10n.Notes.pageCount(not.pageCount)]
+                        .filter { !$0.isEmpty }.joined(separator: " · "))
+                        .font(.caption)
+                        .foregroundStyle(BondTheme.muted)
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(BondTheme.muted)
+            }
+            .foregroundStyle(BondTheme.ink)
+            .padding(.horizontal, BondTheme.Space.md)
+            .frame(minHeight: 52)
+            .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .buttonStyle(.pressable)
+        .accessibilityIdentifier("post.openNote.\(post.id)")
     }
 
     /// Yazı ve varsa fotoğraf. Akışta dokununca gönderi sayfası açılır;

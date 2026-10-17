@@ -41,13 +41,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "We need camera access so you can take photos for posts and stories, and record short story videos."
+            "value": "We need camera access so you can take photos for posts and stories, record short story videos and scan course notes."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Gönderi ve story paylaşırken fotoğraf çekmek, story için de kısa video kaydetmek için kameraya erişmemiz gerekiyor."
+            "value": "Gönderi ve story paylaşırken fotoğraf çekmek, story için kısa video kaydetmek ve ders notlarını taramak için kameraya erişmemiz gerekiyor."
           }
         }
       }

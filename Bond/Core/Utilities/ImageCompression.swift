@@ -53,8 +53,27 @@ enum ImageCompression {
         }.value
     }
 
+    /// Ders notu sayfası: el yazısı okunsun diye uzun kenar 2000 piksel
+    /// (akıştaki 1200'de küçük yazı dağılıyordu).
+    static let notePageDimension: CGFloat = 2000
+
+    static func prepareNotePageInBackground(_ data: Data) async -> Data? {
+        await Task.detached(priority: .userInitiated) { prepareForUpload(data, maxDimension: notePageDimension) }.value
+    }
+
+    /// Taranan sayfa için aynısı.
+    static func prepareNotePageInBackground(_ image: UIImage) async -> Data? {
+        await Task.detached(priority: .userInitiated) {
+            image.jpegData(compressionQuality: 0.9).flatMap { prepareForUpload($0, maxDimension: notePageDimension) }
+        }.value
+    }
+
     static func prepareForUpload(_ data: Data) -> Data? {
-        guard let image = imageForDisplay(data) else { return nil }
+        prepareForUpload(data, maxDimension: maxDimension)
+    }
+
+    static func prepareForUpload(_ data: Data, maxDimension: CGFloat) -> Data? {
+        guard let image = imageForDisplay(data, maxDimension: maxDimension) else { return nil }
 
         var quality: CGFloat = 0.85
         var output = image.jpegData(compressionQuality: quality)

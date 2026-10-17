@@ -10,7 +10,7 @@ struct ChatCustomizeView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var systemScheme
     let conversationID: UUID
-    @AppStorage(ChatTextSize.storageKey) private var textSizeRaw = ChatTextSize.normal.rawValue
+    @AppStorage(ChatTextSize.storageKey) private var textSizeRaw = ChatTextSize.standard.rawValue
     @State private var originalTheme: CardTheme?
     @State private var originalReaction: String?
     @State private var showEmojiPicker = false
@@ -18,7 +18,7 @@ struct ChatCustomizeView: View {
     private var conversation: Conversation? { appState.conversations.first { $0.id == conversationID } }
     private var theme: CardTheme { conversation?.theme ?? .classic }
     private var quickReaction: String { conversation?.quickReaction ?? ChatStyleDefaults.quickReaction }
-    private var textSize: ChatTextSize { ChatTextSize(rawValue: textSizeRaw) ?? .normal }
+    private var textSize: ChatTextSize { ChatTextSize(rawValue: textSizeRaw) ?? .standard }
 
     /// Hızlı çubuktaki emojiler; seçili olan listede yoksa başa ekleniyor.
     private var reactionChoices: [String] {

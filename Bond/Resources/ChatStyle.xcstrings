@@ -134,13 +134,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Default"
+            "value": "Medium"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Normal"
+            "value": "Orta"
           }
         }
       }
