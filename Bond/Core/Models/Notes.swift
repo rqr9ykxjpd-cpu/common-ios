@@ -1,15 +1,9 @@
 import Foundation
 
-/// Notlar girişi yeni hâli yayına çıkana kadar gizli (kurucunun kararı,
-/// 17 Ekim). Geliştirirken `-notes` ile açılır.
+/// Notlar girişi 1.1.7'de açıldı (18 Ekim). 1.1.6'da gizliydi; bayrak,
+/// notların akıştan ayrılmasını girişle aynı anda açmak için duruyor.
 enum NotesRollout {
-    static var isEnabled: Bool {
-#if DEBUG
-        ProcessInfo.processInfo.arguments.contains("-notes")
-#else
-        false
-#endif
-    }
+    static let isEnabled = true
 }
 
 extension SocialPost {
