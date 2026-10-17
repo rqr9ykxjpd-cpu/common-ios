@@ -959,7 +959,7 @@ struct SocialPersonDetailView: View {
             guard !Task.isCancelled else { return }
             details = PersonProfileData(interests: fetched.interests, galleryURLs: fetched.galleryURLs,
                                         avatarURL: fetched.avatarURL, badge: fetched.badge,
-                                        posts: appState.posts.filter { $0.author.id == profile.id },
+                                        posts: appState.posts.filter { $0.author.id == profile.id && $0.showsOutsideNotes },
                                         username: fetched.username, cardTheme: fetched.cardTheme)
             detailsError = nil
         } catch {

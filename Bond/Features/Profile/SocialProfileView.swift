@@ -795,7 +795,7 @@ struct SocialProfileView: View {
         for post in profilePosts { byID[post.id] = post }
         for post in appState.currentUserPosts { byID[post.id] = post }
         return byID.values
-            .filter { !appState.deletedPostIDs.contains($0.id) }
+            .filter { !appState.deletedPostIDs.contains($0.id) && $0.showsOutsideNotes }
             .sorted { $0.createdAt > $1.createdAt }
     }
 }

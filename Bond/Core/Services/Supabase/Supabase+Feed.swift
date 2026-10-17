@@ -5,9 +5,10 @@ private let postListSelect = "id,author_id,caption,media_path,media_paths,place_
 
 extension SupabaseProductService {
     func fetchFeed() async throws -> [BackendPost] {
-        let rows: [PostRow] = try await client
-            .from("posts")
-            .select(postListSelect)
+        var sorgu = client.from("posts").select(postListSelect)
+        // Ders notları akışta değil, Notlar'da; son 100 gönderiden yer yemesinler.
+        if NotesRollout.isEnabled { sorgu = sorgu.neq("kind", value: PostKind.notes.rawValue) }
+        let rows: [PostRow] = try await sorgu
             .order("created_at", ascending: false)
             .limit(100)
             .execute()

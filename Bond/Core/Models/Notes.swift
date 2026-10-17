@@ -12,6 +12,13 @@ enum NotesRollout {
     }
 }
 
+extension SocialPost {
+    /// Notlar yalnızca Notlar'da (kurucunun kararı, 17 Ekim): akışta ve
+    /// profildeki gönderi listesinde görünmez. Notlar girişi gizliyken eskisi
+    /// gibi her yerde görünür, hiçbir yerde kaybolmasın.
+    var showsOutsideNotes: Bool { !(NotesRollout.isEnabled && kind == .notes) }
+}
+
 enum NoteLimits {
     /// Fotoğraf ya da taranmış sayfa (sunucuda notlar için 20).
     static let maxPages = 20

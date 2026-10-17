@@ -102,8 +102,10 @@ struct SocialFeedView: View {
     private func filteredSorted() -> [SocialPost] {
         let place = appState.selectedPlaceFilter
         let kind = appState.selectedKindFilter
+        // Notlar ekranının açtığı notlar da `posts`ta duruyor; akışta değil Notlar'da görünürler.
         let suzulmus = appState.posts.filter { post in
-            (place == nil || post.place?.id == place?.id) && (kind == nil || post.kind == kind)
+            post.showsOutsideNotes
+                && (place == nil || post.place?.id == place?.id) && (kind == nil || post.kind == kind)
         }
         // Önce sabitsiz sıra: az önce paylaşılanlar (yenileyene kadar), sonra sıralama.
         let taze = suzulmus.filter { !$0.isPinned && appState.justPublishedPostIDs.contains($0.id) }
