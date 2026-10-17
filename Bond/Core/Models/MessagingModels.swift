@@ -27,10 +27,13 @@ struct Message: Identifiable, Hashable, Codable {
     /// Doluysa bu bir mesaj değil, sohbetin görünümünde yapılan değişiklik
     /// (tema ya da hızlı tepki); ortada bilgi satırı olarak çiziliyor.
     var style: ChatStyleChange?
+    /// Karşı tarafın uygulamasına ulaştığı an (okunduysa en geç o an). Kendi
+    /// son mesajının altında "Teslim Edildi" buna bakar.
+    var deliveredAt: Date?
 
     init(id: UUID = UUID(), body: String, isMine: Bool, sentAt: Date, reaction: String? = nil,
          senderReaction: String? = nil, editedAt: Date? = nil, replyTo: MessageReply? = nil,
-         sharedPostID: UUID? = nil, style: ChatStyleChange? = nil) {
+         sharedPostID: UUID? = nil, style: ChatStyleChange? = nil, deliveredAt: Date? = nil) {
         self.id = id
         self.body = body
         self.isMine = isMine
@@ -41,6 +44,7 @@ struct Message: Identifiable, Hashable, Codable {
         self.replyTo = replyTo
         self.sharedPostID = sharedPostID
         self.style = style
+        self.deliveredAt = deliveredAt
     }
 
     /// Benim bu mesaja tepkim; yalnızca bunu değiştirebilirim.

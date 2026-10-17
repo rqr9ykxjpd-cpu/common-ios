@@ -658,6 +658,8 @@ struct MessageRow: Decodable {
     let senderReaction: String?
     let createdAt: Date
     let readAt: Date?
+    /// Sunucuda sütun yoksa (20261018020000 öncesi) nil.
+    let deliveredAt: Date?
     let editedAt: Date?
     /// Sorguda yoksa (eski sorgu, anlık kanal) nil.
     let sharedPostID: UUID?
@@ -677,8 +679,12 @@ struct MessageRow: Decodable {
         case editedAt = "edited_at"
         case createdAt = "created_at"
         case readAt = "read_at"
+        case deliveredAt = "delivered_at"
         case sharedPostID = "shared_post_id"
     }
+
+    /// Okunan mesaj teslim de edilmiştir; eski sürümler yalnızca okundu yazıyor.
+    var deliveredOrReadAt: Date? { deliveredAt ?? readAt }
 
     func message(currentUserID: UUID, allRows: [MessageRow], peerName: String) -> Message {
         let reply = replyToID.flatMap { replyID in
@@ -688,7 +694,7 @@ struct MessageRow: Decodable {
         }
         return Message(id: id, body: body, isMine: senderID == currentUserID, sentAt: createdAt, reaction: reaction,
                        senderReaction: senderReaction, editedAt: editedAt, replyTo: reply,
-                       sharedPostID: sharedPostID, style: style)
+                       sharedPostID: sharedPostID, style: style, deliveredAt: deliveredOrReadAt)
     }
 }
 

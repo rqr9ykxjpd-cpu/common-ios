@@ -455,6 +455,12 @@ final class AppState {
     let service: any ProductService
     let defaults: UserDefaults
     var messageListenerTask: Task<Void, Never>?
+    /// Bana gelenleri "teslim alındı" diye işaretleyen istek; art arda
+    /// gelen mesajlarda tek istek gitsin diye bekletilir.
+    var deliveryMarkTask: Task<Void, Never>?
+    /// Gönderilemeyen mesajlar: balonun altında "Teslim Edilmedi", dokununca
+    /// tekrar dene ya da sil (iPhone Mesajlar'daki gibi).
+    var failedMessageIDs: Set<UUID> = []
 
 #if DEBUG
     /// `-tab <ad>` ile açılan sekme. Yalnızca geliştirme derlemesinde.

@@ -84,8 +84,11 @@ struct SampleProductService: ProductService {
     // Sohbet
     func fetchConversations() async throws -> [Conversation] { await store.allConversations() }
     func sendMessage(_ message: Message, matchID: UUID) async throws -> Message {
+        if await SampleIncoming.failures.failsFirstTry(message.id) { throw URLError(.notConnectedToInternet) }
         let kayit = await store.append(message, to: matchID)
-        if SampleIncoming.isOn { SampleIncoming.replyLater(in: matchID, store: store) }
+        if SampleIncoming.isOn {
+            SampleIncoming.deliverAndReply(kayit, in: matchID, senderID: currentUserID ?? SampleData.me.id, store: store)
+        }
         return kayit
     }
     func markConversationRead(matchID: UUID) async throws { await store.markRead(matchID) }
@@ -412,16 +415,24 @@ final class SampleTypingChannel: TypingChannel, @unchecked Sendable {
     func close() async { task.cancel() }
 }
 
-/// `-incoming`: örnek modda karşı taraf, gönderdiğin mesaja 3 saniye sonra
-/// cevap verir. Açık sohbette gelen mesaj sesi ve okundu davranışı sunucusuz
-/// denensin diye.
+/// `-incoming`: örnek modda karşı tarafın uygulaması gönderdiğin mesajı 1
+/// saniye sonra alır ("Teslim Edildi"), 3 saniye sonra cevap verir. Gelen
+/// mesaj sesi, okundu ve teslim davranışı sunucusuz denensin diye.
+/// `-sendfail`: her mesajın ilk denemesi bağlantı hatasıyla düşer ("Teslim
+/// Edilmedi"), tekrar deneyince gider.
 enum SampleIncoming {
     static let channel = AsyncStream<RealtimeMessage>.makeStream()
+    static let failures = SampleSendFailures()
     static var isOn: Bool { ProcessInfo.processInfo.arguments.contains("-incoming") }
 
-    static func replyLater(in matchID: UUID, store: SampleStore) {
+    static func deliverAndReply(_ message: Message, in matchID: UUID, senderID: UUID, store: SampleStore) {
         Task {
-            try? await Task.sleep(for: .seconds(3))
+            try? await Task.sleep(for: .seconds(1))
+            channel.continuation.yield(RealtimeMessage(
+                matchID: matchID, id: message.id, senderID: senderID, body: message.body, replyToID: nil,
+                reaction: nil, senderReaction: nil, createdAt: message.sentAt, deliveredAt: .now
+            ))
+            try? await Task.sleep(for: .seconds(2))
             guard let kisi = await store.allConversations().first(where: { $0.id == matchID })?.profile else { return }
             let cevap = await store.append(Message(body: "Tamamdır, kütüphanede görüşürüz", isMine: false, sentAt: .now),
                                            to: matchID)
@@ -430,6 +441,15 @@ enum SampleIncoming {
                 reaction: nil, senderReaction: nil, createdAt: cevap.sentAt
             ))
         }
+    }
+}
+
+actor SampleSendFailures {
+    private var tried: Set<UUID> = []
+
+    func failsFirstTry(_ id: UUID) -> Bool {
+        guard ProcessInfo.processInfo.arguments.contains("-sendfail") else { return false }
+        return tried.insert(id).inserted
     }
 }
 

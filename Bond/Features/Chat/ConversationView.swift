@@ -23,6 +23,8 @@ struct ConversationView: View {
     @State private var messagePendingReport: UUID?
     /// Mesajla gelen gönderiye dokunulunca açılan gönderi sayfası.
     @State private var openedPostID: UUID?
+    /// "Teslim Edilmedi" mesajına dokunuldu: tekrar dene ya da sil.
+    @State private var failedPrompt: Message?
     @FocusState private var focused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Mesaj sınırına her dayanışta artar; yazma alanı titrer.
@@ -64,6 +66,7 @@ struct ConversationView: View {
                                     .id(message.id)
                                     .transition(.opacity.combined(with: .scale(scale: 0.92)))
                                 } else {
+                                VStack(alignment: .trailing, spacing: 4) {
                                 MessageBubble(
                                     message: message,
                                     theme: theme,
@@ -90,6 +93,10 @@ struct ConversationView: View {
                                         showPaywall = true
                                     },
                                     showActions: {
+                                        if appState.failedMessageIDs.contains(message.id) {
+                                            failedPrompt = message
+                                            return
+                                        }
                                         withAnimation(reduceMotion ? nil : BondTheme.Motion.bouncy) {
                                             activeMessageActions = activeMessageActions == message.id ? nil : message.id
                                         }
@@ -104,6 +111,8 @@ struct ConversationView: View {
                                         openedPostID = postID
                                     }
                                 )
+                                deliveryStatus(message, in: conversation)
+                                }
                                 // Açık tepki çubuğu komşu balonların üstünde kalsın.
                                 .zIndex(activeMessageActions == message.id ? 1 : 0)
                                 .id(message.id)
@@ -203,6 +212,16 @@ struct ConversationView: View {
             lastTypingPing = .now
             let kanal = typingChannel
             Task { await kanal?.ping() }
+        }
+        .confirmationDialog(L10n.MessageStatus.notDeliveredBody, isPresented: Binding(
+            get: { failedPrompt != nil },
+            set: { if !$0 { failedPrompt = nil } }
+        ), titleVisibility: .visible, presenting: failedPrompt) { mesaj in
+            Button(L10n.MessageStatus.tryAgain) { appState.retrySend(mesaj.id, in: conversationID) }
+            Button(L10n.MessageStatus.deleteMessage, role: .destructive) {
+                appState.discardFailedMessage(mesaj.id, in: conversationID)
+            }
+            Button(L10n.Common.cancel, role: .cancel) {}
         }
         .confirmationDialog(L10n.Common.report, isPresented: Binding(
             get: { messagePendingReport != nil },
@@ -512,6 +531,30 @@ struct ConversationView: View {
     /// Yanıt ve düzenleme şeridi yazma alanının üstünden kayarak açılıp kapanıyor.
     private var stripTransition: AnyTransition {
         .opacity.combined(with: .offset(y: 10))
+    }
+
+    /// iPhone Mesajlar'daki gibi: gönderilemeyen mesajın altında kırmızı
+    /// "Teslim Edilmedi"; sohbetin son mesajı seninse ve karşıya ulaştıysa
+    /// altında gri "Teslim Edildi". Okundu gösterilmiyor.
+    @ViewBuilder
+    private func deliveryStatus(_ message: Message, in conversation: Conversation) -> some View {
+        if message.isMine, appState.failedMessageIDs.contains(message.id) {
+            Button { failedPrompt = message } label: {
+                Label(L10n.MessageStatus.notDelivered, systemImage: "exclamationmark.circle.fill")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.red)
+                    .padding(.trailing, 4)
+            }
+            .buttonStyle(.plain)
+            .transition(.opacity)
+        } else if message.isMine, message.deliveredAt != nil,
+                  conversation.messages.last(where: { $0.style == nil })?.id == message.id {
+            Text(L10n.MessageStatus.delivered)
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(.secondary)
+                .padding(.trailing, 4)
+                .transition(.opacity)
+        }
     }
 
     private func send() {

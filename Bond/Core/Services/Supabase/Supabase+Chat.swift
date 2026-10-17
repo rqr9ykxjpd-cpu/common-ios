@@ -21,9 +21,11 @@ extension SupabaseProductService {
 
         var conversations: [Conversation] = []
         for match in matches {
+            // Bütün sütunlar: "Teslim Edildi" sütunu (delivered_at) sunucuda
+            // yoksa da sorgu düşmesin.
             let tumu: [MessageRow] = try await client
                 .from("messages")
-                .select("id,match_id,sender_id,body,reply_to_id,reaction,sender_reaction,created_at,read_at,edited_at,shared_post_id,kind,style_value")
+                .select("*")
                 .eq("match_id", value: match.id)
                 .order("created_at", ascending: true)
                 .execute()
@@ -58,7 +60,7 @@ extension SupabaseProductService {
         let row: MessageRow = try await client
             .from("messages")
             .insert(payload)
-            .select("id,match_id,sender_id,body,reply_to_id,reaction,sender_reaction,created_at,read_at,edited_at,shared_post_id,kind,style_value")
+            .select("*")
             .single()
             .execute()
             .value
@@ -170,7 +172,7 @@ extension SupabaseProductService {
                                         body: row.body, replyToID: row.replyToID,
                                         reaction: row.reaction, senderReaction: row.senderReaction,
                                         createdAt: row.createdAt, sharedPostID: row.sharedPostID,
-                                        style: row.style
+                                        style: row.style, deliveredAt: row.deliveredOrReadAt
                                     ))
                                 }
                             }
@@ -182,7 +184,7 @@ extension SupabaseProductService {
                                         body: row.body, replyToID: row.replyToID,
                                         reaction: row.reaction, senderReaction: row.senderReaction,
                                         createdAt: row.createdAt, sharedPostID: row.sharedPostID,
-                                        style: row.style
+                                        style: row.style, deliveredAt: row.deliveredOrReadAt
                                     ))
                                 }
                             }

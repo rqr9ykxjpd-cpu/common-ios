@@ -32,6 +32,8 @@ struct RealtimeMessage: Sendable {
     var sharedPostID: UUID? = nil
     /// Doluysa sohbetin teması ya da hızlı tepkisi değişti.
     var style: ChatStyleChange? = nil
+    /// Alıcının uygulamasına ulaştı (ya da okundu); "Teslim Edildi".
+    var deliveredAt: Date? = nil
 }
 
 enum ReportReason: String, CaseIterable, Identifiable, Sendable {

@@ -36,6 +36,10 @@ extension AppState {
                     conversations[index].messages[mevcut].senderReaction = payload.senderReaction
                 }
             }
+            // Karşı tarafın uygulaması aldı: son mesajın altında "Teslim Edildi".
+            if eski.deliveredAt == nil, let teslim = payload.deliveredAt {
+                withAnimation(.snappy) { conversations[index].messages[mevcut].deliveredAt = teslim }
+            }
             return
         }
         let peerName = conversations[index].profile.name
@@ -62,6 +66,7 @@ extension AppState {
             } else {
                 conversations[index].unreadCount += 1
             }
+            markMessagesDeliveredSoon()
         }
         conversations.sort { $0.updatedAt > $1.updatedAt }
     }
@@ -270,7 +275,23 @@ extension AppState {
         isLoadingConversations = true
         defer { isLoadingConversations = false }
         do {
-            conversations = try await service.fetchConversations()
+            // Gönderilemeyen mesajlar sunucuda yok; yenileyince de yerinde kalsın.
+            let gidemeyen = conversations.flatMap { sohbet in
+                sohbet.messages.filter { failedMessageIDs.contains($0.id) }.map { (sohbet.id, $0) }
+            }
+            var gelen = try await service.fetchConversations()
+            // Cevabı yolda kaybolan ama sunucuya ulaşmış mesaj artık gitmiş sayılır.
+            failedMessageIDs.subtract(gelen.flatMap { $0.messages.map(\.id) })
+            for (sohbetID, mesaj) in gidemeyen where failedMessageIDs.contains(mesaj.id) {
+                guard let i = gelen.firstIndex(where: { $0.id == sohbetID }),
+                      !gelen[i].messages.contains(where: { $0.id == mesaj.id }) else { continue }
+                gelen[i].messages.append(mesaj)
+            }
+            conversations = gelen
+            failedMessageIDs.formIntersection(conversations.flatMap { $0.messages.map(\.id) })
+            if conversations.contains(where: { $0.messages.contains { !$0.isMine && $0.deliveredAt == nil } }) {
+                markMessagesDeliveredSoon()
+            }
             if let masa = service as? any ConversationClearing {
                 clearedConversationIDs = await masa.fetchClearedConversationIDs()
             }
@@ -349,19 +370,70 @@ extension AppState {
         conversations[index].updatedAt = .now
         do {
             let saved = try await service.sendMessage(message, matchID: conversationID)
-            guard let refreshedIndex = conversations.firstIndex(where: { $0.id == conversationID }),
-                  let messageIndex = conversations[refreshedIndex].messages.firstIndex(where: { $0.id == message.id }) else { return true }
-            conversations[refreshedIndex].messages[messageIndex] = saved
+            replaceSentMessage(saved, in: conversationID)
             promptForPushIfNeeded()
             return true
         } catch {
-            if let refreshedIndex = conversations.firstIndex(where: { $0.id == conversationID }) {
-                withAnimation(.snappy) {
-                    conversations[refreshedIndex].messages.removeAll { $0.id == message.id }
-                }
-            }
-            showError(error, fallback: L10n.Chat.sendFailed)
+            // Mesaj kaybolmuyor: altında "Teslim Edilmedi", dokununca tekrar dene.
+            // Bağlantı hatasında ayrıca uyarı açılmıyor (Mesajlar'daki gibi);
+            // sunucu reddettiyse sebebi söyleniyor.
+            withAnimation(.snappy) { _ = failedMessageIDs.insert(message.id) }
+            if !UserFacingError.isConnectivity(error) { showError(error, fallback: L10n.Chat.sendFailed) }
             return false
+        }
+    }
+
+    /// "Teslim Edilmedi" mesajını aynı kimlikle yeniden gönderir: ilk deneme
+    /// aslında sunucuya ulaşıp cevabı yolda kaybolduysa kopya oluşmaz.
+    func retrySend(_ messageID: UUID, in conversationID: UUID) {
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }),
+              let mesaj = conversations[index].messages.first(where: { $0.id == messageID }) else { return }
+        withAnimation(.snappy) { _ = failedMessageIDs.remove(messageID) }
+        Haptics.impact(.light)
+        ChatSounds.sent()
+        Task {
+            do {
+                let saved = try await service.sendMessage(mesaj, matchID: conversationID)
+                replaceSentMessage(saved, in: conversationID)
+            } catch {
+                let ham = String(describing: error)
+                // Önceki deneme gerçekten gitmiş.
+                if ham.contains("23505") || ham.contains("duplicate key") { return }
+                withAnimation(.snappy) { _ = failedMessageIDs.insert(messageID) }
+                if !UserFacingError.isConnectivity(error) { showError(error, fallback: L10n.Chat.sendFailed) }
+            }
+        }
+    }
+
+    /// Gönderilemeyen mesaj yalnızca bu telefondan kalkar; sunucuda yok.
+    func discardFailedMessage(_ messageID: UUID, in conversationID: UUID) {
+        guard failedMessageIDs.contains(messageID),
+              let index = conversations.firstIndex(where: { $0.id == conversationID }) else { return }
+        withAnimation(.snappy) {
+            conversations[index].messages.removeAll { $0.id == messageID }
+            _ = failedMessageIDs.remove(messageID)
+        }
+    }
+
+    /// Sunucunun kaydı yerine yazılır; "Teslim Edildi" ondan önce geldiyse kalır.
+    private func replaceSentMessage(_ saved: Message, in conversationID: UUID) {
+        guard let index = conversations.firstIndex(where: { $0.id == conversationID }),
+              let messageIndex = conversations[index].messages.firstIndex(where: { $0.id == saved.id }) else { return }
+        var kayit = saved
+        kayit.deliveredAt = saved.deliveredAt ?? conversations[index].messages[messageIndex].deliveredAt
+        conversations[index].messages[messageIndex] = kayit
+    }
+
+    /// Bana gelen mesajlar "teslim alındı": gönderen son mesajının altında
+    /// "Teslim Edildi" görür. Okundu bilgisi ayrı ve gösterilmiyor.
+    func markMessagesDeliveredSoon() {
+        guard let masa = service as? any MessageDeliveryMarking else { return }
+        deliveryMarkTask?.cancel()
+        deliveryMarkTask = Task {
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { return }
+            // Başarısız olursa bir sonraki açılışta yeniden denenir; gösterecek bir şey yok.
+            try? await masa.markMessagesDelivered()
         }
     }
 
