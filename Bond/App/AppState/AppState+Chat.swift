@@ -57,11 +57,11 @@ extension AppState {
         conversations[index].updatedAt = message.sentAt
         if !isMine {
             // Sohbet ekrandaysa mesaj okunmuş sayılır, iPhone Mesajlar'daki gibi
-            // ses ve titreşimle gelir. Eskiden açık sohbette de okunmadı sayısı
+            // tonla (sessizde titreşimle) gelir. Eskiden açık sohbette de okunmadı sayısı
             // artıyordu; çıkıp girene kadar sekmede rozet, karşıda "okunmadı".
             if openConversationID == payload.matchID, UIApplication.shared.applicationState == .active {
+                // Ton ya da (sessizde) titreşim; ayrıca dokunuş verilmiyor, üst üste binmesin.
                 ChatSounds.received()
-                Haptics.impact(.light)
                 markConversationRead(payload.matchID)
             } else {
                 conversations[index].unreadCount += 1
