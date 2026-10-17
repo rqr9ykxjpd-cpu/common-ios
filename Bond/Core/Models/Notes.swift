@@ -1,5 +1,18 @@
 import Foundation
 
+/// Notlar'ın yeni hâli (tarama, PDF, okuma ekranı) gelene kadar Kim
+/// nerede'deki giriş gizli (kurucunun kararı, 17 Ekim). Geliştirirken
+/// `-notes` ile açılır.
+enum NotesRollout {
+    static var isEnabled: Bool {
+#if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-notes")
+#else
+        false
+#endif
+    }
+}
+
 /// Notu olan bir bölüm (20261017020000). Ad, o bölümde en çok kullanılan
 /// yazılış; büyük/küçük harf farkı aynı bölüm sayılıyor.
 struct NoteDepartment: Identifiable, Hashable, Sendable {

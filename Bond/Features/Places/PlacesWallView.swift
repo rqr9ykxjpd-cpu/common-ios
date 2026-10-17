@@ -60,7 +60,7 @@ struct PlacesWallView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: BondTheme.Space.xl) {
                     clubsEntry
-                    notesEntry
+                    if NotesRollout.isEnabled { notesEntry }
                     visibilityCard
                     if let error = appState.placesError, !appState.places.isEmpty {
                         ScreenFailureView(message: error, compact: true) { Task { await appState.loadPlaces(silently: true) } }
