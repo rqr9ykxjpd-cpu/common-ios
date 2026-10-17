@@ -52,10 +52,15 @@ extension AppState {
         if let style = payload.style { applyIncomingStyle(style, at: index) }
         conversations[index].updatedAt = message.sentAt
         if !isMine {
-            conversations[index].unreadCount += 1
-            if openConversationID == payload.matchID {
+            // Sohbet ekrandaysa mesaj okunmuş sayılır, iPhone Mesajlar'daki gibi
+            // ses ve titreşimle gelir. Eskiden açık sohbette de okunmadı sayısı
+            // artıyordu; çıkıp girene kadar sekmede rozet, karşıda "okunmadı".
+            if openConversationID == payload.matchID, UIApplication.shared.applicationState == .active {
                 ChatSounds.received()
                 Haptics.impact(.light)
+                markConversationRead(payload.matchID)
+            } else {
+                conversations[index].unreadCount += 1
             }
         }
         conversations.sort { $0.updatedAt > $1.updatedAt }

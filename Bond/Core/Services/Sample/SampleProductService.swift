@@ -84,7 +84,9 @@ struct SampleProductService: ProductService {
     // Sohbet
     func fetchConversations() async throws -> [Conversation] { await store.allConversations() }
     func sendMessage(_ message: Message, matchID: UUID) async throws -> Message {
-        await store.append(message, to: matchID)
+        let kayit = await store.append(message, to: matchID)
+        if SampleIncoming.isOn { SampleIncoming.replyLater(in: matchID, store: store) }
+        return kayit
     }
     func markConversationRead(matchID: UUID) async throws { await store.markRead(matchID) }
     func setMessageReaction(messageID: UUID, reaction: String?) async throws {
@@ -94,7 +96,9 @@ struct SampleProductService: ProductService {
     func editMessage(_ messageID: UUID, body: String) async throws { await store.editMessage(messageID, body: body) }
     func setStoryLiked(_ storyID: UUID, liked: Bool) async throws { await store.setStoryLiked(storyID, liked: liked) }
     func isStoryLiked(_ storyID: UUID) async throws -> Bool { await store.isStoryLiked(storyID) }
-    func messageStream() -> AsyncStream<RealtimeMessage> { AsyncStream { $0.finish() } }
+    func messageStream() -> AsyncStream<RealtimeMessage> {
+        SampleIncoming.isOn ? SampleIncoming.channel.stream : AsyncStream { $0.finish() }
+    }
     /// Örnek veride karşı taraf yok. `-typing` ile açılırsa sohbet açıldıktan
     /// kısa süre sonra birkaç saniye "yazıyor" sinyali gelir: göstergeyi
     /// sunucusuz doğrulamak için.
@@ -406,6 +410,27 @@ final class SampleTypingChannel: TypingChannel, @unchecked Sendable {
 
     func ping() async {}
     func close() async { task.cancel() }
+}
+
+/// `-incoming`: örnek modda karşı taraf, gönderdiğin mesaja 3 saniye sonra
+/// cevap verir. Açık sohbette gelen mesaj sesi ve okundu davranışı sunucusuz
+/// denensin diye.
+enum SampleIncoming {
+    static let channel = AsyncStream<RealtimeMessage>.makeStream()
+    static var isOn: Bool { ProcessInfo.processInfo.arguments.contains("-incoming") }
+
+    static func replyLater(in matchID: UUID, store: SampleStore) {
+        Task {
+            try? await Task.sleep(for: .seconds(3))
+            guard let kisi = await store.allConversations().first(where: { $0.id == matchID })?.profile else { return }
+            let cevap = await store.append(Message(body: "Tamamdır, kütüphanede görüşürüz", isMine: false, sentAt: .now),
+                                           to: matchID)
+            channel.continuation.yield(RealtimeMessage(
+                matchID: matchID, id: cevap.id, senderID: kisi.id, body: cevap.body, replyToID: nil,
+                reaction: nil, senderReaction: nil, createdAt: cevap.sentAt
+            ))
+        }
+    }
 }
 
 #endif
