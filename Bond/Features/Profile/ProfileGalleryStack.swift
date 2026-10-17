@@ -71,7 +71,9 @@ struct ProfileGalleryStack: View {
                 onFrontChange: { front = $0 },
                 onTap: { showsViewer = true }
             )
-            .frame(maxWidth: .infinity)
+            // Kart 3:4 ve ortada; alan kart kadar geniş olsun ki sayaç kartın
+            // köşesinde dursun (iPad'de genişliğin en solunda kalıyordu).
+            .frame(maxWidth: (height - 24) * 3 / 4 + 20)
             .frame(height: height)
             .overlay(alignment: .bottomLeading) {
                 if photos.count > 1 {
@@ -87,6 +89,7 @@ struct ProfileGalleryStack: View {
                         .accessibilityHidden(true)
                 }
             }
+            .frame(maxWidth: .infinity)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(L10n.CampusDesign.photoIndex(current + 1, of: photos.count))
             .accessibilityAddTraits(.isButton)
