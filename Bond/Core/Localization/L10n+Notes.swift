@@ -43,6 +43,8 @@ extension L10n {
         static var moveEarlier: String { String(localized: "moveEarlier", table: "Notes") }
         static var moveLater: String { String(localized: "moveLater", table: "Notes") }
         static var removeFile: String { String(localized: "removeFile", table: "Notes") }
+        static var delete: String { String(localized: "delete", table: "Notes") }
+        static var deleteConfirm: String { String(localized: "deleteConfirm", table: "Notes") }
         static var pageLimit: String { String(localized: "pageLimit", table: "Notes") }
         static var pdfTooLarge: String { String(localized: "pdfTooLarge", table: "Notes") }
         static var pdfUnreadable: String { String(localized: "pdfUnreadable", table: "Notes") }

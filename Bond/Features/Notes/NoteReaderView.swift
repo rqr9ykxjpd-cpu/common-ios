@@ -17,6 +17,7 @@ struct NoteReaderView: View {
     @State private var failed = false
     @State private var page = 1
     @State private var showComments = false
+    @State private var confirmDelete = false
 
     private var post: SocialPost? { appState.posts.first { $0.id == postID } }
     private var extra: NoteExtra? { appState.noteExtras[postID] }
@@ -46,6 +47,16 @@ struct NoteReaderView: View {
         }
         .background(BondTheme.paper.ignoresSafeArea())
         .task { await load() }
+        // Not silindi (buradan ya da yorumlardaki menüden): okuyucu kapanır.
+        .onChange(of: appState.deletedPostIDs.contains(postID)) { _, silindi in
+            if silindi { dismiss() }
+        }
+        .confirmationDialog(L10n.Notes.deleteConfirm, isPresented: $confirmDelete, titleVisibility: .visible) {
+            Button(L10n.Notes.delete, role: .destructive) { appState.deletePost(postID) }
+            Button(L10n.Common.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.Feed.irreversible)
+        }
         .sheet(isPresented: $showComments) {
             NavigationStack { PostDetailView(postID: postID, showsClose: true) }
                 .presentationDragIndicator(.visible)
@@ -82,10 +93,35 @@ struct NoteReaderView: View {
                 }
                 .accessibilityLabel(L10n.Notes.saveFile)
             }
+            if let post { moreMenu(post) }
         }
         .foregroundStyle(BondTheme.ink)
         .padding(.horizontal, BondTheme.Space.sm)
         .padding(.vertical, 4)
+    }
+
+    /// Kendi notunda sil, başkasınınkinde şikayet et (gönderi menüsündekiyle aynı sebepler).
+    private func moreMenu(_ post: SocialPost) -> some View {
+        Menu {
+            if post.isMine {
+                Button(L10n.Notes.delete, systemImage: "trash", role: .destructive) { confirmDelete = true }
+            } else {
+                Menu {
+                    ForEach(ReportReason.allCases) { reason in
+                        Button(reason.title) {
+                            appState.reportContent(.init(kind: .post, id: post.id), reason: reason)
+                        }
+                    }
+                } label: {
+                    Label(L10n.Common.report, systemImage: "flag")
+                }
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.body.weight(.semibold))
+                .frame(width: 44, height: 44)
+        }
+        .accessibilityLabel(L10n.Common.options)
     }
 
     private func bottomBar(_ post: SocialPost) -> some View {

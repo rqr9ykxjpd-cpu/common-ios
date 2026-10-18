@@ -108,7 +108,9 @@ struct NotesView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(BondTheme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             } else {
-                NoteGrid(notes: Array(recent.prefix(4))) { reading = NoteReaderRoute(id: $0.id) }
+                NoteGrid(notes: Array(recent.filter { !appState.deletedPostIDs.contains($0.id) }.prefix(4))) {
+                    reading = NoteReaderRoute(id: $0.id)
+                }
             }
         }
     }
@@ -137,7 +139,9 @@ struct NotesView: View {
                     .foregroundStyle(BondTheme.muted)
                     .padding(.top, BondTheme.Space.sm)
             } else {
-                NoteGrid(notes: results) { reading = NoteReaderRoute(id: $0.id) }
+                NoteGrid(notes: results.filter { !appState.deletedPostIDs.contains($0.id) }) {
+                    reading = NoteReaderRoute(id: $0.id)
+                }
             }
         } else {
             ProgressView().frame(maxWidth: .infinity).padding(.top, BondTheme.Space.xl)
