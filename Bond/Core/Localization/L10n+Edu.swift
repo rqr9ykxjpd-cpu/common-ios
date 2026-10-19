@@ -4,7 +4,6 @@ extension L10n {
     enum Edu {
         static var cardTitle: String { String(localized: "edu.cardTitle") }
         static var cardBody: String { String(localized: "edu.cardBody") }
-        static var cardAction: String { String(localized: "edu.cardAction") }
         static var pendingTitle: String { String(localized: "edu.pendingTitle") }
         static func pendingBody(_ email: String) -> String { L10n.format("edu.pendingBody", email) }
         static var sheetTitle: String { String(localized: "edu.sheetTitle") }
@@ -27,6 +26,5 @@ extension L10n {
         static var verifiedToast: String { String(localized: "edu.verifiedToast") }
         static var badge: String { String(localized: "edu.badge") }
         static var verifiedLine: String { String(localized: "edu.verifiedLine") }
-        static var notNow: String { String(localized: "edu.notNow") }
     }
 }

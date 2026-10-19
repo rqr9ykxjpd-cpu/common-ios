@@ -5,10 +5,11 @@ private let postListSelect = "id,author_id,caption,media_path,media_paths,place_
 
 extension SupabaseProductService {
     func fetchFeed() async throws -> [BackendPost] {
-        var sorgu = client.from("posts").select(postListSelect)
         // Ders notları akışta değil, Notlar'da; son 100 gönderiden yer yemesinler.
-        if NotesRollout.isEnabled { sorgu = sorgu.neq("kind", value: PostKind.notes.rawValue) }
-        let rows: [PostRow] = try await sorgu
+        let rows: [PostRow] = try await client
+            .from("posts")
+            .select(postListSelect)
+            .neq("kind", value: PostKind.notes.rawValue)
             .order("created_at", ascending: false)
             .limit(100)
             .execute()
@@ -157,15 +158,9 @@ extension SupabaseProductService {
     /// kırılıyordu. Ayrı ve `try?` ile: kolon varsa rozet gelir, yoksa uygulama
     /// hiçbir şey kaybetmeden çalışmaya devam eder.
     func createPost(caption: String, placeName: String?, images: [Data], kind: PostKind) async throws -> BackendPost {
-        try await createPost(caption: caption, placeName: placeName, images: images, kind: kind, department: nil)
-    }
-
-    /// Ders notunda bölüm de yazılır; not gönderi tavanına takılmaz.
-    func createPost(caption: String, placeName: String?, images: [Data], kind: PostKind, department: String?) async throws -> BackendPost {
         guard let userID = currentUserID else { throw BackendServiceError.missingSession }
         try ContentSafety.validate(caption)
         try ContentSafety.validate(placeName ?? "")
-        try ContentSafety.validate(department ?? "")
         if kind != .notes, try await countMyPosts() >= CampusLimits.maxPostsPerUser {
             let plan = try await fetchMyPlan()
             if plan.maxPosts != nil { throw BackendServiceError.postLimit }
@@ -196,8 +191,7 @@ extension SupabaseProductService {
             mediaPath: paths.first,
             // Eski sürümler `media_path`'e bakar ve ilk fotoğrafı görür.
             mediaPaths: paths.count > 1 ? paths : nil,
-            kind: kind,
-            department: department?.trimmingCharacters(in: .whitespacesAndNewlines)
+            kind: kind
         )
         let row: PostRow
         do {

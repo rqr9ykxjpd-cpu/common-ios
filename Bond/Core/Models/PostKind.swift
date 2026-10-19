@@ -45,16 +45,12 @@ enum PostKind: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
     /// Seçilebilir rozetler; `moment` katalogda yok. Ders notu Notlar açıkken
     /// yalnızca Notlar'dan paylaşılıyor, akışta seçilmiyor.
     static var catalog: [PostKind] {
-        allCases.filter { $0 != .moment && !(NotesRollout.isEnabled && $0 == .notes) }
+        allCases.filter { $0 != .moment && $0 != .notes }
     }
     /// Akış filtresi ve sıralama için rozetli türler (katalogla aynı).
     static var tagged: [PostKind] { catalog }
     /// Çip sırasında öne çıkanlar; gerisi "Daha fazla…" kataloğunda.
-    static var featured: [PostKind] {
-        NotesRollout.isEnabled
-            ? [.question, .announcement, .help, .event, .agenda]
-            : [.question, .announcement, .notes, .help, .event, .agenda]
-    }
+    static let featured: [PostKind] = [.question, .announcement, .help, .event, .agenda]
 
     var title: String {
         switch self {

@@ -53,7 +53,6 @@ extension L10n {
         static var addToProfile: String { String(localized: "composer.addToProfile") }
         static var addedToProfile: String { String(localized: "composer.addedToProfile") }
         static var addToProfileFooter: String { String(localized: "composer.addToProfileFooter") }
-        static var addToProfileNeedPhoto: String { String(localized: "composer.addToProfileNeedPhoto") }
         static var galleryFull: String { String(localized: "composer.galleryFull") }
     }
 }

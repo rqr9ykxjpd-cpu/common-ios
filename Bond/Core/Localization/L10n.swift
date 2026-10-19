@@ -18,9 +18,6 @@ enum L10n {
         appLocale.language.languageCode?.identifier == "en"
     }
 
-    static func text(_ key: String.LocalizationValue) -> String {
-        String(localized: key)
-    }
 
     static func format(_ key: String.LocalizationValue, _ arguments: CVarArg...) -> String {
         String(format: String(localized: key), locale: appLocale, arguments: arguments)

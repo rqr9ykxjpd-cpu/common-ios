@@ -2,15 +2,12 @@ import Foundation
 
 extension L10n {
     enum Chat {
-        static var loading: String { String(localized: "chat.loading") }
         static var title: String { String(localized: "chat.title") }
         static var oneRequest: String { String(localized: "chat.oneRequest") }
         static func requestCount(_ count: Int) -> String {
             L10n.format("chat.requestCount", Int64(count))
         }
         static var fromUnmatched: String { String(localized: "chat.fromUnmatched") }
-        static var messages: String { String(localized: "chat.messages") }
-        static var newConnections: String { String(localized: "chat.newConnections") }
         static var emptyTitle: String { String(localized: "chat.emptyTitle") }
         static var emptyBody: String { String(localized: "chat.emptyBody") }
         static var requestsIntro: String { String(localized: "chat.requestsIntro") }
@@ -22,9 +19,6 @@ extension L10n {
         static var requestFootnote: String { String(localized: "chat.requestFootnote") }
         static var missing: String { String(localized: "chat.missing") }
         static var unmatchedMaybe: String { String(localized: "chat.unmatchedMaybe") }
-        static var unmatchConfirm: String { String(localized: "chat.unmatchConfirm") }
-        static var endMatch: String { String(localized: "chat.endMatch") }
-        static var unmatchBody: String { String(localized: "chat.unmatchBody") }
         static var options: String { String(localized: "chat.options") }
         static var editing: String { String(localized: "chat.editing") }
         static var editingHint: String { String(localized: "chat.editingHint") }
@@ -54,7 +48,6 @@ extension L10n {
         static func manyShared(_ a: String, _ b: String, _ count: Int) -> String {
             L10n.format("chat.manyShared", a, b, Int64(count))
         }
-        static var newMatch: String { String(localized: "chat.newMatch") }
         static func blockConfirm(_ name: String) -> String {
             L10n.format("chat.blockConfirm", name)
         }

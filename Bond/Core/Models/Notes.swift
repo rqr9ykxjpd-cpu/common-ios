@@ -1,16 +1,9 @@
 import Foundation
 
-/// Notlar girişi 1.1.7'de açıldı (18 Ekim). 1.1.6'da gizliydi; bayrak,
-/// notların akıştan ayrılmasını girişle aynı anda açmak için duruyor.
-enum NotesRollout {
-    static let isEnabled = true
-}
-
 extension SocialPost {
     /// Notlar yalnızca Notlar'da (kurucunun kararı, 17 Ekim): akışta ve
-    /// profildeki gönderi listesinde görünmez. Notlar girişi gizliyken eskisi
-    /// gibi her yerde görünür, hiçbir yerde kaybolmasın.
-    var showsOutsideNotes: Bool { !(NotesRollout.isEnabled && kind == .notes) }
+    /// profildeki gönderi listesinde görünmez.
+    var showsOutsideNotes: Bool { kind != .notes }
 }
 
 enum NoteLimits {

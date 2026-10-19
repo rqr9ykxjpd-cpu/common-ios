@@ -33,7 +33,6 @@ extension L10n {
         static var activeExists: String { String(localized: "studyGroup.activeExists") }
         static var closed: String { String(localized: "studyGroup.closed") }
         static var mine: String { String(localized: "studyGroup.mine") }
-        static var loadFailed: String { String(localized: "studyGroup.loadFailed") }
         static var spotShow: String { String(localized: "studyGroup.spotShow") }
         static var spotRetake: String { String(localized: "studyGroup.spotRetake") }
         static var spotHint: String { String(localized: "studyGroup.spotHint") }

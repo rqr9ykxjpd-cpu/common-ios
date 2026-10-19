@@ -112,7 +112,7 @@ struct SampleProductService: ProductService {
 
     // Akış
     func fetchFeed() async throws -> [BackendPost] {
-        await store.allPosts().filter { !(NotesRollout.isEnabled && $0.kind == .notes) }
+        await store.allPosts().filter { $0.kind != .notes }
     }
     func countMyPosts() async throws -> Int {
         await store.allPosts().filter { $0.authorID == SampleData.me.id }.count

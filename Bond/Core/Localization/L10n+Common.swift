@@ -20,15 +20,12 @@ extension L10n {
         static var delete: String { String(localized: "common.delete") }
         static var block: String { String(localized: "common.block") }
         static var report: String { String(localized: "common.report") }
-        static var select: String { String(localized: "common.select") }
         static var off: String { String(localized: "common.off") }
         static var on: String { String(localized: "common.on") }
         static var student: String { String(localized: "common.student") }
         static var yalovaUniversity: String { String(localized: "common.yalovaUniversity") }
-        static var youBadge: String { String(localized: "common.youBadge") }
         static var sending: String { String(localized: "common.sending") }
         static var saving: String { String(localized: "common.saving") }
-        static var refresh: String { String(localized: "common.refresh") }
         static var goBack: String { String(localized: "common.goBack") }
         static var secondary: String { String(localized: "common.secondary") }
         static var disabled: String { String(localized: "common.disabled") }

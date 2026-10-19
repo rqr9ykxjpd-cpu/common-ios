@@ -42,11 +42,7 @@ extension L10n {
         static var pickerTitle: String { String(localized: "composer.pickerTitle", table: "PostKind") }
         /// Çip sırasının sonundaki "Daha fazla…" ve açtığı katalog.
         static var moreBadges: String { String(localized: "composer.moreBadges", table: "PostKind") }
-        static var catalogTitle: String { String(localized: "catalog.title", table: "PostKind") }
         static var catalogNone: String { String(localized: "catalog.none", table: "PostKind") }
-        static var questionDescription: String { String(localized: "description.question", table: "PostKind") }
-        static var announcementDescription: String { String(localized: "description.announcement", table: "PostKind") }
-        static var notesDescription: String { String(localized: "description.notes", table: "PostKind") }
         /// Akış filtresindeki "Tümü" çipi.
         static var all: String { String(localized: "filter.all", table: "PostKind") }
         static var filterA11y: String { String(localized: "filter.a11y", table: "PostKind") }

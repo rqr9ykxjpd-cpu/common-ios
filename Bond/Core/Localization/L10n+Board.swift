@@ -40,7 +40,6 @@ extension L10n {
         static func boostCurrent(_ count: Int) -> String { format("founder.boostCurrent", count) }
         static var pin: String { String(localized: "founder.pin", table: "Board") }
         static var unpin: String { String(localized: "founder.unpin", table: "Board") }
-        static var pinned: String { String(localized: "founder.pinned", table: "Board") }
         static func pinnedAt(_ slot: Int) -> String { format("founder.pinnedAt", slot) }
         static var pinChange: String { String(localized: "founder.pinChange", table: "Board") }
         static var pinPrompt: String { String(localized: "founder.pinPrompt", table: "Board") }
@@ -54,7 +53,6 @@ extension L10n {
         static var swipersEmpty: String { String(localized: "founder.swipersEmpty", table: "Board") }
         static var statsTitle: String { String(localized: "founder.stats", table: "Board") }
         static var statsHint: String { String(localized: "founder.statsHint", table: "Board") }
-        static var statsLive: String { String(localized: "founder.stats.live", table: "Board") }
         static var broadcastTitle: String { String(localized: "founder.broadcast", table: "Board") }
         static var broadcastHint: String { String(localized: "founder.broadcastHint", table: "Board") }
         static var broadcastTitleField: String { String(localized: "founder.broadcastTitleField", table: "Board") }
@@ -69,18 +67,12 @@ extension L10n {
         }
         static var week: String { String(localized: "founder.week", table: "Board") }
         static var month: String { String(localized: "founder.month", table: "Board") }
-        static var weekNew: String { String(localized: "founder.week.newUsers", table: "Board") }
-        static var weekActive: String { String(localized: "founder.week.active", table: "Board") }
-        static var weekPosts: String { String(localized: "founder.week.posts", table: "Board") }
         static var users: String { String(localized: "founder.users", table: "Board") }
         static var usersHint: String { String(localized: "founder.usersHint", table: "Board") }
         static var usersSearch: String { String(localized: "founder.usersSearch", table: "Board") }
         static var usersEmpty: String { String(localized: "founder.usersEmpty", table: "Board") }
-        static func userJoined(_ when: String) -> String { format("founder.user.joined", when) }
         static func userActive(_ when: String) -> String { format("founder.user.active", when) }
         static var userFrozen: String { String(localized: "founder.user.frozen", table: "Board") }
-        static var userActions: String { String(localized: "founder.user.actions", table: "Board") }
-        static var userOpenProfile: String { String(localized: "founder.user.openProfile", table: "Board") }
         static var giftPlus30: String { String(localized: "founder.user.giftPlus30", table: "Board") }
         static var giftPro30: String { String(localized: "founder.user.giftPro30", table: "Board") }
         static var giftProForever: String { String(localized: "founder.user.giftProForever", table: "Board") }
@@ -90,14 +82,12 @@ extension L10n {
         static var freeze: String { String(localized: "founder.user.freeze", table: "Board") }
         static var unfreeze: String { String(localized: "founder.user.unfreeze", table: "Board") }
         static func freezeConfirm(_ name: String) -> String { format("founder.user.freezeConfirm", name) }
-        static var paidPlan: String { String(localized: "founder.user.paidPlan", table: "Board") }
         static var userDone: String { String(localized: "founder.user.done", table: "Board") }
         static var announcements: String { String(localized: "founder.announcements", table: "Board") }
         static var announcementsEmpty: String { String(localized: "founder.announcementsEmpty", table: "Board") }
         static func announcementRecipients(_ n: Int) -> String { format("founder.announcement.recipients", n) }
         static var statsUsers: String { String(localized: "founder.stats.users", table: "Board") }
         static var statsPlans: String { String(localized: "founder.stats.plans", table: "Board") }
-        static var statsBoard: String { String(localized: "founder.stats.board", table: "Board") }
         static var statsPeople: String { String(localized: "founder.stats.people", table: "Board") }
         /// Dinamik anahtar: String(localized:) derleme zamanı anahtar istiyor,
         /// çalışma zamanında üretilen anahtarı bulamayıp anahtarın kendisini basıyordu.

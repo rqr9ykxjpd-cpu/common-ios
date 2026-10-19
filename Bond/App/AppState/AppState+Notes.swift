@@ -35,7 +35,7 @@ extension AppState {
     /// Akıştaki notların dersi ve sayfaları ("Notu aç"). Sunucu eskiyse ya da
     /// ağ yoksa not sıradan gönderi gibi kalır.
     func loadNoteExtras(for posts: [SocialPost]) async {
-        guard NotesRollout.isEnabled, let masa = service as? any NotesManaging else { return }
+        guard let masa = service as? any NotesManaging else { return }
         let ids = posts.filter { $0.kind == .notes }.map(\.id)
         guard !ids.isEmpty, let gelen = try? await masa.fetchNoteExtras(ids) else { return }
         for ek in gelen { noteExtras[ek.postID] = ek }

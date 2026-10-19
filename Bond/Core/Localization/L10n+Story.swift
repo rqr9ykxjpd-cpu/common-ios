@@ -5,7 +5,6 @@ extension L10n {
         static var missing: String { String(localized: "story.missing") }
         static var deleteConfirm: String { String(localized: "story.deleteConfirm") }
         static var delete: String { String(localized: "story.delete") }
-        static var paused: String { String(localized: "story.paused") }
         static var pausePlus: String { String(localized: "story.pausePlus") }
         static func ageMinutes(_ n: Int) -> String { L10n.format("story.ageMinutes", Int64(n)) }
         static func ageHours(_ n: Int) -> String { L10n.format("story.ageHours", Int64(n)) }
@@ -33,7 +32,6 @@ extension L10n {
         static var viewersTitle: String { String(localized: "story.viewersTitle") }
         static var unlike: String { String(localized: "story.unlike") }
         static var like: String { String(localized: "story.like") }
-        static var loadFailed: String { String(localized: "story.loadFailed") }
         static var postFailed: String { String(localized: "story.postFailed") }
         static var deleted: String { String(localized: "story.deleted") }
         static var deleteFailed: String { String(localized: "story.deleteFailed") }

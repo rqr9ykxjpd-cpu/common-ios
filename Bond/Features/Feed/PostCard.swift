@@ -72,7 +72,7 @@ struct PostCard: View {
         VStack(alignment: .leading, spacing: BondTheme.Space.md) {
             header
             content
-            if NotesRollout.isEnabled, post.kind == .notes, let not = appState.noteExtras[post.id] {
+            if post.kind == .notes, let not = appState.noteExtras[post.id] {
                 noteOpenRow(not)
             }
             if !isDetail, let top = post.topComment, top.voteCount >= 0 {

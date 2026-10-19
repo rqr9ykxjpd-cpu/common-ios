@@ -2,21 +2,12 @@ import Foundation
 
 extension L10n {
     enum Paywall {
-        static var brand: String { String(localized: "paywall.brand") }
         static var headline: String { String(localized: "paywall.headline") }
-        static var free: String { String(localized: "paywall.free") }
-        static var plus: String { String(localized: "paywall.plus") }
-        static var pro: String { String(localized: "paywall.pro") }
         static var specialNote: String { String(localized: "paywall.specialNote") }
         static func planName(_ tier: String) -> String {
             L10n.format("paywall.planName", tier)
         }
-        static func currentPlan(_ tier: String) -> String {
-            L10n.format("paywall.currentPlan", planName(tier))
-        }
-        static var unlimited: String { String(localized: "paywall.unlimited") }
         static var perMonth: String { String(localized: "paywall.perMonth") }
-        static var handNote: String { String(localized: "paywall.handNote") }
         static var legal: String { String(localized: "paywall.legal") }
         static var restoring: String { String(localized: "paywall.restoring") }
         static var restore: String { String(localized: "paywall.restore") }

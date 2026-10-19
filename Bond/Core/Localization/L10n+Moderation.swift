@@ -9,7 +9,6 @@ extension L10n {
         static var removeStory: String { String(localized: "moderation.removeStory") }
         static var suspendAccount: String { String(localized: "moderation.suspendAccount") }
         static var suspendAccountBody: String { String(localized: "moderation.suspendAccountBody") }
-        static var founderTools: String { String(localized: "moderation.founderTools") }
         static var noneWaiting: String { String(localized: "moderation.noneWaiting") }
         static func waitingCount(_ count: Int) -> String {
             L10n.format("moderation.waitingCount", Int64(count))
@@ -32,7 +31,6 @@ extension L10n {
         }
         static var unknown: String { String(localized: "moderation.unknown") }
         static var noIssue: String { String(localized: "moderation.noIssue") }
-        static var removedContent: String { String(localized: "moderation.removedContent") }
         static var suspend: String { String(localized: "moderation.suspend") }
         static func suspendConfirm(_ name: String) -> String {
             L10n.format("moderation.suspendConfirm", name)
