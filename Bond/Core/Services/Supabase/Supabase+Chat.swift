@@ -259,9 +259,9 @@ extension SupabaseProductService {
     }
 
     func declineMessageRequest(_ requestID: UUID) async throws {
-        try await client.from("message_requests")
-            .update(MeetingRequestStatusUpdate(status: "declined"), returning: .minimal)
-            .eq("id", value: requestID)
+        let _: Bool = try await client
+            .rpc("decline_message_request", params: MessageRequestAcceptParams(request: requestID))
             .execute()
+            .value
     }
 }

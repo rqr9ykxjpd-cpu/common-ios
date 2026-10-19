@@ -11,7 +11,7 @@ enum LegalBlock {
 enum LegalTexts {
     static let gizlilik: [LegalBlock] = [
         .baslik("Gizlilik Politikası"),
-        .paragraf("Son güncelleme: 30 Eylül 2026"),
+        .paragraf("Son güncelleme: 27 Eylül 2026"),
         .paragraf("Common, üniversite kampüsü topluluklarına yönelik; kampüs paylaşımları, kulüpler, buluşmalar ve mesajlaşma sunan bir sosyal uygulamadır. Bu metin, uygulamanın hangi bilgileri topladığını, neden topladığını ve bu bilgilerle ne yaptığını anlatır. Sade tutmaya çalıştık."),
         .altbaslik("Topladığımız bilgiler"),
         .paragraf("Hesabını açarken: e-posta adresin (Google veya Apple ile giriş yaptığında bize iletilen adres), adın, doğum tarihin, üniversiten, bölümün ve sınıfın. Doğum tarihini yaşını hesaplamak ve 18 yaş sınırını uygulamak için istiyoruz."),
@@ -20,14 +20,14 @@ enum LegalTexts {
         .paragraf("Profilini doldururken: kendini anlattığın metin, ilgi alanların ve profil fotoğrafların."),
         .paragraf("Uygulamayı kullanırken: paylaştığın gönderiler ve story'ler, yazdığın yorumlar ve mesajlar, beğendiğin ve kaydettiğin gönderiler, katıldığın kulüpler, \"şu an buradayım\" diye seçtiğin kampüs noktası, kimlerle bağlantı kurduğun ve son aktif olduğun zaman."),
         .paragraf("Otomatik olarak: oturumunu açık tutmak için gereken teknik kayıtlar."),
-        .paragraf("Konumunu telefondan okumuyoruz. Kampüste nerede olduğun yalnızca senin listeden elle seçtiğin yerdir ve seçtiğin süre dolunca kendiliğinden kalkar."),
+        .paragraf("Konumunu telefondan okumuyoruz. Kampüste nerede olduğun yalnızca senin listeden elle seçtiğin yerdir. Başka bir yer seçene veya Ayrıl diyene kadar bu seçim görünür kalır."),
         .altbaslik("Bu bilgileri ne için kullanıyoruz"),
         .paragraf("Hesabını açmak ve girişini sürdürmek; profilini ve paylaşımlarını diğer öğrencilere göstermek; kampüs içeriği üzerinden insanlarla bağlantı kurmanı ve kabul edilen mesaj isteklerinden sonra konuşmanı sağlamak; şikayet edilen içerikleri incelemek ve kuralları uygulamak."),
         .paragraf("Reklam göstermiyoruz. Bilgilerini reklam amacıyla kimseye satmıyor, kiralamıyor veya devretmiyoruz."),
         .altbaslik("Kimler neyi görebiliyor"),
         .madde("Profilin, gönderilerin ve story'lerin: uygulamayı kullanan diğer öğrenciler görebilir. Engellediğin veya seni engelleyen kişiler bunun dışındadır."),
         .madde("Mesajların: uygulama içinde konuşmanın taraflarına gösterilir. Bir mesaj şikayet edildiğinde, o mesajın içeriği ve şikayet gerekçesi yetkili moderatörlere iletilir; bu işlem tüm konuşmayı moderatörlere açmaz."),
-        .madde("Seçtiğin kampüs noktası: yalnızca sen görünür olmayı seçtiğin sürece ve yalnızca uygulamadaki diğer öğrenciler görebilir."),
+        .madde("Seçtiğin kampüs noktası: başka bir yer seçene veya Ayrıl diyene kadar yalnızca uygulamadaki diğer öğrenciler görebilir."),
         .madde("Bir story'yi izlemen: o story'nin sahibi seni izleyenler listesinde görür ve kaç kez izlediğin de ona görünür. Story kaybolduğunda bu bilgi de silinir."),
         .madde("E-posta adreslerin ve doğum tarihin: diğer kullanıcılara gösterilmez. Okul e-postanı doğrularsan diğer kullanıcılar yalnızca Öğrenci rozetini görür."),
         .madde("Engellediğin kişiler: engellediğin kişi bunu göremez."),
@@ -56,7 +56,7 @@ enum LegalTexts {
 
     static let kosullar: [LegalBlock] = [
         .baslik("Kullanım Koşulları"),
-        .paragraf("Son güncelleme: 30 Eylül 2026"),
+        .paragraf("Son güncelleme: 27 Eylül 2026"),
         .paragraf("Common'u kullanarak bu koşulları kabul etmiş olursun. Kabul etmiyorsan uygulamayı kullanma."),
         .altbaslik("Kimler kullanabilir"),
         .paragraf("Common, üniversite öğrencilerine yöneliktir ve 18 yaşını doldurmuş olman gerekir. Hesabını kendi adına açarsın; başkasının kimliğine bürünemez, sahte profil oluşturamazsın. Hesabını başkasına devredemez, paylaşamazsın."),
@@ -99,7 +99,7 @@ enum LegalTexts {
 
     static let privacy: [LegalBlock] = [
         .baslik("Privacy Policy"),
-        .paragraf("Last updated: 30 September 2026"),
+        .paragraf("Last updated: 27 September 2026"),
         .paragraf("Common is a social app for university campus communities, with campus posts, clubs, meetups and messaging. This document explains what information the app collects, why it collects it, and what we do with it. English translation of the Turkish original; the Turkish version governs."),
         .altbaslik("Information we collect"),
         .paragraf("When you create an account: your email address (provided to us when you sign in with Google or Apple), your name, date of birth, university, department and year of study. We ask for your date of birth to calculate your age and to enforce the minimum age of 18."),
@@ -108,14 +108,14 @@ enum LegalTexts {
         .paragraf("When you fill in your profile: your bio, interests and profile photos."),
         .paragraf("As you use the app: the posts and stories you share, the comments and messages you write, the posts you like and save, the clubs you join, the campus location you choose to appear at, who you connect with, and when you were last active."),
         .paragraf("Automatically: the technical records needed to keep you signed in."),
-        .paragraf("We do not read your location from your device. Where you appear on campus is only the place you pick yourself from a list, and it clears automatically when the time you chose runs out."),
+        .paragraf("We do not read your location from your device. Where you appear on campus is only the place you pick yourself from a list. It remains visible until you choose another place or tap Leave."),
         .altbaslik("How we use this information"),
         .paragraf("To create your account and keep you signed in; to show your profile and posts to other students; to help you connect through campus content and talk after a message request is accepted; and to review reported content and enforce our rules."),
         .paragraf("We do not show ads. We do not sell, rent or transfer your information to anyone for advertising."),
         .altbaslik("Who can see what"),
         .madde("Your profile, posts and stories: other students using the app. People you block, or who block you, are excluded."),
         .madde("Your messages: shown to the participants of the conversation in the app. When a message is reported, that message's content and the report reason are shared with authorized moderators; this does not give moderators access to the entire conversation."),
-        .madde("The campus place you pick: only while you choose to be visible, and only to other students in the app."),
+        .madde("The campus place you pick: visible only to other students in the app, until you choose another place or tap Leave."),
         .madde("Watching someone's story: the owner of that story sees you in their list of viewers, including how many times you watched it. This is deleted with the story."),
         .madde("Your email addresses and date of birth: never shown to other users. If you verify a school email, other users see only the Student badge."),
         .madde("People you block: cannot see that you blocked them."),
@@ -144,7 +144,7 @@ enum LegalTexts {
 
     static let terms: [LegalBlock] = [
         .baslik("Terms of Use"),
-        .paragraf("Last updated: 30 September 2026"),
+        .paragraf("Last updated: 27 September 2026"),
         .paragraf("By using Common you accept these terms. If you do not accept them, do not use the app. English translation of the Turkish original; the Turkish version governs."),
         .altbaslik("Who can use it"),
         .paragraf("Common is intended for university students and you must be 18 or older. You open an account in your own name; you may not impersonate anyone or create a fake profile. You may not transfer or share your account."),

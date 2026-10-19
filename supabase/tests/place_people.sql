@@ -29,7 +29,7 @@ select
   true,
   ids.label = 'ghost',
   (select id from public.places where name = 'Ghost Test Kantin'),
-  now() + interval '2 hours'
+  null
 from place_people_ids ids;
 
 insert into public.blocks(blocker_id, blocked_id)
@@ -55,6 +55,18 @@ begin
   assert not ('Ghost' = any(seen)), 'Ghost mode must hide the account from the place list';
   assert not ('Blocked' = any(seen)), 'Blocks must hide the account from the place list';
   assert not ('Viewer' = any(seen)), 'The viewer must not see themself';
+
+  perform public.set_visible_place(place);
+  assert (select visible_place_id = place and visible_until is null
+          from public.profiles
+          where id = (select id from place_people_ids where label = 'viewer')),
+         'Presence must remain selected without an expiry';
+
+  perform public.set_visible_place(null);
+  assert (select visible_place_id is null and visible_until is null
+          from public.profiles
+          where id = (select id from place_people_ids where label = 'viewer')),
+         'Leaving must clear presence explicitly';
 end $$;
 
 reset role;

@@ -239,8 +239,11 @@ struct PlacesWallView: View {
                         .hidden().accessibilityHidden(true)
                 }
                 if let active = appState.currentVisiblePlace {
-                    Text(L10n.Places.visibleAt(active.name))
-                        .foregroundStyle(presenceAccent)
+                    HStack(spacing: 6) {
+                        LiveDot(size: 7)
+                        Text(L10n.Places.visibleAt(active.name))
+                    }
+                    .foregroundStyle(presenceAccent)
                 } else {
                     // Ayrılan alan boş kalmasın; durumu söylesin.
                     Text(L10n.Places.notVisible)
@@ -366,7 +369,7 @@ struct PlacesWallView: View {
                 .hidden()
                 Text(L10n.Places.imHere).hidden()
                 HStack(spacing: 4) {
-                    // "Buradasın" olunca küçük iğne yukarıdan düşüp yere oturuyor.
+                    // Aktif yerde iğne, ayrılma eylemini görünür kılar.
                     if isHere { DroppingPin() }
                     Text(isHere ? L10n.Places.youAreHere : L10n.Places.imHere)
                 }

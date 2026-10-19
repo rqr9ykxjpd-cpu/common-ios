@@ -7,15 +7,18 @@ struct MainTabView: View {
     var body: some View {
         TabView(selection: $selection) {
             SocialFeedView()
+                .adaptivePageWidth()
                 .tabItem { Label(L10n.Tabs.feed, systemImage: "house") }
                 .tag(0)
             PlacesWallView(showsCloseButton: false) { place in
                 appState.selectedPlaceFilter = place
                 selection = 0
             }
+                .adaptivePageWidth()
                 .tabItem { Label(L10n.CampusNavigation.places, systemImage: "mappin.and.ellipse") }
                 .tag(1)
             PremiumMatchesView(showsCloseButton: false)
+                .adaptivePageWidth(BondTheme.Layout.conversationMaxWidth)
                 // Sekme simgesine eklenen efektler (zıplama vb.) çubuğa taşınmıyor:
                 // iOS alt çubuğu yalnızca simgeyi ve yazıyı alıyor. Yeni mesajı rozet
                 // gösteriyor; seçim animasyonunu iOS 26'nın cam çubuğu kendisi yapıyor.
@@ -23,6 +26,7 @@ struct MainTabView: View {
                 .badge(appState.chatActivityCount)
                 .tag(2)
             SocialProfileView()
+                .adaptivePageWidth()
                 .tabItem { Label(L10n.Tabs.profile, systemImage: "person") }
                 .tag(3)
         }

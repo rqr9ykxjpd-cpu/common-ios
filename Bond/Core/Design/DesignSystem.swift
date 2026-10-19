@@ -94,6 +94,16 @@ enum BondTheme {
         static let media: CGFloat = 24
     }
 
+    enum Layout {
+        /// Forms, lists and editorial pages should not stretch into long,
+        /// hard-to-scan lines on iPad or a wide Stage Manager window.
+        static let readableMaxWidth: CGFloat = 720
+        /// Chat can use a little more horizontal space until its dedicated
+        /// two-column iPad navigation arrives.
+        static let conversationMaxWidth: CGFloat = 920
+        static let onboardingMaxWidth: CGFloat = 640
+    }
+
     enum Motion {
         static let duration: Double = 0.2
         static var easing: Animation { .easeOut(duration: duration) }
@@ -108,16 +118,6 @@ enum BondTheme {
         static var interactive: Animation { .interactiveSpring(response: 0.3, dampingFraction: 0.9) }
     }
 
-    /// Sabit punto; sistem metin boyutu ayarıyla büyümez.
-    ///
-    /// Önce metin stili olarak tanımlıydılar (`.system(.headline, ...)`) ve
-    /// sistem ayarıyla ölçekleniyorlardı. Uygulamanın geri kalanı ise sabit
-    /// punto kullanıyordu — 233 sabite karşı 49 ölçeklenebilir. Sonuç tutarsızdı:
-    /// çoğu ekran ayarı yok sayıyor, azınlık büyüyor ve bazıları kırılıyordu.
-    /// Ayarlar ekranında "Şikayetler" kelimenin ortasından bölünüyordu.
-    ///
-    /// Değerler iOS'un varsayılan punto karşılıkları; varsayılan boyuttaki
-    /// görünüm birebir aynı kaldı, yalnızca büyümesi durdu.
     /// Yazı ölçeği. iOS metin stilleri: varsayılan boyutları bu tokenların
     /// eski sabit değerleriyle birebir aynı (34/28/22/20/17/15/17/16/13/12),
     /// yani görünüm değişmiyor; fark, kullanıcının "Metin boyutu" ayarına uyması.
@@ -214,6 +214,25 @@ extension View {
 
     func campusBody(_ size: CGFloat = 17) -> some View {
         modifier(CampusBody(size: size))
+    }
+
+    /// Compact windows keep using every available point. Regular-width
+    /// windows center the product at a readable width instead of stretching
+    /// an iPhone composition edge-to-edge across an iPad.
+    func adaptivePageWidth(_ maxWidth: CGFloat = BondTheme.Layout.readableMaxWidth) -> some View {
+        modifier(AdaptivePageWidth(maxWidth: maxWidth))
+    }
+}
+
+private struct AdaptivePageWidth: ViewModifier {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    let maxWidth: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .frame(maxWidth: horizontalSizeClass == .regular ? maxWidth : .infinity)
+            .frame(maxWidth: .infinity)
+            .background(BondTheme.paper)
     }
 }
 

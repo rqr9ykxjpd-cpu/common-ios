@@ -1,6 +1,6 @@
 # Gizlilik Politikası
 
-**Son güncelleme:** 11 Eylül 2026
+**Son güncelleme:** 27 Eylül 2026
 
 Common, üniversite kampüsü topluluklarına yönelik; kampüs paylaşımları, kulüpler,
 buluşmalar ve mesajlaşma sunan bir sosyal uygulamadır. Bu
@@ -13,6 +13,14 @@ topladığını ve bu bilgilerle ne yaptığını anlatır. Sade tutmaya çalı�
 bize iletilen adres), adın, doğum tarihin, üniversiten, bölümün ve sınıfın.
 Doğum tarihini yaşını hesaplamak ve 18 yaş sınırını uygulamak için istiyoruz.
 
+**Öğrenci doğrulaması yaparsan:** okul e-posta adresin ve doğrulandığı zaman.
+Bu adresi öğrenci durumunu doğrulamak, aynı okul adresinin birden fazla hesapta
+kullanılmasını önlemek ve profilinde Öğrenci rozeti göstermek için işleriz.
+
+**Sorun bildirirsen:** yazdığın metin, uygulama sürümü, iOS sürümü, cihaz modeli
+ve hangi ekrandan yazdığın; destek ekibiyle yazışmaların. Bunları yalnızca sen ve
+yetkili destek ekibi görür; sorunu çözmek ve sana yanıt vermek için kullanırız.
+
 **Profilini doldururken:** kendini anlattığın metin, ilgi alanların ve profil
 fotoğrafların.
 
@@ -24,7 +32,8 @@ bağlantı kurduğun ve son aktif olduğun zaman.
 **Otomatik olarak:** oturumunu açık tutmak için gereken teknik kayıtlar.
 
 Konumunu telefondan **okumuyoruz.** Kampüste nerede olduğun yalnızca senin
-listeden elle seçtiğin yerdir ve seçtiğin süre dolunca kendiliğinden kalkar.
+listeden elle seçtiğin yerdir. Başka bir yer seçene veya **Ayrıl** diyene kadar
+bu seçim görünür kalır.
 
 ## Bu bilgileri ne için kullanıyoruz
 
@@ -44,11 +53,12 @@ kiralamıyor veya devretmiyoruz.
 - **Mesajların:** uygulama içinde konuşmanın taraflarına gösterilir. Bir mesaj
   şikayet edildiğinde, o mesajın içeriği ve şikayet gerekçesi yetkili
   moderatörlere iletilir; bu işlem tüm konuşmayı moderatörlere açmaz.
-- **Seçtiğin kampüs noktası:** yalnızca sen görünür olmayı seçtiğin sürece ve
+- **Seçtiğin kampüs noktası:** başka bir yer seçene veya **Ayrıl** diyene kadar
   yalnızca uygulamadaki diğer öğrenciler görebilir.
 - **Bir story'yi izlemen:** o story'nin sahibi seni izleyenler listesinde görür
   ve kaç kez izlediğin de ona görünür. Story kaybolduğunda bu bilgi de silinir.
-- **E-posta adresin ve doğum tarihin:** diğer kullanıcılara gösterilmez.
+- **E-posta adreslerin ve doğum tarihin:** diğer kullanıcılara gösterilmez.
+  Okul e-postanı doğrularsan diğer kullanıcılar yalnızca Öğrenci rozetini görür.
 - **Engellediğin kişiler:** engellediğin kişi bunu göremez.
 
 ## Bilgilerin nerede tutuluyor

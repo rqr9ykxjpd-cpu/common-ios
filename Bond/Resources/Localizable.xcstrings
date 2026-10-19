@@ -42,6 +42,16 @@
         }
       }
     },
+    "%@ (%lld)" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (%2$lld)"
+          }
+        }
+      }
+    },
     "%@, %@" : {
       "localizations" : {
         "tr" : {
@@ -105,6 +115,16 @@
         }
       }
     },
+    "%lld/%lld" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld/%2$lld"
+          }
+        }
+      }
+    },
     "%lld/220" : {
 
     },
@@ -118,6 +138,9 @@
 
     },
     "🎓" : {
+
+    },
+    "2" : {
 
     },
     "answers.count" : {
@@ -425,23 +448,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Common kurucusu"
-          }
-        }
-      }
-    },
-    "badge.founderCallA11y" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Call %@"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ numarasını ara"
           }
         }
       }
@@ -8855,13 +8861,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "If you pick a place, students there can see you. If you don’t, nobody knows where you are."
+            "value" : "Pick a place to appear there until you leave or choose somewhere else. Your device location is never used."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bulunduğun yeri seçersen orada olan öğrenciler seni görür. Seçmezsen kimse konumunu bilmez."
+            "value" : "Bir yer seçtiğinde ayrılana veya başka bir yer seçene kadar orada görünürsün. Telefon konumun kullanılmaz."
           }
         }
       }
@@ -9228,13 +9234,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You’re visible at %@ right now"
+            "value" : "Visible at %@ until you leave"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Şu an %@ konumunda görünürsün"
+            "value" : "Ayrılana kadar %@ konumunda görünürsün"
           }
         }
       }
@@ -9364,13 +9370,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You’re visible at %@ right now"
+            "value" : "Visible at %@ until you leave"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Şu an %@ konumunda görünürsün"
+            "value" : "Ayrılana kadar %@ konumunda görünürsün"
           }
         }
       }
@@ -9449,13 +9455,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You’re here"
+            "value" : "Leave"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Buradasın"
+            "value" : "Ayrıl"
           }
         }
       }

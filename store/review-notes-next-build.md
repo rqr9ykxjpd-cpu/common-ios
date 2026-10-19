@@ -37,8 +37,14 @@ is recorded and a direct message thread appears in Chats. Either side can
 report, block or leave the conversation at any time.
 The paywall follows the system appearance and keeps Free / Plus / Pro
 comparison on one screen with price and purchase at the bottom.
-Student affiliation is not verified in this version. Sign in with Google or
-Apple is supported, and a .edu.tr email address is not required.
+
+Student email verification is optional and separate from sign-in. From
+Profile, a user can submit a supported university email address and confirm
+the link sent to that inbox. A successful confirmation adds the server-issued
+Student badge; the email address itself is never public. Google or Apple sign-in
+does not grant this badge, and a .edu.tr address is not required to enter or use
+the app. The review account is exempt so App Review is never blocked by access
+to a university inbox.
 
 Use the Google account provided in the Sign-in Information fields. Tap
 Continue with Google on the welcome screen. There is no email/password form
@@ -67,13 +73,17 @@ explicit instructions for removing Common from Sign in with Apple settings.
 Deleting the app account does not cancel an App Store subscription.
 
 Common does not request GPS access. Campus presence is a place selected
-manually by the user for a limited time.
+manually by the user. It remains selected until the user chooses another
+place or taps Leave.
 
 English Terms: https://rqr9ykxjpd-cpu.github.io/common-ios/en/terms.html
 English Privacy: https://rqr9ykxjpd-cpu.github.io/common-ios/en/privacy.html
 
-## Build 5 — what changed since build 4 (for "What's New" / internal)
+## Build 6 — what changed (for "What's New" / internal)
 
+- Optional school-email verification and a server-issued Student badge.
+- Sign in with Apple no longer requires Apple to return a name again; display
+  name and profile photo can both be skipped.
 - Study groups (create, join, leave, cancel; cards above the feed).
 - "Send message" on the founder's profile.
 - Read receipts: messages are now marked read when a conversation is opened
@@ -98,6 +108,11 @@ use 1.0.1 if build 4 has been released.
 - Repair the RevenueCat webhook and confirm a sandbox purchase changes the
   server plan, including restore and expiry handling.
 - Test the dedicated reviewer Google account from a fresh device/session.
+- Deploy `20260922010000_edu_verification.sql` and
+  `20260927020000_edu_verification_release.sql`; configure custom SMTP, the
+  Change Email Address template and the verification redirect URL. Confirm the
+  full flow on a fresh regular account, duplicate-address rejection, resend
+  throttling and the reviewer account exemption.
 - Replace remaining old-brand store screenshots with screenshots from the
   tested new build. Upload the matching new build, not the existing build 2.
 - Capture the four tabs (Feed, On Campus, Chats, Profile). Clubs is a
@@ -112,5 +127,6 @@ use 1.0.1 if build 4 has been released.
   previous session ended.
 - Publish the matching privacy/terms pages and confirm App Privacy labels
   against actual collection, including custom user ID and purchase history.
-- Address the earlier 4.3(b) finding with demonstrable product differences;
-  do not describe the community as verified/closed when it is not enforced.
+- Address the earlier 4.3(b) finding with demonstrable product differences.
+  Describe only profiles carrying the Student badge as email-verified; do not
+  describe every account or the whole community as verified/closed.

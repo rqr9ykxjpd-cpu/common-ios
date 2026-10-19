@@ -16,10 +16,13 @@ Soru sor, ders notu paylaş, etkinlik ve duyuru geç. Gönderileri Soru, Duyuru,
 "Bugün 15.00'te Merkez Kütüphane'de Veri Yapıları çalışıyorum" de; ister hemen, ister saat seçerek. Katılmak tek dokunuş. Grup başlayınca ev sahibi oturduğu yerin fotoğrafını katılanlarla paylaşır, kimse kimseyi aramaz.
 
 Kim nerede?
-Kütüphane, kantin, yemekhane… Kampüs noktalarından birini seçip görünür ol, orada kim var gör. Konumun telefondan okunmaz; yalnızca listeden seçtiğin yer görünür ve süre dolunca kendiliğinden kapanır.
+Kütüphane, kantin, yemekhane… Kampüs noktalarından birini seçip görünür ol, orada kim var gör. Telefon konumun okunmaz; yalnızca listeden seçtiğin yer görünür. Başka bir yer seçene veya Ayrıl diyene kadar seçimin korunur.
 
 Kulüpler
 Öğrenci kulüplerine tek dokunuşla katıl; etkinlikleri ve paylaşımları kaçırma.
+
+Öğrenci doğrulaması
+Okul e-posta adresini isteğe bağlı olarak doğrula; adresin gizli kalırken profilinde Öğrenci rozeti görünsün.
 
 Bağlantı ve sohbet
 Tanımak istediğin bir öğrenciye bağlantı isteği gönder; karşılıklı olursa sohbet açılır. Story'ye yanıt mesaj isteği olarak gider, kabul eden yazışır. Rahatsız eden birini tek dokunuşla engelleyebilir, şikayet edebilirsin.

@@ -28,12 +28,15 @@ struct RootView: View {
                 // Keep a partially completed deletion recoverable after relaunch,
                 // without reopening normal app use with revoked Apple permission.
                 AppleAccountDeletionView()
+                    .adaptivePageWidth(BondTheme.Layout.onboardingMaxWidth)
             } else {
                 switch appState.route {
                 case .welcome:
                     WelcomeView()
+                        .adaptivePageWidth(BondTheme.Layout.onboardingMaxWidth)
                 case .onboarding(let step):
                     OnboardingFlow(step: step)
+                        .adaptivePageWidth(BondTheme.Layout.onboardingMaxWidth)
                 case .app:
                     if appState.accountFrozen {
                         // Dondurulan hesap uygulamayı kullanamaz; ne olduğu ve

@@ -73,6 +73,33 @@ begin
   assert (
     select count(*) from public.profile_photos where profile_id = owner
   ) = 5, 'owner must keep exactly five card photos';
+
+  declare
+    replaced text[];
+  begin
+    replaced := public.replace_gallery_photos(array[
+      owner::text || '/gallery-new-a.jpg',
+      owner::text || '/gallery-new-b.jpg'
+    ]);
+    assert cardinality(replaced) = 5,
+      'atomic replace must return every obsolete storage path';
+    assert (select count(*) = 2 from public.profile_photos where profile_id = owner),
+      'atomic replace must install the complete new gallery';
+    assert (select min(position) = 0 and max(position) = 1
+            from public.profile_photos where profile_id = owner),
+      'replacement positions must stay contiguous';
+
+    begin
+      perform public.replace_gallery_photos(array[other::text || '/gallery-stolen.jpg']);
+      raise exception 'foreign replacement path should fail';
+    exception
+      when others then
+        if sqlerrm not like '%photo_owned_path%' then raise; end if;
+    end;
+
+    assert (select count(*) = 2 from public.profile_photos where profile_id = owner),
+      'a failed replacement must preserve the previous gallery';
+  end;
 end $$;
 
 reset role;

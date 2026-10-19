@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated:** 11 September 2026
+**Last updated:** 27 September 2026
 
 Common is a social app for university campus communities, with campus posts,
 clubs, meetups and messaging. This document explains
@@ -15,6 +15,16 @@ sign in with Google or Apple), your name, date of birth, university,
 department and year of study. We ask for your date of birth to calculate your
 age and to enforce the minimum age of 18.
 
+**If you choose student verification:** your school email address and the time
+it was verified. We process this to verify student status, prevent the same
+school address from being used by more than one account, and show the Student
+badge on your profile.
+
+**If you report a problem:** what you write, the app version, iOS version,
+device model and the screen you wrote from, and your conversation with the
+support team. Only you and the authorized support team can see these; we use
+them to fix the problem and reply to you.
+
 **When you fill in your profile:** your bio, interests and profile photos.
 
 **As you use the app:** the posts and stories you share, the comments and
@@ -25,8 +35,8 @@ were last active.
 **Automatically:** the technical records needed to keep you signed in.
 
 We do **not** read your location from your device. Where you appear on campus
-is only the place you pick yourself from a list, and it clears automatically
-when the time you chose runs out.
+is only the place you pick yourself from a list. It remains visible until you
+choose another place or tap **Leave**.
 
 ## How we use this information
 
@@ -46,11 +56,12 @@ anyone for advertising.
   When a message is reported, that message's content and the report reason
   are shared with authorized moderators; this does not give moderators access
   to the entire conversation.
-- **The campus place you pick:** only while you choose to be visible, and only
-  to other students in the app.
+- **The campus place you pick:** visible only to other students in the app,
+  until you choose another place or tap **Leave**.
 - **Watching someone's story:** the owner of that story sees you in their list of
   viewers, including how many times you watched it. This is deleted with the story.
-- **Your email address and date of birth:** never shown to other users.
+- **Your email addresses and date of birth:** never shown to other users. If
+  you verify a school email, other users see only the Student badge.
 - **People you block:** cannot see that you blocked them.
 
 ## Where your data is stored
