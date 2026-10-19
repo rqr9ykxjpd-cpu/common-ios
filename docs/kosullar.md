@@ -1,6 +1,6 @@
 # Kullanım Koşulları
 
-**Son güncelleme:** 11 Eylül 2026
+**Son güncelleme:** 30 Eylül 2026
 
 Common'u kullanarak bu koşulları kabul etmiş olursun. Kabul etmiyorsan
 uygulamayı kullanma.
@@ -12,8 +12,12 @@ olman gerekir. Hesabını kendi adına açarsın; başkasının kimliğine bür�
 sahte profil oluşturamazsın. Hesabını başkasına devredemez, paylaşamazsın.
 
 Google veya Apple ile giriş yapabilirsin. Giriş için .edu.tr adresi şartı
-aranmaz; giriş yapmış olmak üniversite öğrencisi olduğunun doğrulandığı
-anlamına gelmez.
+aranmaz; giriş yapmış olmak tek başına üniversite öğrencisi olduğunun
+doğrulandığı anlamına gelmez. Profilindeki “Öğrenci” rozeti, desteklenen okul
+e-posta adresine gönderilen bağlantının onaylandığını gösterir. Paylaşım, yorum,
+mesaj ve diğer etkileşimler için okul e-posta adresini doğrulaman gerekir;
+doğrulayana kadar profilin diğer kullanıcılara gösterilmez. Giriş yaptığın
+e-posta adresi herkese gösterilmez.
 
 ## Paylaştığın içerikten sen sorumlusun
 

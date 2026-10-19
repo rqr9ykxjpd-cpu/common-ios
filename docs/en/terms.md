@@ -1,6 +1,6 @@
 # Terms of Use
 
-**Last updated:** 11 September 2026
+**Last updated:** 30 September 2026
 
 By using Common you accept these terms. If you do not accept them, do not use
 the app. English translation of the Turkish original; the Turkish version
@@ -13,7 +13,12 @@ open an account in your own name; you may not impersonate anyone or create a
 fake profile. You may not transfer or share your account.
 
 You can sign in with Google or Apple. A .edu.tr address is not required;
-signing in does not verify that you are a university student.
+signing in alone does not verify that you are a university student. The
+“Student” badge on a profile means that the link sent to a supported school
+email address was confirmed. Posting, commenting, messaging and other
+interactions require verifying your school email address; until you do, your
+profile is not shown to other users. The sign-in email address is not shown
+publicly.
 
 ## You are responsible for what you share
 

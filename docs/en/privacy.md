@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated:** 11 September 2026
+**Last updated:** 30 September 2026
 
 Common is a social app for university campus communities, with campus posts,
 clubs, meetups and messaging. This document explains
@@ -14,6 +14,16 @@ original; the Turkish version governs.
 sign in with Google or Apple), your name, date of birth, university,
 department and year of study. We ask for your date of birth to calculate your
 age and to enforce the minimum age of 18.
+
+**If you choose student verification:** your school email address and the time
+it was verified. We process this to verify student status, prevent the same
+school address from being used by more than one account, and show the Student
+badge on your profile.
+
+**If you report a problem:** what you write, the app version, iOS version,
+device model and the screen you wrote from, and your conversation with the
+support team. Only you and the authorized support team can see these; we use
+them to fix the problem and reply to you.
 
 **When you fill in your profile:** your bio, interests and profile photos.
 
@@ -50,7 +60,8 @@ anyone for advertising.
   to other students in the app.
 - **Watching someone's story:** the owner of that story sees you in their list of
   viewers, including how many times you watched it. This is deleted with the story.
-- **Your email address and date of birth:** never shown to other users.
+- **Your email addresses and date of birth:** never shown to other users. If
+  you verify a school email, other users see only the Student badge.
 - **People you block:** cannot see that you blocked them.
 
 ## Where your data is stored
