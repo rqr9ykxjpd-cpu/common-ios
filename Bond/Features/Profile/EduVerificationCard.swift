@@ -139,6 +139,10 @@ struct EduVerificationSheet: View {
                 if !status.isPending { fieldFocused = true }
             }
             .animation(reduceMotion ? nil : BondTheme.Motion.smooth, value: status)
+            // Kurucu muaf tuttu: yapılacak bir şey kalmadı, pencere kapanır.
+            .onChange(of: status.exempt) { _, muaf in
+                if muaf { close() }
+            }
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)

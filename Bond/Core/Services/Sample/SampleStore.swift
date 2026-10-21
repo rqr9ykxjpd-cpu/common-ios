@@ -18,6 +18,11 @@ actor SampleStore {
     var eduStatus: EduVerificationStatus
     private var eduChecks = 0
     func setEduPending(_ email: String) { eduStatus.pendingEmail = email }
+    /// `-eduLater exempt|verified`: kurucu birkaç saniye sonra muaf tutmuş ya
+    /// da elle doğrulamış gibi; bekleyen bağlantı tıklanmamış kalır.
+    func founderChangedEdu(_ kind: String) {
+        if kind == "exempt" { eduStatus.exempt = true } else { eduStatus.verifiedAt = .now }
+    }
     /// Örnekte ilk kontrol "henüz tıklanmadı" der (öne gelince otomatik kontrol
     /// bekleyen durumu hemen bitirmesin), ikincisi bağlantıyı tıklanmış sayar.
     func completeEdu() -> Bool {

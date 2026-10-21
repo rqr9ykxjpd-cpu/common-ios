@@ -53,7 +53,15 @@ struct BondApp: App {
                 default: break
                 }
             }
-            let state = AppState(service: SampleProductService(hasProfile: !onboarding, eduStatus: edu))
+            let ornek = SampleProductService(hasProfile: !onboarding, eduStatus: edu)
+            let state = AppState(service: ornek)
+            if let i = arguments.firstIndex(of: "-eduLater"), i + 1 < arguments.count {
+                let tur = arguments[i + 1]
+                Task {
+                    try? await Task.sleep(for: .seconds(4))
+                    await ornek.store.founderChangedEdu(tur)
+                }
+            }
             if !onboarding, let asset = SampleData.me.imageAssetName {
                 state.avatarData = UIImage(named: asset)?.jpegData(compressionQuality: 0.85)
             }

@@ -100,7 +100,11 @@ extension AppState {
         await checkForNewPosts()
         // Kullanıcı maildeki doğrulama bağlantısına Safari'de dokunup geri gelmiş olabilir.
         if eduStatus?.isPending == true {
-            await syncEduVerification()
+            // Bağlantıya tıklanmadıysa da durumu yeniden oku: kurucu bu arada
+            // elle doğrulamış olabilir. Eskiden yalnızca bağlantıya bakılıyor,
+            // elle doğrulanan öğrenci uygulamayı kapatıp açana kadar e-posta
+            // istemeye devam ediyordu.
+            if !(await syncEduVerification()) { await loadEduStatus() }
         } else if eduNeedsAttention {
             // Kurucu bu arada öğrenci olarak doğrulamış ya da muaf tutmuş olabilir.
             // Önceden durum yalnızca açılışta okunuyordu: uygulama kapatılıp

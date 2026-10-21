@@ -18,6 +18,9 @@ extension AppState {
     func requireStudent() -> Bool {
         guard isEduLocked else { return true }
         presentEduGate(.action)
+        // Pencere açıkken durumu tazele: kurucu elle doğruladıysa bir sonraki
+        // dokunuş serbest kalsın, uygulamayı kapatıp açmak gerekmesin.
+        Task { await loadEduStatus() }
         return false
     }
 
